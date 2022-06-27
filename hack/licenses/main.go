@@ -18,9 +18,6 @@ import (
 var (
 	goLicense = []byte(`// Copyright (c) Microsoft Corporation.
 // Licensed under the Apache License 2.0.`)
-
-	pythonLicense = []byte(`# Copyright (c) Microsoft Corporation.
-# Licensed under the Apache License 2.0.`)
 )
 
 func main() {
@@ -44,12 +41,7 @@ func main() {
 }
 
 func run() error {
-	err := applyGoLicense()
-	if err != nil {
-		return err
-	}
-
-	return applyPythonLicense()
+	return applyGoLicense()
 }
 
 func applyGoLicense() error {
@@ -85,56 +77,6 @@ func applyGoLicense() error {
 			bb = append(bb, []byte("\n\n")...)
 			bb = append(bb, goLicense...)
 			bb = append(bb, b[i:]...)
-
-			err = ioutil.WriteFile(path, bb, 0666)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-}
-
-func applyPythonLicense() error {
-	return filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if strings.HasPrefix(path, "pyenv") {
-			return filepath.SkipDir
-		}
-
-		switch path {
-		case "python/client", "vendor":
-			return filepath.SkipDir
-		}
-
-		if !strings.HasSuffix(path, ".py") {
-			return nil
-		}
-
-		b, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		if !bytes.Contains(b, pythonLicense) {
-			var bb []byte
-
-			if bytes.HasPrefix(b, []byte("#!")) {
-				i := bytes.Index(b, []byte("\n"))
-
-				bb = append(bb, b[:i]...)
-				bb = append(bb, []byte("\n\n")...)
-				bb = append(bb, pythonLicense...)
-				bb = append(bb, b[i:]...)
-			} else {
-				bb = append(bb, pythonLicense...)
-				bb = append(bb, []byte("\n\n")...)
-				bb = append(bb, b...)
-			}
 
 			err = ioutil.WriteFile(path, bb, 0666)
 			if err != nil {
@@ -182,43 +124,6 @@ func validateGoLicenses(ignored map[string]bool, dirs []string) []string {
 	return unlicensedFiles
 }
 
-//returns the lists of files that don't have a license but should
-func validatePythonLicenses(ignored map[string]bool, dirs []string) []string {
-	unlicensedFiles := make([]string, 0)
-
-	for _, dir := range dirs {
-		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if strings.HasPrefix(path, "pyenv") {
-				return filepath.SkipDir
-			}
-
-			if ignored[path] {
-				return filepath.SkipDir
-			}
-
-			if !strings.HasSuffix(path, ".py") {
-				return nil
-			}
-
-			b, err := ioutil.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			if !bytes.Contains(b, pythonLicense) {
-				unlicensedFiles = append(unlicensedFiles, path)
-			}
-			return nil
-		})
-	}
-
-	return unlicensedFiles
-}
-
 func parseIgnored(commaSeparated string) map[string]bool {
 	ignored := strings.Split(commaSeparated, ",")
 
@@ -231,21 +136,14 @@ func parseIgnored(commaSeparated string) map[string]bool {
 
 func validateLicenses(ignoredGo, ignoredPython, dirs string) error {
 	ignoredMapGo := parseIgnored(ignoredGo)
-	ignoredMapPython := parseIgnored(ignoredPython)
 
 	unlicensedGo := validateGoLicenses(ignoredMapGo, strings.Split(dirs, ","))
-
-	unlicensedPython := validatePythonLicenses(ignoredMapPython, strings.Split(dirs, ","))
 
 	for _, v := range unlicensedGo {
 		fmt.Printf("%s does not have a license\n", v)
 	}
 
-	for _, v := range unlicensedPython {
-		fmt.Printf("%s does not have a license\n", v)
-	}
-
-	if len(unlicensedGo) > 0 || len(unlicensedPython) > 0 {
+	if len(unlicensedGo) > 0 {
 		return errors.New("validation failed")
 	}
 	return nil
