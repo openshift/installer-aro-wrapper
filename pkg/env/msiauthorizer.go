@@ -24,9 +24,9 @@ func (c *core) NewMSIAuthorizer(msiContext MSIContext, resource string) (autores
 	}
 
 	for _, key := range []string{
-		"AZURE_" + string(msiContext) + "_CLIENT_ID",
-		"AZURE_" + string(msiContext) + "_CLIENT_SECRET",
-		"AZURE_TENANT_ID",
+		"ARO_AZURE_" + string(msiContext) + "_CLIENT_ID",
+		"ARO_AZURE_" + string(msiContext) + "_CLIENT_SECRET",
+		"ARO_AZURE_TENANT_ID",
 	} {
 		if _, found := os.LookupEnv(key); !found {
 			return nil, fmt.Errorf("environment variable %q unset (development mode)", key)
@@ -34,9 +34,9 @@ func (c *core) NewMSIAuthorizer(msiContext MSIContext, resource string) (autores
 	}
 
 	config := &auth.ClientCredentialsConfig{
-		ClientID:     os.Getenv("AZURE_" + string(msiContext) + "_CLIENT_ID"),
-		ClientSecret: os.Getenv("AZURE_" + string(msiContext) + "_CLIENT_SECRET"),
-		TenantID:     os.Getenv("AZURE_TENANT_ID"),
+		ClientID:     os.Getenv("ARO_AZURE_" + string(msiContext) + "_CLIENT_ID"),
+		ClientSecret: os.Getenv("ARO_AZURE_" + string(msiContext) + "_CLIENT_SECRET"),
+		TenantID:     os.Getenv("ARO_AZURE_TENANT_ID"),
 		Resource:     resource,
 		AADEndpoint:  c.Environment().ActiveDirectoryEndpoint,
 	}

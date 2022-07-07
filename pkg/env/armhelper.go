@@ -68,18 +68,18 @@ type armHelper struct {
 }
 
 func newARMHelper(ctx context.Context, log *logrus.Entry, env Interface) (ARMHelper, error) {
-	if os.Getenv("AZURE_ARM_CLIENT_ID") == "" {
+	if os.Getenv("ARO_AZURE_ARM_CLIENT_ID") == "" {
 		return &noopARMHelper{}, nil
 	}
 
 	var armAuthorizer autorest.Authorizer
-	if os.Getenv("AZURE_ARM_CLIENT_SECRET") != "" {
+	if os.Getenv("ARO_AZURE_ARM_CLIENT_SECRET") != "" {
 		// TODO: migrate away from AZURE_ARM_CLIENT_SECRET and remove this code
 		// path
 
 		ccc := auth.ClientCredentialsConfig{
-			ClientID:     os.Getenv("AZURE_ARM_CLIENT_ID"),
-			ClientSecret: os.Getenv("AZURE_ARM_CLIENT_SECRET"),
+			ClientID:     os.Getenv("ARO_AZURE_ARM_CLIENT_ID"),
+			ClientSecret: os.Getenv("ARO_AZURE_ARM_CLIENT_SECRET"),
 			TenantID:     env.TenantID(),
 			Resource:     env.Environment().ResourceManagerEndpoint,
 			AADEndpoint:  env.Environment().ActiveDirectoryEndpoint,
@@ -101,7 +101,7 @@ func newARMHelper(ctx context.Context, log *logrus.Entry, env Interface) (ARMHel
 			return nil, err
 		}
 
-		sp, err := adal.NewServicePrincipalTokenFromCertificate(*oauthConfig, os.Getenv("AZURE_ARM_CLIENT_ID"), certs[0], key, env.Environment().ResourceManagerEndpoint)
+		sp, err := adal.NewServicePrincipalTokenFromCertificate(*oauthConfig, os.Getenv("ARO_AZURE_ARM_CLIENT_ID"), certs[0], key, env.Environment().ResourceManagerEndpoint)
 		if err != nil {
 			return nil, err
 		}

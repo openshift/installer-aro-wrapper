@@ -61,7 +61,7 @@ func New(ctx context.Context, log *logrus.Entry, isLocalDevelopmentMode bool) (I
 		return NewDev(true)
 	}
 
-	if os.Getenv("AZURE_EV2") != "" {
+	if os.Getenv("ARO_AZURE_EV2") != "" {
 		log.Info("creating InstanceMetadata from Environment")
 		return newProdFromEnv(ctx)
 	}

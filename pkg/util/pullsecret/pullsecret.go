@@ -147,7 +147,7 @@ func Validate(_ps string) error {
 }
 
 func Build(oc *api.OpenShiftCluster, ps string) (string, error) {
-	pullSecret := os.Getenv("PULL_SECRET")
+	pullSecret := os.Getenv("ARO_PULL_SECRET")
 
 	pullSecret, _, err := Merge(pullSecret, ps)
 	if err != nil {

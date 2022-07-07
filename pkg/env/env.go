@@ -102,5 +102,5 @@ func NewEnv(ctx context.Context, log *logrus.Entry) (Interface, error) {
 }
 
 func IsLocalDevelopmentMode() bool {
-	return strings.EqualFold(os.Getenv("RP_MODE"), "development")
+	return strings.EqualFold(os.Getenv("ARO_RP_MODE"), "development")
 }

@@ -61,8 +61,8 @@ type prod struct {
 
 func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	for _, key := range []string{
-		"AZURE_FP_CLIENT_ID",
-		"DOMAIN_NAME",
+		"ARO_AZURE_FP_CLIENT_ID",
+		"ARO_DOMAIN_NAME",
 	} {
 		if _, found := os.LookupEnv(key); !found {
 			return nil, fmt.Errorf("environment variable %q unset", key)
@@ -98,19 +98,19 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		Core:   core,
 		Dialer: dialer,
 
-		fpClientID: os.Getenv("AZURE_FP_CLIENT_ID"),
+		fpClientID: os.Getenv("ARO_AZURE_FP_CLIENT_ID"),
 
-		clusterGenevaLoggingAccount:       os.Getenv("CLUSTER_MDSD_ACCOUNT"),
-		clusterGenevaLoggingConfigVersion: os.Getenv("CLUSTER_MDSD_CONFIG_VERSION"),
-		clusterGenevaLoggingEnvironment:   os.Getenv("MDSD_ENVIRONMENT"),
-		clusterGenevaLoggingNamespace:     os.Getenv("CLUSTER_MDSD_NAMESPACE"),
+		clusterGenevaLoggingAccount:       os.Getenv("ARO_CLUSTER_MDSD_ACCOUNT"),
+		clusterGenevaLoggingConfigVersion: os.Getenv("ARO_CLUSTER_MDSD_CONFIG_VERSION"),
+		clusterGenevaLoggingEnvironment:   os.Getenv("ARO_MDSD_ENVIRONMENT"),
+		clusterGenevaLoggingNamespace:     os.Getenv("ARO_CLUSTER_MDSD_NAMESPACE"),
 
 		log: log,
 
 		features: map[Feature]bool{},
 	}
 
-	features := os.Getenv("RP_FEATURES")
+	features := os.Getenv("ARO_RP_FEATURES")
 	if features != "" {
 		for _, feature := range strings.Split(features, ",") {
 			f, err := FeatureString("Feature" + feature)
@@ -185,7 +185,7 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	}
 
 	if !p.IsLocalDevelopmentMode() {
-		gatewayDomains := os.Getenv("GATEWAY_DOMAINS")
+		gatewayDomains := os.Getenv("ARO_GATEWAY_DOMAINS")
 		if gatewayDomains != "" {
 			p.gatewayDomains = strings.Split(gatewayDomains, ",")
 		}
@@ -220,7 +220,7 @@ func (p *prod) InitializeAuthorizers() error {
 		armClientAuthorizer, err := clientauthorizer.NewSubjectNameAndIssuer(
 			p.log,
 			"/etc/aro-rp/arm-ca-bundle.pem",
-			os.Getenv("ARM_API_CLIENT_CERT_COMMON_NAME"),
+			os.Getenv("ARO_ARM_API_CLIENT_CERT_COMMON_NAME"),
 		)
 		if err != nil {
 			return err
@@ -232,7 +232,7 @@ func (p *prod) InitializeAuthorizers() error {
 	adminClientAuthorizer, err := clientauthorizer.NewSubjectNameAndIssuer(
 		p.log,
 		"/etc/aro-rp/admin-ca-bundle.pem",
-		os.Getenv("ADMIN_API_CLIENT_CERT_COMMON_NAME"),
+		os.Getenv("ARO_ADMIN_API_CLIENT_CERT_COMMON_NAME"),
 	)
 	if err != nil {
 		return err
@@ -251,7 +251,7 @@ func (p *prod) AdminClientAuthorizer() clientauthorizer.ClientAuthorizer {
 }
 
 func (p *prod) ACRResourceID() string {
-	return os.Getenv("ACR_RESOURCE_ID")
+	return os.Getenv("ARO_ACR_RESOURCE_ID")
 }
 
 func (p *prod) ACRDomain() string {
@@ -304,7 +304,7 @@ func (p *prod) ClusterKeyvault() keyvault.Manager {
 }
 
 func (p *prod) Domain() string {
-	return os.Getenv("DOMAIN_NAME")
+	return os.Getenv("ARO_DOMAIN_NAME")
 }
 
 func (p *prod) FeatureIsSet(f Feature) bool {
@@ -344,7 +344,7 @@ func (p *prod) GatewayDomains() []string {
 }
 
 func (p *prod) GatewayResourceGroup() string {
-	return os.Getenv("GATEWAY_RESOURCEGROUP")
+	return os.Getenv("ARO_GATEWAY_RESOURCEGROUP")
 }
 
 func (p *prod) ServiceKeyvault() keyvault.Manager {

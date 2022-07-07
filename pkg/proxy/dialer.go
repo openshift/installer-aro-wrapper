@@ -56,7 +56,7 @@ func (d *dev) DialContext(ctx context.Context, network, address string) (net.Con
 	c, err := (&net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
-	}).DialContext(ctx, network, os.Getenv("PROXY_HOSTNAME")+":443")
+	}).DialContext(ctx, network, os.Getenv("ARO_PROXY_HOSTNAME")+":443")
 	if err != nil {
 		return nil, err
 	}

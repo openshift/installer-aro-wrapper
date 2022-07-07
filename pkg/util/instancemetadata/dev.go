@@ -13,10 +13,10 @@ import (
 func NewDev(checkEnv bool) (InstanceMetadata, error) {
 	if checkEnv {
 		for _, key := range []string{
-			"AZURE_SUBSCRIPTION_ID",
-			"AZURE_TENANT_ID",
-			"LOCATION",
-			"RESOURCEGROUP",
+			"ARO_AZURE_SUBSCRIPTION_ID",
+			"ARO_AZURE_TENANT_ID",
+			"ARO_LOCATION",
+			"ARO_RESOURCEGROUP",
 		} {
 			if _, found := os.LookupEnv(key); !found {
 				return nil, fmt.Errorf("environment variable %q unset (development mode)", key)
@@ -40,10 +40,10 @@ func NewDev(checkEnv bool) (InstanceMetadata, error) {
 
 	return &instanceMetadata{
 		hostname:       hostname,
-		tenantID:       os.Getenv("AZURE_TENANT_ID"),
-		subscriptionID: os.Getenv("AZURE_SUBSCRIPTION_ID"),
-		location:       os.Getenv("LOCATION"),
-		resourceGroup:  os.Getenv("RESOURCEGROUP"),
+		tenantID:       os.Getenv("ARO_AZURE_TENANT_ID"),
+		subscriptionID: os.Getenv("ARO_AZURE_SUBSCRIPTION_ID"),
+		location:       os.Getenv("ARO_LOCATION"),
+		resourceGroup:  os.Getenv("ARO_RESOURCEGROUP"),
 		environment:    &environment,
 	}, nil
 }

@@ -12,12 +12,12 @@ import (
 
 func URI(instancemetadata instancemetadata.InstanceMetadata, suffix string) (string, error) {
 	for _, key := range []string{
-		"KEYVAULT_PREFIX",
+		"ARO_KEYVAULT_PREFIX",
 	} {
 		if _, found := os.LookupEnv(key); !found {
 			return "", fmt.Errorf("environment variable %q unset", key)
 		}
 	}
 
-	return fmt.Sprintf("https://%s%s.%s/", os.Getenv("KEYVAULT_PREFIX"), suffix, instancemetadata.Environment().KeyVaultDNSSuffix), nil
+	return fmt.Sprintf("https://%s%s.%s/", os.Getenv("ARO_KEYVAULT_PREFIX"), suffix, instancemetadata.Environment().KeyVaultDNSSuffix), nil
 }

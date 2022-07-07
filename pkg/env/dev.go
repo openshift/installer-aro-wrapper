@@ -23,7 +23,7 @@ type dev struct {
 
 func newDev(ctx context.Context, log *logrus.Entry) (Interface, error) {
 	for _, key := range []string{
-		"PROXY_HOSTNAME",
+		"ARO_PROXY_HOSTNAME",
 	} {
 		if _, found := os.LookupEnv(key); !found {
 			return nil, fmt.Errorf("environment variable %q unset", key)
@@ -69,7 +69,7 @@ func (d *dev) InitializeAuthorizers() error {
 }
 
 func (d *dev) AROOperatorImage() string {
-	override := os.Getenv("ARO_IMAGE")
+	override := os.Getenv("ARO_ARO_IMAGE")
 	if override != "" {
 		return override
 	}
