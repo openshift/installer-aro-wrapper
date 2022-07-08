@@ -20,7 +20,7 @@ import (
 	"github.com/Azure/ARO-RP/pkg/util/stringutils"
 )
 
-func (m *manager) Install(ctx context.Context) error {
+func (m *manager) Manifests(ctx context.Context) (graph.Graph, error) {
 	var (
 		installConfig *installconfig.InstallConfig
 		image         *releaseimage.Image
@@ -43,6 +43,14 @@ func (m *manager) Install(ctx context.Context) error {
 		steps.Action(func(ctx context.Context) error {
 			return m.persistGraph(ctx, g)
 		}),
+	}
+
+	err := steps.Run(ctx, m.log, 10*time.Second, s)
+	return g, err
+}
+
+func (m *manager) Install(ctx context.Context) error {
+	s := []steps.Step{
 		steps.AuthorizationRefreshingAction(m.fpAuthorizer, steps.Action(m.deployResourceTemplate)),
 		steps.Action(m.initializeKubernetesClients),
 		steps.Condition(m.bootstrapConfigMapReady, 30*time.Minute, true),

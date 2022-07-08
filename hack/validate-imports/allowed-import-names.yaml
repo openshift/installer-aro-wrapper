@@ -103,6 +103,8 @@ allowedImportNames:
     - azureproviderv1beta1
   sigs.k8s.io/controller-runtime:
     - ctrl
+  github.com/openshift/installer/pkg/asset/targets:
+    - targetassets
   github.com/openshift/hive/pkg/client/clientset/versioned:
     - hiveclient
   github.com/openshift/hive/pkg/client/clientset/versioned/fake:

@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -28,7 +29,6 @@ import (
 	"github.com/Azure/ARO-RP/pkg/util/rhcos"
 	"github.com/Azure/ARO-RP/pkg/util/stringutils"
 	"github.com/Azure/ARO-RP/pkg/util/subnet"
-	"github.com/Azure/ARO-RP/pkg/util/version"
 )
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
@@ -230,11 +230,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		return nil, nil, err
 	}
 
-	image := &releaseimage.Image{}
-	if m.oc.Properties.ClusterProfile.Version == version.InstallStream.Version.String() {
-		image.PullSpec = version.InstallStream.PullSpec
-	} else {
-		return nil, nil, fmt.Errorf("unimplemented version %q", m.oc.Properties.ClusterProfile.Version)
+	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
+	if releaseImageOverride == "" {
+		return nil, nil, fmt.Errorf("no release image in 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE'")
+	}
+
+	image := &releaseimage.Image{
+		PullSpec: releaseImageOverride,
 	}
 
 	err = validation.ValidateInstallConfig(installConfig.Config).ToAggregate()
