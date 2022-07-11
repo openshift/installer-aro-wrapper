@@ -118,16 +118,23 @@ func NewDialer(isLocalDevelopmentMode bool) (Dialer, error) {
 		return &prod{}, nil
 	}
 
+	var basepath string
+	var err error
 	d := &dev{}
 
-	// This assumes we are running from an ARO-RP checkout in development
-	_, curmod, _, _ := runtime.Caller(0)
-	basepath, err := filepath.Abs(filepath.Join(filepath.Dir(curmod), "../.."))
-	if err != nil {
-		return nil, err
+	if os.Getenv("OPENSHIFT_INSTALL_INVOKER") == "hive" {
+		basepath = "/.azure/"
+	} else {
+		// This assumes we are running from an ARO-RP checkout in development
+		_, curmod, _, _ := runtime.Caller(0)
+		basepath, err = filepath.Abs(filepath.Join(filepath.Dir(curmod), "../.."))
+		if err != nil {
+			return nil, err
+		}
+		basepath = filepath.Join(basepath, "secrets")
 	}
 
-	b, err := ioutil.ReadFile(path.Join(basepath, "secrets/proxy.crt"))
+	b, err := ioutil.ReadFile(path.Join(basepath, "proxy.crt"))
 	if err != nil {
 		return nil, err
 	}
@@ -140,12 +147,12 @@ func NewDialer(isLocalDevelopmentMode bool) (Dialer, error) {
 	d.proxyPool = x509.NewCertPool()
 	d.proxyPool.AddCert(cert)
 
-	d.proxyClientCert, err = ioutil.ReadFile(path.Join(basepath, "secrets/proxy-client.crt"))
+	d.proxyClientCert, err = ioutil.ReadFile(path.Join(basepath, "proxy-client.crt"))
 	if err != nil {
 		return nil, err
 	}
 
-	b, err = ioutil.ReadFile(path.Join(basepath, "secrets/proxy-client.key"))
+	b, err = ioutil.ReadFile(path.Join(basepath, "proxy-client.key"))
 	if err != nil {
 		return nil, err
 	}
