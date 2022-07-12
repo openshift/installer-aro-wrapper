@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/validation"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -36,44 +37,44 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	pullSecret, err := pullsecret.Build(m.oc, string(m.oc.Properties.ClusterProfile.PullSecret))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	for _, key := range []string{"cloud.openshift.com"} {
 		pullSecret, err = pullsecret.RemoveKey(pullSecret, key)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errors.WithStack(err)
 		}
 	}
 
 	r, err := azure.ParseResourceID(m.oc.ID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	_, masterSubnetName, err := subnet.Split(m.oc.Properties.MasterProfile.SubnetID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	vnetID, workerSubnetName, err := subnet.Split(m.oc.Properties.WorkerProfiles[0].SubnetID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	vnetr, err := azure.ParseResourceID(vnetID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(m.oc.Properties.SSHKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	sshkey, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	domain := m.oc.Properties.ClusterProfile.Domain
@@ -83,7 +84,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	masterSKU, err := m.env.VMSku(string(m.oc.Properties.MasterProfile.VMSize))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 	masterZones := computeskus.Zones(masterSKU)
 	if len(masterZones) == 0 {
@@ -92,7 +93,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	workerSKU, err := m.env.VMSku(string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 	workerZones := computeskus.Zones(workerSKU)
 	if len(workerZones) == 0 {
@@ -227,7 +228,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	installConfig.Config.Azure.Image, err = rhcos.Image(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
@@ -241,7 +242,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	err = validation.ValidateInstallConfig(installConfig.Config).ToAggregate()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
 	return installConfig, image, err

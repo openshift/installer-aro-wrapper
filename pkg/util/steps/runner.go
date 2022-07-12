@@ -5,12 +5,18 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"runtime"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+type stackTracer interface {
+	StackTrace() errors.StackTrace
+}
 
 // FriendlyName returns a "friendly" stringified name of the given func.
 func FriendlyName(f interface{}) string {
@@ -32,6 +38,15 @@ func Run(ctx context.Context, log *logrus.Entry, pollInterval time.Duration, ste
 
 		if err != nil {
 			log.Errorf("step %s encountered error: %s", step, err.Error())
+
+			if err, ok := err.(stackTracer); ok {
+				trace := ""
+				for _, f := range err.StackTrace() {
+					trace = trace + fmt.Sprintf("%+s:%d\n", f, f)
+				}
+				log.Error(trace)
+			}
+
 			return err
 		}
 	}
