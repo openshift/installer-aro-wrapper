@@ -3,14 +3,14 @@ ARG REGISTRY
 FROM ${REGISTRY}/ubi8/go-toolset:1.17.7 AS builder
 ENV GOOS=linux \
     GOPATH=/go/
-WORKDIR ${GOPATH}/src/github.com/Azure/ARO-RP
+WORKDIR ${GOPATH}/src/github.com/hawkowl/ARO-Installer
 USER root
 RUN yum update -y
-COPY . ${GOPATH}/src/github.com/Azure/ARO-RP/
+COPY . ${GOPATH}/src/github.com/hawkowl/ARO-Installer/
 RUN make aro
 
 FROM ${REGISTRY}/ubi8/ubi-minimal
 RUN microdnf update && microdnf clean all
-COPY --from=builder /go/src/github.com/Azure/ARO-RP/aro /bin/openshift-install
+COPY --from=builder /go/src/github.com/hawkowl/ARO-Installer/aro /bin/openshift-install
 ENTRYPOINT ["/bin/openshift-install"]
 USER 1000
