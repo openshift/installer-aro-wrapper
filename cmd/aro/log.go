@@ -77,6 +77,7 @@ func (h *fileHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
+//nolint:unused
 func setupFileHook(baseDir string) func() {
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		logrus.Fatal(errors.Wrap(err, "failed to create base directory for logs"))
