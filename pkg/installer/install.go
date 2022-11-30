@@ -37,7 +37,7 @@ func (m *manager) Manifests(ctx context.Context) (graph.Graph, error) {
 		steps.Action(func(ctx context.Context) error {
 			var err error
 			// Applies ARO-specific customisations to the InstallConfig
-			g, err = m.applyInstallConfigCustomisations(ctx, installConfig, image)
+			g, err = m.applyInstallConfigCustomisations(installConfig, image)
 			return err
 		}),
 		steps.Action(func(ctx context.Context) error {
