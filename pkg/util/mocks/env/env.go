@@ -45,6 +45,20 @@ func (m *MockCore) EXPECT() *MockCoreMockRecorder {
 	return m.recorder
 }
 
+// AksMsiClientID mocks base method.
+func (m *MockCore) AksMsiClientID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AksMsiClientID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// AksMsiClientID indicates an expected call of AksMsiClientID.
+func (mr *MockCoreMockRecorder) AksMsiClientID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AksMsiClientID", reflect.TypeOf((*MockCore)(nil).AksMsiClientID))
+}
+
 // Environment mocks base method.
 func (m *MockCore) Environment() *azureclient.AROEnvironment {
 	m.ctrl.T.Helper()
@@ -235,6 +249,20 @@ func (m *MockInterface) AdminClientAuthorizer() clientauthorizer.ClientAuthorize
 func (mr *MockInterfaceMockRecorder) AdminClientAuthorizer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AdminClientAuthorizer", reflect.TypeOf((*MockInterface)(nil).AdminClientAuthorizer))
+}
+
+// AksMsiClientID mocks base method.
+func (m *MockInterface) AksMsiClientID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AksMsiClientID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// AksMsiClientID indicates an expected call of AksMsiClientID.
+func (mr *MockInterfaceMockRecorder) AksMsiClientID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AksMsiClientID", reflect.TypeOf((*MockInterface)(nil).AksMsiClientID))
 }
 
 // ArmClientAuthorizer mocks base method.

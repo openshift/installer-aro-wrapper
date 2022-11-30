@@ -6,6 +6,7 @@ package instancemetadata
 import (
 	"context"
 	"os"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 
@@ -18,6 +19,7 @@ type InstanceMetadata interface {
 	SubscriptionID() string
 	Location() string
 	ResourceGroup() string
+	AksMsiClientID() string
 	Environment() *azureclient.AROEnvironment
 }
 
@@ -27,8 +29,11 @@ type instanceMetadata struct {
 	subscriptionID string
 	location       string
 	resourceGroup  string
+	aksMsiClientID string
 	environment    *azureclient.AROEnvironment
 }
+
+const envAksShardId = "ARO_AZURE_AKS_SHARD_ID"
 
 func (im *instanceMetadata) Hostname() string {
 	return im.hostname
@@ -50,6 +55,10 @@ func (im *instanceMetadata) ResourceGroup() string {
 	return im.resourceGroup
 }
 
+func (im *instanceMetadata) AksMsiClientID() string {
+	return im.aksMsiClientID
+}
+
 func (im *instanceMetadata) Environment() *azureclient.AROEnvironment {
 	return im.environment
 }
@@ -68,4 +77,16 @@ func New(ctx context.Context, log *logrus.Entry, isLocalDevelopmentMode bool) (I
 
 	log.Info("creating InstanceMetadata from Azure Instance Metadata Service (AIMS)")
 	return newProd(ctx)
+}
+
+func getAksShardFromEnvironment() (int, error) {
+	var err error
+	shard := 1
+	if os.Getenv(envAksShardId) != "" {
+		shard, err = strconv.Atoi(os.Getenv(envAksShardId))
+		if err != nil {
+			return 0, err
+		}
+	}
+	return shard, nil
 }

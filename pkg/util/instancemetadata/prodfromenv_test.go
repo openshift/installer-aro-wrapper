@@ -27,16 +27,16 @@ func TestProdEnvPopulateInstanceMetadata(t *testing.T) {
 	}{
 		{
 			name:    "missing environment variables",
-			wantErr: "environment variable \"AZURE_ENVIRONMENT\" unset",
+			wantErr: "environment variable \"ARO_AZURE_ENVIRONMENT\" unset",
 		},
 		{
 			name: "valid environment variables",
 			environment: map[string]string{
-				"AZURE_ENVIRONMENT":     azureclient.PublicCloud.Name,
-				"AZURE_SUBSCRIPTION_ID": "some-sub-guid",
-				"AZURE_TENANT_ID":       "some-tenant-guid",
-				"LOCATION":              "some-region",
-				"RESOURCEGROUP":         "my-resourceGroup",
+				"ARO_AZURE_ENVIRONMENT":     azureclient.PublicCloud.Name,
+				"ARO_AZURE_SUBSCRIPTION_ID": "some-sub-guid",
+				"ARO_AZURE_TENANT_ID":       "some-tenant-guid",
+				"ARO_LOCATION":              "some-region",
+				"ARO_RESOURCEGROUP":         "my-resourceGroup",
 			},
 			wantInstanceMetadata: instanceMetadata{
 				environment:    &azureclient.PublicCloud,
@@ -50,23 +50,23 @@ func TestProdEnvPopulateInstanceMetadata(t *testing.T) {
 		{
 			name: "valid environment variables, but invalid Azure environment name",
 			environment: map[string]string{
-				"AZURE_ENVIRONMENT":     "ThisEnvDoesNotExist",
-				"AZURE_SUBSCRIPTION_ID": "some-sub-guid",
-				"AZURE_TENANT_ID":       "some-tenant-guid",
-				"LOCATION":              "some-region",
-				"RESOURCEGROUP":         "my-resourceGroup",
+				"ARO_AZURE_ENVIRONMENT":     "ThisEnvDoesNotExist",
+				"ARO_AZURE_SUBSCRIPTION_ID": "some-sub-guid",
+				"ARO_AZURE_TENANT_ID":       "some-tenant-guid",
+				"ARO_LOCATION":              "some-region",
+				"ARO_RESOURCEGROUP":         "my-resourceGroup",
 			},
 			wantErr: "cloud environment \"ThisEnvDoesNotExist\" is unsupported by ARO",
 		},
 		{
 			name: "valid environment variables with hostname override",
 			environment: map[string]string{
-				"AZURE_ENVIRONMENT":     azureclient.PublicCloud.Name,
-				"AZURE_SUBSCRIPTION_ID": "some-sub-guid",
-				"AZURE_TENANT_ID":       "some-tenant-guid",
-				"LOCATION":              "some-region",
-				"RESOURCEGROUP":         "my-resourceGroup",
-				"HOSTNAME_OVERRIDE":     "my.over.ride",
+				"ARO_AZURE_ENVIRONMENT":     azureclient.PublicCloud.Name,
+				"ARO_AZURE_SUBSCRIPTION_ID": "some-sub-guid",
+				"ARO_AZURE_TENANT_ID":       "some-tenant-guid",
+				"ARO_LOCATION":              "some-region",
+				"ARO_RESOURCEGROUP":         "my-resourceGroup",
+				"ARO_HOSTNAME_OVERRIDE":     "my.over.ride",
 			},
 			wantInstanceMetadata: instanceMetadata{
 				environment:    &azureclient.PublicCloud,
