@@ -13,6 +13,7 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
@@ -113,6 +114,15 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		outboundType = azuretypes.UserDefinedRoutingOutboundType
 	}
 
+	masterDiskEncryptionSet, err := azure.ParseResourceID(m.oc.Properties.MasterProfile.DiskEncryptionSetID)
+	if err != nil {
+		return nil, nil, err
+	}
+	workerDiskEncryptionSet, err := azure.ParseResourceID(m.oc.Properties.WorkerProfiles[0].DiskEncryptionSetID)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	installConfig := &installconfig.InstallConfig{
 		Config: &types.InstallConfig{
 			TypeMeta: metav1.TypeMeta{
@@ -148,9 +158,14 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Zones:            masterZones,
 						InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 						EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
+						VMNetworkingType: "Basic",
 						OSDisk: azuretypes.OSDisk{
-							DiskEncryptionSetID: m.oc.Properties.MasterProfile.DiskEncryptionSetID,
-							DiskSizeGB:          1024,
+							DiskEncryptionSet: &azuretypes.DiskEncryptionSet{
+								SubscriptionID: masterDiskEncryptionSet.SubscriptionID,
+								ResourceGroup:  masterDiskEncryptionSet.ResourceGroup,
+								Name:           masterDiskEncryptionSet.ResourceName,
+							},
+							DiskSizeGB: 1024,
 						},
 					},
 				},
@@ -166,9 +181,14 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							Zones:            workerZones,
 							InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
 							EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
+							VMNetworkingType: "Basic",
 							OSDisk: azuretypes.OSDisk{
-								DiskEncryptionSetID: m.oc.Properties.WorkerProfiles[0].DiskEncryptionSetID,
-								DiskSizeGB:          int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
+								DiskEncryptionSet: &azuretypes.DiskEncryptionSet{
+									SubscriptionID: workerDiskEncryptionSet.SubscriptionID,
+									ResourceGroup:  workerDiskEncryptionSet.ResourceGroup,
+									Name:           workerDiskEncryptionSet.ResourceName,
+								},
+								DiskSizeGB: int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
 							},
 						},
 					},
@@ -211,6 +231,14 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 			},
 			Publish: types.ExternalPublishingStrategy,
+			Capabilities: &types.Capabilities{
+				// don't include the baremetal capability (in the baseline default)
+				BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
+				AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
+					configv1.ClusterVersionCapabilityMarketplace,
+					configv1.ClusterVersionCapabilityOpenShiftSamples,
+				},
+			},
 		},
 		Azure: icazure.NewMetadataWithCredentials(
 			azuretypes.CloudEnvironment(m.env.Environment().Name),
