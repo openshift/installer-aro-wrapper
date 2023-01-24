@@ -114,13 +114,31 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		outboundType = azuretypes.UserDefinedRoutingOutboundType
 	}
 
-	masterDiskEncryptionSet, err := azure.ParseResourceID(m.oc.Properties.MasterProfile.DiskEncryptionSetID)
-	if err != nil {
-		return nil, nil, err
+	var masterDiskEncryptionSet *azuretypes.DiskEncryptionSet
+	var workerDiskEncryptionSet *azuretypes.DiskEncryptionSet
+
+	if m.oc.Properties.MasterProfile.DiskEncryptionSetID != "" {
+		masterDiskEncryptionSetResource, err := azure.ParseResourceID(m.oc.Properties.MasterProfile.DiskEncryptionSetID)
+		if err != nil {
+			return nil, nil, err
+		}
+		masterDiskEncryptionSet = &azuretypes.DiskEncryptionSet{
+			SubscriptionID: masterDiskEncryptionSetResource.SubscriptionID,
+			ResourceGroup:  masterDiskEncryptionSetResource.ResourceGroup,
+			Name:           masterDiskEncryptionSetResource.ResourceName,
+		}
 	}
-	workerDiskEncryptionSet, err := azure.ParseResourceID(m.oc.Properties.WorkerProfiles[0].DiskEncryptionSetID)
-	if err != nil {
-		return nil, nil, err
+
+	if m.oc.Properties.WorkerProfiles[0].DiskEncryptionSetID != "" {
+		workerDiskEncryptionSetResource, err := azure.ParseResourceID(m.oc.Properties.WorkerProfiles[0].DiskEncryptionSetID)
+		if err != nil {
+			return nil, nil, err
+		}
+		workerDiskEncryptionSet = &azuretypes.DiskEncryptionSet{
+			SubscriptionID: workerDiskEncryptionSetResource.SubscriptionID,
+			ResourceGroup:  workerDiskEncryptionSetResource.ResourceGroup,
+			Name:           workerDiskEncryptionSetResource.ResourceName,
+		}
 	}
 
 	installConfig := &installconfig.InstallConfig{
@@ -160,12 +178,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
 						VMNetworkingType: "Basic",
 						OSDisk: azuretypes.OSDisk{
-							DiskEncryptionSet: &azuretypes.DiskEncryptionSet{
-								SubscriptionID: masterDiskEncryptionSet.SubscriptionID,
-								ResourceGroup:  masterDiskEncryptionSet.ResourceGroup,
-								Name:           masterDiskEncryptionSet.ResourceName,
-							},
-							DiskSizeGB: 1024,
+							DiskEncryptionSet: masterDiskEncryptionSet,
+							DiskSizeGB:        1024,
 						},
 					},
 				},
@@ -183,12 +197,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
 							VMNetworkingType: "Basic",
 							OSDisk: azuretypes.OSDisk{
-								DiskEncryptionSet: &azuretypes.DiskEncryptionSet{
-									SubscriptionID: workerDiskEncryptionSet.SubscriptionID,
-									ResourceGroup:  workerDiskEncryptionSet.ResourceGroup,
-									Name:           workerDiskEncryptionSet.ResourceName,
-								},
-								DiskSizeGB: int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
+								DiskEncryptionSet: workerDiskEncryptionSet,
+								DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
 							},
 						},
 					},
