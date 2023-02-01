@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
 	configv1 "github.com/openshift/api/config/v1"
@@ -91,6 +92,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	if len(masterZones) == 0 {
 		masterZones = []string{""}
 	}
+	masterVMNetworkingType := determineVMNetworkingType(masterSKU)
 
 	workerSKU, err := m.env.VMSku(string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
@@ -100,6 +102,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	if len(workerZones) == 0 {
 		workerZones = []string{""}
 	}
+	workerVMNetworkingType := determineVMNetworkingType(workerSKU)
 
 	// Standard_D8s_v3 is only available in one zone in centraluseuap, so we need a non-zonal install in that region
 	if strings.EqualFold(m.oc.Location, "centraluseuap") {
@@ -176,7 +179,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Zones:            masterZones,
 						InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 						EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
-						VMNetworkingType: "Basic",
+						VMNetworkingType: masterVMNetworkingType,
 						OSDisk: azuretypes.OSDisk{
 							DiskEncryptionSet: masterDiskEncryptionSet,
 							DiskSizeGB:        1024,
@@ -195,7 +198,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							Zones:            workerZones,
 							InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
 							EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
-							VMNetworkingType: "Basic",
+							VMNetworkingType: workerVMNetworkingType,
 							OSDisk: azuretypes.OSDisk{
 								DiskEncryptionSet: workerDiskEncryptionSet,
 								DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
@@ -286,4 +289,15 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	}
 
 	return installConfig, image, err
+}
+
+func determineVMNetworkingType(vmSku *mgmtcompute.ResourceSku) string {
+	var vmNetworkingType azuretypes.VMNetworkingCapability
+
+	if computeskus.HasCapability(vmSku, azuretypes.AcceleratedNetworkingEnabled) {
+		vmNetworkingType = azuretypes.VMnetworkingTypeAccelerated
+	} else {
+		vmNetworkingType = azuretypes.VMNetworkingTypeBasic
+	}
+	return string(vmNetworkingType)
 }
