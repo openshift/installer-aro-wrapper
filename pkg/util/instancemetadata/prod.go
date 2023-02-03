@@ -49,13 +49,14 @@ func (p *prod) getServicePrincipalTokenAndClientIdFromMSI() (string, string, err
 		return "", "", err
 	}
 
-	msi_endpoint, err := url.Parse("http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01")
+	msi_endpoint, err := url.Parse("http://169.254.169.254/metadata/identity/oauth2/token")
 	if err != nil {
 		return "", "", err
 	}
 
 	msi_parameters := msi_endpoint.Query()
-	msi_parameters.Add("resource", "https://management.azure.com/")
+	msi_parameters.Add("api-version", "2018-02-01")
+	msi_parameters.Add("resource", p.instanceMetadata.environment.ResourceManagerEndpoint)
 	msi_parameters.Add("mi_res_id", fmt.Sprintf(
 		"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/aro-aks-cluster-%03d-agentpool",
 		p.SubscriptionID(),
