@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	azuretypes "github.com/openshift/installer/pkg/types/azure"
 
 	"github.com/Azure/ARO-RP/pkg/api"
 	"github.com/Azure/ARO-RP/pkg/util/arm"
@@ -71,6 +72,7 @@ func (m *manager) networkMasterNICs(installConfig *installconfig.InstallConfig) 
 	return &arm.Resource{
 		Resource: &mgmtnetwork.Interface{
 			InterfacePropertiesFormat: &mgmtnetwork.InterfacePropertiesFormat{
+				EnableAcceleratedNetworking: to.BoolPtr(installConfig.Config.ControlPlane.Platform.Azure.VMNetworkingType == string(azuretypes.VMnetworkingTypeAccelerated)),
 				IPConfigurations: &[]mgmtnetwork.InterfaceIPConfiguration{
 					{
 						InterfaceIPConfigurationPropertiesFormat: &mgmtnetwork.InterfaceIPConfigurationPropertiesFormat{
