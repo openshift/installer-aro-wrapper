@@ -110,7 +110,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		masterZones = []string{""}
 	}
 
-	SoftwareDefinedNetwork := string(api.SoftwareDefinedNetworkOpenShiftSDN)
+	// Set NetworkType to OVNKubernetes by default
+	SoftwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
+	if string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork) != "" {
+		SoftwareDefinedNetwork = string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork)
+	}
+
 	// determine outbound type based on cluster visibility
 	outboundType := azuretypes.LoadbalancerOutboundType
 	if m.oc.Properties.NetworkProfile.OutboundType == api.OutboundTypeUserDefinedRouting {
