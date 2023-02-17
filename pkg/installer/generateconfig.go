@@ -112,6 +112,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	// Set NetworkType to OVNKubernetes by default
 	SoftwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
+	if string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork) != "" {
+		SoftwareDefinedNetwork = string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork)
+	}
 
 	// determine outbound type based on cluster visibility
 	outboundType := azuretypes.LoadbalancerOutboundType
