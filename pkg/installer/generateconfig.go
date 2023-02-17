@@ -106,7 +106,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		masterZones = []string{""}
 	}
 
+	// Set the Network Type to OpenshiftSDN
 	SoftwareDefinedNetwork := string(api.SoftwareDefinedNetworkOpenShiftSDN)
+	if string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork) != "" {
+		SoftwareDefinedNetwork = string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork)
+	}
+
 	// determine outbound type based on cluster visibility
 	outboundType := azuretypes.LoadbalancerOutboundType
 	if m.oc.Properties.NetworkProfile.OutboundType == api.OutboundTypeUserDefinedRouting {
