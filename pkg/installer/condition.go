@@ -14,8 +14,13 @@ import (
 
 func (m *manager) bootstrapConfigMapReady(ctx context.Context) (bool, error) {
 	cm, err := m.kubernetescli.CoreV1().ConfigMaps("kube-system").Get(ctx, "bootstrap", metav1.GetOptions{})
-	if err != nil && m.env.IsLocalDevelopmentMode() {
-		m.log.Printf("bootstrapConfigMapReady condition error %s", err)
+	if err != nil {
+		// During bootstrap the control plane nodes may go down while they
+		// update various components. In this case, it is usually temporary and
+		// we should let it poll until the timeout rather than fail out
+		// instantly on such a blip.
+		m.log.Printf("bootstrapConfigMapReady condition error %s, continuing to poll", err)
+		return false, nil
 	}
 	return err == nil && cm.Data["status"] == "complete", nil
 }
