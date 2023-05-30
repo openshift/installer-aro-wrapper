@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/go-autorest/autorest/azure"
 )
 
@@ -16,6 +19,13 @@ type AROEnvironment struct {
 	ActualCloudName          string
 	GenevaMonitoringEndpoint string
 	AppSuffix                string
+
+	Cloud cloud.Configuration
+	// Microsoft identity platform scopes used by ARO
+	// See https://learn.microsoft.com/EN-US/azure/active-directory/develop/scopes-oidc#the-default-scope
+	ResourceManagerScope      string
+	KeyVaultScope             string
+	ActiveDirectoryGraphScope string
 }
 
 var (
@@ -25,6 +35,10 @@ var (
 		ActualCloudName:          "AzureCloud",
 		GenevaMonitoringEndpoint: "https://gcs.prod.monitoring.core.windows.net/",
 		AppSuffix:                "aro.azure.com",
+
+		ResourceManagerScope:      azure.PublicCloud.ResourceManagerEndpoint + "/.default",
+		KeyVaultScope:             azure.PublicCloud.ResourceIdentifiers.KeyVault + "/.default",
+		ActiveDirectoryGraphScope: azure.PublicCloud.GraphEndpoint + "/.default",
 	}
 
 	// USGovernmentCloud contains additional ARO information for the US Gov cloud environment.
@@ -33,6 +47,10 @@ var (
 		ActualCloudName:          "AzureUSGovernment",
 		GenevaMonitoringEndpoint: "https://gcs.monitoring.core.usgovcloudapi.net/",
 		AppSuffix:                "aro.azure.us",
+
+		ResourceManagerScope:      azure.PublicCloud.ResourceManagerEndpoint + "/.default",
+		KeyVaultScope:             azure.PublicCloud.ResourceIdentifiers.KeyVault + "/.default",
+		ActiveDirectoryGraphScope: azure.PublicCloud.GraphEndpoint + "/.default",
 	}
 )
 
@@ -45,4 +63,36 @@ func EnvironmentFromName(name string) (AROEnvironment, error) {
 		return USGovernmentCloud, nil
 	}
 	return AROEnvironment{}, fmt.Errorf("cloud environment %q is unsupported by ARO", name)
+}
+
+func (e *AROEnvironment) ClientCertificateCredentialOptions() *azidentity.ClientCertificateCredentialOptions {
+	return &azidentity.ClientCertificateCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Cloud: e.Cloud,
+		},
+	}
+}
+
+func (e *AROEnvironment) ClientSecretCredentialOptions() *azidentity.ClientSecretCredentialOptions {
+	return &azidentity.ClientSecretCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Cloud: e.Cloud,
+		},
+	}
+}
+
+func (e *AROEnvironment) EnvironmentCredentialOptions() *azidentity.EnvironmentCredentialOptions {
+	return &azidentity.EnvironmentCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Cloud: e.Cloud,
+		},
+	}
+}
+
+func (e *AROEnvironment) ManagedIdentityCredentialOptions() *azidentity.ManagedIdentityCredentialOptions {
+	return &azidentity.ManagedIdentityCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Cloud: e.Cloud,
+		},
+	}
 }
