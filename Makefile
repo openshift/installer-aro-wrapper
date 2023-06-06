@@ -50,7 +50,8 @@ ifeq ("${RP_IMAGE_ACR}-$(BRANCH)","arointsvc-master")
 		docker push arointsvc.azurecr.io/aroinstaller:latest
 endif
 
-test-go: generate build-all validate-go lint-go unit-test-go
+test-go: generate build-all validate-go lint-go
+	go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --junitfile report.xml -- -tags=aro,containers_image_openpgp -coverprofile=cover.out ./...
 
 validate-go:
 	gofmt -s -w cmd hack pkg test
@@ -66,9 +67,6 @@ validate-go-action:
 	go run ./hack/validate-imports cmd hack pkg test
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
-
-unit-test-go:
-	go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --junitfile report.xml -- -tags=aro,containers_image_openpgp -coverprofile=cover.out ./...
 
 lint-go:
 	hack/lint-go.sh
