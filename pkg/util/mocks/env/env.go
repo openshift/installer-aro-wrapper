@@ -11,6 +11,7 @@ import (
 	net "net"
 	reflect "reflect"
 
+	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	compute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	autorest "github.com/Azure/go-autorest/autorest"
 	gomock "github.com/golang/mock/gomock"
@@ -19,7 +20,6 @@ import (
 	azureclient "github.com/Azure/ARO-RP/pkg/util/azureclient"
 	clientauthorizer "github.com/Azure/ARO-RP/pkg/util/clientauthorizer"
 	keyvault "github.com/Azure/ARO-RP/pkg/util/keyvault"
-	refreshable "github.com/Azure/ARO-RP/pkg/util/refreshable"
 )
 
 // MockCore is a mock of Core interface.
@@ -116,18 +116,23 @@ func (mr *MockCoreMockRecorder) Location() *gomock.Call {
 }
 
 // NewMSIAuthorizer mocks base method.
-func (m *MockCore) NewMSIAuthorizer(arg0 env.MSIContext, arg1 string) (autorest.Authorizer, error) {
+func (m *MockCore) NewMSIAuthorizer(arg0 env.MSIContext, arg1 ...string) (autorest.Authorizer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewMSIAuthorizer", arg0, arg1)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "NewMSIAuthorizer", varargs...)
 	ret0, _ := ret[0].(autorest.Authorizer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewMSIAuthorizer indicates an expected call of NewMSIAuthorizer.
-func (mr *MockCoreMockRecorder) NewMSIAuthorizer(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockCoreMockRecorder) NewMSIAuthorizer(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewMSIAuthorizer", reflect.TypeOf((*MockCore)(nil).NewMSIAuthorizer), arg0, arg1)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewMSIAuthorizer", reflect.TypeOf((*MockCore)(nil).NewMSIAuthorizer), varargs...)
 }
 
 // ResourceGroup mocks base method.
@@ -394,7 +399,7 @@ func (mr *MockInterfaceMockRecorder) Domain() *gomock.Call {
 }
 
 // EnsureARMResourceGroupRoleAssignment mocks base method.
-func (m *MockInterface) EnsureARMResourceGroupRoleAssignment(arg0 context.Context, arg1 refreshable.Authorizer, arg2 string) error {
+func (m *MockInterface) EnsureARMResourceGroupRoleAssignment(arg0 context.Context, arg1 autorest.Authorizer, arg2 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnsureARMResourceGroupRoleAssignment", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -422,18 +427,23 @@ func (mr *MockInterfaceMockRecorder) Environment() *gomock.Call {
 }
 
 // FPAuthorizer mocks base method.
-func (m *MockInterface) FPAuthorizer(arg0, arg1 string) (refreshable.Authorizer, error) {
+func (m *MockInterface) FPAuthorizer(arg0 string, arg1 ...string) (autorest.Authorizer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FPAuthorizer", arg0, arg1)
-	ret0, _ := ret[0].(refreshable.Authorizer)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FPAuthorizer", varargs...)
+	ret0, _ := ret[0].(autorest.Authorizer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FPAuthorizer indicates an expected call of FPAuthorizer.
-func (mr *MockInterfaceMockRecorder) FPAuthorizer(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockInterfaceMockRecorder) FPAuthorizer(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FPAuthorizer", reflect.TypeOf((*MockInterface)(nil).FPAuthorizer), arg0, arg1)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FPAuthorizer", reflect.TypeOf((*MockInterface)(nil).FPAuthorizer), varargs...)
 }
 
 // FPClientID mocks base method.
@@ -448,6 +458,21 @@ func (m *MockInterface) FPClientID() string {
 func (mr *MockInterfaceMockRecorder) FPClientID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FPClientID", reflect.TypeOf((*MockInterface)(nil).FPClientID))
+}
+
+// FPNewClientCertificateCredential mocks base method.
+func (m *MockInterface) FPNewClientCertificateCredential(arg0 string) (*azidentity.ClientCertificateCredential, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FPNewClientCertificateCredential", arg0)
+	ret0, _ := ret[0].(*azidentity.ClientCertificateCredential)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FPNewClientCertificateCredential indicates an expected call of FPNewClientCertificateCredential.
+func (mr *MockInterfaceMockRecorder) FPNewClientCertificateCredential(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FPNewClientCertificateCredential", reflect.TypeOf((*MockInterface)(nil).FPNewClientCertificateCredential), arg0)
 }
 
 // FeatureIsSet mocks base method.
@@ -564,18 +589,23 @@ func (mr *MockInterfaceMockRecorder) Location() *gomock.Call {
 }
 
 // NewMSIAuthorizer mocks base method.
-func (m *MockInterface) NewMSIAuthorizer(arg0 env.MSIContext, arg1 string) (autorest.Authorizer, error) {
+func (m *MockInterface) NewMSIAuthorizer(arg0 env.MSIContext, arg1 ...string) (autorest.Authorizer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewMSIAuthorizer", arg0, arg1)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "NewMSIAuthorizer", varargs...)
 	ret0, _ := ret[0].(autorest.Authorizer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewMSIAuthorizer indicates an expected call of NewMSIAuthorizer.
-func (mr *MockInterfaceMockRecorder) NewMSIAuthorizer(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockInterfaceMockRecorder) NewMSIAuthorizer(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewMSIAuthorizer", reflect.TypeOf((*MockInterface)(nil).NewMSIAuthorizer), arg0, arg1)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewMSIAuthorizer", reflect.TypeOf((*MockInterface)(nil).NewMSIAuthorizer), varargs...)
 }
 
 // ResourceGroup mocks base method.
