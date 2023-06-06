@@ -26,11 +26,11 @@ endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
 
-build-all:
-	go build -tags aro,containers_image_openpgp ./...
-
 aro: generate
 	go build -tags aro,containers_image_openpgp,codec.safe -ldflags "-X github.com/Azure/ARO-RP/pkg/util/version.GitCommit=$(VERSION)" ./cmd/aro
+
+build-all:
+	go build -tags aro,containers_image_openpgp ./...
 
 clean:
 	rm -rf aro
@@ -42,6 +42,9 @@ generate:
 image-aro:
 	docker pull $(REGISTRY)/ubi8/ubi-minimal
 	docker build --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) .
+
+lint-go:
+	hack/lint-go.sh
 
 publish-image-aro: image-aro
 	docker push $(ARO_IMAGE)
@@ -68,11 +71,8 @@ validate-go-action:
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 
-lint-go:
-	hack/lint-go.sh
-
 vendor:
 	# See comments in the script for background on why we need it
 	hack/update-go-module-dependencies.sh
 
-.PHONY: admin.kubeconfig aks.kubeconfig aro az clean client deploy dev-config.yaml discoverycache generate image-aro image-aro-multistage image-fluentbit image-proxy lint-go runlocal-rp proxy publish-image-aro publish-image-aro-multistage publish-image-fluentbit publish-image-proxy secrets secrets-update e2e.test tunnel test-e2e test-go test-python vendor build-all validate-go  unit-test-go coverage-go validate-fips
+.PHONY: aro build-all clean generate image-aro lint-go publish-image-aro test-go validate-go validate-go-action vendor
