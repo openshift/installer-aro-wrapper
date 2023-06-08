@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vincent-petithory/dataurl"
+	utilsnet "k8s.io/utils/net"
 
 	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
@@ -82,8 +83,14 @@ type bootstrapTemplateData struct {
 	PlatformData          platformTemplateData
 	BootstrapInPlace      *types.BootstrapInPlace
 	UseIPv6ForNodeIP      bool
+	UseDualForNodeIP      bool
+	IsFCOS                bool
+	IsSCOS                bool
 	IsOKD                 bool
 	BootstrapNodeIP       string
+	APIServerURL          string
+	APIIntServerURL       string
+	FeatureSet            configv1.FeatureSet
 	LoggingConfig         *bootstraplogging.Config
 }
 
@@ -104,6 +111,7 @@ type Common struct {
 func (a *Common) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&baremetal.IronicCreds{},
+		&CVOIgnore{},
 		&installconfig.InstallConfig{},
 		&bootstraplogging.Config{},
 		&kubeconfig.AdminInternalClient{},
@@ -172,10 +180,10 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 		},
 	}
 
-	if err := a.addStorageFiles("/", "bootstrap/files", templateData); err != nil {
+	if err := AddStorageFiles(a.Config, "/", "bootstrap/files", templateData); err != nil {
 		return err
 	}
-	if err := a.addSystemdUnits("bootstrap/systemd/units", templateData, commonEnabledServices); err != nil {
+	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/units", templateData, commonEnabledServices); err != nil {
 		return err
 	}
 
@@ -185,7 +193,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	directory, err := data.Assets.Open(platformFilePath)
 	if err == nil {
 		directory.Close()
-		err = a.addStorageFiles("/", platformFilePath, templateData)
+		err = AddStorageFiles(a.Config, "/", platformFilePath, templateData)
 		if err != nil {
 			return err
 		}
@@ -195,7 +203,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	directory, err = data.Assets.Open(platformUnitPath)
 	if err == nil {
 		directory.Close()
-		if err = a.addSystemdUnits(platformUnitPath, templateData, commonEnabledServices); err != nil {
+		if err = AddSystemdUnits(a.Config, platformUnitPath, templateData, commonEnabledServices); err != nil {
 			return err
 		}
 	}
@@ -259,7 +267,7 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	}
 
 	registries := []sysregistriesv2.Registry{}
-	for _, group := range mergedMirrorSets(installConfig.Config.ImageContentSources) {
+	for _, group := range MergedMirrorSets(installConfig.Config.ImageContentSources) {
 		if len(group.Mirrors) == 0 {
 			continue
 		}
@@ -289,12 +297,16 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		bootstrapNodeIP = ""
 	}
 
-	var APIIntVIPonIPv6 bool
-	platformAPIVIP := apiVIP(&installConfig.Config.Platform)
-	if platformAPIVIP == "" {
-		APIIntVIPonIPv6 = false
-	} else {
-		APIIntVIPonIPv6 = net.ParseIP(platformAPIVIP).To4() == nil
+	platformFirstAPIVIP := firstAPIVIP(&installConfig.Config.Platform)
+	APIIntVIPonIPv6 := utilsnet.IsIPv6String(platformFirstAPIVIP)
+
+	networkStack := 0
+	for _, snet := range installConfig.Config.ServiceNetwork {
+		if snet.IP.To4() != nil {
+			networkStack |= 1
+		} else {
+			networkStack |= 2
+		}
 	}
 
 	// Set cluster profile
@@ -307,6 +319,9 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	if bootstrapInPlace {
 		bootstrapInPlaceConfig = installConfig.Config.BootstrapInPlace
 	}
+
+	apiURL := fmt.Sprintf("api.%s", installConfig.Config.ClusterDomain())
+	apiIntURL := fmt.Sprintf("api-int.%s", installConfig.Config.ClusterDomain())
 	return &bootstrapTemplateData{
 		AdditionalTrustBundle: installConfig.Config.AdditionalTrustBundle,
 		FIPS:                  installConfig.Config.FIPS,
@@ -322,12 +337,24 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		ClusterProfile:        clusterProfile,
 		BootstrapInPlace:      bootstrapInPlaceConfig,
 		UseIPv6ForNodeIP:      APIIntVIPonIPv6,
+		UseDualForNodeIP:      networkStack == 3,
+		IsFCOS:                installConfig.Config.IsFCOS(),
+		IsSCOS:                installConfig.Config.IsSCOS(),
 		IsOKD:                 installConfig.Config.IsOKD(),
 		BootstrapNodeIP:       bootstrapNodeIP,
+		APIServerURL:          apiURL,
+		APIIntServerURL:       apiIntURL,
+		FeatureSet:            installConfig.Config.FeatureSet,
 	}
 }
 
-func (a *Common) addStorageFiles(base string, uri string, templateData *bootstrapTemplateData) (err error) {
+// AddStorageFiles adds files to a Ignition config.
+// Parameters:
+// config - the ignition config to be modified
+// base - path were the files are written to in to config
+// uri - path under data/data specifying the files to be included
+// templateData - struct to used to render templates
+func AddStorageFiles(config *igntypes.Config, base string, uri string, templateData interface{}) (err error) {
 	file, err := data.Assets.Open(uri)
 	if err != nil {
 		return err
@@ -350,7 +377,7 @@ func (a *Common) addStorageFiles(base string, uri string, templateData *bootstra
 
 		for _, childInfo := range children {
 			name := childInfo.Name()
-			err = a.addStorageFiles(path.Join(base, name), path.Join(uri, name), templateData)
+			err = AddStorageFiles(config, path.Join(base, name), path.Join(uri, name), templateData)
 			if err != nil {
 				return err
 			}
@@ -371,7 +398,7 @@ func (a *Common) addStorageFiles(base string, uri string, templateData *bootstra
 	appendToFile := false
 	if parentDir == "bin" || parentDir == "dispatcher.d" {
 		mode = 0555
-	} else if filename == "motd" {
+	} else if filename == "motd" || filename == "containers.conf" {
 		mode = 0644
 		appendToFile = true
 	} else {
@@ -383,12 +410,18 @@ func (a *Common) addStorageFiles(base string, uri string, templateData *bootstra
 	}
 
 	// Replace files that already exist in the slice with ones added later, otherwise append them
-	a.Config.Storage.Files = replaceOrAppend(a.Config.Storage.Files, ign)
+	config.Storage.Files = replaceOrAppend(config.Storage.Files, ign)
 
 	return nil
 }
 
-func (a *Common) addSystemdUnits(uri string, templateData *bootstrapTemplateData, enabledServices []string) (err error) {
+// AddSystemdUnits adds systemd units to a Ignition config.
+// Parameters:
+// config - the ignition config to be modified
+// uri - path under data/data specifying the systemd units files to be included
+// templateData - struct to used to render templates
+// enabledServices - a list of systemd units to be enabled by default
+func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface{}, enabledServices []string) (err error) {
 	enabled := make(map[string]struct{}, len(enabledServices))
 	for _, s := range enabledServices {
 		enabled[s] = struct{}{}
@@ -459,7 +492,7 @@ func (a *Common) addSystemdUnits(uri string, templateData *bootstrapTemplateData
 			if _, ok := enabled[name]; ok {
 				unit.Enabled = ignutil.BoolToPtr(true)
 			}
-			a.Config.Systemd.Units = append(a.Config.Systemd.Units, unit)
+			config.Systemd.Units = append(config.Systemd.Units, unit)
 		} else {
 			name, contents, err := readFile(childInfo.Name(), file, templateData)
 			if err != nil {
@@ -473,7 +506,7 @@ func (a *Common) addSystemdUnits(uri string, templateData *bootstrapTemplateData
 			if _, ok := enabled[name]; ok {
 				unit.Enabled = ignutil.BoolToPtr(true)
 			}
-			a.Config.Systemd.Units = append(a.Config.Systemd.Units, unit)
+			config.Systemd.Units = append(config.Systemd.Units, unit)
 		}
 	}
 
@@ -513,6 +546,7 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 		&machines.Worker{},
 		&mcign.MasterIgnitionCustomizations{},
 		&mcign.WorkerIgnitionCustomizations{},
+		&CVOIgnore{}, // this must come after manifests.Manifests so that it replaces cvo-overrides.yaml
 	} {
 		dependencies.Get(asset)
 
@@ -654,23 +688,33 @@ func warnIfCertificatesExpired(config *igntypes.Config) {
 	}
 }
 
-// APIVIP returns a string representation of the platform's API VIP
-// It returns an empty string if the platform does not configure a VIP
-func apiVIP(p *types.Platform) string {
+// APIVIPs returns the string representations of the platform's API VIPs
+// It returns nil if the platform does not configure VIPs
+func apiVIPs(p *types.Platform) []string {
 	switch {
 	case p == nil:
-		return ""
+		return nil
 	case p.BareMetal != nil:
-		return p.BareMetal.APIVIP
+		return p.BareMetal.APIVIPs
 	case p.OpenStack != nil:
-		return p.OpenStack.APIVIP
+		return p.OpenStack.APIVIPs
 	case p.VSphere != nil:
-		return p.VSphere.APIVIP
+		return p.VSphere.APIVIPs
 	case p.Ovirt != nil:
-		return p.Ovirt.APIVIP
+		return p.Ovirt.APIVIPs
 	case p.Nutanix != nil:
-		return p.Nutanix.APIVIP
+		return p.Nutanix.APIVIPs
 	default:
-		return ""
+		return nil
 	}
+}
+
+// firstAPIVIP returns the first VIP of the API server (e.g. in case of
+// dual-stack)
+func firstAPIVIP(p *types.Platform) string {
+	for _, vip := range apiVIPs(p) {
+		return vip
+	}
+
+	return ""
 }

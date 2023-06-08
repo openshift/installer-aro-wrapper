@@ -174,8 +174,8 @@ const (
 	// StateRegistering means we are telling the backend about the host
 	StateRegistering ProvisioningState = "registering"
 
-	// StateMatchProfile means we are comparing the discovered details
-	// against known hardware profiles
+	// StateMatchProfile used to mean we are assigning a profile.
+	// It no longer does anything, profile matching is done on registration
 	StateMatchProfile ProvisioningState = "match profile"
 
 	// StatePreparing means we are removing existing configuration and set new configuration to the host
@@ -254,6 +254,13 @@ type HardwareRAIDVolume struct {
 	// for the particular RAID level.
 	// +kubebuilder:validation:Minimum=1
 	NumberOfPhysicalDisks *int `json:"numberOfPhysicalDisks,omitempty"`
+
+	// The name of the RAID controller to use
+	Controller string `json:"controller,omitempty"`
+
+	// Optional list of physical disk names to be used for the Hardware RAID volumes. The disk names are interpreted
+	// by the Hardware RAID controller, and the format is hardware specific.
+	PhysicalDisks []string `json:"physicalDisks,omitempty"`
 }
 
 // SoftwareRAIDVolume defines the desired configuration of volume in software RAID

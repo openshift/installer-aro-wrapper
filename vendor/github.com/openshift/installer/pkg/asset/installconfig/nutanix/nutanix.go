@@ -9,13 +9,16 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	nutanixclient "github.com/nutanix-cloud-native/prism-go-client/pkg/nutanix"
-	nutanixclientv3 "github.com/nutanix-cloud-native/prism-go-client/pkg/nutanix/v3"
+	nutanixclient "github.com/nutanix-cloud-native/prism-go-client"
+	nutanixclientv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/defaults"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
+	"github.com/openshift/installer/pkg/types/validation"
 	"github.com/openshift/installer/pkg/validate"
 )
 
@@ -71,8 +74,8 @@ func Platform() (*nutanix.Platform, error) {
 		PrismCentral:  pc,
 		PrismElements: []nutanixtypes.PrismElement{*pe},
 		SubnetUUIDs:   []string{subnetUUID},
-		APIVIP:        apiVIP,
-		IngressVIP:    ingressVIP,
+		APIVIPs:       []string{apiVIP},
+		IngressVIPs:   []string{ingressVIP},
 	}
 	return platform, nil
 
@@ -266,6 +269,15 @@ func getSubnet(ctx context.Context, client *nutanixclientv3.Client, peUUID strin
 func getVIPs() (string, string, error) {
 	var apiVIP, ingressVIP string
 
+	defaultMachineNetwork := &types.Networking{
+		MachineNetwork: []types.MachineNetworkEntry{
+			{
+				CIDR: *defaults.DefaultMachineCIDR,
+			},
+		},
+	}
+
+	//TODO: Add support to specify multiple VIPs (-> dual-stack)
 	if err := survey.Ask([]*survey.Question{
 		{
 			Prompt: &survey.Input{
@@ -273,7 +285,11 @@ func getVIPs() (string, string, error) {
 				Help:    "The VIP to be used for the OpenShift API.",
 			},
 			Validate: survey.ComposeValidators(survey.Required, func(ans interface{}) error {
-				return validate.IP((ans).(string))
+				err := validate.IP((ans).(string))
+				if err != nil {
+					return err
+				}
+				return validation.ValidateIPinMachineCIDR((ans).(string), defaultMachineNetwork)
 			}),
 		},
 	}, &apiVIP); err != nil {
@@ -290,7 +306,11 @@ func getVIPs() (string, string, error) {
 				if apiVIP == (ans.(string)) {
 					return fmt.Errorf("%q should not be equal to the Virtual IP address for the API", ans.(string))
 				}
-				return validate.IP((ans).(string))
+				err := validate.IP((ans).(string))
+				if err != nil {
+					return err
+				}
+				return validation.ValidateIPinMachineCIDR((ans).(string), defaultMachineNetwork)
 			}),
 		},
 	}, &ingressVIP); err != nil {

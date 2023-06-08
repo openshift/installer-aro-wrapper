@@ -7,6 +7,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -131,11 +132,17 @@ func (a *InstallConfig) Load(f asset.FileFetcher) (found bool, err error) {
 
 	config := &types.InstallConfig{}
 	if err := yaml.UnmarshalStrict(file.Data, config, yaml.DisallowUnknownFields); err != nil {
-		if strings.Contains(err.Error(), "unknown field") {
-			err = errors.Wrapf(err, "failed to parse first occurence of unknown field")
-		}
 		err = errors.Wrapf(err, "failed to unmarshal %s", installConfigFilename)
-		return false, errors.Wrap(err, asset.InstallConfigError)
+		if !strings.Contains(err.Error(), "unknown field") {
+			return false, errors.Wrap(err, asset.InstallConfigError)
+		}
+		err = errors.Wrapf(err, "failed to parse first occurence of unknown field")
+		logrus.Warnf(err.Error())
+		logrus.Info("Attempting to unmarshal while ignoring unknown keys because strict unmarshaling failed")
+		if err = yaml.UnmarshalStrict(file.Data, config); err != nil {
+			err = errors.Wrapf(err, "failed to unmarshal %s", installConfigFilename)
+			return false, errors.Wrap(err, asset.InstallConfigError)
+		}
 	}
 	a.Config = config
 
@@ -164,7 +171,7 @@ func (a *InstallConfig) finish(filename string) error {
 		a.Azure = icazure.NewMetadata(a.Config.Azure.CloudName, a.Config.Azure.ARMEndpoint)
 	}
 	if a.Config.IBMCloud != nil {
-		a.IBMCloud = icibmcloud.NewMetadata(a.Config.BaseDomain)
+		a.IBMCloud = icibmcloud.NewMetadata(a.Config.BaseDomain, a.Config.IBMCloud.Region, a.Config.IBMCloud.ControlPlaneSubnets, a.Config.IBMCloud.ComputeSubnets)
 	}
 	if a.Config.PowerVS != nil {
 		a.PowerVS = icpowervs.NewMetadata(a.Config.BaseDomain)

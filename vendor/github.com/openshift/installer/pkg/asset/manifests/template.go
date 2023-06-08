@@ -60,7 +60,7 @@ type cloudCredsSecretData struct {
 	GCP       *GCPCredsSecretData
 	IBMCloud  *IBMCloudCredsSecretData
 	OpenStack *OpenStackCredsSecretData
-	VSphere   *VSphereCredsSecretData
+	VSphere   *[]*VSphereCredsSecretData
 	Ovirt     *OvirtCredsSecretData
 }
 
@@ -77,12 +77,14 @@ type bootkubeTemplateData struct {
 	EtcdSignerClientCert          string
 	EtcdSignerClientKey           string
 	EtcdSignerKey                 string
+	IsFCOS                        bool
+	IsSCOS                        bool
+	IsOKD                         bool
 	McsTLSCert                    string
 	McsTLSKey                     string
 	PullSecretBase64              string
 	RootCaCert                    string
 	WorkerIgnConfig               string
-	IsOKD                         bool
 	AROWorkerRegistries           string
 	AROIngressIP                  string
 	AROIngressInternal            bool

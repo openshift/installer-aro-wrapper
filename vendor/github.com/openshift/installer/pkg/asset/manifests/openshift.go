@@ -62,6 +62,7 @@ func (o *Openshift) Dependencies() []asset.Asset {
 		&installconfig.ClusterID{},
 		&password.KubeadminPassword{},
 		&openshiftinstall.Config{},
+		&FeatureGate{},
 
 		&openshift.CloudCredsSecret{},
 		&openshift.KubeadminPasswordSecret{},
@@ -78,7 +79,8 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 	clusterID := &installconfig.ClusterID{}
 	kubeadminPassword := &password.KubeadminPassword{}
 	openshiftInstall := &openshiftinstall.Config{}
-	dependencies.Get(installConfig, kubeadminPassword, clusterID, openshiftInstall)
+	featureGate := &FeatureGate{}
+	dependencies.Get(installConfig, kubeadminPassword, clusterID, openshiftInstall, featureGate)
 	var cloudCreds cloudCredsSecretData
 	platform := installConfig.Config.Platform.Name()
 	switch platform {
@@ -181,12 +183,27 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 			},
 		}
 	case vspheretypes.Name:
+		vsphereCredList := make([]*VSphereCredsSecretData, 0)
+		if len(installConfig.Config.VSphere.VCenters) > 0 {
+			for _, vCenter := range installConfig.Config.VSphere.VCenters {
+				vsphereCred := VSphereCredsSecretData{
+					VCenter:              vCenter.Server,
+					Base64encodeUsername: base64.StdEncoding.EncodeToString([]byte(vCenter.Username)),
+					Base64encodePassword: base64.StdEncoding.EncodeToString([]byte(vCenter.Password)),
+				}
+				vsphereCredList = append(vsphereCredList, &vsphereCred)
+			}
+		} else {
+			vCenter := installConfig.Config.VSphere
+			vsphereCred := VSphereCredsSecretData{
+				VCenter:              vCenter.VCenter,
+				Base64encodeUsername: base64.StdEncoding.EncodeToString([]byte(vCenter.Username)),
+				Base64encodePassword: base64.StdEncoding.EncodeToString([]byte(vCenter.Password)),
+			}
+			vsphereCredList = append(vsphereCredList, &vsphereCred)
+		}
 		cloudCreds = cloudCredsSecretData{
-			VSphere: &VSphereCredsSecretData{
-				VCenter:              installConfig.Config.VSphere.VCenter,
-				Base64encodeUsername: base64.StdEncoding.EncodeToString([]byte(installConfig.Config.VSphere.Username)),
-				Base64encodePassword: base64.StdEncoding.EncodeToString([]byte(installConfig.Config.VSphere.Password)),
-			},
+			VSphere: &vsphereCredList,
 		}
 	case ovirttypes.Name:
 		conf, err := ovirt.NewConfig()
@@ -292,6 +309,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 	}
 
 	o.FileList = append(o.FileList, openshiftInstall.Files()...)
+	o.FileList = append(o.FileList, featureGate.Files()...)
 
 	asset.SortFiles(o.FileList)
 

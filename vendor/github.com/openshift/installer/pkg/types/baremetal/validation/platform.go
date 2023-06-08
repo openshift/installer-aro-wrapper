@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/openshift/installer/pkg/ipnet"
@@ -61,13 +62,6 @@ func validateIPNotinMachineCIDR(ip string, n *types.Networking) error {
 		if network.CIDR.Contains(net.ParseIP(ip)) {
 			return fmt.Errorf("the IP must not be in one of the machine networks")
 		}
-	}
-	return nil
-}
-
-func validateAPIVIPIsDifferentFromINGRESSVIP(apiVIP string, ingressVIP string) error {
-	if apiVIP == ingressVIP {
-		return fmt.Errorf("apiVIP and ingressVIP must not be set to the same value")
 	}
 	return nil
 }
@@ -280,6 +274,17 @@ func validateOSImages(p *baremetal.Platform, fldPath *field.Path) field.ErrorLis
 	return platformErrs
 }
 
+func validateHostsName(hosts []*baremetal.Host, fldPath *field.Path) (errors field.ErrorList) {
+	for idx, host := range hosts {
+		validationMessages := validation.IsDNS1123Subdomain(host.Name)
+		if len(validationMessages) != 0 {
+			msg := strings.Join(validationMessages, "\n")
+			errors = append(errors, field.Invalid(fldPath.Index(idx).Child("name"), host.Name, msg))
+		}
+	}
+	return
+}
+
 // ensure that the number of hosts is enough to cover the ControlPlane
 // and Compute replicas. Hosts without role will be considered eligible
 // for the ControlPlane or Compute requirements.
@@ -399,7 +404,9 @@ func ValidatePlatform(p *baremetal.Platform, n *types.Networking, fldPath *field
 		}
 	}
 
-	if p.Hosts == nil {
+	agentBasedInstallation := validate.IsAgentBasedInstallation()
+
+	if !agentBasedInstallation && p.Hosts == nil {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("hosts"), p.Hosts, "bare metal hosts are missing"))
 	}
 
@@ -407,34 +414,16 @@ func ValidatePlatform(p *baremetal.Platform, n *types.Networking, fldPath *field
 		allErrs = append(allErrs, ValidateMachinePool(p.DefaultMachinePlatform, fldPath.Child("defaultMachinePlatform"))...)
 	}
 
-	if err := validate.IP(p.APIVIP); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("apiVIP"), p.APIVIP, err.Error()))
+	if !agentBasedInstallation {
+		if err := validateHostsCount(p.Hosts, c); err != nil {
+			allErrs = append(allErrs, field.Required(fldPath.Child("Hosts"), err.Error()))
+		}
+		allErrs = append(allErrs, validateHostsWithoutBMC(p.Hosts, fldPath)...)
+		allErrs = append(allErrs, validateBootMode(p.Hosts, fldPath.Child("Hosts"))...)
+		allErrs = append(allErrs, validateNetworkConfig(p.Hosts, fldPath.Child("Hosts"))...)
+
+		allErrs = append(allErrs, validateHostsName(p.Hosts, fldPath.Child("Hosts"))...)
 	}
-
-	if err := validateIPinMachineCIDR(p.APIVIP, n); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("apiVIP"), p.APIVIP, err.Error()))
-	}
-
-	if err := validate.IP(p.IngressVIP); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("ingressVIP"), p.IngressVIP, err.Error()))
-	}
-
-	if err := validateIPinMachineCIDR(p.IngressVIP, n); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("ingressVIP"), p.IngressVIP, err.Error()))
-	}
-
-	if err := validateHostsCount(p.Hosts, c); err != nil {
-		allErrs = append(allErrs, field.Required(fldPath.Child("Hosts"), err.Error()))
-	}
-
-	if err := validateAPIVIPIsDifferentFromINGRESSVIP(p.APIVIP, p.IngressVIP); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("apiVIP"), p.APIVIP, err.Error()))
-	}
-
-	allErrs = append(allErrs, validateHostsWithoutBMC(p.Hosts, fldPath)...)
-
-	allErrs = append(allErrs, validateBootMode(p.Hosts, fldPath.Child("Hosts"))...)
-	allErrs = append(allErrs, validateNetworkConfig(p.Hosts, fldPath.Child("Hosts"))...)
 
 	return allErrs
 }

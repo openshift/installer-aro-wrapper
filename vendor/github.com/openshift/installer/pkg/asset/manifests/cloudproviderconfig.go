@@ -179,7 +179,7 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		if installConfig.Config.GCP.ComputeSubnet != "" {
 			subnet = installConfig.Config.GCP.ComputeSubnet
 		}
-		gcpConfig, err := gcpmanifests.CloudProviderConfig(clusterID.InfraID, installConfig.Config.GCP.ProjectID, subnet)
+		gcpConfig, err := gcpmanifests.CloudProviderConfig(clusterID.InfraID, installConfig.Config.GCP.ProjectID, subnet, installConfig.Config.GCP.NetworkProjectID)
 		if err != nil {
 			return errors.Wrap(err, "could not create cloud provider config")
 		}
@@ -188,6 +188,23 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		accountID, err := installConfig.IBMCloud.AccountID(context.TODO())
 		if err != nil {
 			return err
+		}
+
+		subnetNames := []string{}
+		cpSubnets, err := installConfig.IBMCloud.ControlPlaneSubnets(context.TODO())
+		if err != nil {
+			return errors.Wrap(err, "could not retrieve IBM Cloud control plane subnets")
+		}
+		for _, cpSubnet := range cpSubnets {
+			subnetNames = append(subnetNames, cpSubnet.Name)
+		}
+
+		computeSubnets, err := installConfig.IBMCloud.ComputeSubnets(context.TODO())
+		if err != nil {
+			return errors.Wrap(err, "could not retrieve IBM Cloud compute subnets")
+		}
+		for _, computeSubnet := range computeSubnets {
+			subnetNames = append(subnetNames, computeSubnet.Name)
 		}
 
 		controlPlane := &ibmcloudtypes.MachinePool{}
@@ -210,8 +227,16 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 			}
 		}
 
-		resourceGroupName := installConfig.Config.Platform.IBMCloud.ClusterResourceGroupName(clusterID.InfraID)
-		ibmcloudConfig, err := ibmcloudmanifests.CloudProviderConfig(clusterID.InfraID, accountID, installConfig.Config.IBMCloud.Region, resourceGroupName, controlPlane.Zones, compute.Zones)
+		ibmcloudConfig, err := ibmcloudmanifests.CloudProviderConfig(
+			clusterID.InfraID,
+			accountID,
+			installConfig.Config.IBMCloud.Region,
+			installConfig.Config.Platform.IBMCloud.ClusterResourceGroupName(clusterID.InfraID),
+			installConfig.Config.Platform.IBMCloud.GetVPCName(),
+			subnetNames,
+			controlPlane.Zones,
+			compute.Zones,
+		)
 		if err != nil {
 			return errors.Wrap(err, "could not create cloud provider config")
 		}
@@ -230,8 +255,8 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 			return err
 		}
 
-		vpc := installConfig.Config.PowerVS.VPC
-		vpcSubnets := installConfig.Config.PowerVS.Subnets
+		vpc := installConfig.Config.PowerVS.VPCName
+		vpcSubnets := installConfig.Config.PowerVS.VPCSubnets
 		if vpc == "" {
 			vpc = fmt.Sprintf("vpc-%s", clusterID.InfraID)
 		}
@@ -256,19 +281,34 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		}
 		cm.Data[cloudProviderConfigDataKey] = powervsConfig
 	case vspheretypes.Name:
-		folderPath := installConfig.Config.Platform.VSphere.Folder
-		if len(folderPath) == 0 {
-			dataCenter := installConfig.Config.Platform.VSphere.Datacenter
-			folderPath = fmt.Sprintf("/%s/vm/%s", dataCenter, clusterID.InfraID)
+		vSphere := installConfig.Config.Platform.VSphere
+		if len(vSphere.VCenters) > 0 {
+			folderPath := installConfig.Config.Platform.VSphere.Folder
+			if len(folderPath) == 0 {
+				dataCenter := installConfig.Config.Platform.VSphere.Datacenter
+				folderPath = fmt.Sprintf("/%s/vm/%s", dataCenter, clusterID.InfraID)
+			}
+
+			vsphereConfig, err := vspheremanifests.MultiZoneIniCloudProviderConfig(folderPath, installConfig.Config.Platform.VSphere)
+			if err != nil {
+				return errors.Wrap(err, "could not create cloud provider config")
+			}
+			cm.Data[cloudProviderConfigDataKey] = vsphereConfig
+		} else {
+			folderPath := installConfig.Config.Platform.VSphere.Folder
+			if len(folderPath) == 0 {
+				dataCenter := installConfig.Config.Platform.VSphere.Datacenter
+				folderPath = fmt.Sprintf("/%s/vm/%s", dataCenter, clusterID.InfraID)
+			}
+			vsphereConfig, err := vspheremanifests.InTreeCloudProviderConfig(
+				folderPath,
+				installConfig.Config.Platform.VSphere,
+			)
+			if err != nil {
+				return errors.Wrap(err, "could not create cloud provider config")
+			}
+			cm.Data[cloudProviderConfigDataKey] = vsphereConfig
 		}
-		vsphereConfig, err := vspheremanifests.CloudProviderConfig(
-			folderPath,
-			installConfig.Config.Platform.VSphere,
-		)
-		if err != nil {
-			return errors.Wrap(err, "could not create cloud provider config")
-		}
-		cm.Data[cloudProviderConfigDataKey] = vsphereConfig
 	default:
 		return errors.New("invalid Platform")
 	}
