@@ -32,7 +32,6 @@ import (
 type prod struct {
 	Core
 	proxy.Dialer
-	ARMHelper
 
 	armClientAuthorizer   clientauthorizer.ClientAuthorizer
 	adminClientAuthorizer clientauthorizer.ClientAuthorizer
@@ -208,11 +207,6 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 
 		p.gatewayDomains = append(p.gatewayDomains, p.acrDomain, acrDataDomain)
-	}
-
-	p.ARMHelper, err = newARMHelper(ctx, log, p)
-	if err != nil {
-		return nil, err
 	}
 
 	return p, nil

@@ -9,13 +9,13 @@ import (
 	"net"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/jongio/azidext/go/azidext"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/ARO-RP/pkg/util/clientauthorizer"
 	"github.com/Azure/ARO-RP/pkg/util/version"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/go-autorest/autorest"
 )
 
 type dev struct {
@@ -52,13 +52,6 @@ func newDev(ctx context.Context, log *logrus.Entry) (Interface, error) {
 	d.prod.clusterGenevaLoggingConfigVersion = version.DevClusterGenevaLoggingConfigVersion
 	d.prod.clusterGenevaLoggingEnvironment = version.DevGenevaLoggingEnvironment
 	d.prod.clusterGenevaLoggingNamespace = version.DevClusterGenevaLoggingNamespace
-
-	// ugh: run this again after RP_MODE=development has caused the feature flag
-	// to be set.
-	d.prod.ARMHelper, err = newARMHelper(ctx, log, d)
-	if err != nil {
-		return nil, err
-	}
 
 	return d, nil
 }
