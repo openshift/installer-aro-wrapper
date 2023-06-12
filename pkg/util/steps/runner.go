@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,19 @@ type stackTracer interface {
 // FriendlyName returns a "friendly" stringified name of the given func.
 func FriendlyName(f interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+}
+
+func shortName(fullName string) string {
+	sepCheck := func(c rune) bool {
+		return c == '/' || c == '.'
+	}
+
+	fields := strings.FieldsFunc(strings.TrimSpace(fullName), sepCheck)
+
+	if size := len(fields); size > 0 {
+		return fields[size-1]
+	}
+	return fullName
 }
 
 // Step is the interface for steps that Runner can execute.

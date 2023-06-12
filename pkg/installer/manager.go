@@ -6,7 +6,6 @@ package installer
 import (
 	"context"
 
-	"github.com/Azure/go-autorest/autorest"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/Azure/ARO-RP/pkg/cluster/graph"
 	"github.com/Azure/ARO-RP/pkg/env"
 	"github.com/Azure/ARO-RP/pkg/util/azureclient/mgmt/features"
+	"github.com/Azure/ARO-RP/pkg/util/refreshable"
 )
 
 type manager struct {
@@ -26,7 +26,7 @@ type manager struct {
 	clusterUUID  string
 	oc           *api.OpenShiftCluster
 	sub          *api.Subscription
-	fpAuthorizer autorest.Authorizer
+	fpAuthorizer refreshable.Authorizer
 
 	deployments features.DeploymentsClient
 
@@ -40,7 +40,7 @@ type Interface interface {
 	Manifests(ctx context.Context) (graph.Graph, error)
 }
 
-func NewInstaller(log *logrus.Entry, _env env.Interface, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer autorest.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
+func NewInstaller(log *logrus.Entry, _env env.Interface, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
 	return &manager{
 		log:          log,
 		env:          _env,
