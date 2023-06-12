@@ -66,7 +66,6 @@ const (
 type Interface interface {
 	Core
 	proxy.Dialer
-	ARMHelper
 
 	InitializeAuthorizers() error
 	ArmClientAuthorizer() clientauthorizer.ClientAuthorizer

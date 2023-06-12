@@ -398,20 +398,6 @@ func (mr *MockInterfaceMockRecorder) Domain() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Domain", reflect.TypeOf((*MockInterface)(nil).Domain))
 }
 
-// EnsureARMResourceGroupRoleAssignment mocks base method.
-func (m *MockInterface) EnsureARMResourceGroupRoleAssignment(arg0 context.Context, arg1 autorest.Authorizer, arg2 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnsureARMResourceGroupRoleAssignment", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// EnsureARMResourceGroupRoleAssignment indicates an expected call of EnsureARMResourceGroupRoleAssignment.
-func (mr *MockInterfaceMockRecorder) EnsureARMResourceGroupRoleAssignment(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureARMResourceGroupRoleAssignment", reflect.TypeOf((*MockInterface)(nil).EnsureARMResourceGroupRoleAssignment), arg0, arg1, arg2)
-}
-
 // Environment mocks base method.
 func (m *MockInterface) Environment() *azureclient.AROEnvironment {
 	m.ctrl.T.Helper()
