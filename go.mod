@@ -88,6 +88,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denis-tingajkin/go-header v0.4.2 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
+	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/dnephin/pflag v1.0.7 // indirect
 	github.com/esimonov/ifshort v1.0.2 // indirect
 	github.com/ettle/strcase v0.1.1 // indirect
@@ -286,8 +287,25 @@ require (
 )
 
 exclude (
-	github.com/containerd/containerd v1.2.10
+	// we're not yet compatible with new ones
+	github.com/Azure/azure-sdk-for-go v48.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v55.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v63.2.0+incompatible
+	github.com/Azure/azure-sdk-for-go v63.3.0+incompatible
+	github.com/Azure/azure-sdk-for-go v63.4.0+incompatible
+	github.com/Azure/azure-sdk-for-go v64.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
+	github.com/Azure/azure-sdk-for-go v64.2.0+incompatible
+	github.com/Azure/azure-sdk-for-go v65.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v66.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v67.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v67.1.0+incompatible
+	github.com/Azure/azure-sdk-for-go v67.2.0+incompatible
+	github.com/Azure/azure-sdk-for-go v67.3.0+incompatible
+	github.com/Azure/azure-sdk-for-go v67.4.0+incompatible
+	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	// exclude github.com/containerd/containerd < 1.6.1, 1.5.10, 1.14.12 https://nvd.nist.gov/vuln/detail/CVE-2022-23648
+	github.com/containerd/containerd v1.2.10
 	github.com/containerd/containerd v1.2.7
 	github.com/containerd/containerd v1.3.0
 	github.com/containerd/containerd v1.3.2
@@ -382,6 +400,8 @@ exclude (
 	github.com/hashicorp/vault v1.5.0-rc1
 	// force use of github.com/envoyproxy/protoc-gen-validate
 	github.com/lyft/protoc-gen-validate v0.0.13
+	// busted install path
+	github.com/mikefarah/yaml/v2 v2.4.0
 	// https://www.whitesourcesoftware.com/vulnerability-database/WS-2018-0594
 	github.com/satori/go.uuid v0.0.0
 	github.com/satori/uuid v0.0.0
@@ -399,7 +419,7 @@ replace (
 	// Replace old GoGo Protobuf versions https://nvd.nist.gov/vuln/detail/CVE-2021-3121
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/mrnold/go-libnbd => github.com/mrnold/go-libnbd v1.4.1-cdi // v1.10.0 uses an invalid module path
-	github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.19.4
+	github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v1.21.0 // earlier versions refer to dead packages
 	// https://www.whitesourcesoftware.com/vulnerability-database/WS-2018-0594
 	github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/satori/uuid => github.com/satori/uuid v1.2.1-0.20181028125025-b2ce2384e17b
