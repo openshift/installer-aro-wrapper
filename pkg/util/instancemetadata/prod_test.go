@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/mock/gomock"
-	"github.com/pborman/uuid"
 
 	"github.com/Azure/ARO-RP/pkg/util/azureclient"
 )
@@ -175,13 +175,13 @@ func TestPopulateTenantIDFromMSI(t *testing.T) {
 		{
 			name:         "valid",
 			mockToken:    base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`)) + "." + base64.RawURLEncoding.EncodeToString([]byte(`{"tid":"rpTenantID"}`)) + ".",
-			mockClientId: uuid.NewUUID().String(),
+			mockClientId: uuid.Must(uuid.NewV4()).String(),
 			wantTenantID: "rpTenantID",
 		},
 		{
 			name:         "oauthtoken invalid",
 			mockToken:    "invalid",
-			mockClientId: uuid.NewUUID().String(),
+			mockClientId: uuid.Must(uuid.NewV4()).String(),
 			wantErr:      "token contains an invalid number of segments",
 		},
 	} {
