@@ -275,6 +275,8 @@ github.com/denis-tingajkin/go-header
 # github.com/dimchansky/utfbom v1.1.1
 ## explicit
 github.com/dimchansky/utfbom
+# github.com/dnaeon/go-vcr v1.2.0
+## explicit; go 1.15
 # github.com/dnephin/pflag v1.0.7
 ## explicit; go 1.12
 github.com/dnephin/pflag
@@ -287,7 +289,7 @@ github.com/ettle/strcase
 # github.com/evanphx/json-patch v5.6.0+incompatible
 ## explicit
 github.com/evanphx/json-patch
-# github.com/fatih/color v1.12.0
+# github.com/fatih/color v1.13.0
 ## explicit; go 1.13
 github.com/fatih/color
 # github.com/fatih/structtag v1.2.0
@@ -923,7 +925,7 @@ github.com/pascaldekloe/name
 # github.com/pborman/uuid v1.2.1
 ## explicit
 github.com/pborman/uuid
-# github.com/pelletier/go-toml v1.9.3
+# github.com/pelletier/go-toml v1.9.4
 ## explicit; go 1.12
 github.com/pelletier/go-toml
 # github.com/phayes/checkstyle v0.0.0-20170904204023-bfd46e6a821d
@@ -1006,7 +1008,7 @@ github.com/sourcegraph/go-diff/diff
 ## explicit; go 1.13
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/spf13/cast v1.3.1
+# github.com/spf13/cast v1.4.1
 ## explicit
 github.com/spf13/cast
 # github.com/spf13/cobra v1.4.0
@@ -1125,8 +1127,6 @@ go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
 # go.uber.org/goleak v1.1.12
 ## explicit; go 1.13
-# go.uber.org/zap v1.19.1
-## explicit; go 1.13
 # golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
@@ -1175,7 +1175,7 @@ golang.org/x/oauth2/jwt
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20220406163625-3f8b81556e12
+# golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -1286,7 +1286,7 @@ golang.org/x/tools/internal/lsp/fuzzy
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
-# golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+# golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
 ## explicit; go 1.11
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
@@ -1830,7 +1830,7 @@ sigs.k8s.io/yaml
 # github.com/go-openapi/spec => github.com/go-openapi/spec v0.19.8
 # github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 # github.com/mrnold/go-libnbd => github.com/mrnold/go-libnbd v1.4.1-cdi
-# github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.19.4
+# github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v1.21.0
 # github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 # github.com/satori/uuid => github.com/satori/uuid v1.2.1-0.20181028125025-b2ce2384e17b
 # github.com/spf13/pflag => github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
