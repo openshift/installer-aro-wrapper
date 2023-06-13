@@ -86,7 +86,3 @@ func (s *authorizationRefreshingActionStep) run(ctx context.Context, log *logrus
 func (s *authorizationRefreshingActionStep) String() string {
 	return fmt.Sprintf("[AuthorizationRetryingAction %s]", FriendlyName(s.f))
 }
-
-func (s *authorizationRefreshingActionStep) metricsName() string {
-	return fmt.Sprintf("authorizationretryingaction.%s", shortName(FriendlyName(s.f)))
-}
