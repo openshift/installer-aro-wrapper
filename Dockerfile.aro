@@ -7,6 +7,7 @@ WORKDIR ${GOPATH}/src/github.com/openshift/ARO-Installer
 USER root
 RUN yum update -y
 COPY . ${GOPATH}/src/github.com/openshift/ARO-Installer/
+RUN git config --system --add safe.directory '*'
 RUN make aro
 
 FROM ${REGISTRY}/ubi8/ubi-minimal
