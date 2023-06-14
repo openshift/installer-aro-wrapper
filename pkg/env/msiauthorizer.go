@@ -25,7 +25,10 @@ func (c *core) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autore
 	var err error
 
 	if !c.IsLocalDevelopmentMode() {
+		// because Aks has multiple MSI's attached to the VMs, we have to set this
+		// ClientID so that the MSI authorizer knows which MSI to use (agentpool)
 		options := c.Environment().ManagedIdentityCredentialOptions()
+		options.ID = azidentity.ClientID(c.AksMsiClientID())
 		tokenCredential, err = azidentity.NewManagedIdentityCredential(options)
 	} else {
 		for _, key := range []string{
