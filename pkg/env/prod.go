@@ -123,10 +123,7 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 	}
 
-	// because Aks has multiple MSI's attached to the VMs, we have to set this env variable so that the MSI authorizer knows which MSI to use (agentpool)
-	os.Setenv("AZURE_CLIENT_ID", p.AksMsiClientID())
-
-	msiKVAuthorizer, err := p.NewMSIAuthorizer(MSIContextRP, p.Environment().KeyVaultScope)
+	msiKVAuthorizer, err := p.NewMSIAuthorizer(MSIContextRP, p.Environment().ResourceIdentifiers.KeyVault)
 	if err != nil {
 		return nil, err
 	}
