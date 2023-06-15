@@ -27,10 +27,6 @@ func timingOutCondition(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-//func currentTimeFunc() {
-//	return time.Now()
-//}
-
 func TestStepRunner(t *testing.T) {
 	for _, tt := range []struct {
 		name        string
