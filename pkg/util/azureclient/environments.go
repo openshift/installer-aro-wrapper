@@ -48,9 +48,9 @@ var (
 		GenevaMonitoringEndpoint: "https://gcs.monitoring.core.usgovcloudapi.net/",
 		AppSuffix:                "aro.azure.us",
 
-		ResourceManagerScope:      azure.PublicCloud.ResourceManagerEndpoint + "/.default",
-		KeyVaultScope:             azure.PublicCloud.ResourceIdentifiers.KeyVault + "/.default",
-		ActiveDirectoryGraphScope: azure.PublicCloud.GraphEndpoint + "/.default",
+		ResourceManagerScope:      azure.USGovernmentCloud.ResourceManagerEndpoint + "/.default",
+		KeyVaultScope:             azure.USGovernmentCloud.ResourceIdentifiers.KeyVault + "/.default",
+		ActiveDirectoryGraphScope: azure.USGovernmentCloud.GraphEndpoint + "/.default",
 	}
 )
 
