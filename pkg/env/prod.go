@@ -14,9 +14,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
-	"github.com/Azure/go-autorest/autorest/adal"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/jongio/azidext/go/azidext"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/ARO-RP/pkg/proxy"
@@ -24,14 +26,12 @@ import (
 	"github.com/Azure/ARO-RP/pkg/util/clientauthorizer"
 	"github.com/Azure/ARO-RP/pkg/util/computeskus"
 	"github.com/Azure/ARO-RP/pkg/util/keyvault"
-	"github.com/Azure/ARO-RP/pkg/util/refreshable"
 	"github.com/Azure/ARO-RP/pkg/util/version"
 )
 
 type prod struct {
 	Core
 	proxy.Dialer
-	ARMHelper
 
 	armClientAuthorizer   clientauthorizer.ClientAuthorizer
 	adminClientAuthorizer clientauthorizer.ClientAuthorizer
@@ -123,9 +123,6 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 	}
 
-	// because Aks has multiple MSI's attached to the VMs, we have to set this env variable so that the MSI authorizer knows which MSI to use (agentpool)
-	os.Setenv("AZURE_CLIENT_ID", p.AksMsiClientID())
-
 	msiKVAuthorizer, err := p.NewMSIAuthorizer(MSIContextRP, p.Environment().ResourceIdentifiers.KeyVault)
 	if err != nil {
 		return nil, err
@@ -144,7 +141,7 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		return nil, err
 	}
 
-	localFPKVAuthorizer, err := p.FPAuthorizer(p.TenantID(), p.Environment().ResourceIdentifiers.KeyVault)
+	localFPKVAuthorizer, err := p.FPAuthorizer(p.TenantID(), p.Environment().KeyVaultScope)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +161,7 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	p.clusterGenevaLoggingPrivateKey = clusterGenevaLoggingPrivateKey
 	p.clusterGenevaLoggingCertificate = clusterGenevaLoggingCertificates[0]
 
-	localFPAuthorizer, err := p.FPAuthorizer(p.TenantID(), p.Environment().ResourceManagerEndpoint)
+	localFPAuthorizer, err := p.FPAuthorizer(p.TenantID(), p.Environment().ResourceManagerScope)
 	if err != nil {
 		return nil, err
 	}
@@ -207,11 +204,6 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 
 		p.gatewayDomains = append(p.gatewayDomains, p.acrDomain, acrDataDomain)
-	}
-
-	p.ARMHelper, err = newARMHelper(ctx, log, p)
-	if err != nil {
-		return nil, err
 	}
 
 	return p, nil
@@ -315,20 +307,24 @@ func (p *prod) FeatureIsSet(f Feature) bool {
 	return p.features[f]
 }
 
-func (p *prod) FPAuthorizer(tenantID, resource string) (refreshable.Authorizer, error) {
-	oauthConfig, err := adal.NewOAuthConfig(p.Environment().ActiveDirectoryEndpoint, tenantID)
+func (p *prod) FPAuthorizer(tenantID string, scopes ...string) (autorest.Authorizer, error) {
+	tokenCredential, err := p.FPNewClientCertificateCredential(tenantID)
 	if err != nil {
 		return nil, err
 	}
 
+	return azidext.NewTokenCredentialAdapter(tokenCredential, scopes), nil
+}
+
+func (p *prod) FPNewClientCertificateCredential(tenantID string) (*azidentity.ClientCertificateCredential, error) {
 	fpPrivateKey, fpCertificates := p.fpCertificateRefresher.GetCertificates()
-
-	sp, err := adal.NewServicePrincipalTokenFromCertificate(*oauthConfig, p.fpClientID, fpCertificates[0], fpPrivateKey, resource)
+	options := p.Environment().ClientCertificateCredentialOptions()
+	credential, err := azidentity.NewClientCertificateCredential(tenantID, p.fpClientID, fpCertificates, fpPrivateKey, options)
 	if err != nil {
 		return nil, err
 	}
 
-	return refreshable.NewAuthorizer(sp), nil
+	return credential, nil
 }
 
 func (p *prod) FPClientID() string {

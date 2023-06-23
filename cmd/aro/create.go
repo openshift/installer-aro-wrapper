@@ -21,6 +21,7 @@ import (
 	"github.com/Azure/ARO-RP/pkg/installer"
 	"github.com/Azure/ARO-RP/pkg/util/azureclient/mgmt/features"
 	"github.com/Azure/ARO-RP/pkg/util/encryption"
+	"github.com/Azure/ARO-RP/pkg/util/refreshable"
 	"github.com/Azure/ARO-RP/pkg/util/storage"
 )
 
@@ -167,7 +168,7 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry) (installer.Interface
 	if err != nil {
 		return nil, err
 	}
-	fpAuthorizer, err := _env.FPAuthorizer(sub.Properties.TenantID, _env.Environment().ResourceManagerEndpoint)
+	fpAuthorizer, err := refreshable.NewAuthorizer(_env, sub.Properties.TenantID)
 	if err != nil {
 		return nil, err
 	}
