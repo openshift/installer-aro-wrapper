@@ -11,10 +11,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/machines/machineconfig"
 	mcv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/Azure/ARO-RP/pkg/cluster/graph"
 )
 
 const (
@@ -72,15 +69,11 @@ func newMTUMachineConfigIgnitionFile(role string) (types.File, error) {
 	return ignition.FileFromBytes(manifests[0].Filename, "root", 0644, manifests[0].Data), nil
 }
 
-func (m *manager) overrideEthernetMTU(g graph.Graph) error {
-	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
-
+func (m *manager) overrideEthernetMTU(bootstrap *bootstrap.Bootstrap) error {
 	// Override MTU on the bootstrap node itself, so cluster-network-operator
 	// gets an appropriate default MTU for OpenshiftSDN or OVNKubernetes when
 	// it first starts up on the bootstrap node.
-
-	ignitionFile := newMTUIgnitionFile()
-	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, ignitionFile)
+	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, newMTUIgnitionFile())
 
 	// Then add the following MachineConfig manifest files to the bootstrap
 	// node's Ignition config:
@@ -99,12 +92,6 @@ func (m *manager) overrideEthernetMTU(g graph.Graph) error {
 		return err
 	}
 	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, ignitionFile)
-
-	data, err := ignition.Marshal(bootstrap.Config)
-	if err != nil {
-		return errors.Wrap(err, "failed to Marshal Ignition config")
-	}
-	bootstrap.File.Data = data
 
 	return nil
 }
