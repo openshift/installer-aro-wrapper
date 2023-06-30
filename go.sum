@@ -1051,6 +1051,8 @@ github.com/hashicorp/terraform-registry-address v0.0.0-20210412075316-9b2996cce8
 github.com/hashicorp/terraform-svchost v0.0.0-20200729002733-f050f53b9734/go.mod h1:kNDNcF7sN4DocDLBkQYz73HGKwN1ANB1blq4lIYLYvg=
 github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb/go.mod h1:+NfK9FKeTrX5uv1uIXGdwYDTeHna2qgaIlx54MXqjAM=
 github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d/go.mod h1:+NfK9FKeTrX5uv1uIXGdwYDTeHna2qgaIlx54MXqjAM=
+github.com/hawkowl/installer-aro v0.9.0-master.0.20230630013649-b161c68d5837 h1:ezwcGqP10TMmmhKhV/+skz6HSZ32PHvJNCBVVT33N6M=
+github.com/hawkowl/installer-aro v0.9.0-master.0.20230630013649-b161c68d5837/go.mod h1:wb4u+CItVA788fLUOmYGAAinxb11dLFaYENYyLeo1pI=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/hinshun/vt10x v0.0.0-20220119200601-820417d04eec h1:qv2VnGeEQHchGaZ/u7lxST/RaJw+cv273q79D81Xbog=
@@ -1083,8 +1085,6 @@ github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJS
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
 github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234 h1:R0Hokq55Hv3SpbXyfZRh8vIrKFAPZ+SQqyTsRc7J/4E=
 github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234/go.mod h1:kZxm8EB19+pd3nT92t0aQblXb7K4sHG8cp59cleqdNc=
-github.com/jewzaam/installer-aro v0.9.0-master.0.20221108164629-2867b943e1d9 h1:9x/8uzzxOvSwh72kLPlLCMEKn+NhQ9WPXXzCZRQI4qY=
-github.com/jewzaam/installer-aro v0.9.0-master.0.20221108164629-2867b943e1d9/go.mod h1:wb4u+CItVA788fLUOmYGAAinxb11dLFaYENYyLeo1pI=
 github.com/jgautheron/goconst v1.5.1 h1:HxVbL1MhydKs8R8n/HE5NPvzfaYmQJA3o879lE4+WcM=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.0/go.mod h1:eaTn3RZAmMBcV0fifFvlm6VHNz3wSkYyXYWUh7ymB74=
