@@ -4,18 +4,45 @@ package bootstraplogging
 // Licensed under the Apache License 2.0.
 
 import (
+	"embed"
+
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/openshift/installer/pkg/asset/bootstraplogging"
+	"github.com/coreos/ignition/v2/config/v3_2/types"
 
 	"github.com/Azure/ARO-RP/pkg/api"
 	"github.com/Azure/ARO-RP/pkg/env"
+	"github.com/Azure/ARO-RP/pkg/util/ignition"
 	utiltls "github.com/Azure/ARO-RP/pkg/util/tls"
 	"github.com/Azure/ARO-RP/pkg/util/version"
 )
 
+//go:embed staticresources
+var loggingStaticFiles embed.FS
+
+var enabledUnits = map[string]bool{
+	"fluentbit.service": true,
+	"mdsd.service":      true,
+}
+
+type Config struct {
+	Certificate       string
+	Key               string
+	Namespace         string
+	Environment       string
+	Account           string
+	ConfigVersion     string
+	ResourceID        string
+	SubscriptionID    string
+	Region            string
+	ResourceName      string
+	ResourceGroupName string
+	FluentbitImage    string
+	MdsdImage         string
+}
+
 // GetConfig prepares a bootstraplogging.Config object based on
 // the environment
-func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
+func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*Config, error) {
 	r, err := azure.ParseResourceID(oc.ID)
 	if err != nil {
 		return nil, err
@@ -33,7 +60,7 @@ func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*bootstraplogging.C
 		return nil, err
 	}
 
-	return &bootstraplogging.Config{
+	return &Config{
 		Certificate:       string(gcsCertBytes),
 		Key:               string(gcsKeyBytes),
 		Namespace:         env.ClusterGenevaLoggingNamespace(),
@@ -48,4 +75,8 @@ func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*bootstraplogging.C
 		MdsdImage:         version.MdsdImage(env.ACRDomain()),
 		FluentbitImage:    version.FluentbitImage(env.ACRDomain()),
 	}, nil
+}
+
+func Files(config *Config) ([]types.File, []types.Unit, error) {
+	return ignition.GetFiles(loggingStaticFiles, config, enabledUnits)
 }

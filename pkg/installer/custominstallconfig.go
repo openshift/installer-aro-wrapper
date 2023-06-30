@@ -7,14 +7,18 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
+	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
+	"github.com/pkg/errors"
 
 	"github.com/Azure/ARO-RP/pkg/api"
 	"github.com/Azure/ARO-RP/pkg/bootstraplogging"
 	"github.com/Azure/ARO-RP/pkg/cluster/graph"
+	"github.com/Azure/ARO-RP/pkg/patches/bootstrapimagepull"
 )
 
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
@@ -54,7 +58,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig)
+	g.Set(installConfig, image, clusterID, dnsConfig, imageRegistryConfig)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
@@ -64,13 +68,53 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		}
 	}
 
+	// Get the bootstrap configuration
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+
 	// Handle MTU3900 feature flag
 	if m.oc.Properties.NetworkProfile.MTUSize == api.MTU3900 {
 		m.log.Printf("applying feature flag %s", api.FeatureFlagMTU3900)
-		if err = m.overrideEthernetMTU(g); err != nil {
+		if err := m.overrideEthernetMTU(bootstrap); err != nil {
 			return nil, err
 		}
 	}
 
+	err = m.addBootstrapLogging(bootstrap, bootstrapLoggingConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to generate bootstrap logging config")
+	}
+
+	err = m.addBootstrapImagePullLogging(bootstrap)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to generate bootstrap image pull logging")
+	}
+
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to Marshal Ignition config")
+	}
+	bootstrap.File.Data = data
+
 	return g, nil
+}
+
+func (m *manager) addBootstrapLogging(bootstrap *bootstrap.Bootstrap, config *bootstraplogging.Config) error {
+	files, units, err := bootstraplogging.Files(config)
+	if err != nil {
+		return err
+	}
+
+	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, files...)
+	bootstrap.Config.Systemd.Units = append(bootstrap.Config.Systemd.Units, units...)
+	return nil
+}
+
+func (m *manager) addBootstrapImagePullLogging(bootstrap *bootstrap.Bootstrap) error {
+	units, err := bootstrapimagepull.GetFiles()
+	if err != nil {
+		return err
+	}
+
+	bootstrap.Config.Systemd.Units = append(bootstrap.Config.Systemd.Units, units...)
+	return nil
 }
