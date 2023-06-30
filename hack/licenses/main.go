@@ -8,7 +8,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -59,7 +58,7 @@ func applyGoLicense() error {
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -78,7 +77,7 @@ func applyGoLicense() error {
 			bb = append(bb, goLicense...)
 			bb = append(bb, b[i:]...)
 
-			err = ioutil.WriteFile(path, bb, 0666)
+			err = os.WriteFile(path, bb, 0666)
 			if err != nil {
 				return err
 			}
@@ -105,7 +104,7 @@ func validateGoLicenses(ignored map[string]bool, dirs []string) []string {
 				return nil
 			}
 
-			b, err := ioutil.ReadFile(path)
+			b, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}

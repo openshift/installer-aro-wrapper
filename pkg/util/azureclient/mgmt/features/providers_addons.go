@@ -22,7 +22,7 @@ func (c *providersClient) List(ctx context.Context, top *int32, expand string) (
 	for page.NotDone() {
 		providers = append(providers, page.Values()...)
 
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}
