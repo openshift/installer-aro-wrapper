@@ -2,6 +2,7 @@ package ignition
 
 import (
 	"bytes"
+	"embed"
 	"io"
 	"io/fs"
 	"path/filepath"
@@ -13,16 +14,17 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition"
 )
 
-func GetFiles(staticFiles fs.FS, templateData interface{}, enabledUnits map[string]bool) ([]types.File, []types.Unit, error) {
+func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[string]bool) ([]types.File, []types.Unit, error) {
 	files := make([]types.File, 0)
 	units := make([]types.Unit, 0)
 
-	err := fs.WalkDir(staticFiles, "/", func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
+	err := fs.WalkDir(staticFiles, ".", func(path string, d fs.DirEntry, err error) error {
+		if d == nil || !d.Type().IsRegular() {
 			return nil
 		}
 
-		dirPath := filepath.SplitList(filepath.Dir(path))
+		dirPath := strings.Split(path, string(filepath.Separator))[1:]
+		cleanPath := filepath.Join(dirPath...)
 
 		var data []byte
 
@@ -61,7 +63,7 @@ func GetFiles(staticFiles fs.FS, templateData interface{}, enabledUnits map[stri
 
 			units = append(units, unit)
 		} else {
-			finalFilename := strings.TrimSuffix(path, ".template")
+			finalFilename := strings.TrimSuffix(cleanPath, ".template")
 
 			var mode int
 			if dirPath[len(dirPath)-1] == "bin" {

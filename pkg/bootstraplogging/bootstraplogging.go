@@ -78,5 +78,5 @@ func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*Config, error) {
 }
 
 func Files(config *Config) ([]types.File, []types.Unit, error) {
-	return ignition.GetFiles(loggingStaticFiles, config, enabledUnits)
+	return ignition.GetFiles(loggingStaticFiles, map[string]*Config{"LoggingConfig": config}, enabledUnits)
 }
