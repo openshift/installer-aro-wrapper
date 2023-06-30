@@ -1,6 +1,6 @@
 # Uses a multi-stage container build to build ARO-Installer.
 ARG REGISTRY=registry.access.redhat.com
-FROM ${REGISTRY}/ubi8/go-toolset:1.18.4 AS builder
+FROM ${REGISTRY}/ubi8/go-toolset:1.19 AS builder
 ENV GOOS=linux \
     GOPATH=/go/
 WORKDIR ${GOPATH}/src/github.com/openshift/ARO-Installer
