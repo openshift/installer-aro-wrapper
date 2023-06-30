@@ -965,6 +965,16 @@ github.com/oklog/ulid
 github.com/olekukonko/tablewriter
 # github.com/onsi/ginkgo/v2 v2.3.1
 ## explicit; go 1.18
+github.com/onsi/ginkgo/v2
+github.com/onsi/ginkgo/v2/config
+github.com/onsi/ginkgo/v2/formatter
+github.com/onsi/ginkgo/v2/internal
+github.com/onsi/ginkgo/v2/internal/global
+github.com/onsi/ginkgo/v2/internal/interrupt_handler
+github.com/onsi/ginkgo/v2/internal/parallel_support
+github.com/onsi/ginkgo/v2/internal/testingtproxy
+github.com/onsi/ginkgo/v2/reporters
+github.com/onsi/ginkgo/v2/types
 # github.com/onsi/gomega v1.22.0
 ## explicit; go 1.18
 github.com/onsi/gomega
@@ -1384,7 +1394,7 @@ github.com/yeya24/promlinter
 # gitlab.com/bosi/decorder v0.2.1
 ## explicit; go 1.17
 gitlab.com/bosi/decorder
-# go.mongodb.org/mongo-driver v1.9.0
+# go.mongodb.org/mongo-driver v1.8.3
 ## explicit; go 1.10
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec
@@ -2159,7 +2169,6 @@ sigs.k8s.io/yaml
 # github.com/IBM-Cloud/terraform-provider-ibm => github.com/openshift/terraform-provider-ibm v1.26.2-openshift-2
 # github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 # github.com/circonus-labs/circonusllhist => github.com/openhistogram/circonusllhist v0.3.0
-# github.com/cockroachdb/errors => github.com/cockroachdb/errors v1.8.5
 # github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v1.1.2
 # github.com/containernetworking/plugins => github.com/containernetworking/plugins v1.0.0
 # github.com/containers/image => github.com/containers/image v3.0.2+incompatible
