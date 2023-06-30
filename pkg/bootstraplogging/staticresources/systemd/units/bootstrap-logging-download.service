@@ -1,0 +1,11 @@
+[Unit]
+Description=Download Bootstrap Logging Images
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/sysconfig/bootstrap-logging
+ExecStart=/usr/local/bin/bootstrap-logging-download.sh
+RemainAfterExit=true
+StandardOutput=journal+console

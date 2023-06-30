@@ -1,0 +1,2 @@
+MDSDIMAGE={{ .LoggingConfig.MdsdImage }}
+FLUENTIMAGE={{ .LoggingConfig.FluentbitImage }}
