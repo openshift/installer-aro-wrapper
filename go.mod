@@ -28,6 +28,7 @@ require (
 	github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234
 	github.com/jongio/azidext/go/azidext v0.4.0
 	github.com/jstemmer/go-junit-report v0.9.1
+	github.com/onsi/ginkgo/v2 v2.3.1
 	github.com/onsi/gomega v1.22.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/client-go v0.0.0-20220603133046-984ee5ebedcf
@@ -228,7 +229,6 @@ require (
 	github.com/nutanix-cloud-native/prism-go-client v0.2.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/onsi/ginkgo/v2 v2.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84 // indirect
 	github.com/openshift/cloud-credential-operator v0.0.0-20220316185125-ed0612946f4b // indirect
@@ -288,7 +288,7 @@ require (
 	github.com/yagipy/maintidx v1.0.0 // indirect
 	github.com/yeya24/promlinter v0.2.0 // indirect
 	gitlab.com/bosi/decorder v0.2.1 // indirect
-	go.mongodb.org/mongo-driver v1.9.0 // indirect
+	go.mongodb.org/mongo-driver v1.8.3 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
@@ -349,6 +349,8 @@ exclude (
 	github.com/Azure/azure-sdk-for-go v67.3.0+incompatible
 	github.com/Azure/azure-sdk-for-go v67.4.0+incompatible
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
+	// hash failure
+	github.com/cockroachdb/errors v1.8.5
 	// exclude github.com/containerd/containerd < 1.6.1, 1.5.10, 1.14.12 https://nvd.nist.gov/vuln/detail/CVE-2022-23648
 	github.com/containerd/containerd v1.2.10
 	github.com/containerd/containerd v1.2.7
@@ -450,6 +452,8 @@ exclude (
 	// https://www.whitesourcesoftware.com/vulnerability-database/WS-2018-0594
 	github.com/satori/go.uuid v0.0.0
 	github.com/satori/uuid v0.0.0
+	// hash failure
+	go.mongodb.org/mongo-driver v1.9.0
 	// force use of cloud.google.com/go
 	google.golang.org/cloud v0.0.0-20151119220103-975617b05ea8
 )
@@ -510,7 +514,6 @@ replace (
 	github.com/IBM-Cloud/terraform-provider-ibm => github.com/openshift/terraform-provider-ibm v1.26.2-openshift-2
 	github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 	github.com/circonus-labs/circonusllhist => github.com/openhistogram/circonusllhist v0.3.0
-	github.com/cockroachdb/errors => github.com/cockroachdb/errors v1.8.5
 	github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v1.1.2
 	github.com/containernetworking/plugins => github.com/containernetworking/plugins v1.0.0
 	github.com/containers/image => github.com/containers/image v3.0.2+incompatible
