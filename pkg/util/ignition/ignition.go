@@ -63,7 +63,7 @@ func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[s
 
 			units = append(units, unit)
 		} else {
-			finalFilename := strings.TrimSuffix(cleanPath, ".template")
+			finalFilename := "/" + strings.TrimSuffix(cleanPath, ".template")
 
 			var mode int
 			if dirPath[len(dirPath)-1] == "bin" {
@@ -82,4 +82,21 @@ func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[s
 	}
 
 	return files, units, nil
+}
+
+func MergeUnits(units []types.Unit, newUnits []types.Unit) []types.Unit {
+	for _, new := range newUnits {
+		found := false
+		for i, old := range units {
+			if old.Name == new.Name {
+				found = true
+				units[i] = new
+				break
+			}
+		}
+		if !found {
+			units = append(units, new)
+		}
+	}
+	return units
 }

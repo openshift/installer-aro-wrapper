@@ -19,6 +19,7 @@ import (
 	"github.com/Azure/ARO-RP/pkg/bootstraplogging"
 	"github.com/Azure/ARO-RP/pkg/cluster/graph"
 	"github.com/Azure/ARO-RP/pkg/patches/bootstrapimagepull"
+	utilignition "github.com/Azure/ARO-RP/pkg/util/ignition"
 )
 
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
@@ -105,7 +106,7 @@ func (m *manager) addBootstrapLogging(bootstrap *bootstrap.Bootstrap, config *bo
 	}
 
 	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, files...)
-	bootstrap.Config.Systemd.Units = append(bootstrap.Config.Systemd.Units, units...)
+	bootstrap.Config.Systemd.Units = utilignition.MergeUnits(bootstrap.Config.Systemd.Units, units)
 	return nil
 }
 
@@ -115,6 +116,6 @@ func (m *manager) addBootstrapImagePullLogging(bootstrap *bootstrap.Bootstrap) e
 		return err
 	}
 
-	bootstrap.Config.Systemd.Units = append(bootstrap.Config.Systemd.Units, units...)
+	bootstrap.Config.Systemd.Units = utilignition.MergeUnits(bootstrap.Config.Systemd.Units, units)
 	return nil
 }
