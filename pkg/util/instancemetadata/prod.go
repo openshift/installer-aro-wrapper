@@ -15,8 +15,8 @@ import (
 
 	"github.com/form3tech-oss/jwt-go"
 
-	"github.com/Azure/ARO-RP/pkg/util/azureclaim"
-	"github.com/Azure/ARO-RP/pkg/util/azureclient"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclaim"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
 )
 
 type prod struct {

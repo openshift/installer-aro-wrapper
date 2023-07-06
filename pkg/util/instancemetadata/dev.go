@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Azure/ARO-RP/pkg/util/azureclient"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
 )
 
 func NewDev(checkEnv bool) (InstanceMetadata, error) {

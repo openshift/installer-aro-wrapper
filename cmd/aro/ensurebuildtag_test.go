@@ -16,6 +16,6 @@ func TestEnsureAroTag(t *testing.T) {
 	*/
 	// TODO: Use `azuretypes.Platform.IsARO()` from github.com/openshift/installer/pkg/types/azure
 	if !platformIsAro {
-		t.Fatalf("ARO-RP must be built, run, and tested with '-tags aro' to support github.com/openshift/installer, see https://github.com/openshift/installer/pull/4843/files")
+		t.Fatalf("ARO-Installer must be built, run, and tested with '-tags aro' to support github.com/openshift/installer, see https://github.com/openshift/installer/pull/4843/files")
 	}
 }

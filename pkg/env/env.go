@@ -16,9 +16,9 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/proxy"
-	"github.com/Azure/ARO-RP/pkg/util/clientauthorizer"
-	"github.com/Azure/ARO-RP/pkg/util/keyvault"
+	"github.com/openshift/ARO-Installer/pkg/proxy"
+	"github.com/openshift/ARO-Installer/pkg/util/clientauthorizer"
+	"github.com/openshift/ARO-Installer/pkg/util/keyvault"
 )
 
 type Feature int

@@ -14,8 +14,8 @@ import (
 	"github.com/jongio/azidext/go/azidext"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/util/clientauthorizer"
-	"github.com/Azure/ARO-RP/pkg/util/version"
+	"github.com/openshift/ARO-Installer/pkg/util/clientauthorizer"
+	"github.com/openshift/ARO-Installer/pkg/util/version"
 )
 
 type dev struct {

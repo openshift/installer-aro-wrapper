@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Azure/ARO-RP/pkg/util/instancemetadata"
+	"github.com/openshift/ARO-Installer/pkg/util/instancemetadata"
 )
 
 func URI(instancemetadata instancemetadata.InstanceMetadata, suffix string) (string, error) {
