@@ -9,11 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/ARO-RP/pkg/cluster/graph"
-	"github.com/Azure/ARO-RP/pkg/env"
-	"github.com/Azure/ARO-RP/pkg/util/azureclient/mgmt/features"
-	"github.com/Azure/ARO-RP/pkg/util/refreshable"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
+	"github.com/openshift/ARO-Installer/pkg/env"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/features"
+	"github.com/openshift/ARO-Installer/pkg/util/refreshable"
 )
 
 type manager struct {

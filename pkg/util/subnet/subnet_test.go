@@ -13,8 +13,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/golang/mock/gomock"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	mock_network "github.com/Azure/ARO-RP/pkg/util/mocks/azureclient/mgmt/network"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	mock_network "github.com/openshift/ARO-Installer/pkg/util/mocks/azureclient/mgmt/network"
 )
 
 func TestGet(t *testing.T) {

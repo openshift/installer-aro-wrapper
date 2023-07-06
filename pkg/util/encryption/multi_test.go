@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	mock_encryption "github.com/Azure/ARO-RP/pkg/util/mocks/encryption"
+	mock_encryption "github.com/openshift/ARO-Installer/pkg/util/mocks/encryption"
 )
 
 func TestOpen(t *testing.T) {

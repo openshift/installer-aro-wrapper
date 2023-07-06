@@ -6,7 +6,7 @@ package encryption
 import (
 	"context"
 
-	"github.com/Azure/ARO-RP/pkg/util/keyvault"
+	"github.com/openshift/ARO-Installer/pkg/util/keyvault"
 )
 
 type multi struct {
