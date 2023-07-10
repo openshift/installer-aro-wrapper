@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"github.com/sirupsen/logrus"
 
-	testlog "github.com/Azure/ARO-RP/test/util/log"
+	testlog "github.com/openshift/ARO-Installer/test/util/log"
 )
 
 func TestPanic(t *testing.T) {

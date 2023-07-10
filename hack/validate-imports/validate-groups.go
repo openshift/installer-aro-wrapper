@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const local = "github.com/Azure/ARO-RP"
+const local = "github.com/openshift/ARO-Installer"
 
 type importType int
 

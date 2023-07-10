@@ -15,14 +15,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/ARO-RP/pkg/cluster/graph"
-	"github.com/Azure/ARO-RP/pkg/env"
-	"github.com/Azure/ARO-RP/pkg/installer"
-	"github.com/Azure/ARO-RP/pkg/util/azureclient/mgmt/features"
-	"github.com/Azure/ARO-RP/pkg/util/encryption"
-	"github.com/Azure/ARO-RP/pkg/util/refreshable"
-	"github.com/Azure/ARO-RP/pkg/util/storage"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
+	"github.com/openshift/ARO-Installer/pkg/env"
+	"github.com/openshift/ARO-Installer/pkg/installer"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/features"
+	"github.com/openshift/ARO-Installer/pkg/util/encryption"
+	"github.com/openshift/ARO-Installer/pkg/util/refreshable"
+	"github.com/openshift/ARO-Installer/pkg/util/storage"
 )
 
 type target struct {
