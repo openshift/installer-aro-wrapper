@@ -123,7 +123,7 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 	}
 
-	msiKVAuthorizer, err := p.NewMSIAuthorizer(MSIContextRP, p.Environment().ResourceIdentifiers.KeyVault)
+	msiKVAuthorizer, err := p.NewMSIAuthorizer(MSIContextRP, p.Environment().KeyVaultScope)
 	if err != nil {
 		return nil, err
 	}
