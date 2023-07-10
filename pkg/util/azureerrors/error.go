@@ -10,7 +10,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 
-	"github.com/Azure/ARO-RP/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/api"
 )
 
 // HasAuthorizationFailedError returns true it the error is, or contains, an

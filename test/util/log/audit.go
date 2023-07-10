@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 
-	"github.com/Azure/ARO-RP/pkg/util/log/audit"
+	"github.com/openshift/ARO-Installer/pkg/util/log/audit"
 )
 
 // NewAudit creates a logging hook and entry suitable for testing the IFXAudit

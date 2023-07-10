@@ -55,7 +55,7 @@ func FilterVMSizes(skus []mgmtcompute.ResourceSku, location string) map[string]*
 		// TODO(mjudeikis): At some point some SKU's stopped returning zones and
 		// locations. IcM is open with MSFT but this might take a while.
 		// Revert once we find out right behaviour.
-		// https://github.com/Azure/ARO-RP/issues/1515
+		// https://github.com/openshift/ARO-Installer/issues/1515
 		if len(*sku.Locations) == 0 || !strings.EqualFold((*sku.Locations)[0], location) ||
 			*sku.ResourceType != "virtualMachines" {
 			continue

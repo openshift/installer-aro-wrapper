@@ -7,10 +7,10 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/ARO-RP/pkg/env"
-	utiltls "github.com/Azure/ARO-RP/pkg/util/tls"
-	"github.com/Azure/ARO-RP/pkg/util/version"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/env"
+	utiltls "github.com/openshift/ARO-Installer/pkg/util/tls"
+	"github.com/openshift/ARO-Installer/pkg/util/version"
 )
 
 // GetConfig prepares a bootstraplogging.Config object based on

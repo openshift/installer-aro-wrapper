@@ -21,12 +21,12 @@ import (
 	"github.com/jongio/azidext/go/azidext"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/proxy"
-	"github.com/Azure/ARO-RP/pkg/util/azureclient/mgmt/compute"
-	"github.com/Azure/ARO-RP/pkg/util/clientauthorizer"
-	"github.com/Azure/ARO-RP/pkg/util/computeskus"
-	"github.com/Azure/ARO-RP/pkg/util/keyvault"
-	"github.com/Azure/ARO-RP/pkg/util/version"
+	"github.com/openshift/ARO-Installer/pkg/proxy"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/compute"
+	"github.com/openshift/ARO-Installer/pkg/util/clientauthorizer"
+	"github.com/openshift/ARO-Installer/pkg/util/computeskus"
+	"github.com/openshift/ARO-Installer/pkg/util/keyvault"
+	"github.com/openshift/ARO-Installer/pkg/util/version"
 )
 
 type prod struct {

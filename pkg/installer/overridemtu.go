@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/Azure/ARO-RP/pkg/cluster/graph"
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
 )
 
 const (

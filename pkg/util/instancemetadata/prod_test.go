@@ -17,7 +17,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pborman/uuid"
 
-	"github.com/Azure/ARO-RP/pkg/util/azureclient"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
 )
 
 func TestPopulateInstanceMetadata(t *testing.T) {
