@@ -51,7 +51,7 @@ func (m *manager) Manifests(ctx context.Context) (graph.Graph, error) {
 
 func (m *manager) Install(ctx context.Context) error {
 	s := []steps.Step{
-		steps.AuthorizationRefreshingAction(m.fpAuthorizer, steps.Action(m.deployResourceTemplate)),
+		steps.AuthorizationRetryingAction(m.fpAuthorizer, m.deployResourceTemplate),
 		steps.Action(m.initializeKubernetesClients),
 		steps.Condition(m.bootstrapConfigMapReady, 30*time.Minute, true),
 	}

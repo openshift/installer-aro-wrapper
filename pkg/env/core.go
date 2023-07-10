@@ -17,7 +17,7 @@ import (
 // etc.)
 type Core interface {
 	IsLocalDevelopmentMode() bool
-	NewMSIAuthorizer(MSIContext, string) (autorest.Authorizer, error)
+	NewMSIAuthorizer(MSIContext, ...string) (autorest.Authorizer, error)
 	instancemetadata.InstanceMetadata
 }
 
