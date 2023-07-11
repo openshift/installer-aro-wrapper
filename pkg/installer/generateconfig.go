@@ -26,12 +26,12 @@ import (
 	"golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/ARO-RP/pkg/util/computeskus"
-	"github.com/Azure/ARO-RP/pkg/util/pullsecret"
-	"github.com/Azure/ARO-RP/pkg/util/rhcos"
-	"github.com/Azure/ARO-RP/pkg/util/stringutils"
-	"github.com/Azure/ARO-RP/pkg/util/subnet"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/util/computeskus"
+	"github.com/openshift/ARO-Installer/pkg/util/pullsecret"
+	"github.com/openshift/ARO-Installer/pkg/util/rhcos"
+	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
+	"github.com/openshift/ARO-Installer/pkg/util/subnet"
 )
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {

@@ -13,9 +13,9 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/ARO-RP/pkg/util/azureclient/mgmt/features"
-	"github.com/Azure/ARO-RP/pkg/util/azureerrors"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/features"
+	"github.com/openshift/ARO-Installer/pkg/util/azureerrors"
 )
 
 func DeployTemplate(ctx context.Context, log *logrus.Entry, deployments features.DeploymentsClient, resourceGroupName string, deploymentName string, template *Template, parameters map[string]interface{}) error {

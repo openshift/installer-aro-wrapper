@@ -1,4 +1,4 @@
-module github.com/Azure/ARO-RP
+module github.com/openshift/ARO-Installer
 
 go 1.18
 

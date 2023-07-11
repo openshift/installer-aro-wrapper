@@ -15,8 +15,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	utilnet "github.com/Azure/ARO-RP/pkg/util/net"
-	"github.com/Azure/ARO-RP/pkg/util/recover"
+	utilnet "github.com/openshift/ARO-Installer/pkg/util/net"
+	"github.com/openshift/ARO-Installer/pkg/util/recover"
 )
 
 type Server struct {

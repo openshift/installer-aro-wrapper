@@ -30,7 +30,7 @@ build-all:
 	go build -tags aro,containers_image_openpgp ./...
 
 aro: generate
-	go build -tags aro,containers_image_openpgp,codec.safe -ldflags "-X github.com/Azure/ARO-RP/pkg/util/version.GitCommit=$(VERSION)" ./cmd/aro
+	go build -tags aro,containers_image_openpgp,codec.safe -ldflags "-X github.com/openshift/ARO-Installer/pkg/util/version.GitCommit=$(VERSION)" ./cmd/aro
 
 clean:
 	rm -rf aro
@@ -54,7 +54,7 @@ test-go: generate build-all validate-go lint-go unit-test-go
 
 validate-go:
 	gofmt -s -w cmd hack pkg test
-	go run ./vendor/golang.org/x/tools/cmd/goimports -w -local=github.com/Azure/ARO-RP cmd hack pkg test
+	go run ./vendor/golang.org/x/tools/cmd/goimports -w -local=github.com/openshift/ARO-Installer cmd hack pkg test
 	go run ./hack/validate-imports cmd hack pkg test
 	go run ./hack/licenses
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)

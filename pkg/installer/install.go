@@ -14,10 +14,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/Azure/ARO-RP/pkg/cluster/graph"
-	"github.com/Azure/ARO-RP/pkg/util/restconfig"
-	"github.com/Azure/ARO-RP/pkg/util/steps"
-	"github.com/Azure/ARO-RP/pkg/util/stringutils"
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
+	"github.com/openshift/ARO-Installer/pkg/util/restconfig"
+	"github.com/openshift/ARO-Installer/pkg/util/steps"
+	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
 )
 
 func (m *manager) Manifests(ctx context.Context) (graph.Graph, error) {

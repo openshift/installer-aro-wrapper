@@ -10,7 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/util/azureclient"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
 )
 
 type InstanceMetadata interface {

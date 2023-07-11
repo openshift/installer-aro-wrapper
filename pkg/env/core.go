@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/util/instancemetadata"
+	"github.com/openshift/ARO-Installer/pkg/util/instancemetadata"
 )
 
 // Core collects basic configuration information which is expected to be

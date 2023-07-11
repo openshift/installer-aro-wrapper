@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	mock_features "github.com/Azure/ARO-RP/pkg/util/mocks/azureclient/mgmt/features"
+	mock_features "github.com/openshift/ARO-Installer/pkg/util/mocks/azureclient/mgmt/features"
 )
 
 const deploymentName = "test"

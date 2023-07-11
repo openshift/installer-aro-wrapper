@@ -12,8 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/Azure/ARO-RP/pkg/util/azureerrors"
-	"github.com/Azure/ARO-RP/pkg/util/refreshable"
+	"github.com/openshift/ARO-Installer/pkg/util/azureerrors"
+	"github.com/openshift/ARO-Installer/pkg/util/refreshable"
 )
 
 var ErrWantRefresh = errors.New("want refresh")
