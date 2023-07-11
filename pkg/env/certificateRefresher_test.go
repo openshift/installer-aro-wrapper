@@ -14,9 +14,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Azure/ARO-RP/pkg/util/keyvault"
-	mock_keyvault "github.com/Azure/ARO-RP/pkg/util/mocks/keyvault"
-	utilpem "github.com/Azure/ARO-RP/pkg/util/pem"
+	"github.com/openshift/ARO-Installer/pkg/util/keyvault"
+	mock_keyvault "github.com/openshift/ARO-Installer/pkg/util/mocks/keyvault"
+	utilpem "github.com/openshift/ARO-Installer/pkg/util/pem"
 )
 
 const testCertBundle1 = `-----BEGIN PRIVATE KEY-----

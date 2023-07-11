@@ -13,9 +13,9 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 
-	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/ARO-RP/pkg/util/arm"
-	"github.com/Azure/ARO-RP/pkg/util/azureclient"
+	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/util/arm"
+	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
 )
 
 func (m *manager) networkBootstrapNIC(installConfig *installconfig.InstallConfig) *arm.Resource {

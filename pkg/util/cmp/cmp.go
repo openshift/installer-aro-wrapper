@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/Azure/ARO-RP/pkg/api"
+	"github.com/openshift/ARO-Installer/pkg/api"
 )
 
 // Diff is a wrapper for github.com/google/go-cmp/cmp.Diff with extra options
