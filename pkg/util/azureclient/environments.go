@@ -70,6 +70,8 @@ func (e *AROEnvironment) ClientCertificateCredentialOptions() *azidentity.Client
 		ClientOptions: azcore.ClientOptions{
 			Cloud: e.Cloud,
 		},
+		// Required for Subject Name/Issuer (SNI) authentication
+		SendCertificateChain: true,
 	}
 }
 
