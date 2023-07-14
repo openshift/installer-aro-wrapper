@@ -4,7 +4,7 @@ package main
 // Licensed under the Apache License 2.0.
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -49,7 +49,7 @@ func newRootCmd() *cobra.Command {
 }
 
 func runRootCmd(cmd *cobra.Command, args []string) {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 	logrus.SetLevel(logrus.TraceLevel)
 
 	level, err := logrus.ParseLevel(rootOpts.logLevel)

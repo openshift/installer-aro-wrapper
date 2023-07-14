@@ -253,8 +253,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				// don't include the baremetal capability (in the baseline default)
 				BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 				AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
+					configv1.ClusterVersionCapabilityConsole,
+					configv1.ClusterVersionCapabilityCSISnapshot,
+					configv1.ClusterVersionCapabilityInsights,
 					configv1.ClusterVersionCapabilityMarketplace,
 					configv1.ClusterVersionCapabilityOpenShiftSamples,
+					configv1.ClusterVersionCapabilityStorage,
 				},
 			},
 		},

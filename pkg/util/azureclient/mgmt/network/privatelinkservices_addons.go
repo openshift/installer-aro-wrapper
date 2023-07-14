@@ -23,7 +23,7 @@ func (c *privateLinkServicesClient) List(ctx context.Context, resourceGroupName 
 	for page.NotDone() {
 		privatelinkservices = append(privatelinkservices, page.Values()...)
 
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}

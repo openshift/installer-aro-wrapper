@@ -91,7 +91,11 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
-		err = gcpconfig.ValidatePreExitingPublicDNS(client, ic.Config)
+		err = gcpconfig.ValidatePreExistingPublicDNS(client, ic.Config)
+		if err != nil {
+			return err
+		}
+		err = gcpconfig.ValidatePreExistingPrivateDNS(client, ic.Config)
 		if err != nil {
 			return err
 		}
@@ -100,7 +104,7 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
-		err = ibmcloudconfig.ValidatePreExitingPublicDNS(client, ic.Config, ic.IBMCloud)
+		err = ibmcloudconfig.ValidatePreExistingPublicDNS(client, ic.Config, ic.IBMCloud)
 		if err != nil {
 			return err
 		}
@@ -110,7 +114,11 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 			return err
 		}
 	case vsphere.Name:
-		err = vsconfig.ValidateForProvisioning(ic.Config)
+		if len(ic.Config.VSphere.VCenters) > 0 {
+			err = vsconfig.ValidateMultiZoneForProvisioning(ic.Config)
+		} else {
+			err = vsconfig.ValidateForProvisioning(ic.Config)
+		}
 		if err != nil {
 			return err
 		}
@@ -130,7 +138,7 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
-		err = powervsconfig.ValidatePreExistingPublicDNS(client, ic.Config, ic.PowerVS)
+		err = powervsconfig.ValidatePreExistingDNS(client, ic.Config, ic.PowerVS)
 	case libvirt.Name, none.Name:
 		// no special provisioning requirements to check
 	case nutanix.Name:

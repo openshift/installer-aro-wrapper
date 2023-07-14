@@ -22,7 +22,7 @@ func (c *roleDefinitionsClient) List(ctx context.Context, scope string, filter s
 
 	for page.NotDone() {
 		result = append(result, page.Values()...)
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}

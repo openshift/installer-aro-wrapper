@@ -33,7 +33,7 @@ func (c *resourceGroupsClient) List(ctx context.Context, filter string, top *int
 	for page.NotDone() {
 		resourcegroups = append(resourcegroups, page.Values()...)
 
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}

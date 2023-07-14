@@ -114,7 +114,7 @@ func defaultAzureMachinePoolPlatform() azuretypes.MachinePool {
 
 func defaultGCPMachinePoolPlatform() gcptypes.MachinePool {
 	return gcptypes.MachinePool{
-		InstanceType: "n1-standard-4",
+		InstanceType: "n2-standard-4",
 		OSDisk: gcptypes.OSDisk{
 			DiskSizeGB: powerOfTwoRootVolumeSize,
 			DiskType:   "pd-ssd",
@@ -217,6 +217,7 @@ func (w *Worker) Dependencies() []asset.Asset {
 		&installconfig.PlatformCredsCheck{},
 		&installconfig.InstallConfig{},
 		new(rhcos.Image),
+		new(rhcos.Release),
 		&machine.Worker{},
 		&bootkube.ARODNSConfig{},
 	}
@@ -228,9 +229,10 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 	clusterID := &installconfig.ClusterID{}
 	installConfig := &installconfig.InstallConfig{}
 	rhcosImage := new(rhcos.Image)
+	rhcosRelease := new(rhcos.Release)
 	wign := &machine.Worker{}
 	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(clusterID, installConfig, rhcosImage, wign, aroDNSConfig)
+	dependencies.Get(clusterID, installConfig, rhcosImage, rhcosRelease, wign, aroDNSConfig)
 
 	workerUserDataSecretName := "worker-user-data"
 
@@ -239,6 +241,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 	var err error
 	ic := installConfig.Config
 	for _, pool := range ic.Compute {
+		pool := pool // this makes golint happy... G601: Implicit memory aliasing in for loop. (gosec)
 		if pool.Hyperthreading == types.HyperthreadingDisabled {
 			ignHT, err := machineconfig.ForHyperthreadingDisabled("worker")
 			if err != nil {
@@ -383,6 +386,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			mpool.InstanceType = azuredefaults.ComputeInstanceType(
 				installConfig.Config.Platform.Azure.CloudName,
 				installConfig.Config.Platform.Azure.Region,
+				pool.Architecture,
 			)
 			mpool.Set(ic.Platform.Azure.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.Azure)
@@ -418,7 +422,8 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				return err
 			}
 
-			sets, err := azure.MachineSets(clusterID.InfraID, ic, &pool, string(*rhcosImage), "worker", workerUserDataSecretName, capabilities)
+			useImageGallery := ic.Platform.Azure.CloudName != azuretypes.StackCloud
+			sets, err := azure.MachineSets(clusterID.InfraID, ic, &pool, string(*rhcosImage), "worker", workerUserDataSecretName, capabilities, useImageGallery)
 			if err != nil {
 				return errors.Wrap(err, "failed to create worker machine objects")
 			}
@@ -461,6 +466,16 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				machineSets = append(machineSets, set)
 			}
 		case ibmcloudtypes.Name:
+			subnets := map[string]string{}
+			if len(ic.Platform.IBMCloud.ComputeSubnets) > 0 {
+				subnetMetas, err := installConfig.IBMCloud.ComputeSubnets(ctx)
+				if err != nil {
+					return err
+				}
+				for _, subnet := range subnetMetas {
+					subnets[subnet.Zone] = subnet.Name
+				}
+			}
 			mpool := defaultIBMCloudMachinePoolPlatform()
 			mpool.Set(ic.Platform.IBMCloud.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.IBMCloud)
@@ -472,7 +487,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				mpool.Zones = azs
 			}
 			pool.Platform.IBMCloud = &mpool
-			sets, err := ibmcloud.MachineSets(clusterID.InfraID, ic, &pool, "worker", workerUserDataSecretName)
+			sets, err := ibmcloud.MachineSets(clusterID.InfraID, ic, subnets, &pool, "worker", workerUserDataSecretName)
 			if err != nil {
 				return errors.Wrap(err, "failed to create worker machine objects")
 			}
@@ -510,6 +525,14 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			mpool := defaultVSphereMachinePoolPlatform()
 			mpool.Set(ic.Platform.VSphere.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.VSphere)
+			// The machinepool has no zones defined, there are FailureDomains
+			// This is a vSphere zonal installation. Generate machinepool zone
+			// list.
+			if len(mpool.Zones) == 0 && len(ic.VSphere.FailureDomains) != 0 {
+				for _, fd := range ic.VSphere.FailureDomains {
+					mpool.Zones = append(mpool.Zones, fd.Name)
+				}
+			}
 			pool.Platform.VSphere = &mpool
 			templateName := clusterID.InfraID + "-rhcos"
 

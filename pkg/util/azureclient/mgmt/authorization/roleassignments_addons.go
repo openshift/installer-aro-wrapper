@@ -23,7 +23,7 @@ func (c *roleAssignmentsClient) ListForResource(ctx context.Context, resourceGro
 
 	for page.NotDone() {
 		result = append(result, page.Values()...)
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func (c *roleAssignmentsClient) ListForResourceGroup(ctx context.Context, resour
 
 	for page.NotDone() {
 		result = append(result, page.Values()...)
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -164,10 +164,10 @@ type OvirtClusterProviderStatus struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// CACertificate is a PEM encoded CA Certificate for the control plane nodes.
-	CACertificate []byte
+	CACertificate []byte `json:"cacertificate"`
 
 	// CAPrivateKey is a PEM encoded PKCS1 CA PrivateKey for the control plane nodes.
-	CAPrivateKey []byte
+	CAPrivateKey []byte `json:"caprivatekey"`
 }
 
 // +genclient

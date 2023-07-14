@@ -18,7 +18,7 @@ limitations under the License.
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=ovirtprovider.machine.openshift.io
+// +groupName=ovirtproviderconfig.machine.openshift.io
 package v1beta1
 
 import (

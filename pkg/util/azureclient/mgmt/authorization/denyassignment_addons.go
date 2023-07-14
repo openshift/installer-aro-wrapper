@@ -22,7 +22,7 @@ func (c *denyAssignmentClient) ListForResourceGroup(ctx context.Context, resourc
 
 	for page.NotDone() {
 		result = append(result, page.Values()...)
-		err = page.Next()
+		err = page.NextWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}

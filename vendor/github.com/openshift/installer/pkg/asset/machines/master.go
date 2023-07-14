@@ -68,9 +68,10 @@ import (
 
 // Master generates the machines for the `master` machine pool.
 type Master struct {
-	UserDataFile       *asset.File
-	MachineConfigFiles []*asset.File
-	MachineFiles       []*asset.File
+	UserDataFile           *asset.File
+	MachineConfigFiles     []*asset.File
+	MachineFiles           []*asset.File
+	ControlPlaneMachineSet *asset.File
 
 	// SecretFiles is used by the baremetal platform to register the
 	// credential information for communicating with management
@@ -109,6 +110,9 @@ const (
 	// masterUserDataFileName is the filename used for the master
 	// user-data secret.
 	masterUserDataFileName = "99_openshift-cluster-api_master-user-data-secret.yaml"
+
+	// masterUserDataFileName is the filename used for the control plane machine sets.
+	controlPlaneMachineSetFileName = "99_openshift-machine-api_master-control-plane-machine-set.yaml"
 )
 
 var (
@@ -158,6 +162,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 	pool := *ic.ControlPlane
 	var err error
 	machines := []machinev1beta1.Machine{}
+	var controlPlaneMachineSet *machinev1.ControlPlaneMachineSet
 	switch ic.Platform.Name() {
 	case alibabacloudtypes.Name:
 		client, err := installConfig.AlibabaCloud.Client()
@@ -246,7 +251,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		}
 
 		pool.Platform.AWS = &mpool
-		machines, err = aws.Machines(
+		machines, controlPlaneMachineSet, err = aws.Machines(
 			clusterID.InfraID,
 			installConfig.Config.Platform.AWS.Region,
 			subnets,
@@ -258,7 +263,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
-		aws.ConfigMasters(machines, clusterID.InfraID, ic.Publish)
+		aws.ConfigMasters(machines, controlPlaneMachineSet, clusterID.InfraID, ic.Publish)
 	case gcptypes.Name:
 		mpool := defaultGCPMachinePoolPlatform()
 		mpool.Set(ic.Platform.GCP.DefaultMachinePlatform)
@@ -277,6 +282,16 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		}
 		gcp.ConfigMasters(machines, clusterID.InfraID, ic.Publish)
 	case ibmcloudtypes.Name:
+		subnets := map[string]string{}
+		if len(ic.Platform.IBMCloud.ControlPlaneSubnets) > 0 {
+			subnetMetas, err := installConfig.IBMCloud.ControlPlaneSubnets(ctx)
+			if err != nil {
+				return err
+			}
+			for _, subnet := range subnetMetas {
+				subnets[subnet.Zone] = subnet.Name
+			}
+		}
 		mpool := defaultIBMCloudMachinePoolPlatform()
 		mpool.Set(ic.Platform.IBMCloud.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.IBMCloud)
@@ -288,7 +303,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			mpool.Zones = azs
 		}
 		pool.Platform.IBMCloud = &mpool
-		machines, err = ibmcloud.Machines(clusterID.InfraID, ic, &pool, "master", masterUserDataSecretName)
+		machines, err = ibmcloud.Machines(clusterID.InfraID, ic, subnets, &pool, "master", masterUserDataSecretName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
@@ -321,6 +336,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		mpool.InstanceType = azuredefaults.ControlPlaneInstanceType(
 			installConfig.Config.Platform.Azure.CloudName,
 			installConfig.Config.Platform.Azure.Region,
+			installConfig.Config.ControlPlane.Architecture,
 		)
 		mpool.OSDisk.DiskSizeGB = 1024
 		mpool.Set(ic.Platform.Azure.DefaultMachinePlatform)
@@ -356,8 +372,9 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
+		useImageGallery := installConfig.Azure.CloudName != azuretypes.StackCloud
 
-		machines, err = azure.Machines(clusterID.InfraID, ic, &pool, string(*rhcosImage), "master", masterUserDataSecretName, capabilities)
+		machines, err = azure.Machines(clusterID.InfraID, ic, &pool, string(*rhcosImage), "master", masterUserDataSecretName, capabilities, useImageGallery)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
@@ -419,6 +436,23 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		mpool.MemoryMiB = 16384
 		mpool.Set(ic.Platform.VSphere.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.VSphere)
+
+		// The machinepool has no zones defined, there are FailureDomains
+		// This is a vSphere zonal installation. Generate machinepool zone
+		// list.
+
+		fdCount := int64(len(ic.Platform.VSphere.FailureDomains))
+		var idx int64
+		if len(mpool.Zones) == 0 && len(ic.VSphere.FailureDomains) != 0 {
+			for i := int64(0); i < *(ic.ControlPlane.Replicas); i++ {
+				idx = i
+				if idx >= fdCount {
+					idx = i % fdCount
+				}
+				mpool.Zones = append(mpool.Zones, ic.VSphere.FailureDomains[idx].Name)
+			}
+		}
+
 		pool.Platform.VSphere = &mpool
 		templateName := clusterID.InfraID + "-rhcos"
 
@@ -502,6 +536,16 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 	}
 
 	m.MachineFiles = make([]*asset.File, len(machines))
+	if controlPlaneMachineSet != nil && *pool.Replicas > 1 {
+		data, err := yaml.Marshal(controlPlaneMachineSet)
+		if err != nil {
+			return errors.Wrapf(err, "marshal control plane machine set")
+		}
+		m.ControlPlaneMachineSet = &asset.File{
+			Filename: filepath.Join(directory, controlPlaneMachineSetFileName),
+			Data:     data,
+		}
+	}
 	padFormat := fmt.Sprintf("%%0%dd", len(fmt.Sprintf("%d", len(machines))))
 	for i, machine := range machines {
 		data, err := yaml.Marshal(machine)
@@ -534,6 +578,9 @@ func (m *Master) Files() []*asset.File {
 	// reconcile a machine it can pick up the related host.
 	files = append(files, m.HostFiles...)
 	files = append(files, m.MachineFiles...)
+	if m.ControlPlaneMachineSet != nil {
+		files = append(files, m.ControlPlaneMachineSet)
+	}
 	return files
 }
 
@@ -579,6 +626,17 @@ func (m *Master) Load(f asset.FileFetcher) (found bool, err error) {
 	}
 	m.MachineFiles = fileList
 
+	file, err = f.FetchByName(filepath.Join(directory, controlPlaneMachineSetFileName))
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Choosing to ignore the CPMS file if it does not exist since UPI does not need it.
+			logrus.Debugf("CPMS file missing. Ignoring it while loading machine asset.")
+			return true, nil
+		}
+		return true, err
+	}
+	m.ControlPlaneMachineSet = file
+
 	return true, nil
 }
 
@@ -600,6 +658,7 @@ func (m *Master) Machines() ([]machinev1beta1.Machine, error) {
 		&machinev1.AlibabaCloudMachineProviderConfig{},
 		&machinev1.NutanixMachineProviderConfig{},
 		&machinev1.PowerVSMachineProviderConfig{},
+		&machinev1.ControlPlaneMachineSet{},
 	)
 
 	machinev1beta1.AddToScheme(scheme)
@@ -641,7 +700,7 @@ func IsMachineManifest(file *asset.File) bool {
 		return false
 	}
 	filename := filepath.Base(file.Filename)
-	if filename == masterUserDataFileName || filename == workerUserDataFileName {
+	if filename == masterUserDataFileName || filename == workerUserDataFileName || filename == controlPlaneMachineSetFileName {
 		return true
 	}
 	if matched, err := machineconfig.IsManifest(filename); err != nil {
