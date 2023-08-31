@@ -75,7 +75,6 @@ require (
 	github.com/OpenPeeDeeP/depguard v1.1.0 // indirect
 	github.com/PaesslerAG/gval v1.0.0 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
-	github.com/ajeddeloh/go-json v0.0.0-20200220154158-5ae607161559 // indirect
 	github.com/alexkohler/prealloc v1.0.0 // indirect
 	github.com/alingse/asasalint v0.0.11 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1550 // indirect
@@ -97,9 +96,7 @@ require (
 	github.com/clarketm/json v1.17.1 // indirect
 	github.com/containers/image v3.0.2+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
-	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
-	github.com/coreos/ignition v0.35.0 // indirect
 	github.com/coreos/vcontext v0.0.0-20220326205524-7fcaf69e7050 // indirect
 	github.com/curioswitch/go-reassign v0.1.2 // indirect
 	github.com/daixiang0/gci v0.6.3 // indirect
@@ -561,7 +558,7 @@ replace (
 	github.com/openshift/cluster-api-provider-kubevirt => github.com/openshift/cluster-api-provider-kubevirt v0.0.0-20210719100556-9b8bc3666720
 	github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230124145200-03e8cb50f9ff
 	github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-	github.com/openshift/installer => github.com/jewzaam/installer-aro v0.9.0-master.0.20230623080010-96c4ea6a1ddb
+	github.com/openshift/installer => github.com/jewzaam/installer-aro v0.9.0-master.0.20230914225404-a68d2ff56b41
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20230523185907-4accd895aa8f

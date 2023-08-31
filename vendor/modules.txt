@@ -228,8 +228,6 @@ github.com/PaesslerAG/gval
 # github.com/PaesslerAG/jsonpath v0.1.1
 ## explicit
 github.com/PaesslerAG/jsonpath
-# github.com/ajeddeloh/go-json v0.0.0-20200220154158-5ae607161559
-## explicit
 # github.com/alexkohler/prealloc v1.0.0
 ## explicit; go 1.15
 github.com/alexkohler/prealloc/pkg
@@ -379,18 +377,9 @@ github.com/containers/image/types
 # github.com/coreos/go-semver v0.3.0
 ## explicit
 github.com/coreos/go-semver/semver
-# github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
-## explicit
-github.com/coreos/go-systemd/unit
 # github.com/coreos/go-systemd/v22 v22.3.2
 ## explicit; go 1.12
 github.com/coreos/go-systemd/v22/unit
-# github.com/coreos/ignition v0.35.0
-## explicit
-github.com/coreos/ignition/config/shared/errors
-github.com/coreos/ignition/config/shared/validations
-github.com/coreos/ignition/config/v2_2/types
-github.com/coreos/ignition/config/validate/report
 # github.com/coreos/ignition/v2 v2.14.0
 ## explicit; go 1.15
 github.com/coreos/ignition/v2/config/shared/errors
@@ -1097,7 +1086,7 @@ github.com/openshift/hive/apis/hive/v1/openstack
 github.com/openshift/hive/apis/hive/v1/ovirt
 github.com/openshift/hive/apis/hive/v1/vsphere
 github.com/openshift/hive/apis/scheme
-# github.com/openshift/installer v0.16.1 => github.com/jewzaam/installer-aro v0.9.0-master.0.20230623080010-96c4ea6a1ddb
+# github.com/openshift/installer v0.16.1 => github.com/jewzaam/installer-aro v0.9.0-master.0.20230914225404-a68d2ff56b41
 ## explicit; go 1.18
 github.com/openshift/installer/data
 github.com/openshift/installer/pkg/aro/dnsmasq
@@ -2340,7 +2329,7 @@ sigs.k8s.io/yaml
 # github.com/openshift/cluster-api-provider-kubevirt => github.com/openshift/cluster-api-provider-kubevirt v0.0.0-20210719100556-9b8bc3666720
 # github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230124145200-03e8cb50f9ff
 # github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-# github.com/openshift/installer => github.com/jewzaam/installer-aro v0.9.0-master.0.20230623080010-96c4ea6a1ddb
+# github.com/openshift/installer => github.com/jewzaam/installer-aro v0.9.0-master.0.20230914225404-a68d2ff56b41
 # github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 # github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 # github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20230523185907-4accd895aa8f
