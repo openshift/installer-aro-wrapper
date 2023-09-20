@@ -56,6 +56,8 @@ endif
 test-go: generate build-all validate-go lint-go
 	go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --junitfile report.xml -- -tags=aro,containers_image_openpgp -coverprofile=cover.out ./...
 
+unit-test-go: test-go
+
 validate-go:
 	gofmt -s -w cmd hack pkg test
 	go run ./vendor/golang.org/x/tools/cmd/goimports -w -local=github.com/Azure/ARO-RP cmd hack pkg test
@@ -75,4 +77,4 @@ vendor:
 	# See comments in the script for background on why we need it
 	hack/update-go-module-dependencies.sh
 
-.PHONY: aro build-all clean generate image-aro lint-go publish-image-aro test-go validate-go validate-go-action vendor
+.PHONY: aro build-all clean generate image-aro lint-go publish-image-aro test-go unit-test-go validate-go validate-go-action vendor
