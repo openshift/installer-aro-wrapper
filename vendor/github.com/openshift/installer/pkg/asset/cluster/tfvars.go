@@ -4,22 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/IBM/vpc-go-sdk/vpcv1"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	coreosarch "github.com/coreos/stream-metadata-go/arch"
 	"github.com/ghodss/yaml"
-	ibmcloudprovider "github.com/openshift/cluster-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
-	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
-	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	configv1 "github.com/openshift/api/config/v1"
 	machinev1 "github.com/openshift/api/machine/v1"
 	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
+	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
+	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
@@ -30,6 +32,7 @@ import (
 	aztypes "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	ovirtconfig "github.com/openshift/installer/pkg/asset/installconfig/ovirt"
+	powervsconfig "github.com/openshift/installer/pkg/asset/installconfig/powervs"
 	vsphereconfig "github.com/openshift/installer/pkg/asset/installconfig/vsphere"
 	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/manifests"
@@ -63,9 +66,14 @@ import (
 	"github.com/openshift/installer/pkg/types/ovirt"
 	"github.com/openshift/installer/pkg/types/powervs"
 	"github.com/openshift/installer/pkg/types/vsphere"
+	ibmcloudprovider "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
 )
 
 const (
+	// GCPFirewallPermission is the role/permission to create or skip the creation of
+	// firewall rules for GCP during an xpn installation.
+	GCPFirewallPermission = "compute.firewalls.create"
+
 	// TfVarsFileName is the filename for Terraform variables.
 	TfVarsFileName = "terraform.tfvars.json"
 
@@ -281,6 +289,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			PrivateSubnets:        privateSubnets,
 			PublicSubnets:         publicSubnets,
 			InternalZone:          installConfig.Config.AWS.HostedZone,
+			InternalZoneRole:      installConfig.Config.AWS.HostedZoneRole,
 			Services:              installConfig.Config.AWS.ServiceEndpoints,
 			Publish:               installConfig.Config.Publish,
 			MasterConfigs:         masterConfigs,
@@ -369,6 +378,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 				BootstrapIgnitionURLPlaceholder: bootstrapIgnURLPlaceholder,
 				HyperVGeneration:                hyperVGeneration,
 				VMArchitecture:                  installConfig.Config.ControlPlane.Architecture,
+				InfrastructureName:              clusterID.InfraID,
 			},
 		)
 		if err != nil {
@@ -384,27 +394,27 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			return err
 		}
 
-		instanceServiceAccount := ""
-
-		// Passthrough service accounts are only needed for GCP XPN.
-		ic := installConfig.Config
-		if len(ic.GCP.NetworkProjectID) > 0 && ic.CredentialsMode == types.PassthroughCredentialsMode {
-			var found bool
-			serviceAccount := make(map[string]interface{})
-			err := json.Unmarshal([]byte(sess.Credentials.JSON), &serviceAccount)
-			if err != nil {
-				return err
-			}
-			instanceServiceAccount, found = serviceAccount["client_email"].(string)
-			if !found {
-				return errors.New("could not find google service account")
-			}
-		}
-
 		auth := gcptfvars.Auth{
 			ProjectID:        installConfig.Config.GCP.ProjectID,
 			NetworkProjectID: installConfig.Config.GCP.NetworkProjectID,
 			ServiceAccount:   string(sess.Credentials.JSON),
+		}
+
+		client, err := gcpconfig.NewClient(context.Background())
+		if err != nil {
+			return err
+		}
+
+		// In the case of a shared vpn, the firewall rules should only be created if the user has permissions to do so
+		createFirewallRules := true
+		if installConfig.Config.GCP.NetworkProjectID != "" {
+			permissions, err := client.GetProjectPermissions(context.Background(), installConfig.Config.GCP.NetworkProjectID, []string{
+				GCPFirewallPermission,
+			})
+			if err != nil {
+				return err
+			}
+			createFirewallRules = permissions.Has(GCPFirewallPermission)
 		}
 
 		masters, err := mastersAsset.Machines()
@@ -425,43 +435,25 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		}
 		preexistingnetwork := installConfig.Config.GCP.Network != ""
 
-		createFirewallRules := true
-		if installConfig.Config.GCP.CreateFirewallRules == gcp.CreateFirewallRulesDisabled {
-			createFirewallRules = false
-		}
-
-		// Setup defaults for public dns zone
-		createPublicZoneRecords := true
+		// Search the project for a dns zone with the specified base domain.
 		publicZoneName := ""
-		publicZoneProject := installConfig.Config.GCP.ProjectID
-		if installConfig.Config.GCP.PublicDNSZone != nil && installConfig.Config.GCP.PublicDNSZone.ProjectID != "" {
-			publicZoneProject = installConfig.Config.GCP.PublicDNSZone.ProjectID
-		}
-
-		switch {
-		case installConfig.Config.Publish != types.ExternalPublishingStrategy:
-			// Do not create public records when not publishing externally.
-			createPublicZoneRecords = false
-		case installConfig.Config.GCP.PublicDNSZone != nil && installConfig.Config.GCP.PublicDNSZone.ID != "":
-			publicZoneName = installConfig.Config.GCP.PublicDNSZone.ID
-		default:
-			// Search the project for a dns zone with the specified base domain.
-			publicZone, err := gcpconfig.GetPublicZone(ctx, publicZoneProject, installConfig.Config.BaseDomain)
+		if installConfig.Config.Publish == types.ExternalPublishingStrategy {
+			publicZone, err := client.GetDNSZone(ctx, installConfig.Config.GCP.ProjectID, installConfig.Config.BaseDomain, true)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get GCP public zone")
 			}
 			publicZoneName = publicZone.Name
 		}
 
-		// Setup defaults for private DNS Zone
-		createPrivateZone := true
-		createPrivateZoneRecords := true
 		privateZoneName := ""
-		privateZoneProject := ""
-		if installConfig.Config.GCP.PrivateDNSZone != nil && installConfig.Config.GCP.PrivateDNSZone.ID != "" {
-			createPrivateZone = false
-			privateZoneName = installConfig.Config.GCP.PrivateDNSZone.ID
-			privateZoneProject = installConfig.Config.GCP.PrivateDNSZone.ProjectID
+		if installConfig.Config.GCP.NetworkProjectID != "" {
+			privateZone, err := client.GetDNSZone(ctx, installConfig.Config.GCP.ProjectID, installConfig.Config.ClusterDomain(), false)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get GCP private zone")
+			}
+			if privateZone != nil {
+				privateZoneName = privateZone.Name
+			}
 		}
 
 		archName := coreosarch.RpmArch(string(installConfig.Config.ControlPlane.Architecture))
@@ -484,22 +476,16 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		imageURL := fmt.Sprintf("https://storage.googleapis.com/rhcos/rhcos/%s.tar.gz", img.Name)
 		data, err := gcptfvars.TFVars(
 			gcptfvars.TFVarsSources{
-				Auth:                     auth,
-				MasterConfigs:            masterConfigs,
-				WorkerConfigs:            workerConfigs,
-				CreateFirewallRules:      createFirewallRules,
-				CreatePrivateZone:        createPrivateZone,
-				CreatePrivateZoneRecords: createPrivateZoneRecords,
-				CreatePublicZoneRecords:  createPublicZoneRecords,
-				ImageURI:                 imageURL,
-				ImageLicenses:            installConfig.Config.GCP.Licenses,
-				InstanceServiceAccount:   instanceServiceAccount,
-				PreexistingNetwork:       preexistingnetwork,
-				PrivateZoneName:          privateZoneName,
-				PrivateZoneProject:       privateZoneProject,
-				PublicZoneName:           publicZoneName,
-				PublicZoneProject:        publicZoneProject,
-				PublishStrategy:          installConfig.Config.Publish,
+				Auth:                auth,
+				MasterConfigs:       masterConfigs,
+				WorkerConfigs:       workerConfigs,
+				CreateFirewallRules: createFirewallRules,
+				ImageURI:            imageURL,
+				ImageLicenses:       installConfig.Config.GCP.Licenses,
+				PreexistingNetwork:  preexistingnetwork,
+				PublicZoneName:      publicZoneName,
+				PrivateZoneName:     privateZoneName,
+				PublishStrategy:     installConfig.Config.Publish,
 			},
 		)
 		if err != nil {
@@ -515,7 +501,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			return err
 		}
 		auth := ibmcloudtfvars.Auth{
-			APIKey: client.APIKey,
+			APIKey: client.GetAPIKey(),
 		}
 
 		// Get master and worker machine info
@@ -618,18 +604,19 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 
 		data, err = ibmcloudtfvars.TFVars(
 			ibmcloudtfvars.TFVarsSources{
-				Auth:                 auth,
-				CISInstanceCRN:       cisCRN,
-				DNSInstanceID:        dnsID,
-				ImageURL:             string(*rhcosImage),
-				MasterConfigs:        masterConfigs,
-				MasterDedicatedHosts: masterDedicatedHosts,
-				PreexistingVPC:       preexistingVPC,
-				PublishStrategy:      installConfig.Config.Publish,
-				ResourceGroupName:    installConfig.Config.Platform.IBMCloud.ResourceGroupName,
-				VPCPermitted:         vpcPermitted,
-				WorkerConfigs:        workerConfigs,
-				WorkerDedicatedHosts: workerDedicatedHosts,
+				Auth:                     auth,
+				CISInstanceCRN:           cisCRN,
+				DNSInstanceID:            dnsID,
+				ImageURL:                 string(*rhcosImage),
+				MasterConfigs:            masterConfigs,
+				MasterDedicatedHosts:     masterDedicatedHosts,
+				NetworkResourceGroupName: installConfig.Config.Platform.IBMCloud.NetworkResourceGroupName,
+				PreexistingVPC:           preexistingVPC,
+				PublishStrategy:          installConfig.Config.Publish,
+				ResourceGroupName:        installConfig.Config.Platform.IBMCloud.ResourceGroupName,
+				VPCPermitted:             vpcPermitted,
+				WorkerConfigs:            workerConfigs,
+				WorkerDedicatedHosts:     workerDedicatedHosts,
 			},
 		)
 		if err != nil {
@@ -828,6 +815,46 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			masterConfigs[i] = m.Spec.ProviderSpec.Value.Object.(*machinev1.PowerVSMachineProviderConfig)
 		}
 
+		client, err := powervsconfig.NewClient()
+		if err != nil {
+			return err
+		}
+		var (
+			vpcRegion, vpcZone string
+		)
+		vpcName := installConfig.Config.PowerVS.VPCName
+		if vpcName != "" {
+			var vpc *vpcv1.VPC
+			vpc, err = client.GetVPCByName(ctx, vpcName)
+			if err != nil {
+				return err
+			}
+			var crnElems = strings.SplitN(*vpc.CRN, ":", 8)
+			vpcRegion = crnElems[5]
+		} else {
+			specified := installConfig.Config.PowerVS.VPCRegion
+			if specified != "" {
+				if powervs.ValidateVPCRegion(specified) {
+					vpcRegion = specified
+				} else {
+					return errors.New("unknown VPC region")
+				}
+			} else if vpcRegion, err = powervs.VPCRegionForPowerVSRegion(installConfig.Config.PowerVS.Region); err != nil {
+				return err
+			}
+		}
+		if vpcSubnet != "" {
+			var sn *vpcv1.Subnet
+			sn, err = client.GetSubnetByName(ctx, vpcSubnet, vpcRegion)
+			if err != nil {
+				return err
+			}
+			vpcZone = *sn.Zone.Name
+		} else {
+			rand.Seed(time.Now().UnixNano())
+			vpcZone = fmt.Sprintf("%s-%d", vpcRegion, rand.Intn(2)+1) //nolint:gosec // we don't need a crypto secure number
+		}
+
 		osImage := strings.SplitN(string(*rhcosImage), "/", 2)
 		data, err = powervstfvars.TFVars(
 			powervstfvars.TFVarsSources{
@@ -840,7 +867,9 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 				ImageBucketName:      osImage[0],
 				ImageBucketFileName:  osImage[1],
 				NetworkName:          installConfig.Config.PowerVS.PVSNetworkName,
-				VPCName:              installConfig.Config.PowerVS.VPCName,
+				VPCRegion:            vpcRegion,
+				VPCZone:              vpcZone,
+				VPCName:              vpcName,
 				VPCSubnetName:        vpcSubnet,
 				VPCPermitted:         vpcPermitted,
 				VPCGatewayName:       vpcGatewayName,
@@ -861,30 +890,29 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		})
 
 	case vsphere.Name:
+		vim25Client, _, cleanup, err := vsphereconfig.CreateVSphereClients(context.TODO(),
+			installConfig.Config.VSphere.VCenters[0].Server,
+			installConfig.Config.VSphere.VCenters[0].Username,
+			installConfig.Config.VSphere.VCenters[0].Password)
+		if err != nil {
+			return errors.Wrapf(err, "unable to connect to vCenter %s. Ensure provided information is correct and client certs have been added to system trust", installConfig.Config.VSphere.VCenters[0].Server)
+		}
+		defer cleanup()
+
+		finder := vsphereconfig.NewFinder(vim25Client)
+
 		networkFailureDomainMap := make(map[string]string)
-		var networkID string
+
 		controlPlanes, err := mastersAsset.Machines()
 		if err != nil {
 			return err
 		}
-
 		controlPlaneConfigs := make([]*machinev1beta1.VSphereMachineProviderSpec, len(controlPlanes))
 		for i, c := range controlPlanes {
 			controlPlaneConfigs[i] = c.Spec.ProviderSpec.Value.Object.(*machinev1beta1.VSphereMachineProviderSpec)
 		}
 
-		vim25Client, _, cleanup, err := vsphereconfig.CreateVSphereClients(context.TODO(),
-			installConfig.Config.VSphere.VCenter,
-			installConfig.Config.VSphere.Username,
-			installConfig.Config.VSphere.Password)
-		if err != nil {
-			return errors.Wrapf(err, "unable to connect to vCenter %s. Ensure provided information is correct and client certs have been added to system trust.", installConfig.Config.VSphere.VCenter)
-		}
-		defer cleanup()
-		finder := vsphereconfig.NewFinder(vim25Client)
-
 		for _, fd := range installConfig.Config.VSphere.FailureDomains {
-
 			// Must use the Managed Object ID for a port group (e.g. dvportgroup-5258)
 			// instead of the name since port group names aren't always unique in vSphere.
 			// https://bugzilla.redhat.com/show_bug.cgi?id=1918005
@@ -900,30 +928,11 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			}
 		}
 
-		networkID, err = vsphereconfig.GetNetworkMoID(context.TODO(),
-			vim25Client,
-			finder,
-			controlPlaneConfigs[0].Workspace.Datacenter,
-			installConfig.Config.VSphere.Cluster,
-			controlPlaneConfigs[0].Network.Devices[0].NetworkName)
-		if err != nil {
-			return errors.Wrap(err, "failed to get vSphere network ID")
-		}
-
-		// Set this flag to use an existing folder specified in the install-config. Otherwise, create one.
-		preexistingFolder := installConfig.Config.Platform.VSphere.Folder != ""
-
 		data, err = vspheretfvars.TFVars(
 			vspheretfvars.TFVarsSources{
-				ControlPlaneConfigs: controlPlaneConfigs,
-				Username:            installConfig.Config.VSphere.Username,
-				Password:            installConfig.Config.VSphere.Password,
-				Cluster:             installConfig.Config.VSphere.Cluster,
-				ImageURL:            string(*rhcosImage),
-				PreexistingFolder:   preexistingFolder,
-				DiskType:            installConfig.Config.Platform.VSphere.DiskType,
-				NetworkID:           networkID,
-
+				ControlPlaneConfigs:     controlPlaneConfigs,
+				ImageURL:                string(*rhcosImage),
+				DiskType:                installConfig.Config.Platform.VSphere.DiskType,
 				NetworksInFailureDomain: networkFailureDomainMap,
 				InfraID:                 clusterID.InfraID,
 				InstallConfig:           installConfig,

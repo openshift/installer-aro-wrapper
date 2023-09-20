@@ -8,7 +8,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/azure"
 	gcpmanifests "github.com/openshift/installer/pkg/asset/manifests/gcp"
 	ibmcloudmanifests "github.com/openshift/installer/pkg/asset/manifests/ibmcloud"
+	nutanixmanifests "github.com/openshift/installer/pkg/asset/manifests/nutanix"
 	openstackmanifests "github.com/openshift/installer/pkg/asset/manifests/openstack"
 	powervsmanifests "github.com/openshift/installer/pkg/asset/manifests/powervs"
 	vspheremanifests "github.com/openshift/installer/pkg/asset/manifests/vsphere"
@@ -93,7 +93,7 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 	}
 
 	switch installConfig.Config.Platform.Name() {
-	case libvirttypes.Name, nonetypes.Name, baremetaltypes.Name, ovirttypes.Name, nutanixtypes.Name:
+	case libvirttypes.Name, nonetypes.Name, baremetaltypes.Name, ovirttypes.Name:
 		return nil
 	case awstypes.Name:
 		// Store the additional trust bundle in the ca-bundle.pem key if the cluster is being installed on a C2S region.
@@ -251,7 +251,11 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 			return err
 		}
 
-		if vpcRegion, err = powervstypes.VPCRegionForPowerVSRegion(installConfig.Config.PowerVS.Region); err != nil {
+		vpcRegion = installConfig.Config.PowerVS.VPCRegion
+		if vpcRegion == "" {
+			vpcRegion, err = powervstypes.VPCRegionForPowerVSRegion(installConfig.Config.PowerVS.Region)
+		}
+		if err != nil {
 			return err
 		}
 
@@ -281,34 +285,17 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		}
 		cm.Data[cloudProviderConfigDataKey] = powervsConfig
 	case vspheretypes.Name:
-		vSphere := installConfig.Config.Platform.VSphere
-		if len(vSphere.VCenters) > 0 {
-			folderPath := installConfig.Config.Platform.VSphere.Folder
-			if len(folderPath) == 0 {
-				dataCenter := installConfig.Config.Platform.VSphere.Datacenter
-				folderPath = fmt.Sprintf("/%s/vm/%s", dataCenter, clusterID.InfraID)
-			}
-
-			vsphereConfig, err := vspheremanifests.MultiZoneIniCloudProviderConfig(folderPath, installConfig.Config.Platform.VSphere)
-			if err != nil {
-				return errors.Wrap(err, "could not create cloud provider config")
-			}
-			cm.Data[cloudProviderConfigDataKey] = vsphereConfig
-		} else {
-			folderPath := installConfig.Config.Platform.VSphere.Folder
-			if len(folderPath) == 0 {
-				dataCenter := installConfig.Config.Platform.VSphere.Datacenter
-				folderPath = fmt.Sprintf("/%s/vm/%s", dataCenter, clusterID.InfraID)
-			}
-			vsphereConfig, err := vspheremanifests.InTreeCloudProviderConfig(
-				folderPath,
-				installConfig.Config.Platform.VSphere,
-			)
-			if err != nil {
-				return errors.Wrap(err, "could not create cloud provider config")
-			}
-			cm.Data[cloudProviderConfigDataKey] = vsphereConfig
+		vsphereConfig, err := vspheremanifests.CloudProviderConfigIni(clusterID.InfraID, installConfig.Config.Platform.VSphere)
+		if err != nil {
+			return errors.Wrap(err, "could not create cloud provider config")
 		}
+		cm.Data[cloudProviderConfigDataKey] = vsphereConfig
+	case nutanixtypes.Name:
+		configJSON, err := nutanixmanifests.CloudConfigJSON(installConfig.Config.Nutanix)
+		if err != nil {
+			return errors.Wrap(err, "could not create Nutanix Cloud provider config")
+		}
+		cm.Data[cloudProviderConfigDataKey] = configJSON
 	default:
 		return errors.New("invalid Platform")
 	}

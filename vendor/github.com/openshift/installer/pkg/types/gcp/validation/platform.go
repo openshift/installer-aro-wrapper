@@ -2,10 +2,8 @@ package validation
 
 import (
 	"os"
-
 	"sort"
 
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/openshift/installer/pkg/types"
@@ -41,6 +39,7 @@ var (
 		"europe-west9":            "Paris, France",
 		"europe-west12":           "Turin, Italy",
 		"europe-southwest1":       "Madrid, Spain",
+		"me-central1":             "Doha, Qatar, Middle East",
 		"me-west1":                "Tel Aviv, Israel",
 		"northamerica-northeast1": "Montréal, Québec, Canada",
 		"northamerica-northeast2": "Toronto, Ontario, Canada",
@@ -93,13 +92,6 @@ func ValidatePlatform(p *gcp.Platform, fldPath *field.Path, ic *types.InstallCon
 		}
 		if p.ControlPlaneSubnet == "" {
 			allErrs = append(allErrs, field.Required(fldPath.Child("controlPlaneSubnet"), "must provide a control plane subnet when a network is specified"))
-		}
-	}
-
-	if p.CreateFirewallRules != "" {
-		validCreateFirewallRules := sets.NewString(string(gcp.CreateFirewallRulesEnabled), string(gcp.CreateFirewallRulesDisabled))
-		if !validCreateFirewallRules.Has(string(p.CreateFirewallRules)) {
-			allErrs = append(allErrs, field.NotSupported(fldPath.Child("createFirewallRules"), p.CreateFirewallRules, validCreateFirewallRules.List()))
 		}
 	}
 

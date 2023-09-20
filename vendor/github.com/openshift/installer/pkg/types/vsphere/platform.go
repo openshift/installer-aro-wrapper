@@ -1,5 +1,9 @@
 package vsphere
 
+import (
+	configv1 "github.com/openshift/api/config/v1"
+)
+
 // DiskType is a disk provisioning type for vsphere.
 // +kubebuilder:validation:Enum="";thin;thick;eagerZeroedThick
 type DiskType string
@@ -19,30 +23,44 @@ const (
 
 	// DiskTypeEagerZeroedThick uses EagerZeroedThick disk provisioning type for vsphere in the cluster.
 	DiskTypeEagerZeroedThick DiskType = "eagerZeroedThick"
+
+	// TagCategoryRegion the tag category associated with regions.
+	TagCategoryRegion = "openshift-region"
+
+	// TagCategoryZone the tag category associated with zones.
+	TagCategoryZone = "openshift-zone"
 )
 
-// Platform stores any global configuration used for vsphere platforms
+// Platform stores any global configuration used for vsphere platforms.
 type Platform struct {
 	// VCenter is the domain name or IP address of the vCenter.
-	VCenter string `json:"vCenter"`
+	// Deprecated: Use VCenters.Server
+	DeprecatedVCenter string `json:"vCenter,omitempty"`
 	// Username is the name of the user to use to connect to the vCenter.
-	Username string `json:"username"`
+	// Deprecated: Use VCenters.Username
+	DeprecatedUsername string `json:"username,omitempty"`
 	// Password is the password for the user to use to connect to the vCenter.
-	Password string `json:"password"`
+	// Deprecated: Use VCenters.Password
+	DeprecatedPassword string `json:"password,omitempty"`
 	// Datacenter is the name of the datacenter to use in the vCenter.
-	Datacenter string `json:"datacenter"`
+	// Deprecated: Use FailureDomains.Topology.Datacenter
+	DeprecatedDatacenter string `json:"datacenter,omitempty"`
 	// DefaultDatastore is the default datastore to use for provisioning volumes.
-	DefaultDatastore string `json:"defaultDatastore"`
+	// Deprecated: Use FailureDomains.Topology.Datastore
+	DeprecatedDefaultDatastore string `json:"defaultDatastore,omitempty"`
 	// Folder is the absolute path of the folder that will be used and/or created for
 	// virtual machines. The absolute path is of the form /<datacenter>/vm/<folder>/<subfolder>.
 	// +kubebuilder:validation:Pattern=`^/.*?/vm/.*?`
 	// +optional
-	Folder string `json:"folder,omitempty"`
+	// Deprecated: Use FailureDomains.Topology.Folder
+	DeprecatedFolder string `json:"folder,omitempty"`
 	// Cluster is the name of the cluster virtual machines will be cloned into.
-	Cluster string `json:"cluster,omitempty"`
+	// Deprecated: Use FailureDomains.Topology.Cluster
+	DeprecatedCluster string `json:"cluster,omitempty"`
 	// ResourcePool is the absolute path of the resource pool where virtual machines will be
 	// created. The absolute path is of the form /<datacenter>/host/<cluster>/Resources/<resourcepool>.
-	ResourcePool string `json:"resourcePool,omitempty"`
+	// Deprecated: Use FailureDomains.Topology.ResourcePool
+	DeprecatedResourcePool string `json:"resourcePool,omitempty"`
 	// ClusterOSImage overrides the url provided in rhcos.json to download the RHCOS OVA
 	ClusterOSImage string `json:"clusterOSImage,omitempty"`
 
@@ -84,7 +102,8 @@ type Platform struct {
 	// +optional
 	DefaultMachinePlatform *MachinePool `json:"defaultMachinePlatform,omitempty"`
 	// Network specifies the name of the network to be used by the cluster.
-	Network string `json:"network,omitempty"`
+	// Deprecated: Use FailureDomains.Topology.Network
+	DeprecatedNetwork string `json:"network,omitempty"`
 	// DiskType is the name of the disk provisioning type,
 	// valid values are thin, thick, and eagerZeroedThick. When not
 	// specified, it will be set according to the default storage policy
@@ -92,7 +111,6 @@ type Platform struct {
 	DiskType DiskType `json:"diskType,omitempty"`
 	// VCenters holds the connection details for services to communicate with vCenter.
 	// Currently only a single vCenter is supported.
-	// VCenters is available in TechPreview.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=1
 	// +kubebuilder:validation:MinItems=1
@@ -100,16 +118,20 @@ type Platform struct {
 	// FailureDomains holds the VSpherePlatformFailureDomainSpec which contains
 	// the definition of region, zone and the vCenter topology.
 	// If this is omitted failure domains (regions and zones) will not be used.
-	// FailureDomains is available in TechPreview.
 	// +kubebuilder:validation:Optional
 	FailureDomains []FailureDomain `json:"failureDomains,omitempty"`
+
+	// LoadBalancer defines how the load balancer used by the cluster is configured.
+	// LoadBalancer is available in TechPreview.
+	// +optional
+	LoadBalancer *configv1.VSpherePlatformLoadBalancer `json:"loadBalancer,omitempty"`
 }
 
 // FailureDomain holds the region and zone failure domain and
 // the vCenter topology of that failure domain.
 type FailureDomain struct {
 	// name defines the name of the FailureDomain
-	// This name is abritrary but will be used
+	// This name is arbitrary but will be used
 	// in VSpherePlatformDeploymentZone for association.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
@@ -188,7 +210,7 @@ type VCenter struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=32767
 	// +kubebuilder:default=443
-	Port uint `json:"port,omitempty"`
+	Port int32 `json:"port,omitempty"`
 	// Username is the username that will be used to connect to vCenter
 	// +kubebuilder:validation:Required
 	Username string `json:"user"`

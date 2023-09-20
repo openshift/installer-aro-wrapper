@@ -2,7 +2,9 @@ package validation
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -27,6 +29,21 @@ var (
 		return v
 	}()
 )
+
+var (
+	// tagKeyRegex is for verifying that the tag key contains only allowed characters.
+	tagKeyRegex = regexp.MustCompile(`^[a-zA-Z]([0-9A-Za-z_.-]{0,126}[0-9A-Za-z_])?$`)
+
+	// tagValueRegex is for verifying that the tag value contains only allowed characters.
+	tagValueRegex = regexp.MustCompile(`^[0-9A-Za-z_.=+-@]{1,256}$`)
+
+	// tagKeyPrefixRegex is for verifying that the tag value does not contain restricted prefixes.
+	tagKeyPrefixRegex = regexp.MustCompile(`^(?i)(name$|kubernetes\.io|openshift\.io|microsoft|azure|windows)`)
+)
+
+// maxUserTagLimit is the maximum userTags that can be configured as defined in openshift/api.
+// https://github.com/openshift/api/blob/e82a99f5bc64c2bf8549da559a6f37ccaf7d3af6/config/v1/types_infrastructure.go#L483-L490
+const maxUserTagLimit = 10
 
 // ValidatePlatform checks that the specified platform is valid.
 func ValidatePlatform(p *azure.Platform, publish types.PublishingStrategy, fldPath *field.Path) field.ErrorList {
@@ -72,6 +89,14 @@ func ValidatePlatform(p *azure.Platform, publish types.PublishingStrategy, fldPa
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("outboundType"), p.OutboundType, fmt.Sprintf("%s is only allowed when installing to pre-existing network", azure.UserDefinedRoutingOutboundType)))
 	}
 
+	// support for Azure user-defined tags made available through
+	// RFE-2017 is for AzurePublicCloud only.
+	if p.CloudName != azure.PublicCloud && len(p.UserTags) > 0 {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("userTags"), fmt.Sprintf("userTags support is for %s only", azure.PublicCloud)))
+	}
+	// check if configured userTags are valid.
+	allErrs = append(allErrs, validateUserTags(p.UserTags, fldPath.Child("userTags"))...)
+
 	switch cloud := p.CloudName; cloud {
 	case azure.StackCloud:
 		allErrs = append(allErrs, validateAzureStack(p, fldPath)...)
@@ -85,6 +110,76 @@ func ValidatePlatform(p *azure.Platform, publish types.PublishingStrategy, fldPa
 	}
 
 	return allErrs
+}
+
+// validateUserTags verifies if configured number of UserTags is not more than
+// allowed limit and the tag keys and values are valid.
+func validateUserTags(tags map[string]string, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if len(tags) == 0 {
+		return allErrs
+	}
+
+	if len(tags) > maxUserTagLimit {
+		allErrs = append(allErrs, field.TooMany(fldPath, len(tags), maxUserTagLimit))
+	}
+
+	if err := findDuplicateTagKeys(tags); err != nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath, err.Error()))
+	}
+
+	for key, value := range tags {
+		if err := validateTag(key, value); err != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Key(key), value, err.Error()))
+		}
+	}
+	return allErrs
+}
+
+// validateTag checks the following to ensure that the tag configured is acceptable.
+//   - The key and value contain only allowed characters.
+//   - The key is not empty and at most 128 characters and starts with an alphabet.
+//   - The value is not empty and at most 256 characters.
+//     Note: Although azure allows empty value, the tags may be applied to resources
+//     in services that do not accept empty tag values. Consequently, OpenShift cannot
+//     accept empty tag values.
+//   - The key cannot be Name or have kubernetes.io, openshift.io, microsoft, azure,
+//     windows prefixes.
+func validateTag(key, value string) error {
+	if !tagKeyRegex.MatchString(key) {
+		return fmt.Errorf("key is invalid or contains invalid characters: key can have a maximum of 128 characters, cannot be empty and must begin with a letter, end with a letter, number or underscore, and must contain only alphanumeric characters and the following special characters `_ . -`")
+	}
+	if !tagValueRegex.MatchString(value) {
+		return fmt.Errorf("value is invalid or contains invalid characters: value can have a maximum of 256 characters, cannot be empty and must contain only alphanumeric characters and the following special characters `_ + , - . / : ; < = > ? @`")
+	}
+	if tagKeyPrefixRegex.MatchString(key) {
+		return fmt.Errorf("key contains restricted prefix")
+	}
+	return nil
+}
+
+// findDuplicateTagKeys checks for duplicate tag keys in the user-defined tagset.
+// Tag keys are case-insensitive. A tag with a key, regardless of the casing, is
+// updated or retrieved. An Azure service might keep the casing as provided for
+// the tag key. To allow user to choose the required variant of the key to add
+// return error when duplicate tag keys are present.
+func findDuplicateTagKeys(tagSet map[string]string) error {
+	dupKeys := make(map[string]int)
+	for k := range tagSet {
+		dupKeys[strings.ToTitle(k)]++
+	}
+
+	var errMsg []string
+	for key, count := range dupKeys {
+		if count > 1 {
+			errMsg = append(errMsg, fmt.Sprintf("\"%s\" matches %d keys", key, count))
+		}
+	}
+	if len(errMsg) > 0 {
+		return fmt.Errorf("found duplicate tag keys: %v", strings.Join(errMsg, ", "))
+	}
+
+	return nil
 }
 
 var (
