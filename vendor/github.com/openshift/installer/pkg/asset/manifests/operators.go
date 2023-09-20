@@ -19,6 +19,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
+	"github.com/openshift/installer/pkg/types/vsphere"
 )
 
 const (
@@ -64,6 +65,7 @@ func (m *Manifests) Dependencies() []asset.Asset {
 		&Proxy{},
 		&Scheduler{},
 		&ImageContentSourcePolicy{},
+		&ClusterCSIDriverConfig{},
 		&tls.RootCA{},
 		&tls.MCSCertKey{},
 
@@ -90,7 +92,8 @@ func (m *Manifests) Generate(dependencies asset.Parents) error {
 	proxy := &Proxy{}
 	scheduler := &Scheduler{}
 	imageContentSourcePolicy := &ImageContentSourcePolicy{}
-	dependencies.Get(installConfig, ingress, dns, network, infra, proxy, scheduler, imageContentSourcePolicy)
+	clusterCSIDriverConfig := &ClusterCSIDriverConfig{}
+	dependencies.Get(installConfig, ingress, dns, network, infra, proxy, scheduler, imageContentSourcePolicy, clusterCSIDriverConfig)
 
 	redactedConfig, err := redactedInstallConfig(*installConfig.Config)
 	if err != nil {
@@ -125,6 +128,7 @@ func (m *Manifests) Generate(dependencies asset.Parents) error {
 	m.FileList = append(m.FileList, proxy.Files()...)
 	m.FileList = append(m.FileList, scheduler.Files()...)
 	m.FileList = append(m.FileList, imageContentSourcePolicy.Files()...)
+	m.FileList = append(m.FileList, clusterCSIDriverConfig.Files()...)
 
 	asset.SortFiles(m.FileList)
 
@@ -251,14 +255,40 @@ func (m *Manifests) Load(f asset.FileFetcher) (bool, error) {
 }
 
 func redactedInstallConfig(config types.InstallConfig) ([]byte, error) {
-	config.PullSecret = ""
-	if config.Platform.VSphere != nil {
-		p := *config.Platform.VSphere
-		p.Username = ""
-		p.Password = ""
-		config.Platform.VSphere = &p
+	newConfig := config
+
+	newConfig.PullSecret = ""
+	if newConfig.Platform.VSphere != nil {
+		p := config.VSphere
+		newVCenters := make([]vsphere.VCenter, len(p.VCenters))
+		for i, v := range p.VCenters {
+			newVCenters[i].Server = v.Server
+			newVCenters[i].Datacenters = v.Datacenters
+		}
+		newVSpherePlatform := vsphere.Platform{
+			DeprecatedVCenter:          p.DeprecatedVCenter,
+			DeprecatedUsername:         "",
+			DeprecatedPassword:         "",
+			DeprecatedDatacenter:       p.DeprecatedDatacenter,
+			DeprecatedDefaultDatastore: p.DeprecatedDefaultDatastore,
+			DeprecatedFolder:           p.DeprecatedFolder,
+			DeprecatedCluster:          p.DeprecatedCluster,
+			DeprecatedResourcePool:     p.DeprecatedResourcePool,
+			ClusterOSImage:             p.ClusterOSImage,
+			DeprecatedAPIVIP:           p.DeprecatedAPIVIP,
+			APIVIPs:                    p.APIVIPs,
+			DeprecatedIngressVIP:       p.DeprecatedIngressVIP,
+			IngressVIPs:                p.IngressVIPs,
+			DefaultMachinePlatform:     p.DefaultMachinePlatform,
+			DeprecatedNetwork:          p.DeprecatedNetwork,
+			DiskType:                   p.DiskType,
+			VCenters:                   newVCenters,
+			FailureDomains:             p.FailureDomains,
+		}
+		newConfig.Platform.VSphere = &newVSpherePlatform
 	}
-	return yaml.Marshal(config)
+
+	return yaml.Marshal(newConfig)
 }
 
 func indent(indention int, v string) string {

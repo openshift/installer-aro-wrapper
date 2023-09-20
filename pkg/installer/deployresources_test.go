@@ -65,20 +65,22 @@ func TestZones(t *testing.T) {
 			}
 
 			zones, err := zones(&installconfig.InstallConfig{
-				Config: &types.InstallConfig{
-					ControlPlane: &types.MachinePool{
-						Platform: types.MachinePoolPlatform{
-							Azure: &azuretypes.MachinePool{
-								Zones: tt.zones,
+				AssetBase: installconfig.AssetBase{
+					Config: &types.InstallConfig{
+						ControlPlane: &types.MachinePool{
+							Platform: types.MachinePoolPlatform{
+								Azure: &azuretypes.MachinePool{
+									Zones: tt.zones,
+								},
 							},
+							Replicas: to.Int64Ptr(tt.replicas),
 						},
-						Replicas: to.Int64Ptr(tt.replicas),
-					},
-					Platform: types.Platform{
-						Azure: &azuretypes.Platform{
-							Region: tt.region,
-							DefaultMachinePlatform: &azuretypes.MachinePool{
-								Zones: tt.zones,
+						Platform: types.Platform{
+							Azure: &azuretypes.Platform{
+								Region: tt.region,
+								DefaultMachinePlatform: &azuretypes.MachinePool{
+									Zones: tt.zones,
+								},
 							},
 						},
 					},

@@ -3,7 +3,7 @@ package manifests
 import (
 	"context"
 	"encoding/base64"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -143,7 +143,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 		}
 		cloudCreds = cloudCredsSecretData{
 			IBMCloud: &IBMCloudCredsSecretData{
-				Base64encodeAPIKey: base64.StdEncoding.EncodeToString([]byte(client.APIKey)),
+				Base64encodeAPIKey: base64.StdEncoding.EncodeToString([]byte(client.GetAPIKey())),
 			},
 		}
 	case openstacktypes.Name:
@@ -184,24 +184,16 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 		}
 	case vspheretypes.Name:
 		vsphereCredList := make([]*VSphereCredsSecretData, 0)
-		if len(installConfig.Config.VSphere.VCenters) > 0 {
-			for _, vCenter := range installConfig.Config.VSphere.VCenters {
-				vsphereCred := VSphereCredsSecretData{
-					VCenter:              vCenter.Server,
-					Base64encodeUsername: base64.StdEncoding.EncodeToString([]byte(vCenter.Username)),
-					Base64encodePassword: base64.StdEncoding.EncodeToString([]byte(vCenter.Password)),
-				}
-				vsphereCredList = append(vsphereCredList, &vsphereCred)
-			}
-		} else {
-			vCenter := installConfig.Config.VSphere
+
+		for _, vCenter := range installConfig.Config.VSphere.VCenters {
 			vsphereCred := VSphereCredsSecretData{
-				VCenter:              vCenter.VCenter,
+				VCenter:              vCenter.Server,
 				Base64encodeUsername: base64.StdEncoding.EncodeToString([]byte(vCenter.Username)),
 				Base64encodePassword: base64.StdEncoding.EncodeToString([]byte(vCenter.Password)),
 			}
 			vsphereCredList = append(vsphereCredList, &vsphereCred)
 		}
+
 		cloudCreds = cloudCredsSecretData{
 			VSphere: &vsphereCredList,
 		}
@@ -212,7 +204,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 		}
 
 		if len(conf.CABundle) == 0 && len(conf.CAFile) > 0 {
-			content, err := ioutil.ReadFile(conf.CAFile)
+			content, err := os.ReadFile(conf.CAFile)
 			if err != nil {
 				return errors.Wrapf(err, "failed to read the cert file: %s", conf.CAFile)
 			}

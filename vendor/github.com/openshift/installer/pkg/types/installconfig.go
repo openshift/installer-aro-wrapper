@@ -27,8 +27,7 @@ const (
 	// InstallConfigVersion is the version supported by this package.
 	// If you bump this, you must also update the list of convertable values in
 	// pkg/types/conversion/installconfig.go
-	InstallConfigVersion  = "v1"
-	workerMachinePoolName = "worker"
+	InstallConfigVersion = "v1"
 )
 
 var (
@@ -155,6 +154,16 @@ type InstallConfig struct {
 	// +optional
 	FIPS bool `json:"fips,omitempty"`
 
+	// CPUPartitioning determines if a cluster should be setup for CPU workload partitioning at install time.
+	// When this field is set the cluster will be flagged for CPU Partitioning allowing users to segregate workloads to
+	// specific CPU Sets. This does not make any decisions on workloads it only configures the nodes to allow CPU Partitioning.
+	// The "AllNodes" value will setup all nodes for CPU Partitioning, the default is "None".
+	// This feature is currently in TechPreview.
+	//
+	// +kubebuilder:default="None"
+	// +optional
+	CPUPartitioning CPUPartitioningMode `json:"cpuPartitioningMode,omitempty"`
+
 	// CredentialsMode is used to explicitly set the mode with which CredentialRequests are satisfied.
 	//
 	// If this field is set, then the installer will not attempt to query the cloud permissions before attempting
@@ -217,6 +226,17 @@ func (c *InstallConfig) IsOKD() bool {
 func (c *InstallConfig) IsSingleNodeOpenShift() bool {
 	return c.BootstrapInPlace != nil
 }
+
+// CPUPartitioningMode defines how the nodes should be setup for partitioning the CPU Sets.
+// +kubebuilder:validation:Enum=None;AllNodes
+type CPUPartitioningMode string
+
+const (
+	// CPUPartitioningNone means that no CPU Partitioning is on in this cluster infrastructure.
+	CPUPartitioningNone CPUPartitioningMode = "None"
+	// CPUPartitioningAllNodes means that all nodes are configured with CPU Partitioning in this cluster.
+	CPUPartitioningAllNodes CPUPartitioningMode = "AllNodes"
+)
 
 // Platform is the configuration for the specific platform upon which to perform
 // the installation. Only one of the platform configuration should be set.
@@ -457,7 +477,8 @@ type Capabilities struct {
 // WorkerMachinePool retrieves the worker MachinePool from InstallConfig.Compute
 func (c *InstallConfig) WorkerMachinePool() *MachinePool {
 	for _, machinePool := range c.Compute {
-		if machinePool.Name == workerMachinePoolName {
+		switch machinePool.Name {
+		case MachinePoolComputeRoleName, MachinePoolEdgeRoleName:
 			return &machinePool
 		}
 	}

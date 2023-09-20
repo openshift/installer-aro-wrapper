@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/gophercloud/utils/openstack/clientconfig"
-	clusterapi "github.com/openshift/api/machine/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	clusterapi "github.com/openshift/api/machine/v1beta1"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/openstack"
 	openstackdefaults "github.com/openshift/installer/pkg/types/openstack/defaults"
@@ -47,7 +47,19 @@ func MachineSets(clusterID string, config *types.InstallConfig, pool *types.Mach
 		if int32(idx) < total%numOfAZs {
 			replicas++
 		}
-		provider, err := generateProvider(clusterID, platform, mpool, osImage, az, role, userDataSecret, trunkSupport, volumeAZs[idx%len(volumeAZs)])
+		provider, err := generateProvider(
+			clusterID,
+			platform,
+			mpool,
+			osImage,
+			role,
+			userDataSecret,
+			trunkSupport,
+			openstack.FailureDomain{
+				ComputeAvailabilityZone: az,
+				StorageAvailabilityZone: volumeAZs[idx%len(volumeAZs)],
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
