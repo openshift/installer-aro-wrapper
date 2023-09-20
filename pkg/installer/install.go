@@ -5,12 +5,14 @@ package installer
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/pkg/errors"
+	machnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -96,6 +98,10 @@ func (m *manager) initializeKubernetesClients(ctx context.Context) error {
 		return err
 	}
 	r.Dial = restconfig.DialContext(m.env, m.oc)
+
+	// https://github.com/kubernetes/kubernetes/issues/118703#issuecomment-1595072383
+	// TODO: Revert or adapt when upstream fix is available
+	r.Proxy = machnet.NewProxierWithNoProxyCIDR(http.ProxyFromEnvironment)
 
 	m.kubernetescli, err = kubernetes.NewForConfig(r)
 	return err
