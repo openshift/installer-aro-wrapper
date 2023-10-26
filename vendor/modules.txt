@@ -1602,7 +1602,7 @@ google.golang.org/appengine/urlfetch
 google.golang.org/genproto/googleapis/rpc/code
 google.golang.org/genproto/googleapis/rpc/errdetails
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.46.0 => google.golang.org/grpc v1.40.0
+# google.golang.org/grpc v1.46.0 => google.golang.org/grpc v1.56.3
 ## explicit; go 1.11
 google.golang.org/grpc
 google.golang.org/grpc/attributes
@@ -2192,7 +2192,7 @@ sigs.k8s.io/yaml
 # github.com/uber/athenadriver => github.com/uber/athenadriver v1.1.10
 # github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.1
 # google.golang.org/cloud => cloud.google.com/go v0.97.0
-# google.golang.org/grpc => google.golang.org/grpc v1.40.0
+# google.golang.org/grpc => google.golang.org/grpc v1.56.3
 # k8s.io/klog/v2 => k8s.io/klog/v2 v2.8.0
 # k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 # k8s.io/kube-state-metrics => k8s.io/kube-state-metrics v1.9.7
