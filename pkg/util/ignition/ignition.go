@@ -16,7 +16,9 @@ import (
 
 // GetFiles pulls files from a embed.FS and templates them. SystemD units
 // included are loaded as Units, and enabled if enabledUnits["name"] is true.
-func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[string]bool) ([]types.File, []types.Unit, error) {
+// AdditionalFileModes can be used to mark files with special file modes, since
+// go:embed does not store that information.
+func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[string]bool, additionalFileModes map[string]int) ([]types.File, []types.Unit, error) {
 	files := make([]types.File, 0)
 	units := make([]types.Unit, 0)
 
@@ -66,7 +68,14 @@ func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[s
 			units = append(units, unit)
 		} else {
 			finalFilename := "/" + strings.TrimSuffix(cleanPath, ".template")
-			files = append(files, ignition.FileFromBytes(finalFilename, "root", int(d.Type().Perm()), data))
+			f := ignition.FileFromBytes(finalFilename, "root", 0555, data)
+
+			// if we have a special file mode for this file, set it
+			if got, ok := additionalFileModes[finalFilename]; ok {
+				f.Mode = ignutil.IntToPtr(got)
+			}
+
+			files = append(files, f)
 		}
 
 		return nil
@@ -75,7 +84,7 @@ func GetFiles(staticFiles embed.FS, templateData interface{}, enabledUnits map[s
 		return nil, nil, err
 	}
 
-	return files, units, nil
+	return files, units, err
 }
 
 func MergeUnits(units []types.Unit, newUnits []types.Unit) []types.Unit {
