@@ -111,9 +111,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	}
 
 	// Set NetworkType to OVNKubernetes by default
-	SoftwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
+	softwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
 	if string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork) != "" {
-		SoftwareDefinedNetwork = string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork)
+		softwareDefinedNetwork = string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork)
 	}
 
 	// determine outbound type based on cluster visibility
@@ -166,7 +166,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							CIDR: *ipnet.MustParseCIDR("127.0.0.0/8"), // dummy
 						},
 					},
-					NetworkType: SoftwareDefinedNetwork,
+					NetworkType: softwareDefinedNetwork,
 					ClusterNetwork: []types.ClusterNetworkEntry{
 						{
 							CIDR:       *ipnet.MustParseCIDR(m.oc.Properties.NetworkProfile.PodCIDR),
@@ -260,6 +260,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						configv1.ClusterVersionCapabilityMarketplace,
 						configv1.ClusterVersionCapabilityOpenShiftSamples,
 						configv1.ClusterVersionCapabilityStorage,
+						configv1.ClusterVersionCapabilityNodeTuning,
 					},
 				},
 			},
