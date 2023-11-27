@@ -1233,7 +1233,7 @@ github.com/openshift/installer/pkg/types/vsphere/defaults
 github.com/openshift/installer/pkg/types/vsphere/validation
 github.com/openshift/installer/pkg/validate
 github.com/openshift/installer/pkg/version
-# github.com/openshift/machine-config-operator v3.11.0+incompatible => github.com/openshift/machine-config-operator v0.0.1-0.20230523185907-4accd895aa8f
+# github.com/openshift/machine-config-operator v0.0.0 => github.com/openshift/machine-config-operator v0.0.1-0.20230523185907-4accd895aa8f
 ## explicit; go 1.18
 github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1
 # github.com/opentracing/opentracing-go v1.2.0
@@ -1476,7 +1476,7 @@ github.com/yeya24/promlinter
 # gitlab.com/bosi/decorder v0.2.3
 ## explicit; go 1.17
 gitlab.com/bosi/decorder
-# go.mongodb.org/mongo-driver v1.9.0
+# go.mongodb.org/mongo-driver v1.9.1
 ## explicit; go 1.10
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec
@@ -2309,7 +2309,6 @@ sigs.k8s.io/yaml
 # github.com/IBM-Cloud/terraform-provider-ibm => github.com/openshift/terraform-provider-ibm v1.26.2-openshift-2
 # github.com/c-bata/go-prompt => github.com/c-bata/go-prompt v0.2.5
 # github.com/circonus-labs/circonusllhist => github.com/openhistogram/circonusllhist v0.3.0
-# github.com/cockroachdb/errors => github.com/cockroachdb/errors v1.8.5
 # github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v1.1.2
 # github.com/containernetworking/plugins => github.com/containernetworking/plugins v1.0.0
 # github.com/containers/image => github.com/containers/image v3.0.2+incompatible
