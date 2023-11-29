@@ -10,7 +10,6 @@ import (
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	powervsconfig "github.com/openshift/installer/pkg/asset/installconfig/powervs"
-
 	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
@@ -56,9 +55,14 @@ func (a *PlatformPermsCheck) Generate(dependencies asset.Parents) error {
 	case aws.Name:
 		permissionGroups := []awsconfig.PermissionGroup{awsconfig.PermissionCreateBase}
 		usingExistingVPC := len(ic.Config.AWS.Subnets) != 0
+		usingExistingPrivateZone := len(ic.Config.AWS.HostedZone) != 0
 
 		if !usingExistingVPC {
 			permissionGroups = append(permissionGroups, awsconfig.PermissionCreateNetworking)
+		}
+
+		if !usingExistingPrivateZone {
+			permissionGroups = append(permissionGroups, awsconfig.PermissionCreateHostedZone)
 		}
 
 		// Add delete permissions for non-C2S installs.
@@ -68,6 +72,9 @@ func (a *PlatformPermsCheck) Generate(dependencies asset.Parents) error {
 				permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteSharedNetworking)
 			} else {
 				permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteNetworking)
+			}
+			if !usingExistingPrivateZone {
+				permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteHostedZone)
 			}
 		}
 

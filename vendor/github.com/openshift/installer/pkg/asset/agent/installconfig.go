@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	baremetaldefaults "github.com/openshift/installer/pkg/types/baremetal/defaults"
 	"github.com/openshift/installer/pkg/types/none"
+	"github.com/openshift/installer/pkg/types/validation"
 	"github.com/openshift/installer/pkg/types/vsphere"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 const (
@@ -23,9 +25,11 @@ const (
 // OptionalInstallConfig is an InstallConfig where the default is empty, rather
 // than generated from running the survey.
 type OptionalInstallConfig struct {
-	installconfig.InstallConfig
+	installconfig.AssetBase
 	Supplied bool
 }
+
+var _ asset.WritableAsset = (*OptionalInstallConfig)(nil)
 
 // Dependencies returns all of the dependencies directly needed by an
 // InstallConfig asset.
@@ -44,21 +48,24 @@ func (a *OptionalInstallConfig) Generate(parents asset.Parents) error {
 
 // Load returns the installconfig from disk.
 func (a *OptionalInstallConfig) Load(f asset.FileFetcher) (bool, error) {
-
-	var foundValidatedDefaultInstallConfig bool
-
-	foundValidatedDefaultInstallConfig, err := a.InstallConfig.Load(f)
-	if foundValidatedDefaultInstallConfig && err == nil {
+	found, err := a.LoadFromFile(f)
+	if found && err == nil {
 		a.Supplied = true
 		if err := a.validateInstallConfig(a.Config).ToAggregate(); err != nil {
 			return false, errors.Wrapf(err, "invalid install-config configuration")
 		}
+		if err := a.RecordFile(); err != nil {
+			return false, err
+		}
 	}
-	return foundValidatedDefaultInstallConfig, err
+	return found, err
 }
 
 func (a *OptionalInstallConfig) validateInstallConfig(installConfig *types.InstallConfig) field.ErrorList {
 	var allErrs field.ErrorList
+	if err := validation.ValidateInstallConfig(a.Config, true); err != nil {
+		allErrs = append(allErrs, err...)
+	}
 
 	if err := a.validateSupportedPlatforms(installConfig); err != nil {
 		allErrs = append(allErrs, err...)
@@ -95,8 +102,9 @@ func (a *OptionalInstallConfig) validateSupportedArchs(installConfig *types.Inst
 
 	switch string(installConfig.ControlPlane.Architecture) {
 	case types.ArchitectureAMD64:
+	case types.ArchitectureARM64:
 	default:
-		allErrs = append(allErrs, field.NotSupported(fieldPath, installConfig.ControlPlane.Architecture, []string{types.ArchitectureAMD64}))
+		allErrs = append(allErrs, field.NotSupported(fieldPath, installConfig.ControlPlane.Architecture, []string{types.ArchitectureAMD64, types.ArchitectureARM64}))
 	}
 
 	for i, compute := range installConfig.Compute {
@@ -104,8 +112,9 @@ func (a *OptionalInstallConfig) validateSupportedArchs(installConfig *types.Inst
 
 		switch string(compute.Architecture) {
 		case types.ArchitectureAMD64:
+		case types.ArchitectureARM64:
 		default:
-			allErrs = append(allErrs, field.NotSupported(fieldPath, compute.Architecture, []string{types.ArchitectureAMD64}))
+			allErrs = append(allErrs, field.NotSupported(fieldPath, compute.Architecture, []string{types.ArchitectureAMD64, types.ArchitectureARM64}))
 		}
 	}
 
@@ -250,7 +259,7 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 			}
 			if host.BMC.Password != "" {
 				fieldPath := field.NewPath("Platform", "Baremetal", fmt.Sprintf("Hosts[%d]", i), "BMC", "Password")
-				logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, host.BMC.Password))
+				logrus.Warnf(fmt.Sprintf("%s is ignored", fieldPath))
 			}
 			if host.BMC.Address != "" {
 				fieldPath := field.NewPath("Platform", "Baremetal", fmt.Sprintf("Hosts[%d]", i), "BMC", "Address")
@@ -308,37 +317,37 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 	case vsphere.Name:
 		vspherePlatform := installConfig.Platform.VSphere
 
-		if vspherePlatform.VCenter != "" {
+		if vspherePlatform.DeprecatedVCenter != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "VCenter")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.VCenter))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedVCenter))
 		}
-		if vspherePlatform.Username != "" {
+		if vspherePlatform.DeprecatedUsername != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Username")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Username))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedUsername))
 		}
-		if vspherePlatform.Password != "" {
+		if vspherePlatform.DeprecatedPassword != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Password")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Password))
+			logrus.Warnf(fmt.Sprintf("%s is ignored", fieldPath))
 		}
-		if vspherePlatform.Datacenter != "" {
+		if vspherePlatform.DeprecatedDatacenter != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Datacenter")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Datacenter))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedDatacenter))
 		}
-		if vspherePlatform.DefaultDatastore != "" {
+		if vspherePlatform.DeprecatedDefaultDatastore != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "DefaultDatastore")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DefaultDatastore))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedDefaultDatastore))
 		}
-		if vspherePlatform.Folder != "" {
+		if vspherePlatform.DeprecatedFolder != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Folder")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Folder))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedFolder))
 		}
-		if vspherePlatform.Cluster != "" {
+		if vspherePlatform.DeprecatedCluster != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Cluster")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Cluster))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedCluster))
 		}
-		if vspherePlatform.ResourcePool != "" {
+		if vspherePlatform.DeprecatedResourcePool != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "ResourcePool")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.ResourcePool))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedResourcePool))
 		}
 		if vspherePlatform.ClusterOSImage != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "ClusterOSImage")
@@ -348,9 +357,9 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 			fieldPath := field.NewPath("Platform", "VSphere", "DefaultMachinePlatform")
 			logrus.Warnf(fmt.Sprintf("%s: %v is ignored", fieldPath, vspherePlatform.DefaultMachinePlatform))
 		}
-		if vspherePlatform.Network != "" {
+		if vspherePlatform.DeprecatedNetwork != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Network")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Network))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedNetwork))
 		}
 		if vspherePlatform.DiskType != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "DiskType")

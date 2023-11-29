@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 TAG ?= $(shell git describe --exact-match 2>/dev/null)
 COMMIT = $(shell git rev-parse --short=7 HEAD)$(shell [[ $$(git status --porcelain) = "" ]] || echo -dirty)
-ARO_IMAGE_BASE = ${RP_IMAGE_ACR}.azurecr.io/aroinstaller
+ARO_IMAGE_BASE = $(RP_IMAGE_ACR).azurecr.io/aroinstaller
 
 ifneq ($(shell uname -s),Darwin)
     export CGO_CFLAGS=-Dgpgme_off_t=off_t
@@ -18,10 +18,8 @@ ifeq ($(RP_IMAGE_ACR),arointsvc)
 	REGISTRY = arointsvc.azurecr.io
 else ifeq ($(RP_IMAGE_ACR),arosvc)
 	REGISTRY = arosvc.azurecr.io
-else ifeq ($(RP_IMAGE_ACR),)
-	REGISTRY = registry.access.redhat.com
 else
-	REGISTRY = $(RP_IMAGE_ACR)
+	REGISTRY = registry.access.redhat.com
 endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
