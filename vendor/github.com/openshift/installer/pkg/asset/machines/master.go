@@ -9,24 +9,22 @@ import (
 
 	"github.com/ghodss/yaml"
 	baremetalhost "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
-	machinev1 "github.com/openshift/api/machine/v1"
-	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
-	baremetalapi "github.com/openshift/cluster-api-provider-baremetal/pkg/apis"
-	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
-	ibmcloudapi "github.com/openshift/cluster-api-provider-ibmcloud/pkg/apis"
-	ibmcloudprovider "github.com/openshift/cluster-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
-	libvirtapi "github.com/openshift/cluster-api-provider-libvirt/pkg/apis"
-	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
-	ovirtproviderapi "github.com/openshift/cluster-api-provider-ovirt/pkg/apis"
-	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
-	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	openstackapi "sigs.k8s.io/cluster-api-provider-openstack/pkg/apis"
-	openstackprovider "sigs.k8s.io/cluster-api-provider-openstack/pkg/apis/openstackproviderconfig/v1alpha1"
+
+	configv1 "github.com/openshift/api/config/v1"
+	machinev1 "github.com/openshift/api/machine/v1"
+	machinev1alpha1 "github.com/openshift/api/machine/v1alpha1"
+	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
+	baremetalapi "github.com/openshift/cluster-api-provider-baremetal/pkg/apis"
+	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
+	libvirtapi "github.com/openshift/cluster-api-provider-libvirt/pkg/apis"
+	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
+	ovirtproviderapi "github.com/openshift/cluster-api-provider-ovirt/pkg/apis"
+	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
@@ -52,6 +50,7 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
+	awsdefaults "github.com/openshift/installer/pkg/types/aws/defaults"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	azuredefaults "github.com/openshift/installer/pkg/types/azure/defaults"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
@@ -64,6 +63,9 @@ import (
 	ovirttypes "github.com/openshift/installer/pkg/types/ovirt"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
+	ibmcloudapi "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis"
+	ibmcloudprovider "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
+	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
 
 // Master generates the machines for the `master` machine pool.
@@ -208,7 +210,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			}
 		}
 
-		mpool := defaultAWSMachinePoolPlatform()
+		mpool := defaultAWSMachinePoolPlatform("master")
 
 		osImage := strings.SplitN(string(*rhcosImage), ",", 2)
 		osImageID := osImage[0]
@@ -235,10 +237,14 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		}
 
 		if mpool.InstanceType == "" {
-			mpool.InstanceType, err = aws.PreferredInstanceType(ctx, installConfig.AWS, awsDefaultMachineTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture), mpool.Zones)
+			topology := configv1.HighlyAvailableTopologyMode
+			if pool.Replicas != nil && *pool.Replicas == 1 {
+				topology = configv1.SingleReplicaTopologyMode
+			}
+			mpool.InstanceType, err = aws.PreferredInstanceType(ctx, installConfig.AWS, awsdefaults.InstanceTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture, topology), mpool.Zones)
 			if err != nil {
 				logrus.Warn(errors.Wrap(err, "failed to find default instance type"))
-				mpool.InstanceType = awsDefaultMachineTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture)[0]
+				mpool.InstanceType = awsdefaults.InstanceTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture, topology)[0]
 			}
 		}
 
@@ -276,11 +282,14 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			mpool.Zones = azs
 		}
 		pool.Platform.GCP = &mpool
-		machines, err = gcp.Machines(clusterID.InfraID, ic, &pool, string(*rhcosImage), "master", masterUserDataSecretName)
+		machines, controlPlaneMachineSet, err = gcp.Machines(clusterID.InfraID, ic, &pool, string(*rhcosImage), "master", masterUserDataSecretName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
-		gcp.ConfigMasters(machines, clusterID.InfraID, ic.Publish)
+		err := gcp.ConfigMasters(machines, controlPlaneMachineSet, clusterID.InfraID, ic.Publish)
+		if err != nil {
+			return err
+		}
 	case ibmcloudtypes.Name:
 		subnets := map[string]string{}
 		if len(ic.Platform.IBMCloud.ControlPlaneSubnets) > 0 {
@@ -373,12 +382,14 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			return err
 		}
 		useImageGallery := installConfig.Azure.CloudName != azuretypes.StackCloud
-
-		machines, err = azure.Machines(clusterID.InfraID, ic, &pool, string(*rhcosImage), "master", masterUserDataSecretName, capabilities, useImageGallery)
+		machines, controlPlaneMachineSet, err = azure.Machines(clusterID.InfraID, ic, &pool, string(*rhcosImage), "master", masterUserDataSecretName, capabilities, useImageGallery)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
-		azure.ConfigMasters(machines, clusterID.InfraID)
+		err = azure.ConfigMasters(machines, controlPlaneMachineSet, clusterID.InfraID)
+		if err != nil {
+			return err
+		}
 	case baremetaltypes.Name:
 		mpool := defaultBareMetalMachinePoolPlatform()
 		mpool.Set(ic.Platform.BareMetal.DefaultMachinePlatform)
@@ -480,6 +491,9 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		mpool.NumCPUs = 8
 		mpool.Set(ic.Platform.Nutanix.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.Nutanix)
+		if err = mpool.ValidateConfig(ic.Platform.Nutanix); err != nil {
+			return errors.Wrap(err, "failed to create master machine objects")
+		}
 		pool.Platform.Nutanix = &mpool
 		templateName := nutanixtypes.RHCOSImageName(clusterID.InfraID)
 
@@ -524,7 +538,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		}
 		machineConfigs = append(machineConfigs, ignFIPS)
 	}
-	ignARODNS, err := dnsmasq.MachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, "master", aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
+	ignARODNS, err := dnsmasq.MachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, "master", aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create ignition for ARO DNS for master machines")
 	}
@@ -646,8 +660,10 @@ func (m *Master) Machines() ([]machinev1beta1.Machine, error) {
 	baremetalapi.AddToScheme(scheme)
 	ibmcloudapi.AddToScheme(scheme)
 	libvirtapi.AddToScheme(scheme)
-	openstackapi.AddToScheme(scheme)
 	ovirtproviderapi.AddToScheme(scheme)
+	scheme.AddKnownTypes(machinev1alpha1.GroupVersion,
+		&machinev1alpha1.OpenstackProviderSpec{},
+	)
 	scheme.AddKnownTypes(machinev1beta1.SchemeGroupVersion,
 		&machinev1beta1.AWSMachineProviderConfig{},
 		&machinev1beta1.VSphereMachineProviderSpec{},
@@ -668,7 +684,7 @@ func (m *Master) Machines() ([]machinev1beta1.Machine, error) {
 		baremetalprovider.SchemeGroupVersion,
 		ibmcloudprovider.SchemeGroupVersion,
 		libvirtprovider.SchemeGroupVersion,
-		openstackprovider.SchemeGroupVersion,
+		machinev1alpha1.GroupVersion,
 		machinev1beta1.SchemeGroupVersion,
 		ovirtprovider.SchemeGroupVersion,
 	)

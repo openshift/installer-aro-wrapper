@@ -49,7 +49,6 @@ func (a *PlatformProvisionCheck) Dependencies() []asset.Asset {
 func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 	ic := &InstallConfig{}
 	dependencies.Get(ic)
-	var err error
 	platform := ic.Config.Platform.Name()
 	switch platform {
 	case aws.Name:
@@ -74,7 +73,7 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 		}
 		return azconfig.ValidateForProvisioning(client, ic.Config)
 	case baremetal.Name:
-		err = bmconfig.ValidateBaremetalPlatformSet(ic.Config)
+		err := bmconfig.ValidateBaremetalPlatformSet(ic.Config)
 		if err != nil {
 			return err
 		}
@@ -87,15 +86,7 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 			return err
 		}
 	case gcp.Name:
-		client, err := gcpconfig.NewClient(context.TODO())
-		if err != nil {
-			return err
-		}
-		err = gcpconfig.ValidatePreExistingPublicDNS(client, ic.Config)
-		if err != nil {
-			return err
-		}
-		err = gcpconfig.ValidatePreExistingPrivateDNS(client, ic.Config)
+		err := gcpconfig.ValidateForProvisioning(ic.Config)
 		if err != nil {
 			return err
 		}
@@ -109,21 +100,16 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 			return err
 		}
 	case openstack.Name:
-		err = osconfig.ValidateForProvisioning(ic.Config)
+		err := osconfig.ValidateForProvisioning(ic.Config)
 		if err != nil {
 			return err
 		}
 	case vsphere.Name:
-		if len(ic.Config.VSphere.VCenters) > 0 {
-			err = vsconfig.ValidateMultiZoneForProvisioning(ic.Config)
-		} else {
-			err = vsconfig.ValidateForProvisioning(ic.Config)
-		}
-		if err != nil {
+		if err := vsconfig.ValidateForProvisioning(ic.Config); err != nil {
 			return err
 		}
 	case ovirt.Name:
-		err = ovirtconfig.ValidateForProvisioning(ic.Config)
+		err := ovirtconfig.ValidateForProvisioning(ic.Config)
 		if err != nil {
 			return err
 		}
@@ -133,23 +119,33 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 			return err
 		}
 		err = alibabacloudconfig.ValidateForProvisioning(client, ic.Config, ic.AlibabaCloud)
+		if err != nil {
+			return err
+		}
 	case powervs.Name:
 		client, err := powervsconfig.NewClient()
 		if err != nil {
 			return err
 		}
 		err = powervsconfig.ValidatePreExistingDNS(client, ic.Config, ic.PowerVS)
+		if err != nil {
+			return err
+		}
+		err = powervsconfig.ValidateCustomVPCSetup(client, ic.Config)
+		if err != nil {
+			return err
+		}
 	case libvirt.Name, none.Name:
 		// no special provisioning requirements to check
 	case nutanix.Name:
-		err = nutanixconfig.ValidateForProvisioning(ic.Config)
+		err := nutanixconfig.ValidateForProvisioning(ic.Config)
 		if err != nil {
 			return err
 		}
 	default:
-		err = fmt.Errorf("unknown platform type %q", platform)
+		return fmt.Errorf("unknown platform type %q", platform)
 	}
-	return err
+	return nil
 }
 
 // Name returns the human-friendly name of the asset.

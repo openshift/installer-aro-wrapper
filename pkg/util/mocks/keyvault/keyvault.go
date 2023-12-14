@@ -10,10 +10,10 @@ import (
 	x509 "crypto/x509"
 	reflect "reflect"
 
-	keyvault0 "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
+	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
 	gomock "github.com/golang/mock/gomock"
 
-	keyvault "github.com/openshift/ARO-Installer/pkg/util/keyvault"
+	keyvault0 "github.com/openshift/ARO-Installer/pkg/util/keyvault"
 )
 
 // MockManager is a mock of Manager interface.
@@ -40,7 +40,7 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // CreateSignedCertificate mocks base method.
-func (m *MockManager) CreateSignedCertificate(arg0 context.Context, arg1, arg2, arg3 string, arg4 keyvault.Eku) error {
+func (m *MockManager) CreateSignedCertificate(arg0 context.Context, arg1, arg2, arg3 string, arg4 keyvault0.Eku) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSignedCertificate", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
@@ -114,10 +114,10 @@ func (mr *MockManagerMockRecorder) GetCertificateSecret(arg0, arg1 interface{}) 
 }
 
 // GetSecret mocks base method.
-func (m *MockManager) GetSecret(arg0 context.Context, arg1 string) (keyvault0.SecretBundle, error) {
+func (m *MockManager) GetSecret(arg0 context.Context, arg1 string) (keyvault.SecretBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSecret", arg0, arg1)
-	ret0, _ := ret[0].(keyvault0.SecretBundle)
+	ret0, _ := ret[0].(keyvault.SecretBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -129,10 +129,10 @@ func (mr *MockManagerMockRecorder) GetSecret(arg0, arg1 interface{}) *gomock.Cal
 }
 
 // GetSecrets mocks base method.
-func (m *MockManager) GetSecrets(arg0 context.Context) ([]keyvault0.SecretItem, error) {
+func (m *MockManager) GetSecrets(arg0 context.Context) ([]keyvault.SecretItem, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSecrets", arg0)
-	ret0, _ := ret[0].([]keyvault0.SecretItem)
+	ret0, _ := ret[0].([]keyvault.SecretItem)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -144,10 +144,10 @@ func (mr *MockManagerMockRecorder) GetSecrets(arg0 interface{}) *gomock.Call {
 }
 
 // SetCertificateIssuer mocks base method.
-func (m *MockManager) SetCertificateIssuer(arg0 context.Context, arg1 string, arg2 keyvault0.CertificateIssuerSetParameters) (keyvault0.IssuerBundle, error) {
+func (m *MockManager) SetCertificateIssuer(arg0 context.Context, arg1 string, arg2 keyvault.CertificateIssuerSetParameters) (keyvault.IssuerBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetCertificateIssuer", arg0, arg1, arg2)
-	ret0, _ := ret[0].(keyvault0.IssuerBundle)
+	ret0, _ := ret[0].(keyvault.IssuerBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -159,7 +159,7 @@ func (mr *MockManagerMockRecorder) SetCertificateIssuer(arg0, arg1, arg2 interfa
 }
 
 // SetSecret mocks base method.
-func (m *MockManager) SetSecret(arg0 context.Context, arg1 string, arg2 keyvault0.SecretSetParameters) error {
+func (m *MockManager) SetSecret(arg0 context.Context, arg1 string, arg2 keyvault.SecretSetParameters) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetSecret", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

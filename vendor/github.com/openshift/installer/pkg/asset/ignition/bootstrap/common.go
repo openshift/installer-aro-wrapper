@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -19,12 +18,12 @@ import (
 	"github.com/containers/image/pkg/sysregistriesv2"
 	ignutil "github.com/coreos/ignition/v2/config/util"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
-	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vincent-petithory/dataurl"
 	utilsnet "k8s.io/utils/net"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
@@ -218,7 +217,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 		}},
 	)
 
-	dnsmasqIgnConfig, err := dnsmasq.Ignition3Config(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
+	dnsmasqIgnConfig, err := dnsmasq.Ignition3Config(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, true)
 	if err != nil {
 		return err
 	}
@@ -517,7 +516,7 @@ func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface
 // '.template', strip that extension from the name and render the
 // template.
 func readFile(name string, reader io.Reader, templateData interface{}) (finalName string, data []byte, err error) {
-	data, err = ioutil.ReadAll(reader)
+	data, err = io.ReadAll(reader)
 	if err != nil {
 		return name, []byte{}, err
 	}

@@ -2,10 +2,12 @@ package powervs
 
 import (
 	"context"
-	"github.com/IBM-Cloud/bluemix-go/crn"
-	"github.com/openshift/installer/pkg/types"
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/IBM-Cloud/bluemix-go/crn"
+	"github.com/pkg/errors"
+
+	"github.com/openshift/installer/pkg/types"
 )
 
 //go:generate mockgen -source=./metadata.go -destination=./mock/powervsmetadata_generated.go -package=mock
@@ -150,7 +152,7 @@ func (m *Metadata) SetDNSInstanceCRN(crn string) {
 
 // GetExistingVPCGateway checks if the VPC is a Permitted Network for the DNS Zone
 func (m *Metadata) GetExistingVPCGateway(ctx context.Context, vpcName string, vpcSubnet string) (string, bool, error) {
-	if vpcName == "" {
+	if vpcName == "" || vpcSubnet == "" {
 		return "", false, nil
 	}
 
