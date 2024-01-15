@@ -1751,8 +1751,6 @@ github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJS
 github.com/jessevdk/go-flags v1.5.0/go.mod h1:Fw0T6WPc1dYxT4mKEZRfG5kJhaTDP9pj1c2EWnYs/m4=
 github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234 h1:R0Hokq55Hv3SpbXyfZRh8vIrKFAPZ+SQqyTsRc7J/4E=
 github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234/go.mod h1:kZxm8EB19+pd3nT92t0aQblXb7K4sHG8cp59cleqdNc=
-github.com/jewzaam/installer-aro v0.9.0-master.0.20230914225404-a68d2ff56b41 h1:KP64EacHsHnEQ2sXK5bwUi4HdnIF5G5VLqlMniDgW5A=
-github.com/jewzaam/installer-aro v0.9.0-master.0.20230914225404-a68d2ff56b41/go.mod h1:0jBUBeSbh0HuvLz4UuNZbumiePKsFvOLhAClcLcAB6w=
 github.com/jgautheron/goconst v1.5.1 h1:HxVbL1MhydKs8R8n/HE5NPvzfaYmQJA3o879lE4+WcM=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.1/go.mod h1:RZQ/lnuN+zqeRVpQigTwO6o0AJUkxbnSnpuG7toUTG4=
@@ -2192,6 +2190,8 @@ github.com/openshift/custom-resource-status v1.1.2 h1:C3DL44LEbvlbItfd8mT5jWrqPf
 github.com/openshift/custom-resource-status v1.1.2/go.mod h1:DB/Mf2oTeiAmVVX1gN+NEqweonAPY0TKUwADizj8+ZA=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8 h1:7e4sMDIstjEKW6SmPv8VhusDaYinDBrspd1M7ybIHC8=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
+github.com/openshift/installer-aro v0.9.0-master.0.20240110185516-5c294dd945c9 h1:C604TcnJCr/Hr79WRDKVQkvGS1Dr3CtNtqvIYkzOObk=
+github.com/openshift/installer-aro v0.9.0-master.0.20240110185516-5c294dd945c9/go.mod h1:0jBUBeSbh0HuvLz4UuNZbumiePKsFvOLhAClcLcAB6w=
 github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221/go.mod h1:AMZwYwSdbvALDl3QobEzcJ2IeDO7DYLsr42izKzh524=
 github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104/go.mod h1:1j0Au43h8Sn2B81FxOudqcmKnzvMNEH+vfg5y1g2xAk=
 github.com/openshift/machine-config-operator v0.0.1-0.20230523185907-4accd895aa8f h1:zUCgQF9c5EZDM/ZuPhL542eZ1/V+WmyZJ81DNIXpfKA=
