@@ -1093,7 +1093,7 @@ github.com/openshift/hive/apis/hive/v1/openstack
 github.com/openshift/hive/apis/hive/v1/ovirt
 github.com/openshift/hive/apis/hive/v1/vsphere
 github.com/openshift/hive/apis/scheme
-# github.com/openshift/installer v0.16.1 => github.com/jewzaam/installer-aro v0.9.0-master.0.20231127080144-4632dc500a4f
+# github.com/openshift/installer v0.16.1 => github.com/openshift/installer-aro v0.9.0-master.0.20240110213613-2bc92decda79
 ## explicit; go 1.18
 github.com/openshift/installer/data
 github.com/openshift/installer/pkg/aro/dnsmasq
@@ -2353,7 +2353,7 @@ sigs.k8s.io/yaml
 # github.com/openshift/cluster-api-provider-kubevirt => github.com/openshift/cluster-api-provider-kubevirt v0.0.0-20210719100556-9b8bc3666720
 # github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230110131003-22d89b3fd9e2
 # github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-# github.com/openshift/installer => github.com/jewzaam/installer-aro v0.9.0-master.0.20231127080144-4632dc500a4f
+# github.com/openshift/installer => github.com/openshift/installer-aro v0.9.0-master.0.20240110213613-2bc92decda79
 # github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 # github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 # github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20230912144553-fb94e20d06d5
