@@ -5,7 +5,9 @@ package storage
 
 import (
 	"context"
+	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	mgmtstorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
@@ -13,6 +15,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
 
+	"github.com/openshift/ARO-Installer/pkg/api"
 	"github.com/openshift/ARO-Installer/pkg/env"
 	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/storage"
 )
@@ -44,6 +47,20 @@ func (m *manager) BlobService(ctx context.Context, resourceGroup, account string
 		SharedAccessExpiryTime: &date.Time{Time: t.Add(24 * time.Hour)},
 	})
 	if err != nil {
+		if strings.Contains(err.Error(), "TooManyRequests") {
+			err = &api.CloudError{
+				StatusCode: http.StatusTooManyRequests,
+				CloudErrorBody: &api.CloudErrorBody{
+					Code:    api.CloudErrorCodeThrottlingLimitExceeded,
+					Message: "ThrottlingLimitExceeded",
+					Details: []api.CloudErrorBody{
+						{
+							Message: string("Requests are being throttled due to Azure Storage limits being exceeded. Please visit https://learn.microsoft.com/en-us/azure/openshift/troubleshoot#exceeding-azure-storage-limits for more details."),
+						},
+					},
+				},
+			}
+		}
 		return nil, err
 	}
 
