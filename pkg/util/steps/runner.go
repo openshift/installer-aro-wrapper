@@ -6,16 +6,12 @@ package steps
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"reflect"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/openshift/ARO-Installer/pkg/api"
 )
 
 type stackTracer interface {
@@ -42,16 +38,6 @@ func Run(ctx context.Context, log *logrus.Entry, pollInterval time.Duration, ste
 
 		if err != nil {
 			log.Errorf("step %s encountered error: %s", step, err.Error())
-			if strings.Contains(err.Error(), "ThrottlingLimitExceeded") || strings.Contains(err.Error(), "TooManyRequests") {
-				correlation_id := fmt.Sprintf("%v", log.Data["correlation_id"])
-				message := fmt.Sprintf("Requests are being throttled due to Azure Storage limits being exceeded. Please visit https://learn.microsoft.com/en-us/azure/openshift/troubleshoot#exceeding-azure-storage-limits for more details. CorrelationId: " + correlation_id)
-				err = api.NewCloudError(
-					http.StatusTooManyRequests,
-					api.CloudErrorCodeThrottlingLimitExceeded,
-					"",
-					message)
-				return err
-			}
 
 			if err, ok := err.(stackTracer); ok {
 				trace := ""
