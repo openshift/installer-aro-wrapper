@@ -42,7 +42,7 @@ func ValidateMachinePool(p *openstack.MachinePool, ci *CloudInfo, controlPlane b
 	var checkStorageFlavor bool
 	// Validate Root Volumes
 	if p.RootVolume != nil {
-		allErrs = append(allErrs, validateVolumeTypes(p.RootVolume.Type, ci.VolumeTypes, fldPath.Child("rootVolume").Child("type"))...)
+		allErrs = append(allErrs, validateVolumeTypes(p.RootVolume.Types, ci.VolumeTypes, fldPath.Child("rootVolume").Child("types"))...)
 		if p.RootVolume.Size < minimumStorage {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("rootVolume").Child("size"), p.RootVolume.Size, fmt.Sprintf("Volume size must be greater than %d GB to use root volumes, had %d GB", minimumStorage, p.RootVolume.Size)))
 		} else if p.RootVolume.Size < recommendedStorage {
@@ -89,15 +89,16 @@ func validateZones(input []string, available []string, fldPath *field.Path) fiel
 	return allErrs
 }
 
-func validateVolumeTypes(input string, available []string, fldPath *field.Path) field.ErrorList {
+func validateVolumeTypes(input []string, available []string, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	if input == "" {
-		allErrs = append(allErrs, field.Invalid(fldPath, input, "Volume type must be specified to use root volumes"))
+	if len(input) == 0 {
 		return allErrs
 	}
-	volumeTypes := sets.NewString(available...)
-	if !volumeTypes.Has(input) {
-		allErrs = append(allErrs, field.Invalid(fldPath, input, "Volume Type either does not exist in this cloud, or is not available"))
+	volumeTypes := sets.New[string](available...)
+	for _, volumeType := range input {
+		if !volumeTypes.Has(volumeType) {
+			allErrs = append(allErrs, field.Invalid(fldPath, volumeType, "Volume type either does not exist in this cloud, or is not available"))
+		}
 	}
 
 	return allErrs
@@ -106,7 +107,7 @@ func validateVolumeTypes(input string, available []string, fldPath *field.Path) 
 func validateUUIDV4s(input []string, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	for idx, uuid := range input {
-		if !validUUIDv4(uuid) {
+		if !ValidUUIDv4(uuid) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Index(idx), uuid, "valid UUID v4 must be specified"))
 		}
 	}
@@ -116,7 +117,7 @@ func validateUUIDV4s(input []string, fldPath *field.Path) field.ErrorList {
 
 // validUUIDv4 checks if string is in UUID v4 format
 // For more information: https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)
-func validUUIDv4(s string) bool {
+func ValidUUIDv4(s string) bool {
 	uuid, err := guuid.Parse(s)
 	if err != nil {
 		return false

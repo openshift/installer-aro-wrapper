@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -26,6 +26,7 @@ import (
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
 	libvirttypes "github.com/openshift/installer/pkg/types/libvirt"
@@ -93,15 +94,15 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 	}
 
 	switch installConfig.Config.Platform.Name() {
-	case libvirttypes.Name, nonetypes.Name, baremetaltypes.Name, ovirttypes.Name:
+	case libvirttypes.Name, externaltypes.Name, nonetypes.Name, baremetaltypes.Name, ovirttypes.Name:
 		return nil
 	case awstypes.Name:
 		// Store the additional trust bundle in the ca-bundle.pem key if the cluster is being installed on a C2S region.
 		trustBundle := installConfig.Config.AdditionalTrustBundle
-		if trustBundle == "" || !awstypes.IsSecretRegion(installConfig.Config.AWS.Region) {
-			return nil
+		if trustBundle != "" && awstypes.IsSecretRegion(installConfig.Config.AWS.Region) {
+			cm.Data[cloudProviderConfigCABundleDataKey] = trustBundle
 		}
-		cm.Data[cloudProviderConfigCABundleDataKey] = trustBundle
+
 		// Include a non-empty kube config to appease components--such as the kube-apiserver--that
 		// expect there to be a kube config if the cloud-provider-config ConfigMap exists. See
 		// https://bugzilla.redhat.com/show_bug.cgi?id=1926975.

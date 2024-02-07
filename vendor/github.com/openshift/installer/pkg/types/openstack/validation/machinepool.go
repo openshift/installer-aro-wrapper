@@ -25,42 +25,38 @@ func ValidateMachinePool(_ *openstack.Platform, machinePool *openstack.MachinePo
 		errs = append(errs, field.NotSupported(fldPath.Child("serverGroupPolicy"), machinePool.ServerGroupPolicy, validServerGroupPolicies))
 	}
 
-	errs = append(errs, validateFailureDomains(machinePool, role, fldPath)...)
-
-	return errs
-}
-
-func validateFailureDomains(machinePool *openstack.MachinePool, role string, fldPath *field.Path) (errs field.ErrorList) {
-	if len(machinePool.FailureDomains) == 0 {
-		return nil
-	}
-
-	fldPath = fldPath.Child("failureDomains")
-
-	if role != "master" {
-		return append(errs, field.Forbidden(fldPath, "failure domains can only be set on the master machine-pool"))
-	}
-
-	// No failure domains together with zones
-	if len(machinePool.Zones) > 1 || len(machinePool.Zones) > 0 && machinePool.Zones[0] != "" {
-		errs = append(errs, field.Forbidden(fldPath, "failure domains can not be set together with zones"))
-	}
-
-	// No failure domains together with root volume zones
 	if machinePool.RootVolume != nil {
-		if len(machinePool.RootVolume.Zones) > 1 || len(machinePool.RootVolume.Zones) > 0 && machinePool.RootVolume.Zones[0] != "" {
-			errs = append(errs, field.Forbidden(fldPath, "failure domains can not be set together with rootVolume zones"))
+		if len(machinePool.Zones) > 0 && len(machinePool.RootVolume.Zones) == 0 {
+			errs = append(errs, field.Required(fldPath.Child("rootVolume").Child("zones"), "root volume availability zones must be specified when compute availability zones are specified"))
 		}
-	}
 
-	// portTarget IDs must be unique
-	for i := range machinePool.FailureDomains {
-		ids := make(map[string]struct{})
-		for _, portTarget := range machinePool.FailureDomains[i].PortTargets {
-			if _, ok := ids[portTarget.ID]; ok {
-				errs = append(errs, field.Duplicate(fldPath.Index(i).Child("id"), portTarget.ID))
+		rootVolumeType := machinePool.RootVolume.DeprecatedType
+		rootVolumeTypes := machinePool.RootVolume.Types
+		typePath := fldPath.Child("rootVolume").Child("type")
+		typesPath := fldPath.Child("rootVolume").Child("types")
+
+		if rootVolumeType != "" && len(rootVolumeTypes) > 0 {
+			errs = append(errs, field.Invalid(typePath, rootVolumeType, "Only one of type or types can be specified"))
+			errs = append(errs, field.Invalid(typesPath, rootVolumeTypes, "Only one of type or types can be specified"))
+		}
+
+		if rootVolumeType == "" && len(rootVolumeTypes) == 0 {
+			errs = append(errs, field.Invalid(typePath, rootVolumeType, "Either type or types must be specified"))
+			errs = append(errs, field.Invalid(typesPath, rootVolumeTypes, "Either type or types must be specified"))
+		}
+
+		// When distributing the Root volumes across multiple failure domains, we suggest using multiple Storage types so they use a different backend.
+		// Storage availability zones are purely cosmetic for now and can also be used to define where a volume should be created, however
+		// we don't want to force a user to define a Storage availability zone when using multiple Storage types.
+		// Therefore we decided to require as many Storage types as there are Compute availability zones, if there are multiple Compute availability zones
+		// and more than one Storage type is defined.
+		// Even if we support a single Storage type across multiple failure domains, we still allow doing it.
+		// e.g. it would not make sense to have 3 Compute availability zones and 2 Storage types, because one of the Storage types would be used twice and
+		// therefore the number of failure domains would not be 3 anymore.
+		if machinePool.RootVolume.Types != nil {
+			if computes, volumes := len(machinePool.Zones), len(machinePool.RootVolume.Types); computes > 1 && volumes > 1 && volumes != computes {
+				errs = append(errs, field.Invalid(typesPath, rootVolumeTypes, "Compute and Storage availability zones in a MachinePool should have been validated to have equal length when more than one Storage type is defined"))
 			}
-			ids[portTarget.ID] = struct{}{}
 		}
 	}
 

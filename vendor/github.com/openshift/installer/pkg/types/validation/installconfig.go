@@ -21,6 +21,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	operv1 "github.com/openshift/api/operator/v1"
+	"github.com/openshift/installer/pkg/hostcrypt"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/alibabacloud"
@@ -54,6 +55,8 @@ import (
 var pluginsUsingHostPrefix = sets.NewString(string(operv1.NetworkTypeOpenShiftSDN), string(operv1.NetworkTypeOVNKubernetes))
 
 // ValidateInstallConfig checks that the specified install config is valid.
+//
+//nolint:gocyclo
 func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	if c.TypeMeta.APIVersion == "" {
@@ -66,13 +69,11 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 		return field.ErrorList{field.Invalid(field.NewPath("apiVersion"), c.TypeMeta.APIVersion, fmt.Sprintf("install-config version must be %q", types.InstallConfigVersion))}
 	}
 
-	if c.SSHKey != "" {
-		if c.FIPS == true {
-			allErrs = append(allErrs, validateFIPSconfig(c)...)
-		} else {
-			if err := validate.SSHPublicKey(c.SSHKey); err != nil {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("sshKey"), c.SSHKey, err.Error()))
-			}
+	if c.FIPS {
+		allErrs = append(allErrs, validateFIPSconfig(c)...)
+	} else if c.SSHKey != "" {
+		if err := validate.SSHPublicKey(c.SSHKey); err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("sshKey"), c.SSHKey, err.Error()))
 		}
 	}
 
@@ -127,9 +128,19 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 	if c.Proxy != nil {
 		allErrs = append(allErrs, validateProxy(c.Proxy, c, field.NewPath("proxy"))...)
 	}
-	allErrs = append(allErrs, validateImageContentSources(c.ImageContentSources, field.NewPath("imageContentSources"))...)
+	allErrs = append(allErrs, validateImageContentSources(c.DeprecatedImageContentSources, field.NewPath("imageContentSources"))...)
 	if _, ok := validPublishingStrategies[c.Publish]; !ok {
 		allErrs = append(allErrs, field.NotSupported(field.NewPath("publish"), c.Publish, validPublishingStrategyValues))
+	}
+	allErrs = append(allErrs, validateImageDigestSources(c.ImageDigestSources, field.NewPath("imageDigestSources"))...)
+	if _, ok := validPublishingStrategies[c.Publish]; !ok {
+		allErrs = append(allErrs, field.NotSupported(field.NewPath("publish"), c.Publish, validPublishingStrategyValues))
+	}
+	if len(c.DeprecatedImageContentSources) != 0 && len(c.ImageDigestSources) != 0 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("imageContentSources"), c.Publish, "cannot set imageContentSources and imageDigestSources at the same time"))
+	}
+	if len(c.DeprecatedImageContentSources) != 0 {
+		logrus.Warningln("imageContentSources is deprecated, please use ImageDigestSource")
 	}
 	allErrs = append(allErrs, validateCloudCredentialsMode(c.CredentialsMode, field.NewPath("credentialsMode"), c.Platform)...)
 	if c.Capabilities != nil {
@@ -141,6 +152,16 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 		case aws.Name, azure.Name, gcp.Name, alibabacloud.Name, ibmcloud.Name, powervs.Name:
 		default:
 			allErrs = append(allErrs, field.Invalid(field.NewPath("publish"), c.Publish, fmt.Sprintf("Internal publish strategy is not supported on %q platform", platformName)))
+		}
+	}
+
+	if c.Capabilities != nil {
+		if c.Capabilities.BaselineCapabilitySet == configv1.ClusterVersionCapabilitySetNone {
+			enabledCaps := sets.New[configv1.ClusterVersionCapability](c.Capabilities.AdditionalEnabledCapabilities...)
+			if enabledCaps.Has(configv1.ClusterVersionCapabilityBaremetal) && !enabledCaps.Has(configv1.ClusterVersionCapabilityMachineAPI) {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
+					"the baremetal capability requires the MachineAPI capability"))
+			}
 		}
 	}
 
@@ -240,10 +261,13 @@ func validateNetworkingIPVersion(n *types.Networking, p *types.Platform) field.E
 			// We now support ipv6-primary dual stack on baremetal
 			allowV6Primary = true
 		case p.VSphere != nil:
+			// as well as on vSphere
+			allowV6Primary = true
 		case p.OpenStack != nil:
 		case p.Ovirt != nil:
 		case p.Nutanix != nil:
 		case p.None != nil:
+		case p.External != nil:
 		default:
 			allErrs = append(allErrs, field.Invalid(field.NewPath("networking"), "DualStack", "dual-stack IPv4/IPv6 is not supported for this platform, specify only one type of address"))
 		}
@@ -275,6 +299,7 @@ func validateNetworkingIPVersion(n *types.Networking, p *types.Platform) field.E
 		case p.Ovirt != nil:
 		case p.Nutanix != nil:
 		case p.None != nil:
+		case p.External != nil:
 		case p.Azure != nil && p.Azure.CloudName == azure.StackCloud:
 			allErrs = append(allErrs, field.Invalid(field.NewPath("networking"), "IPv6", "Azure Stack does not support IPv6"))
 		default:
@@ -519,9 +544,6 @@ func validateVIPsForPlatform(network *types.Networking, platform *types.Platform
 
 		allErrs = append(allErrs, validateAPIAndIngressVIPs(virtualIPs, newVIPsFields, true, true, network, fldPath.Child(openstack.Name))...)
 	case platform.VSphere != nil:
-		allErrs = append(allErrs, ensureIPv4IsFirstInDualStackSlice(&platform.VSphere.APIVIPs, fldPath.Child(vsphere.Name, newVIPsFields.APIVIPs))...)
-		allErrs = append(allErrs, ensureIPv4IsFirstInDualStackSlice(&platform.VSphere.IngressVIPs, fldPath.Child(vsphere.Name, newVIPsFields.IngressVIPs))...)
-
 		virtualIPs = vips{
 			API:     platform.VSphere.APIVIPs,
 			Ingress: platform.VSphere.IngressVIPs,
@@ -718,7 +740,7 @@ func validatePlatform(platform *types.Platform, usingAgentMethod bool, fldPath *
 	}
 	if platform.Azure != nil {
 		validate(azure.Name, platform.Azure, func(f *field.Path) field.ErrorList {
-			return azurevalidation.ValidatePlatform(platform.Azure, c.Publish, f)
+			return azurevalidation.ValidatePlatform(platform.Azure, c.Publish, f, c)
 		})
 	}
 	if platform.GCP != nil {
@@ -800,6 +822,24 @@ func validateProxy(p *types.Proxy, c *types.InstallConfig, fldPath *field.Path) 
 }
 
 func validateImageContentSources(groups []types.ImageContentSource, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	for gidx, group := range groups {
+		groupf := fldPath.Index(gidx)
+		if err := validateNamedRepository(group.Source); err != nil {
+			allErrs = append(allErrs, field.Invalid(groupf.Child("source"), group.Source, err.Error()))
+		}
+
+		for midx, mirror := range group.Mirrors {
+			if err := validateNamedRepository(mirror); err != nil {
+				allErrs = append(allErrs, field.Invalid(groupf.Child("mirrors").Index(midx), mirror, err.Error()))
+				continue
+			}
+		}
+	}
+	return allErrs
+}
+
+func validateImageDigestSources(groups []types.ImageDigestSource, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	for gidx, group := range groups {
 		groupf := fldPath.Index(gidx)
@@ -949,15 +989,21 @@ func validateIPProxy(proxy string, n *types.Networking, fldPath *field.Path) fie
 // for ssh keys on FIPS.
 func validateFIPSconfig(c *types.InstallConfig) field.ErrorList {
 	allErrs := field.ErrorList{}
-	sshParsedKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(c.SSHKey))
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("sshKey"), c.SSHKey, fmt.Sprintf("Fatal error trying to parse configured public key: %s", err)))
-	} else {
-		sshKeyType := sshParsedKey.Type()
-		re := regexp.MustCompile(`^ecdsa-sha2-nistp\d{3}$|^ssh-rsa$`)
-		if !re.MatchString(sshKeyType) {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("sshKey"), c.SSHKey, fmt.Sprintf("SSH key type %s unavailable when FIPS is enabled. Please use rsa or ecdsa.", sshKeyType)))
+	if c.SSHKey != "" {
+		sshParsedKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(c.SSHKey))
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("sshKey"), c.SSHKey, fmt.Sprintf("Fatal error trying to parse configured public key: %s", err)))
+		} else {
+			sshKeyType := sshParsedKey.Type()
+			re := regexp.MustCompile(`^ecdsa-sha2-nistp\d{3}$|^ssh-rsa$`)
+			if !re.MatchString(sshKeyType) {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("sshKey"), c.SSHKey, fmt.Sprintf("SSH key type %s unavailable when FIPS is enabled. Please use rsa or ecdsa.", sshKeyType)))
+			}
 		}
+	}
+
+	if err := hostcrypt.VerifyHostTargetState(c.FIPS); err != nil {
+		logrus.Warnf("%v", err)
 	}
 	return allErrs
 }
@@ -1015,17 +1061,55 @@ func validateFeatureSet(c *types.InstallConfig) field.ErrorList {
 		allErrs = append(allErrs, field.NotSupported(field.NewPath("featureSet"), c.FeatureSet, sortedFeatureSets))
 	}
 
+	if len(c.FeatureGates) > 0 {
+		if c.FeatureSet != configv1.CustomNoUpgrade {
+			allErrs = append(allErrs, field.Forbidden(field.NewPath("featureGates"), "featureGates can only be used with the CustomNoUpgrade feature set"))
+		}
+		allErrs = append(allErrs, validateCustomFeatureGates(c)...)
+	}
+
 	if c.FeatureSet != configv1.TechPreviewNoUpgrade {
 		errMsg := "the TechPreviewNoUpgrade feature set must be enabled to use this field"
-
-		if c.Azure != nil && len(c.Azure.UserTags) > 0 {
-			allErrs = append(allErrs, field.Forbidden(field.NewPath("platform", "azure", "userTags"), errMsg))
-		}
 
 		if c.OpenStack != nil {
 			for _, f := range openstackvalidation.FilledInTechPreviewFields(c) {
 				allErrs = append(allErrs, field.Forbidden(f, errMsg))
 			}
+		}
+
+		if c.VSphere != nil {
+			if len(c.VSphere.Hosts) > 0 {
+				allErrs = append(allErrs, field.Forbidden(field.NewPath("platform", "vsphere", "hosts"), errMsg))
+			}
+		}
+
+		if c.GCP != nil {
+			if len(c.GCP.UserTags) > 0 {
+				allErrs = append(allErrs, field.Forbidden(field.NewPath("platform", "gcp", "userTags"), errMsg))
+			}
+			if len(c.GCP.UserLabels) > 0 {
+				allErrs = append(allErrs, field.Forbidden(field.NewPath("platform", "gcp", "userLabels"), errMsg))
+			}
+		}
+	}
+
+	return allErrs
+}
+
+// validateCustomFeatureGates checks that all provided custom features match the expected format.
+// The expected format is <FeatureName>=<Enabled>.
+func validateCustomFeatureGates(c *types.InstallConfig) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for i, rawFeature := range c.FeatureGates {
+		featureParts := strings.Split(rawFeature, "=")
+		if len(featureParts) != 2 {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("featureGates").Index(i), rawFeature, "must match the format <feature-name>=<bool>"))
+			continue
+		}
+
+		if _, err := strconv.ParseBool(featureParts[1]); err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("featureGates").Index(i), rawFeature, "must match the format <feature-name>=<bool>, could not parse boolean value"))
 		}
 	}
 

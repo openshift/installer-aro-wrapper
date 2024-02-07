@@ -9,7 +9,8 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/identity/v3/tokens"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/attributestags"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -119,6 +120,14 @@ func TFVars(
 		}
 	}
 
+	// storageVolumeTypes is a slice where each index targets a master.
+	storageVolumeTypes := make([]string, len(masterSpecs))
+	for i := range storageVolumeTypes {
+		if masterSpecs[i].RootVolume != nil {
+			storageVolumeTypes[i] = masterSpecs[i].RootVolume.VolumeType
+		}
+	}
+
 	// Normally baseImage contains a URL that we will use to create a new Glance image, but for testing
 	// purposes we also allow to set a custom Glance image name to skip the uploading. Here we check
 	// whether baseImage is a URL or not. If this is the first case, it means that the image should be
@@ -148,10 +157,8 @@ func TFVars(
 	}
 
 	var rootVolumeSize int
-	var rootVolumeType string
 	if rootVolume := masterSpecs[0].RootVolume; rootVolume != nil {
 		rootVolumeSize = rootVolume.Size
-		rootVolumeType = rootVolume.VolumeType
 	}
 
 	masterServerGroupPolicy := getServerGroupPolicy(mastermpool, defaultmpool, types_openstack.SGPolicySoftAntiAffinity)
@@ -176,18 +183,31 @@ func TFVars(
 		additionalNetworkIDs = mastermpool.AdditionalNetworkIDs
 	}
 
-	// defaultMachinesPort carries the machinesSubnet (and its resolved
-	// network) if provided.
+	// defaultMachinesPort carries the machine subnets and the network.
 	var defaultMachinesPort *terraformPort
-	if machinesSubnet := installConfig.Config.Platform.OpenStack.MachinesSubnet; machinesSubnet != "" {
-		networkID, err := getNetworkFromSubnet(networkClient, machinesSubnet)
+	if controlPlanePort := installConfig.Config.Platform.OpenStack.ControlPlanePort; controlPlanePort != nil {
+		port, err := portTargetToTerraformPort(networkClient, *controlPlanePort)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve the given machineSubnet: %w", err)
+			return nil, fmt.Errorf("failed to resolve portTarget :%w", err)
 		}
-		defaultMachinesPort = &terraformPort{
-			NetworkID: networkID,
-			FixedIP:   []terraformFixedIP{{SubnetID: machinesSubnet}},
+		defaultMachinesPort = &port
+		// tagging the API port if pre-created by the user.
+		if apiVIPS := installConfig.Config.OpenStack.APIVIPs; len(apiVIPS) > 0 {
+			// Assuming the API VIPs addresses are on the same Port
+			err = tagVIPsPort(cloud, clusterID.InfraID, apiVIPS[0], port.NetworkID)
+			if err != nil {
+				return nil, err
+			}
 		}
+		// tagging the Ingress port if pre-created by the user.
+		if ingressVIPS := installConfig.Config.OpenStack.IngressVIPs; len(ingressVIPS) > 0 {
+			// Assuming the Ingress VIPs addresses are on the same Port
+			err = tagVIPsPort(cloud, clusterID.InfraID, ingressVIPS[0], port.NetworkID)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 	}
 
 	// machinesPorts defines the primary port for a master. A nil value
@@ -204,20 +224,6 @@ func TFVars(
 		// Terraform expects each master to get an array, empty or otherwise.
 		additionalPorts[i] = []terraformPort{}
 		machinesPorts[i] = defaultMachinesPort
-		if mastermpool != nil && len(mastermpool.FailureDomains) > 0 {
-			failureDomain := &mastermpool.FailureDomains[i%len(mastermpool.FailureDomains)]
-			for j := range failureDomain.PortTargets {
-				terraformPort, err := portTargetToTerraformPort(networkClient, failureDomain.PortTargets[j].PortTarget)
-				if err != nil {
-					return nil, fmt.Errorf("failed to resolve portTarget %q of master %d :%w", failureDomain.PortTargets[j].ID, i, err)
-				}
-				if failureDomain.PortTargets[j].ID == "control-plane" {
-					machinesPorts[i] = &terraformPort
-				} else {
-					additionalPorts[i] = append(additionalPorts[i], terraformPort)
-				}
-			}
-		}
 	}
 
 	var additionalSecurityGroupIDs []string
@@ -232,12 +238,11 @@ func TFVars(
 		FlavorName                        string                            `json:"openstack_master_flavor_name,omitempty"`
 		APIFloatingIP                     string                            `json:"openstack_api_floating_ip,omitempty"`
 		IngressFloatingIP                 string                            `json:"openstack_ingress_floating_ip,omitempty"`
-		APIVIP                            string                            `json:"openstack_api_int_ip,omitempty"`
-		IngressVIP                        string                            `json:"openstack_ingress_ip,omitempty"`
+		APIVIPs                           []string                          `json:"openstack_api_int_ips,omitempty"`
+		IngressVIPs                       []string                          `json:"openstack_ingress_ips,omitempty"`
 		TrunkSupport                      bool                              `json:"openstack_trunk_support,omitempty"`
 		OctaviaSupport                    bool                              `json:"openstack_octavia_support,omitempty"`
 		RootVolumeSize                    int                               `json:"openstack_master_root_volume_size,omitempty"`
-		RootVolumeType                    string                            `json:"openstack_master_root_volume_type,omitempty"`
 		BootstrapShim                     string                            `json:"openstack_bootstrap_shim_ignition,omitempty"`
 		ExternalDNS                       []string                          `json:"openstack_external_dns,omitempty"`
 		MasterServerGroupName             string                            `json:"openstack_master_server_group_name,omitempty"`
@@ -251,6 +256,7 @@ func TFVars(
 		MachinesPorts                     []*terraformPort                  `json:"openstack_machines_ports"`
 		MasterAvailabilityZones           []string                          `json:"openstack_master_availability_zones,omitempty"`
 		MasterRootVolumeAvailabilityZones []string                          `json:"openstack_master_root_volume_availability_zones,omitempty"`
+		MasterRootVolumeTypes             []string                          `json:"openstack_master_root_volume_types,omitempty"`
 		UserManagedLoadBalancer           bool                              `json:"openstack_user_managed_load_balancer"`
 	}{
 		BaseImageName:                     imageName,
@@ -259,12 +265,11 @@ func TFVars(
 		FlavorName:                        masterSpecs[0].Flavor,
 		APIFloatingIP:                     installConfig.Config.Platform.OpenStack.APIFloatingIP,
 		IngressFloatingIP:                 installConfig.Config.Platform.OpenStack.IngressFloatingIP,
-		APIVIP:                            installConfig.Config.Platform.OpenStack.APIVIPs[0],
-		IngressVIP:                        installConfig.Config.Platform.OpenStack.IngressVIPs[0],
+		APIVIPs:                           installConfig.Config.Platform.OpenStack.APIVIPs,
+		IngressVIPs:                       installConfig.Config.Platform.OpenStack.IngressVIPs,
 		TrunkSupport:                      masterSpecs[0].Trunk,
 		OctaviaSupport:                    octaviaSupport,
 		RootVolumeSize:                    rootVolumeSize,
-		RootVolumeType:                    rootVolumeType,
 		BootstrapShim:                     bootstrapShim,
 		ExternalDNS:                       installConfig.Config.Platform.OpenStack.ExternalDNS,
 		MasterServerGroupName:             masterServerGroupName,
@@ -278,8 +283,47 @@ func TFVars(
 		MachinesPorts:                     machinesPorts,
 		MasterAvailabilityZones:           computeAvailabilityZones,
 		MasterRootVolumeAvailabilityZones: storageAvailabilityZones,
+		MasterRootVolumeTypes:             storageVolumeTypes,
 		UserManagedLoadBalancer:           userManagedLoadBalancer,
 	}, "", "  ")
+}
+
+// tagVIPsPort tags a provided Port to allow detach of security group when destroying the cluster.
+func tagVIPsPort(cloud, infraID, portIP, networkID string) error {
+	opts := &clientconfig.ClientOpts{
+		Cloud: cloud,
+	}
+
+	networkClient, err := clientconfig.NewServiceClient("network", opts)
+	if err != nil {
+		return err
+	}
+
+	listOpts := ports.ListOpts{
+		NetworkID: networkID,
+		FixedIPs:  []ports.FixedIPOpts{{IPAddress: portIP}},
+	}
+
+	allPagesPort, err := ports.List(networkClient, listOpts).AllPages()
+	if err != nil {
+		return err
+	}
+
+	allPorts, err := ports.ExtractPorts(allPagesPort)
+	if err != nil {
+		return err
+	}
+
+	if len(allPorts) > 1 {
+		return fmt.Errorf("found multiple ports matching network ID %s and Port IP %s, cannot proceed", networkID, portIP)
+	} else if len(allPorts) == 1 {
+		tag := infraID + openstackdefaults.DualStackVIPsPortTag
+		err = attributestags.Add(networkClient, "ports", allPorts[0].ID, tag).ExtractErr()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // getServiceCatalog fetches OpenStack service catalog with service endpoints
@@ -301,16 +345,6 @@ func getServiceCatalog(cloud string) (*tokens.ServiceCatalog, error) {
 	}
 
 	return serviceCatalog, nil
-}
-
-// getNetworkFromSubnet looks up a subnet in openstack and returns the ID of the network it's a part of
-func getNetworkFromSubnet(networkClient *gophercloud.ServiceClient, subnetID string) (string, error) {
-	subnet, err := subnets.Get(networkClient, subnetID).Extract()
-	if err != nil {
-		return "", err
-	}
-
-	return subnet.NetworkID, nil
 }
 
 func isOctaviaSupported(serviceCatalog *tokens.ServiceCatalog) (bool, error) {

@@ -11,6 +11,144 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.5.0] - 2023-11-08
+
+### Added
+
+- Added request information methods to reduce the amount of generated code.
+
+## [1.4.0] - 2023-11-01
+
+### Added
+
+- Added serialization helpers. [microsoft/kiota#3406](https://github.com/microsoft/kiota/issues/3406)
+
+## [1.3.1] - 2023-10-31
+
+### Changed
+
+- Fixed an issue where query parameters of type array of anything else than string would not be expanded properly. [#114](https://github.com/microsoft/kiota-abstractions-go/issues/114)
+
+## [1.3.0] - 2023-10-12
+
+### Added
+
+- Added an overload method to set binary content with their content type.
+
+## [1.2.3] - 2023-10-05
+
+### Added
+
+- A tryAdd method to RequestHeaders
+
+## [1.2.2] - 2023-09-21
+
+### Changed
+
+- Switched the RFC 6570 implementation to std-uritemplate
+
+## [1.2.1] - 2023-09-06
+
+### Changed
+
+- Fixed a bug where serialization registries would always replace existing values. [#95](https://github.com/microsoft/kiota-abstractions-go/issues/95)
+
+## [1.2.0] - 2023-07-26
+
+### Added
+
+- Added support for multipart request body.
+
+## [1.1.0] - 2023-05-04
+
+### Added
+
+- Added an interface to represent composed types.
+
+## [1.0.0] - 2023-05-04
+
+### Changed
+
+- GA Release.
+
+## [0.20.0] - 2023-04-12
+
+### Added
+
+- Adds response headers to Api Error class
+
+### Changed
+
+## [0.19.1] - 2023-04-12
+
+### Added
+
+### Changed
+
+- Fixes concurrent map write panics when enabling backing stores.
+
+## [0.19.0] - 2023-03-22
+
+### Added
+
+- Adds base request builder class to reduce generated code duplication.
+
+## [0.18.0] - 2023-03-20
+
+### Added
+
+- Adds utility functions `CopyMap` and `CopyStringMap` that returns a copy of the passed map.
+
+## [0.17.3] - 2023-03-15
+
+### Changed
+
+- Fixes panic when updating in-memory slices, maps or structs .
+
+## [0.17.2] - 2023-03-01
+
+### Added
+
+- Adds ResponseStatusCode field in ApiError struct.
+
+## [0.17.1] - 2023-01-28
+
+### Added
+
+- Adds a type qualifier for backing store instance type to be `BackingStoreFactory`.
+
+### Changed
+
+## [0.17.0] - 2023-01-23
+
+### Added
+
+- Added support for backing store.
+
+## [0.16.0] - 2023-01-10
+
+### Added
+
+- Added a method to convert abstract requests to native requests in the request adapter interface.
+
+## [0.15.2] - 2023-01-09
+
+### Changed
+
+- Fix bug where empty string query parameters are added to the request.
+
+## [0.15.1] - 2022-12-15
+
+### Changed
+
+- Fix bug preventing adding authentication key to header requests.
+
+## [0.15.0] - 2022-12-15
+
+### Added
+
+- Added support for multi-valued request headers.
+
 ## [0.14.0] - 2022-10-28
 
 ### Changed

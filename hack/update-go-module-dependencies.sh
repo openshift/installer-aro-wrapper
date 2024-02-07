@@ -25,6 +25,9 @@
 # we also must take care of replacing modules such as sigs.k8s.io/cluster-api-provider-azure
 # with github.com/openshift/cluster-api-provider-azure (just an example, there are more).
 
+RELEASE=release-4.14
+GO_VERSION=1.20
+
 for x in vendor/github.com/openshift/*; do
 	case $x in
 		# Review the list of special cases on each release.
@@ -35,12 +38,6 @@ for x in vendor/github.com/openshift/*; do
 
 		# Replace the installer with our own fork below in this script.
 		vendor/github.com/openshift/installer)
-			;;
-
-		# Inconsistent imports: some of our dependencies import it as github.com/metal3-io/cluster-api-provider-baremetal
-		# but in some places directly from the openshift fork.
-		# Replace github.com/metal3-io/cluster-api-provider-baremetal with an openshift fork in go.mod
-		vendor/github.com/openshift/cluster-api-provider-baremetal)
 			;;
 
 		# It is only used indirectly and intermediate dependencies pin to different incompatible commits.
@@ -54,34 +51,23 @@ for x in vendor/github.com/openshift/*; do
 		vendor/github.com/openshift/custom-resource-status)
 			;;
 
-		vendor/github.com/openshift/assisted-service)
-			;;
-
-		vendor/github.com/openshift/cluster-api | vendor/github.com/openshift/cluster-api-provider-ibmcloud)
-			go mod edit -replace sigs.k8s.io/${x##vendor/github.com/openshift/}=$(go list -mod=mod -m ${x##vendor/}@release-4.13 | sed -e 's/ /@/')
-			;;
-
 		*)
-			go mod edit -replace ${x##vendor/}=$(go list -mod=mod -m ${x##vendor/}@release-4.13 | sed -e 's/ /@/')
+			go mod edit -replace "${x##vendor/}"="$(go list -mod=mod -m ${x##vendor/}@$RELEASE | sed -e 's/ /@/')"
 			;;
 	esac
 done
 
-for x in aws azure openstack; do
-	case $x in
-		# module name has been changed from sigs.k8s.io/cluster-api-provider-aws to -> sigs.k8s.io/cluster-api-provider-aws/v2
-		aws)
-			go mod edit -replace sigs.k8s.io/cluster-api-provider-$x/v2=$(go list -mod=mod -m github.com/openshift/cluster-api-provider-$x/v2@release-4.13 | sed -e 's/ /@/')
-			;;
-		*)
-			go mod edit -replace sigs.k8s.io/cluster-api-provider-$x=$(go list -mod=mod -m github.com/openshift/cluster-api-provider-$x@release-4.13 | sed -e 's/ /@/')
-			;;
-	esac
+for x in aws/v2 azure openstack; do
+	go mod edit -replace sigs.k8s.io/cluster-api-provider-$x="$(go list -mod=mod -m github.com/openshift/cluster-api-provider-$x@$RELEASE | sed -e 's/ /@/')"
 done
 
-go mod edit -replace github.com/openshift/installer=$(go list -mod=mod -m github.com/jewzaam/installer-aro@release-4.13-azure | sed -e 's/ /@/')
+for x in baremetal-operator baremetal-operator/apis baremetal-operator/pkg/hardwareutils cluster-api-provider-baremetal cluster-api-provider-metal3 cluster-api-provider-metal3/api; do
+  go mod edit -replace github.com/metal3-io/$x="$(go list -mod=mod -m github.com/openshift/$x@$RELEASE | sed -e 's/ /@/')"
+done
+
+go mod edit -replace github.com/openshift/installer="$(go list -mod=mod -m github.com/openshift/installer-aro@$RELEASE-azure | sed -e 's/ /@/')"
 
 go get ./...
 
-go mod tidy -compat=1.19
+go mod tidy -compat=$GO_VERSION
 go mod vendor

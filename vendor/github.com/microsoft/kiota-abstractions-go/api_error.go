@@ -4,7 +4,9 @@ import "fmt"
 
 // ApiError is the parent type for errors thrown by the client when receiving failed responses to its requests
 type ApiError struct {
-	Message string
+	Message            string
+	ResponseStatusCode int
+	ResponseHeaders    *ResponseHeaders
 }
 
 func (e *ApiError) Error() string {
@@ -17,5 +19,5 @@ func (e *ApiError) Error() string {
 
 // NewApiError creates a new ApiError instance
 func NewApiError() *ApiError {
-	return &ApiError{}
+	return &ApiError{ResponseHeaders: NewResponseHeaders()}
 }

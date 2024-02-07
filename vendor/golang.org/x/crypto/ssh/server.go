@@ -213,7 +213,6 @@ func NewServerConn(c net.Conn, config *ServerConfig) (*ServerConn, <-chan NewCha
 	} else {
 		for _, algo := range fullConf.PublicKeyAuthAlgorithms {
 			if !contains(supportedPubKeyAuthAlgos, algo) {
-				c.Close()
 				return nil, nil, nil, fmt.Errorf("ssh: unsupported public key authentication algorithm %s", algo)
 			}
 		}
@@ -221,7 +220,6 @@ func NewServerConn(c net.Conn, config *ServerConfig) (*ServerConn, <-chan NewCha
 	// Check if the config contains any unsupported key exchanges
 	for _, kex := range fullConf.KeyExchanges {
 		if _, ok := serverForbiddenKexAlgos[kex]; ok {
-			c.Close()
 			return nil, nil, nil, fmt.Errorf("ssh: unsupported key exchange %s for server", kex)
 		}
 	}
@@ -339,7 +337,7 @@ func checkSourceAddress(addr net.Addr, sourceAddrs string) error {
 	return fmt.Errorf("ssh: remote address %v is not allowed because of source-address restriction", addr)
 }
 
-func gssExchangeToken(gssapiConfig *GSSAPIWithMICConfig, token []byte, s *connection,
+func gssExchangeToken(gssapiConfig *GSSAPIWithMICConfig, firstToken []byte, s *connection,
 	sessionID []byte, userAuthReq userAuthRequestMsg) (authErr error, perms *Permissions, err error) {
 	gssAPIServer := gssapiConfig.Server
 	defer gssAPIServer.DeleteSecContext()
@@ -349,7 +347,7 @@ func gssExchangeToken(gssapiConfig *GSSAPIWithMICConfig, token []byte, s *connec
 			outToken     []byte
 			needContinue bool
 		)
-		outToken, srcName, needContinue, err = gssAPIServer.AcceptSecContext(token)
+		outToken, srcName, needContinue, err = gssAPIServer.AcceptSecContext(firstToken)
 		if err != nil {
 			return err, nil, nil
 		}
@@ -371,7 +369,6 @@ func gssExchangeToken(gssapiConfig *GSSAPIWithMICConfig, token []byte, s *connec
 		if err := Unmarshal(packet, userAuthGSSAPITokenReq); err != nil {
 			return nil, nil, err
 		}
-		token = userAuthGSSAPITokenReq.Token
 	}
 	packet, err := s.transport.readPacket()
 	if err != nil {

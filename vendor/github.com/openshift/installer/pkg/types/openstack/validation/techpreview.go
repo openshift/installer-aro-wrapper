@@ -14,12 +14,8 @@ func FilledInTechPreviewFields(installConfig *types.InstallConfig) (fields []*fi
 		return nil
 	}
 
-	if installConfig.OpenStack.LoadBalancer != nil {
-		fields = append(fields, field.NewPath("platform", "openstack", "loadBalancer"))
-	}
-
-	if installConfig.ControlPlane != nil && installConfig.ControlPlane.Platform.OpenStack != nil && len(installConfig.ControlPlane.Platform.OpenStack.FailureDomains) > 0 {
-		fields = append(fields, field.NewPath("controlPlane", "platform", "openstack", "failureDomains"))
+	if installConfig.OpenStack.ControlPlanePort != nil && installConfig.OpenStack.DeprecatedMachinesSubnet == "" {
+		fields = append(fields, field.NewPath("platform", "openstack", "controlPlanePort"))
 	}
 
 	return fields

@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	s "github.com/microsoft/kiota-abstractions-go/serialization"
-	t "github.com/yosida95/uritemplate/v3"
+	stduritemplate "github.com/std-uritemplate/std-uritemplate/go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -25,9 +25,11 @@ type RequestInformation struct {
 	Method HttpMethod
 	uri    *u.URL
 	// The Request Headers.
-	Headers map[string]string
+	Headers *RequestHeaders
 	// The Query Parameters of the request.
-	QueryParameters map[string]string
+	// Deprecated: use QueryParametersAny instead
+	QueryParameters    map[string]string
+	QueryParametersAny map[string]any
 	// The Request Body.
 	Content []byte
 	// The path parameters to use for the URL template when generating the URI.
@@ -42,11 +44,34 @@ const raw_url_key = "request-raw-url"
 // NewRequestInformation creates a new RequestInformation object with default values.
 func NewRequestInformation() *RequestInformation {
 	return &RequestInformation{
-		Headers:         make(map[string]string),
-		QueryParameters: make(map[string]string),
-		options:         make(map[string]RequestOption),
-		PathParameters:  make(map[string]string),
+		Headers:            NewRequestHeaders(),
+		QueryParameters:    make(map[string]string),
+		QueryParametersAny: make(map[string]any),
+		options:            make(map[string]RequestOption),
+		PathParameters:     make(map[string]string),
 	}
+}
+
+// NewRequestInformationWithMethodAndUrlTemplateAndPathParameters creates a new RequestInformation object with the specified method and URL template and path parameters.
+func NewRequestInformationWithMethodAndUrlTemplateAndPathParameters(method HttpMethod, urlTemplate string, pathParameters map[string]string) *RequestInformation {
+	value := NewRequestInformation()
+	value.Method = method
+	value.UrlTemplate = urlTemplate
+	value.PathParameters = pathParameters
+	return value
+}
+func ConfigureRequestInformation[T any](request *RequestInformation, config *RequestConfiguration[T]) {
+	if request == nil {
+		return
+	}
+	if config == nil {
+		return
+	}
+	if config.QueryParameters != nil {
+		request.AddQueryParameters(*(config.QueryParameters))
+	}
+	request.Headers.AddAll(config.Headers)
+	request.AddRequestOptions(config.Options)
 }
 
 // GetUri returns the URI of the request.
@@ -58,6 +83,8 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 	} else if request.PathParameters == nil {
 		return nil, errors.New("uri template parameters cannot be nil")
 	} else if request.QueryParameters == nil {
+		return nil, errors.New("uri query parameters cannot be nil")
+	} else if request.QueryParametersAny == nil {
 		return nil, errors.New("uri query parameters cannot be nil")
 	} else if request.PathParameters[raw_url_key] != "" {
 		uri, err := u.Parse(request.PathParameters[raw_url_key])
@@ -72,38 +99,22 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 			return nil, errors.New("pathParameters must contain a value for \"baseurl\" for the url to be built")
 		}
 
-		uriTemplate, err := t.New(request.UrlTemplate)
-		if err != nil {
-			return nil, err
-		}
-		values := t.Values{}
-		varNames := uriTemplate.Varnames()
-		normalizedNames := make(map[string]string)
-		for _, varName := range varNames {
-			normalizedNames[strings.ToLower(varName)] = varName
-		}
+		substitutions := make(map[string]any)
 		for key, value := range request.PathParameters {
-			addParameterWithOriginalName(key, value, normalizedNames, values)
+			substitutions[key] = value
 		}
 		for key, value := range request.QueryParameters {
-			addParameterWithOriginalName(key, value, normalizedNames, values)
+			substitutions[key] = value
 		}
-		url, err := uriTemplate.Expand(values)
+		for key, value := range request.QueryParametersAny {
+			substitutions[key] = value
+		}
+		url, err := stduritemplate.Expand(request.UrlTemplate, substitutions)
 		if err != nil {
 			return nil, err
 		}
 		uri, err := u.Parse(url)
 		return uri, err
-	}
-}
-
-// addParameterWithOriginalName adds the URI template parameter to the template using the right casing, because of go conventions, casing might have changed for the generated property
-func addParameterWithOriginalName(key string, value string, normalizedNames map[string]string, values t.Values) {
-	lowercaseKey := strings.ToLower(key)
-	if paramName, ok := normalizedNames[lowercaseKey]; ok {
-		values.Set(paramName, t.String(value))
-	} else {
-		values.Set(key, t.String(value))
 	}
 }
 
@@ -115,6 +126,9 @@ func (request *RequestInformation) SetUri(url u.URL) {
 	}
 	for k := range request.QueryParameters {
 		delete(request.QueryParameters, k)
+	}
+	for k := range request.QueryParametersAny {
+		delete(request.QueryParametersAny, k)
 	}
 }
 
@@ -149,9 +163,17 @@ const contentTypeHeader = "Content-Type"
 const binaryContentType = "application/octet-steam"
 
 // SetStreamContent sets the request body to a binary stream.
+// Deprecated: Use SetStreamContentAndContentType instead.
 func (request *RequestInformation) SetStreamContent(content []byte) {
+	request.SetStreamContentAndContentType(content, binaryContentType)
+}
+
+// SetStreamContentAndContentType sets the request body to a binary stream with the specified content type.
+func (request *RequestInformation) SetStreamContentAndContentType(content []byte, contentType string) {
 	request.Content = content
-	request.Headers[contentTypeHeader] = binaryContentType
+	if request.Headers != nil {
+		request.Headers.Add(contentTypeHeader, contentType)
+	}
 }
 
 func (request *RequestInformation) setContentAndContentType(writer s.SerializationWriter, contentType string) error {
@@ -162,7 +184,9 @@ func (request *RequestInformation) setContentAndContentType(writer s.Serializati
 		return errors.New("content cannot be nil")
 	}
 	request.Content = content
-	request.Headers[contentTypeHeader] = contentType
+	if request.Headers != nil {
+		request.Headers.TryAdd(contentTypeHeader, contentType)
+	}
 	return nil
 }
 
@@ -207,6 +231,10 @@ func (request *RequestInformation) SetContentFromParsable(ctx context.Context, r
 		return err
 	}
 	defer writer.Close()
+	if multipartBody, ok := item.(MultipartBody); ok {
+		contentType += "; boundary=" + multipartBody.GetBoundary()
+		multipartBody.SetRequestAdapter(requestAdapter)
+	}
 	request.setRequestType(item, span)
 	err = writer.WriteObjectValue("", item)
 	if err != nil {
@@ -439,7 +467,7 @@ func (request *RequestInformation) SetContentFromScalarCollection(ctx context.Co
 }
 
 // AddQueryParameters adds the query parameters to the request by reading the properties from the provided object.
-func (request *RequestInformation) AddQueryParameters(source interface{}) {
+func (request *RequestInformation) AddQueryParameters(source any) {
 	if source == nil || request == nil {
 		return
 	}
@@ -459,7 +487,7 @@ func (request *RequestInformation) AddQueryParameters(source interface{}) {
 			continue
 		}
 		str, ok := value.(*string)
-		if ok && str != nil {
+		if ok && str != nil && *str != "" {
 			request.QueryParameters[fieldName] = *str
 		}
 		bl, ok := value.(*bool)
@@ -470,22 +498,20 @@ func (request *RequestInformation) AddQueryParameters(source interface{}) {
 		if ok && it != nil {
 			request.QueryParameters[fieldName] = strconv.FormatInt(int64(*it), 10)
 		}
-		arr, ok := value.([]string)
-		if ok && len(arr) > 0 {
-			request.QueryParameters[fieldName] = strings.Join(arr, ",")
-		}
-	}
-}
+		strArr, ok := value.([]string)
+		if ok && len(strArr) > 0 {
+			// populating both query parameter fields to avoid breaking compatibility with code reading this field
+			request.QueryParameters[fieldName] = strings.Join(strArr, ",")
 
-// AddRequestHeaders adds request headers to the request.
-func (request *RequestInformation) AddRequestHeaders(headersToAdd map[string]string) {
-	if len(headersToAdd) == 0 {
-		return
-	}
-	if len(request.Headers) == 0 {
-		request.Headers = make(map[string]string, len(headersToAdd))
-	}
-	for key, value := range headersToAdd {
-		request.Headers[key] = value
+			tmp := make([]any, len(strArr))
+			for i, v := range strArr {
+				tmp[i] = v
+			}
+			request.QueryParametersAny[fieldName] = tmp
+		}
+		arr, ok := value.([]any)
+		if ok && len(arr) > 0 {
+			request.QueryParametersAny[fieldName] = arr
+		}
 	}
 }

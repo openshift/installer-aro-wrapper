@@ -53,8 +53,6 @@ var (
 	commonEnabledServices = []string{
 		"progress.service",
 		"kubelet.service",
-		"chown-gatewayd-key.service",
-		"systemd-journal-gatewayd.socket",
 		"approve-csr.service",
 		// baremetal & openstack platform services
 		"keepalived.service",
@@ -63,6 +61,11 @@ var (
 		"master-bmh-update.service",
 		"fluentbit.service",
 		"mdsd.service",
+	}
+
+	rhcosEnabledServices = []string{
+		"chown-gatewayd-key.service",
+		"systemd-journal-gatewayd.socket",
 	}
 )
 
@@ -182,8 +185,13 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	if err := AddStorageFiles(a.Config, "/", "bootstrap/files", templateData); err != nil {
 		return err
 	}
-	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/units", templateData, commonEnabledServices); err != nil {
+	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/common/units", templateData, commonEnabledServices); err != nil {
 		return err
+	}
+	if !templateData.IsOKD {
+		if err := AddSystemdUnits(a.Config, "bootstrap/systemd/rhcos/units", templateData, rhcosEnabledServices); err != nil {
+			return err
+		}
 	}
 
 	// Check for optional platform specific files/units
@@ -266,7 +274,13 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	}
 
 	registries := []sysregistriesv2.Registry{}
-	for _, group := range MergedMirrorSets(installConfig.Config.ImageContentSources) {
+	digestMirrorSources := []types.ImageDigestSource{}
+	if len(installConfig.Config.DeprecatedImageContentSources) > 0 {
+		digestMirrorSources = ContentSourceToDigestMirror(installConfig.Config.DeprecatedImageContentSources)
+	} else if len(installConfig.Config.ImageDigestSources) > 0 {
+		digestMirrorSources = append(digestMirrorSources, installConfig.Config.ImageDigestSources...)
+	}
+	for _, group := range MergedMirrorSets(digestMirrorSources) {
 		if len(group.Mirrors) == 0 {
 			continue
 		}

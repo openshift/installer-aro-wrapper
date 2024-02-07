@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync/atomic"
@@ -37,7 +37,7 @@ type ImageWriter struct {
 // NewWriter creates a new ImageWrite and initializes its temporary staging dir.
 // Cleanup should be called after the ImageWriter is no longer needed.
 func NewWriter() (*ImageWriter, error) {
-	tmp, err := ioutil.TempDir("", "")
+	tmp, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,25 @@ func (iw *ImageWriter) AddFile(data io.Reader, filePath string) error {
 	return err
 }
 
+func failIfSymlink(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+
+	if info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("%q is a symlink - these are not yet supported", path)
+	}
+
+	return nil
+}
+
 // AddLocalFile adds a file identified by its path to the ImageWriter's staging area.
 func (iw *ImageWriter) AddLocalFile(origin, target string) error {
+	if err := failIfSymlink(origin); err != nil {
+		return err
+	}
+
 	directoryPath, fileName := manglePath(target)
 
 	if err := os.MkdirAll(path.Join(iw.stagingDir, directoryPath), 0755); err != nil {
@@ -107,7 +124,45 @@ func (iw *ImageWriter) AddLocalFile(origin, target string) error {
 	return iw.AddFile(f, target)
 }
 
+func ensureIsDirectory(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	fileinfo, err := f.Stat()
+	if err != nil {
+		return err
+	}
+
+	if !fileinfo.IsDir() {
+		return fmt.Errorf("%q is not a directory", path)
+	}
+
+	return nil
+}
+
+// AddLocalDirectory adds a directory recursively to the ImageWriter's staging area.
+func (iw *ImageWriter) AddLocalDirectory(origin, target string) error {
+	if err := ensureIsDirectory(origin); err != nil {
+		return err
+	}
+
+	walkfn := func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		relPath := path[len(origin):] // We need the path to be relative to the origin.
+		return iw.AddLocalFile(path, filepath.Join(target, relPath))
+	}
+
+	return filepath.Walk(origin, walkfn)
+}
+
 func manglePath(input string) (string, string) {
+	input = posixifyPath(input)
+
 	nonEmptySegments := splitPath(input)
 
 	dirSegments := nonEmptySegments[:len(nonEmptySegments)-1]
@@ -119,6 +174,18 @@ func manglePath(input string) (string, string) {
 	name = mangleFileName(name)
 
 	return path.Join(dirSegments...), name
+}
+
+// Converts given path to Posix (replacing \ with /)
+//
+// @param {string} givenPath Path to convert
+//
+// @returns {string} Converted filepath
+func posixifyPath(path string) string {
+	if runtime.GOOS == "windows" {
+		return strings.ReplaceAll(path, "\\", "/")
+	}
+	return path
 }
 
 func splitPath(input string) []string {
@@ -189,7 +256,7 @@ func mangleD1String(input string, maxCharacters int) string {
 // calculateDirChildrenSectors calculates the total mashalled size of all DirectoryEntries
 // within a directory. The size of each entry depends of the length of the filename.
 func calculateDirChildrenSectors(path string) (uint32, error) {
-	contents, err := ioutil.ReadDir(path)
+	contents, err := os.ReadDir(path)
 	if err != nil {
 		return 0, err
 	}
@@ -245,7 +312,7 @@ func (wc *writeContext) createDEForRoot() (*DirectoryEntry, error) {
 	de := &DirectoryEntry{
 		ExtendedAtributeRecordLength: 0,
 		ExtentLocation:               int32(extentLocation),
-		ExtentLength:                 int32(extentLengthInSectors * sectorSize),
+		ExtentLength:                 uint32(extentLengthInSectors * sectorSize),
 		RecordingDateTime:            wc.timestamp,
 		FileFlags:                    dirFlagDir,
 		FileUnitSize:                 0, // 0 for non-interleaved write
@@ -269,7 +336,7 @@ type itemToWrite struct {
 // scanDirectory reads the directory's contents and adds them to the queue, as well as stores all their DirectoryEntries in the item,
 // because we'll need them to write this item's descriptor.
 func (wc *writeContext) scanDirectory(item *itemToWrite, dirPath string, ownEntry *DirectoryEntry, parentEntery *DirectoryEntry, targetSector uint32) (*list.List, error) {
-	contents, err := ioutil.ReadDir(dirPath)
+	contents, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
@@ -290,10 +357,14 @@ func (wc *writeContext) scanDirectory(item *itemToWrite, dirPath string, ownEntr
 			fileFlags = dirFlagDir
 			extentLength = extentLengthInSectors * sectorSize
 		} else {
-			if c.Size() > int64(math.MaxUint32) {
+			fileinfo, err := c.Info()
+			if err != nil {
+				return nil, err
+			}
+			if fileinfo.Size() > int64(math.MaxUint32) {
 				return nil, ErrFileTooLarge
 			}
-			extentLength = uint32(c.Size())
+			extentLength = uint32(fileinfo.Size())
 			extentLengthInSectors = fileLengthToSectors(extentLength)
 
 			fileFlags = 0
@@ -303,7 +374,7 @@ func (wc *writeContext) scanDirectory(item *itemToWrite, dirPath string, ownEntr
 		de := &DirectoryEntry{
 			ExtendedAtributeRecordLength: 0,
 			ExtentLocation:               int32(extentLocation),
-			ExtentLength:                 int32(extentLength),
+			ExtentLength:                 uint32(extentLength),
 			RecordingDateTime:            wc.timestamp,
 			FileFlags:                    fileFlags,
 			FileUnitSize:                 0, // 0 for non-interleaved write
@@ -487,9 +558,6 @@ func writeAll(w io.Writer, itemsToWrite *list.List) error {
 
 // WriteTo writes the image to the given WriterAt
 func (iw *ImageWriter) WriteTo(w io.Writer, volumeIdentifier string) error {
-	buffer := make([]byte, sectorSize)
-	var err error
-
 	now := time.Now()
 
 	wc := writeContext{
@@ -567,7 +635,8 @@ func (iw *ImageWriter) WriteTo(w io.Writer, volumeIdentifier string) error {
 		}
 	}
 
-	if buffer, err = pvd.MarshalBinary(); err != nil {
+	buffer, err := pvd.MarshalBinary()
+	if err != nil {
 		return err
 	}
 	if _, err = w.Write(buffer); err != nil {
