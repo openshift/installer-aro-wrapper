@@ -9,19 +9,20 @@ import (
 	"os"
 	"path/filepath"
 
-	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
-	"github.com/openshift/assisted-service/models"
-	"github.com/openshift/assisted-service/pkg/staticnetworkconfig"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	k8syaml "sigs.k8s.io/yaml"
 
+	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
+	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
 	"github.com/openshift/installer/pkg/asset/agent/agentconfig"
-	k8syaml "sigs.k8s.io/yaml"
+	"github.com/openshift/installer/pkg/asset/agent/manifests/staticnetworkconfig"
+	"github.com/openshift/installer/pkg/types"
 )
 
 var (
@@ -82,6 +83,10 @@ func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
 		if len(agentConfig.Config.Hosts) == 0 {
 			return nil
 		}
+		if err := validateHostCount(installConfig.Config, agentConfig); err != nil {
+			return err
+		}
+
 		for i, host := range agentConfig.Config.Hosts {
 			if host.NetworkConfig.Raw != nil {
 				isNetworkConfigAvailable = true
@@ -200,7 +205,6 @@ func (n *NMStateConfig) finish() error {
 }
 
 func (n *NMStateConfig) validateWithNMStateCtl() error {
-
 	level := logrus.GetLevel()
 	logrus.SetLevel(logrus.WarnLevel)
 	staticNetworkConfigGenerator := staticnetworkconfig.New(logrus.WithField("pkg", "manifests"), staticnetworkconfig.Config{MaxConcurrentGenerations: 2})
@@ -336,4 +340,47 @@ func buildMacInterfaceMap(nmStateConfig aiv1beta1.NMStateConfig) models.MacInter
 		})
 	}
 	return macInterfaceMap
+}
+
+func validateHostCount(installConfig *types.InstallConfig, agentConfig *agentconfig.AgentConfig) error {
+	numRequiredMasters, numRequiredWorkers := agent.GetReplicaCount(installConfig)
+
+	numMasters := int64(0)
+	numWorkers := int64(0)
+	// Check for hosts explicitly defined
+	for _, host := range agentConfig.Config.Hosts {
+		switch host.Role {
+		case "master":
+			numMasters++
+		case "worker":
+			numWorkers++
+		}
+	}
+
+	// If role is not defined it will first be assigned as a master
+	for _, host := range agentConfig.Config.Hosts {
+		if host.Role == "" {
+			if numMasters < numRequiredMasters {
+				numMasters++
+			} else {
+				numWorkers++
+			}
+		}
+	}
+
+	if numMasters != 0 && numMasters < numRequiredMasters {
+		logrus.Warnf("not enough master hosts defined (%v) to support all the configured ControlPlane replicas (%v)", numMasters, numRequiredMasters)
+	}
+	if numMasters > numRequiredMasters {
+		return fmt.Errorf("the number of master hosts defined (%v) exceeds the configured ControlPlane replicas (%v)", numMasters, numRequiredMasters)
+	}
+
+	if numWorkers != 0 && numWorkers < numRequiredWorkers {
+		logrus.Warnf("not enough worker hosts defined (%v) to support all the configured Compute replicas (%v)", numWorkers, numRequiredWorkers)
+	}
+	if numWorkers > numRequiredWorkers {
+		return fmt.Errorf("the number of worker hosts defined (%v) exceeds the configured Compute replicas (%v)", numWorkers, numRequiredWorkers)
+	}
+
+	return nil
 }

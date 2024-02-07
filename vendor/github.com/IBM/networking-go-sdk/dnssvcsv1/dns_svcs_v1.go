@@ -1,5 +1,5 @@
 /**
- * (C) Copyright IBM Corp. 2021.
+ * (C) Copyright IBM Corp. 2023.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /*
- * IBM OpenAPI SDK Code Generator Version: 3.38.0-07189efd-20210827-205025
+ * IBM OpenAPI SDK Code Generator Version: 3.67.0-df2073a1-20230222-221157
  */
 
 // Package dnssvcsv1 : Operations and models for the DnsSvcsV1 service
@@ -210,6 +210,9 @@ func (dnsSvcs *DnsSvcsV1) ListDnszonesWithContext(ctx context.Context, listDnszo
 	if listDnszonesOptions.Limit != nil {
 		builder.AddQuery("limit", fmt.Sprint(*listDnszonesOptions.Limit))
 	}
+	if listDnszonesOptions.VpcID != nil {
+		builder.AddQuery("vpc_id", fmt.Sprint(*listDnszonesOptions.VpcID))
+	}
 
 	request, err := builder.Build()
 	if err != nil {
@@ -330,7 +333,7 @@ func (dnsSvcs *DnsSvcsV1) DeleteDnszoneWithContext(ctx context.Context, deleteDn
 
 	pathParamsMap := map[string]string{
 		"instance_id": *deleteDnszoneOptions.InstanceID,
-		"dnszone_id":  *deleteDnszoneOptions.DnszoneID,
+		"dnszone_id": *deleteDnszoneOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.DELETE)
@@ -382,7 +385,7 @@ func (dnsSvcs *DnsSvcsV1) GetDnszoneWithContext(ctx context.Context, getDnszoneO
 
 	pathParamsMap := map[string]string{
 		"instance_id": *getDnszoneOptions.InstanceID,
-		"dnszone_id":  *getDnszoneOptions.DnszoneID,
+		"dnszone_id": *getDnszoneOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -446,7 +449,7 @@ func (dnsSvcs *DnsSvcsV1) UpdateDnszoneWithContext(ctx context.Context, updateDn
 
 	pathParamsMap := map[string]string{
 		"instance_id": *updateDnszoneOptions.InstanceID,
-		"dnszone_id":  *updateDnszoneOptions.DnszoneID,
+		"dnszone_id": *updateDnszoneOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.PATCH)
@@ -523,7 +526,7 @@ func (dnsSvcs *DnsSvcsV1) ListResourceRecordsWithContext(ctx context.Context, li
 
 	pathParamsMap := map[string]string{
 		"instance_id": *listResourceRecordsOptions.InstanceID,
-		"dnszone_id":  *listResourceRecordsOptions.DnszoneID,
+		"dnszone_id": *listResourceRecordsOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -552,6 +555,12 @@ func (dnsSvcs *DnsSvcsV1) ListResourceRecordsWithContext(ctx context.Context, li
 	}
 	if listResourceRecordsOptions.Limit != nil {
 		builder.AddQuery("limit", fmt.Sprint(*listResourceRecordsOptions.Limit))
+	}
+	if listResourceRecordsOptions.Type != nil {
+		builder.AddQuery("type", fmt.Sprint(*listResourceRecordsOptions.Type))
+	}
+	if listResourceRecordsOptions.Name != nil {
+		builder.AddQuery("name", fmt.Sprint(*listResourceRecordsOptions.Name))
 	}
 
 	request, err := builder.Build()
@@ -594,7 +603,7 @@ func (dnsSvcs *DnsSvcsV1) CreateResourceRecordWithContext(ctx context.Context, c
 
 	pathParamsMap := map[string]string{
 		"instance_id": *createResourceRecordOptions.InstanceID,
-		"dnszone_id":  *createResourceRecordOptions.DnszoneID,
+		"dnszone_id": *createResourceRecordOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.POST)
@@ -683,8 +692,8 @@ func (dnsSvcs *DnsSvcsV1) DeleteResourceRecordWithContext(ctx context.Context, d
 
 	pathParamsMap := map[string]string{
 		"instance_id": *deleteResourceRecordOptions.InstanceID,
-		"dnszone_id":  *deleteResourceRecordOptions.DnszoneID,
-		"record_id":   *deleteResourceRecordOptions.RecordID,
+		"dnszone_id": *deleteResourceRecordOptions.DnszoneID,
+		"record_id": *deleteResourceRecordOptions.RecordID,
 	}
 
 	builder := core.NewRequestBuilder(core.DELETE)
@@ -736,8 +745,8 @@ func (dnsSvcs *DnsSvcsV1) GetResourceRecordWithContext(ctx context.Context, getR
 
 	pathParamsMap := map[string]string{
 		"instance_id": *getResourceRecordOptions.InstanceID,
-		"dnszone_id":  *getResourceRecordOptions.DnszoneID,
-		"record_id":   *getResourceRecordOptions.RecordID,
+		"dnszone_id": *getResourceRecordOptions.DnszoneID,
+		"record_id": *getResourceRecordOptions.RecordID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -801,8 +810,8 @@ func (dnsSvcs *DnsSvcsV1) UpdateResourceRecordWithContext(ctx context.Context, u
 
 	pathParamsMap := map[string]string{
 		"instance_id": *updateResourceRecordOptions.InstanceID,
-		"dnszone_id":  *updateResourceRecordOptions.DnszoneID,
-		"record_id":   *updateResourceRecordOptions.RecordID,
+		"dnszone_id": *updateResourceRecordOptions.DnszoneID,
+		"record_id": *updateResourceRecordOptions.RecordID,
 	}
 
 	builder := core.NewRequestBuilder(core.PUT)
@@ -888,7 +897,7 @@ func (dnsSvcs *DnsSvcsV1) ExportResourceRecordsWithContext(ctx context.Context, 
 
 	pathParamsMap := map[string]string{
 		"instance_id": *exportResourceRecordsOptions.InstanceID,
-		"dnszone_id":  *exportResourceRecordsOptions.DnszoneID,
+		"dnszone_id": *exportResourceRecordsOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -923,7 +932,7 @@ func (dnsSvcs *DnsSvcsV1) ExportResourceRecordsWithContext(ctx context.Context, 
 }
 
 // ImportResourceRecords : Import resource records from a zone file
-// Import resource records from a zone file.
+// Import resource records from a zone file. The maximum size of a zone file is 8MB.
 func (dnsSvcs *DnsSvcsV1) ImportResourceRecords(importResourceRecordsOptions *ImportResourceRecordsOptions) (result *ImportResourceRecordsResp, response *core.DetailedResponse, err error) {
 	return dnsSvcs.ImportResourceRecordsWithContext(context.Background(), importResourceRecordsOptions)
 }
@@ -938,14 +947,14 @@ func (dnsSvcs *DnsSvcsV1) ImportResourceRecordsWithContext(ctx context.Context, 
 	if err != nil {
 		return
 	}
-	if importResourceRecordsOptions.File == nil {
-		err = fmt.Errorf("at least one of  or file must be supplied")
+	if (importResourceRecordsOptions.File == nil) {
+		err = fmt.Errorf("file must be supplied")
 		return
 	}
 
 	pathParamsMap := map[string]string{
 		"instance_id": *importResourceRecordsOptions.InstanceID,
-		"dnszone_id":  *importResourceRecordsOptions.DnszoneID,
+		"dnszone_id": *importResourceRecordsOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.POST)
@@ -1014,7 +1023,7 @@ func (dnsSvcs *DnsSvcsV1) ListPermittedNetworksWithContext(ctx context.Context, 
 
 	pathParamsMap := map[string]string{
 		"instance_id": *listPermittedNetworksOptions.InstanceID,
-		"dnszone_id":  *listPermittedNetworksOptions.DnszoneID,
+		"dnszone_id": *listPermittedNetworksOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -1038,11 +1047,8 @@ func (dnsSvcs *DnsSvcsV1) ListPermittedNetworksWithContext(ctx context.Context, 
 		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listPermittedNetworksOptions.XCorrelationID))
 	}
 
-	if listPermittedNetworksOptions.Offset != nil {
-		builder.AddQuery("offset", fmt.Sprint(*listPermittedNetworksOptions.Offset))
-	}
-	if listPermittedNetworksOptions.Limit != nil {
-		builder.AddQuery("limit", fmt.Sprint(*listPermittedNetworksOptions.Limit))
+	if listPermittedNetworksOptions.Accounts != nil {
+		builder.AddQuery("accounts", fmt.Sprint(*listPermittedNetworksOptions.Accounts))
 	}
 
 	request, err := builder.Build()
@@ -1085,7 +1091,7 @@ func (dnsSvcs *DnsSvcsV1) CreatePermittedNetworkWithContext(ctx context.Context,
 
 	pathParamsMap := map[string]string{
 		"instance_id": *createPermittedNetworkOptions.InstanceID,
-		"dnszone_id":  *createPermittedNetworkOptions.DnszoneID,
+		"dnszone_id": *createPermittedNetworkOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.POST)
@@ -1108,6 +1114,10 @@ func (dnsSvcs *DnsSvcsV1) CreatePermittedNetworkWithContext(ctx context.Context,
 	builder.AddHeader("Content-Type", "application/json")
 	if createPermittedNetworkOptions.XCorrelationID != nil {
 		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*createPermittedNetworkOptions.XCorrelationID))
+	}
+
+	if createPermittedNetworkOptions.Accounts != nil {
+		builder.AddQuery("accounts", fmt.Sprint(*createPermittedNetworkOptions.Accounts))
 	}
 
 	body := make(map[string]interface{})
@@ -1161,8 +1171,8 @@ func (dnsSvcs *DnsSvcsV1) DeletePermittedNetworkWithContext(ctx context.Context,
 	}
 
 	pathParamsMap := map[string]string{
-		"instance_id":          *deletePermittedNetworkOptions.InstanceID,
-		"dnszone_id":           *deletePermittedNetworkOptions.DnszoneID,
+		"instance_id": *deletePermittedNetworkOptions.InstanceID,
+		"dnszone_id": *deletePermittedNetworkOptions.DnszoneID,
 		"permitted_network_id": *deletePermittedNetworkOptions.PermittedNetworkID,
 	}
 
@@ -1226,8 +1236,8 @@ func (dnsSvcs *DnsSvcsV1) GetPermittedNetworkWithContext(ctx context.Context, ge
 	}
 
 	pathParamsMap := map[string]string{
-		"instance_id":          *getPermittedNetworkOptions.InstanceID,
-		"dnszone_id":           *getPermittedNetworkOptions.DnszoneID,
+		"instance_id": *getPermittedNetworkOptions.InstanceID,
+		"dnszone_id": *getPermittedNetworkOptions.DnszoneID,
 		"permitted_network_id": *getPermittedNetworkOptions.PermittedNetworkID,
 	}
 
@@ -1292,7 +1302,7 @@ func (dnsSvcs *DnsSvcsV1) ListLoadBalancersWithContext(ctx context.Context, list
 
 	pathParamsMap := map[string]string{
 		"instance_id": *listLoadBalancersOptions.InstanceID,
-		"dnszone_id":  *listLoadBalancersOptions.DnszoneID,
+		"dnszone_id": *listLoadBalancersOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -1314,6 +1324,13 @@ func (dnsSvcs *DnsSvcsV1) ListLoadBalancersWithContext(ctx context.Context, list
 	builder.AddHeader("Accept", "application/json")
 	if listLoadBalancersOptions.XCorrelationID != nil {
 		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listLoadBalancersOptions.XCorrelationID))
+	}
+
+	if listLoadBalancersOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listLoadBalancersOptions.Offset))
+	}
+	if listLoadBalancersOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listLoadBalancersOptions.Limit))
 	}
 
 	request, err := builder.Build()
@@ -1356,7 +1373,7 @@ func (dnsSvcs *DnsSvcsV1) CreateLoadBalancerWithContext(ctx context.Context, cre
 
 	pathParamsMap := map[string]string{
 		"instance_id": *createLoadBalancerOptions.InstanceID,
-		"dnszone_id":  *createLoadBalancerOptions.DnszoneID,
+		"dnszone_id": *createLoadBalancerOptions.DnszoneID,
 	}
 
 	builder := core.NewRequestBuilder(core.POST)
@@ -1448,8 +1465,8 @@ func (dnsSvcs *DnsSvcsV1) DeleteLoadBalancerWithContext(ctx context.Context, del
 
 	pathParamsMap := map[string]string{
 		"instance_id": *deleteLoadBalancerOptions.InstanceID,
-		"dnszone_id":  *deleteLoadBalancerOptions.DnszoneID,
-		"lb_id":       *deleteLoadBalancerOptions.LbID,
+		"dnszone_id": *deleteLoadBalancerOptions.DnszoneID,
+		"lb_id": *deleteLoadBalancerOptions.LbID,
 	}
 
 	builder := core.NewRequestBuilder(core.DELETE)
@@ -1501,8 +1518,8 @@ func (dnsSvcs *DnsSvcsV1) GetLoadBalancerWithContext(ctx context.Context, getLoa
 
 	pathParamsMap := map[string]string{
 		"instance_id": *getLoadBalancerOptions.InstanceID,
-		"dnszone_id":  *getLoadBalancerOptions.DnszoneID,
-		"lb_id":       *getLoadBalancerOptions.LbID,
+		"dnszone_id": *getLoadBalancerOptions.DnszoneID,
+		"lb_id": *getLoadBalancerOptions.LbID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -1566,8 +1583,8 @@ func (dnsSvcs *DnsSvcsV1) UpdateLoadBalancerWithContext(ctx context.Context, upd
 
 	pathParamsMap := map[string]string{
 		"instance_id": *updateLoadBalancerOptions.InstanceID,
-		"dnszone_id":  *updateLoadBalancerOptions.DnszoneID,
-		"lb_id":       *updateLoadBalancerOptions.LbID,
+		"dnszone_id": *updateLoadBalancerOptions.DnszoneID,
+		"lb_id": *updateLoadBalancerOptions.LbID,
 	}
 
 	builder := core.NewRequestBuilder(core.PUT)
@@ -1680,6 +1697,13 @@ func (dnsSvcs *DnsSvcsV1) ListPoolsWithContext(ctx context.Context, listPoolsOpt
 	builder.AddHeader("Accept", "application/json")
 	if listPoolsOptions.XCorrelationID != nil {
 		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listPoolsOptions.XCorrelationID))
+	}
+
+	if listPoolsOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listPoolsOptions.Offset))
+	}
+	if listPoolsOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listPoolsOptions.Limit))
 	}
 
 	request, err := builder.Build()
@@ -1819,7 +1843,7 @@ func (dnsSvcs *DnsSvcsV1) DeletePoolWithContext(ctx context.Context, deletePoolO
 
 	pathParamsMap := map[string]string{
 		"instance_id": *deletePoolOptions.InstanceID,
-		"pool_id":     *deletePoolOptions.PoolID,
+		"pool_id": *deletePoolOptions.PoolID,
 	}
 
 	builder := core.NewRequestBuilder(core.DELETE)
@@ -1871,7 +1895,7 @@ func (dnsSvcs *DnsSvcsV1) GetPoolWithContext(ctx context.Context, getPoolOptions
 
 	pathParamsMap := map[string]string{
 		"instance_id": *getPoolOptions.InstanceID,
-		"pool_id":     *getPoolOptions.PoolID,
+		"pool_id": *getPoolOptions.PoolID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -1935,7 +1959,7 @@ func (dnsSvcs *DnsSvcsV1) UpdatePoolWithContext(ctx context.Context, updatePoolO
 
 	pathParamsMap := map[string]string{
 		"instance_id": *updatePoolOptions.InstanceID,
-		"pool_id":     *updatePoolOptions.PoolID,
+		"pool_id": *updatePoolOptions.PoolID,
 	}
 
 	builder := core.NewRequestBuilder(core.PUT)
@@ -2054,6 +2078,13 @@ func (dnsSvcs *DnsSvcsV1) ListMonitorsWithContext(ctx context.Context, listMonit
 	builder.AddHeader("Accept", "application/json")
 	if listMonitorsOptions.XCorrelationID != nil {
 		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listMonitorsOptions.XCorrelationID))
+	}
+
+	if listMonitorsOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listMonitorsOptions.Offset))
+	}
+	if listMonitorsOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listMonitorsOptions.Limit))
 	}
 
 	request, err := builder.Build()
@@ -2205,7 +2236,7 @@ func (dnsSvcs *DnsSvcsV1) DeleteMonitorWithContext(ctx context.Context, deleteMo
 
 	pathParamsMap := map[string]string{
 		"instance_id": *deleteMonitorOptions.InstanceID,
-		"monitor_id":  *deleteMonitorOptions.MonitorID,
+		"monitor_id": *deleteMonitorOptions.MonitorID,
 	}
 
 	builder := core.NewRequestBuilder(core.DELETE)
@@ -2257,7 +2288,7 @@ func (dnsSvcs *DnsSvcsV1) GetMonitorWithContext(ctx context.Context, getMonitorO
 
 	pathParamsMap := map[string]string{
 		"instance_id": *getMonitorOptions.InstanceID,
-		"monitor_id":  *getMonitorOptions.MonitorID,
+		"monitor_id": *getMonitorOptions.MonitorID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -2321,7 +2352,7 @@ func (dnsSvcs *DnsSvcsV1) UpdateMonitorWithContext(ctx context.Context, updateMo
 
 	pathParamsMap := map[string]string{
 		"instance_id": *updateMonitorOptions.InstanceID,
-		"monitor_id":  *updateMonitorOptions.MonitorID,
+		"monitor_id": *updateMonitorOptions.MonitorID,
 	}
 
 	builder := core.NewRequestBuilder(core.PUT)
@@ -2670,7 +2701,7 @@ func (dnsSvcs *DnsSvcsV1) GetCustomResolverWithContext(ctx context.Context, getC
 	return
 }
 
-// UpdateCustomResolver : Update the properties of a custom resolver
+// UpdateCustomResolver : Update a custom resolver
 // Update the properties of a custom resolver.
 func (dnsSvcs *DnsSvcsV1) UpdateCustomResolver(updateCustomResolverOptions *UpdateCustomResolverOptions) (result *CustomResolver, response *core.DetailedResponse, err error) {
 	return dnsSvcs.UpdateCustomResolverWithContext(context.Background(), updateCustomResolverOptions)
@@ -2723,6 +2754,80 @@ func (dnsSvcs *DnsSvcsV1) UpdateCustomResolverWithContext(ctx context.Context, u
 	}
 	if updateCustomResolverOptions.Enabled != nil {
 		body["enabled"] = updateCustomResolverOptions.Enabled
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalCustomResolver)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// UpdateCrLocationsOrder : Update the locations order of a custom resolver
+// Update the locations order of a custom resolver.
+func (dnsSvcs *DnsSvcsV1) UpdateCrLocationsOrder(updateCrLocationsOrderOptions *UpdateCrLocationsOrderOptions) (result *CustomResolver, response *core.DetailedResponse, err error) {
+	return dnsSvcs.UpdateCrLocationsOrderWithContext(context.Background(), updateCrLocationsOrderOptions)
+}
+
+// UpdateCrLocationsOrderWithContext is an alternate form of the UpdateCrLocationsOrder method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) UpdateCrLocationsOrderWithContext(ctx context.Context, updateCrLocationsOrderOptions *UpdateCrLocationsOrderOptions) (result *CustomResolver, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(updateCrLocationsOrderOptions, "updateCrLocationsOrderOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(updateCrLocationsOrderOptions, "updateCrLocationsOrderOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *updateCrLocationsOrderOptions.InstanceID,
+		"resolver_id": *updateCrLocationsOrderOptions.ResolverID,
+	}
+
+	builder := core.NewRequestBuilder(core.PUT)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/custom_resolvers/{resolver_id}/locations_order`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range updateCrLocationsOrderOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "UpdateCrLocationsOrder")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if updateCrLocationsOrderOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*updateCrLocationsOrderOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if updateCrLocationsOrderOptions.Locations != nil {
+		body["locations"] = updateCrLocationsOrderOptions.Locations
 	}
 	_, err = builder.SetBodyContentJSON(body)
 	if err != nil {
@@ -3001,6 +3106,13 @@ func (dnsSvcs *DnsSvcsV1) ListForwardingRulesWithContext(ctx context.Context, li
 		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listForwardingRulesOptions.XCorrelationID))
 	}
 
+	if listForwardingRulesOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listForwardingRulesOptions.Offset))
+	}
+	if listForwardingRulesOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listForwardingRulesOptions.Limit))
+	}
+
 	request, err := builder.Build()
 	if err != nil {
 		return
@@ -3125,7 +3237,7 @@ func (dnsSvcs *DnsSvcsV1) DeleteForwardingRuleWithContext(ctx context.Context, d
 	pathParamsMap := map[string]string{
 		"instance_id": *deleteForwardingRuleOptions.InstanceID,
 		"resolver_id": *deleteForwardingRuleOptions.ResolverID,
-		"rule_id":     *deleteForwardingRuleOptions.RuleID,
+		"rule_id": *deleteForwardingRuleOptions.RuleID,
 	}
 
 	builder := core.NewRequestBuilder(core.DELETE)
@@ -3178,7 +3290,7 @@ func (dnsSvcs *DnsSvcsV1) GetForwardingRuleWithContext(ctx context.Context, getF
 	pathParamsMap := map[string]string{
 		"instance_id": *getForwardingRuleOptions.InstanceID,
 		"resolver_id": *getForwardingRuleOptions.ResolverID,
-		"rule_id":     *getForwardingRuleOptions.RuleID,
+		"rule_id": *getForwardingRuleOptions.RuleID,
 	}
 
 	builder := core.NewRequestBuilder(core.GET)
@@ -3223,7 +3335,7 @@ func (dnsSvcs *DnsSvcsV1) GetForwardingRuleWithContext(ctx context.Context, getF
 	return
 }
 
-// UpdateForwardingRule : Update the properties of a forwarding rule
+// UpdateForwardingRule : Update a forwarding rule
 // Update the properties of a forwarding rule on the given custom resolver.
 func (dnsSvcs *DnsSvcsV1) UpdateForwardingRule(updateForwardingRuleOptions *UpdateForwardingRuleOptions) (result *ForwardingRule, response *core.DetailedResponse, err error) {
 	return dnsSvcs.UpdateForwardingRuleWithContext(context.Background(), updateForwardingRuleOptions)
@@ -3243,7 +3355,7 @@ func (dnsSvcs *DnsSvcsV1) UpdateForwardingRuleWithContext(ctx context.Context, u
 	pathParamsMap := map[string]string{
 		"instance_id": *updateForwardingRuleOptions.InstanceID,
 		"resolver_id": *updateForwardingRuleOptions.ResolverID,
-		"rule_id":     *updateForwardingRuleOptions.RuleID,
+		"rule_id": *updateForwardingRuleOptions.RuleID,
 	}
 
 	builder := core.NewRequestBuilder(core.PATCH)
@@ -3304,13 +3416,1224 @@ func (dnsSvcs *DnsSvcsV1) UpdateForwardingRuleWithContext(ctx context.Context, u
 	return
 }
 
+// CreateSecondaryZone : Create a secondary zone
+// Create a secondary zone for the custom resolver.
+func (dnsSvcs *DnsSvcsV1) CreateSecondaryZone(createSecondaryZoneOptions *CreateSecondaryZoneOptions) (result *SecondaryZone, response *core.DetailedResponse, err error) {
+	return dnsSvcs.CreateSecondaryZoneWithContext(context.Background(), createSecondaryZoneOptions)
+}
+
+// CreateSecondaryZoneWithContext is an alternate form of the CreateSecondaryZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) CreateSecondaryZoneWithContext(ctx context.Context, createSecondaryZoneOptions *CreateSecondaryZoneOptions) (result *SecondaryZone, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(createSecondaryZoneOptions, "createSecondaryZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(createSecondaryZoneOptions, "createSecondaryZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *createSecondaryZoneOptions.InstanceID,
+		"resolver_id": *createSecondaryZoneOptions.ResolverID,
+	}
+
+	builder := core.NewRequestBuilder(core.POST)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/custom_resolvers/{resolver_id}/secondary_zones`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range createSecondaryZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "CreateSecondaryZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if createSecondaryZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*createSecondaryZoneOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if createSecondaryZoneOptions.Description != nil {
+		body["description"] = createSecondaryZoneOptions.Description
+	}
+	if createSecondaryZoneOptions.Zone != nil {
+		body["zone"] = createSecondaryZoneOptions.Zone
+	}
+	if createSecondaryZoneOptions.Enabled != nil {
+		body["enabled"] = createSecondaryZoneOptions.Enabled
+	}
+	if createSecondaryZoneOptions.TransferFrom != nil {
+		body["transfer_from"] = createSecondaryZoneOptions.TransferFrom
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalSecondaryZone)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// ListSecondaryZones : List secondary zones
+// List secondary zones for the custom resolver.
+func (dnsSvcs *DnsSvcsV1) ListSecondaryZones(listSecondaryZonesOptions *ListSecondaryZonesOptions) (result *SecondaryZoneList, response *core.DetailedResponse, err error) {
+	return dnsSvcs.ListSecondaryZonesWithContext(context.Background(), listSecondaryZonesOptions)
+}
+
+// ListSecondaryZonesWithContext is an alternate form of the ListSecondaryZones method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) ListSecondaryZonesWithContext(ctx context.Context, listSecondaryZonesOptions *ListSecondaryZonesOptions) (result *SecondaryZoneList, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(listSecondaryZonesOptions, "listSecondaryZonesOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(listSecondaryZonesOptions, "listSecondaryZonesOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *listSecondaryZonesOptions.InstanceID,
+		"resolver_id": *listSecondaryZonesOptions.ResolverID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/custom_resolvers/{resolver_id}/secondary_zones`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range listSecondaryZonesOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "ListSecondaryZones")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if listSecondaryZonesOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listSecondaryZonesOptions.XCorrelationID))
+	}
+
+	if listSecondaryZonesOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listSecondaryZonesOptions.Offset))
+	}
+	if listSecondaryZonesOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listSecondaryZonesOptions.Limit))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalSecondaryZoneList)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// GetSecondaryZone : Get a secondary zone
+// Get details of a secondary zone for the custom resolver.
+func (dnsSvcs *DnsSvcsV1) GetSecondaryZone(getSecondaryZoneOptions *GetSecondaryZoneOptions) (result *SecondaryZone, response *core.DetailedResponse, err error) {
+	return dnsSvcs.GetSecondaryZoneWithContext(context.Background(), getSecondaryZoneOptions)
+}
+
+// GetSecondaryZoneWithContext is an alternate form of the GetSecondaryZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) GetSecondaryZoneWithContext(ctx context.Context, getSecondaryZoneOptions *GetSecondaryZoneOptions) (result *SecondaryZone, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(getSecondaryZoneOptions, "getSecondaryZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(getSecondaryZoneOptions, "getSecondaryZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *getSecondaryZoneOptions.InstanceID,
+		"resolver_id": *getSecondaryZoneOptions.ResolverID,
+		"secondary_zone_id": *getSecondaryZoneOptions.SecondaryZoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/custom_resolvers/{resolver_id}/secondary_zones/{secondary_zone_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range getSecondaryZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "GetSecondaryZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if getSecondaryZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*getSecondaryZoneOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalSecondaryZone)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// UpdateSecondaryZone : Update a secondary zone
+// Update a secondary zone for the custom resolver.
+func (dnsSvcs *DnsSvcsV1) UpdateSecondaryZone(updateSecondaryZoneOptions *UpdateSecondaryZoneOptions) (result *SecondaryZone, response *core.DetailedResponse, err error) {
+	return dnsSvcs.UpdateSecondaryZoneWithContext(context.Background(), updateSecondaryZoneOptions)
+}
+
+// UpdateSecondaryZoneWithContext is an alternate form of the UpdateSecondaryZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) UpdateSecondaryZoneWithContext(ctx context.Context, updateSecondaryZoneOptions *UpdateSecondaryZoneOptions) (result *SecondaryZone, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(updateSecondaryZoneOptions, "updateSecondaryZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(updateSecondaryZoneOptions, "updateSecondaryZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *updateSecondaryZoneOptions.InstanceID,
+		"resolver_id": *updateSecondaryZoneOptions.ResolverID,
+		"secondary_zone_id": *updateSecondaryZoneOptions.SecondaryZoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.PATCH)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/custom_resolvers/{resolver_id}/secondary_zones/{secondary_zone_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range updateSecondaryZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "UpdateSecondaryZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if updateSecondaryZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*updateSecondaryZoneOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if updateSecondaryZoneOptions.Description != nil {
+		body["description"] = updateSecondaryZoneOptions.Description
+	}
+	if updateSecondaryZoneOptions.Enabled != nil {
+		body["enabled"] = updateSecondaryZoneOptions.Enabled
+	}
+	if updateSecondaryZoneOptions.TransferFrom != nil {
+		body["transfer_from"] = updateSecondaryZoneOptions.TransferFrom
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalSecondaryZone)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// DeleteSecondaryZone : Delete a secondary zone
+// Delete a secondary zone for the custom resolver.
+func (dnsSvcs *DnsSvcsV1) DeleteSecondaryZone(deleteSecondaryZoneOptions *DeleteSecondaryZoneOptions) (response *core.DetailedResponse, err error) {
+	return dnsSvcs.DeleteSecondaryZoneWithContext(context.Background(), deleteSecondaryZoneOptions)
+}
+
+// DeleteSecondaryZoneWithContext is an alternate form of the DeleteSecondaryZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) DeleteSecondaryZoneWithContext(ctx context.Context, deleteSecondaryZoneOptions *DeleteSecondaryZoneOptions) (response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(deleteSecondaryZoneOptions, "deleteSecondaryZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(deleteSecondaryZoneOptions, "deleteSecondaryZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *deleteSecondaryZoneOptions.InstanceID,
+		"resolver_id": *deleteSecondaryZoneOptions.ResolverID,
+		"secondary_zone_id": *deleteSecondaryZoneOptions.SecondaryZoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.DELETE)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/custom_resolvers/{resolver_id}/secondary_zones/{secondary_zone_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range deleteSecondaryZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "DeleteSecondaryZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	if deleteSecondaryZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*deleteSecondaryZoneOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	response, err = dnsSvcs.Service.Request(request, nil)
+
+	return
+}
+
+// ListLinkedZones : List linked zones
+// List linked zones in requestor's instance.
+func (dnsSvcs *DnsSvcsV1) ListLinkedZones(listLinkedZonesOptions *ListLinkedZonesOptions) (result *LinkedDnszonesList, response *core.DetailedResponse, err error) {
+	return dnsSvcs.ListLinkedZonesWithContext(context.Background(), listLinkedZonesOptions)
+}
+
+// ListLinkedZonesWithContext is an alternate form of the ListLinkedZones method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) ListLinkedZonesWithContext(ctx context.Context, listLinkedZonesOptions *ListLinkedZonesOptions) (result *LinkedDnszonesList, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(listLinkedZonesOptions, "listLinkedZonesOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(listLinkedZonesOptions, "listLinkedZonesOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *listLinkedZonesOptions.InstanceID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range listLinkedZonesOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "ListLinkedZones")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if listLinkedZonesOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listLinkedZonesOptions.XCorrelationID))
+	}
+
+	if listLinkedZonesOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listLinkedZonesOptions.Offset))
+	}
+	if listLinkedZonesOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listLinkedZonesOptions.Limit))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalLinkedDnszonesList)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// CreateLinkedZone : Create a linked zone
+// Create a linked zone.
+func (dnsSvcs *DnsSvcsV1) CreateLinkedZone(createLinkedZoneOptions *CreateLinkedZoneOptions) (result *LinkedDnszone, response *core.DetailedResponse, err error) {
+	return dnsSvcs.CreateLinkedZoneWithContext(context.Background(), createLinkedZoneOptions)
+}
+
+// CreateLinkedZoneWithContext is an alternate form of the CreateLinkedZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) CreateLinkedZoneWithContext(ctx context.Context, createLinkedZoneOptions *CreateLinkedZoneOptions) (result *LinkedDnszone, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(createLinkedZoneOptions, "createLinkedZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(createLinkedZoneOptions, "createLinkedZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *createLinkedZoneOptions.InstanceID,
+	}
+
+	builder := core.NewRequestBuilder(core.POST)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range createLinkedZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "CreateLinkedZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if createLinkedZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*createLinkedZoneOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if createLinkedZoneOptions.OwnerInstanceID != nil {
+		body["owner_instance_id"] = createLinkedZoneOptions.OwnerInstanceID
+	}
+	if createLinkedZoneOptions.OwnerZoneID != nil {
+		body["owner_zone_id"] = createLinkedZoneOptions.OwnerZoneID
+	}
+	if createLinkedZoneOptions.Description != nil {
+		body["description"] = createLinkedZoneOptions.Description
+	}
+	if createLinkedZoneOptions.Label != nil {
+		body["label"] = createLinkedZoneOptions.Label
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalLinkedDnszone)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// GetLinkedZone : Get a linked zone
+// Get details of a linked zone.
+func (dnsSvcs *DnsSvcsV1) GetLinkedZone(getLinkedZoneOptions *GetLinkedZoneOptions) (result *LinkedDnszone, response *core.DetailedResponse, err error) {
+	return dnsSvcs.GetLinkedZoneWithContext(context.Background(), getLinkedZoneOptions)
+}
+
+// GetLinkedZoneWithContext is an alternate form of the GetLinkedZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) GetLinkedZoneWithContext(ctx context.Context, getLinkedZoneOptions *GetLinkedZoneOptions) (result *LinkedDnszone, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(getLinkedZoneOptions, "getLinkedZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(getLinkedZoneOptions, "getLinkedZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *getLinkedZoneOptions.InstanceID,
+		"linked_dnszone_id": *getLinkedZoneOptions.LinkedDnszoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range getLinkedZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "GetLinkedZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if getLinkedZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*getLinkedZoneOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalLinkedDnszone)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// UpdateLinkedZone : Update the properties of a linked zone
+// Update the properties of a linked zone.
+func (dnsSvcs *DnsSvcsV1) UpdateLinkedZone(updateLinkedZoneOptions *UpdateLinkedZoneOptions) (result *LinkedDnszone, response *core.DetailedResponse, err error) {
+	return dnsSvcs.UpdateLinkedZoneWithContext(context.Background(), updateLinkedZoneOptions)
+}
+
+// UpdateLinkedZoneWithContext is an alternate form of the UpdateLinkedZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) UpdateLinkedZoneWithContext(ctx context.Context, updateLinkedZoneOptions *UpdateLinkedZoneOptions) (result *LinkedDnszone, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(updateLinkedZoneOptions, "updateLinkedZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(updateLinkedZoneOptions, "updateLinkedZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *updateLinkedZoneOptions.InstanceID,
+		"linked_dnszone_id": *updateLinkedZoneOptions.LinkedDnszoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.PATCH)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range updateLinkedZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "UpdateLinkedZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if updateLinkedZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*updateLinkedZoneOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if updateLinkedZoneOptions.Description != nil {
+		body["description"] = updateLinkedZoneOptions.Description
+	}
+	if updateLinkedZoneOptions.Label != nil {
+		body["label"] = updateLinkedZoneOptions.Label
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalLinkedDnszone)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// DeleteLinkedZone : Delete a linked zone
+// Delete a linked zone.
+func (dnsSvcs *DnsSvcsV1) DeleteLinkedZone(deleteLinkedZoneOptions *DeleteLinkedZoneOptions) (response *core.DetailedResponse, err error) {
+	return dnsSvcs.DeleteLinkedZoneWithContext(context.Background(), deleteLinkedZoneOptions)
+}
+
+// DeleteLinkedZoneWithContext is an alternate form of the DeleteLinkedZone method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) DeleteLinkedZoneWithContext(ctx context.Context, deleteLinkedZoneOptions *DeleteLinkedZoneOptions) (response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(deleteLinkedZoneOptions, "deleteLinkedZoneOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(deleteLinkedZoneOptions, "deleteLinkedZoneOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *deleteLinkedZoneOptions.InstanceID,
+		"linked_dnszone_id": *deleteLinkedZoneOptions.LinkedDnszoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.DELETE)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range deleteLinkedZoneOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "DeleteLinkedZone")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	if deleteLinkedZoneOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*deleteLinkedZoneOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	response, err = dnsSvcs.Service.Request(request, nil)
+
+	return
+}
+
+// ListDnszoneAccessRequests : List Access Requests
+// List access requests in owner's instance.
+func (dnsSvcs *DnsSvcsV1) ListDnszoneAccessRequests(listDnszoneAccessRequestsOptions *ListDnszoneAccessRequestsOptions) (result *AccessRequestsList, response *core.DetailedResponse, err error) {
+	return dnsSvcs.ListDnszoneAccessRequestsWithContext(context.Background(), listDnszoneAccessRequestsOptions)
+}
+
+// ListDnszoneAccessRequestsWithContext is an alternate form of the ListDnszoneAccessRequests method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) ListDnszoneAccessRequestsWithContext(ctx context.Context, listDnszoneAccessRequestsOptions *ListDnszoneAccessRequestsOptions) (result *AccessRequestsList, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(listDnszoneAccessRequestsOptions, "listDnszoneAccessRequestsOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(listDnszoneAccessRequestsOptions, "listDnszoneAccessRequestsOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *listDnszoneAccessRequestsOptions.InstanceID,
+		"dnszone_id": *listDnszoneAccessRequestsOptions.DnszoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/dnszones/{dnszone_id}/access_requests`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range listDnszoneAccessRequestsOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "ListDnszoneAccessRequests")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if listDnszoneAccessRequestsOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listDnszoneAccessRequestsOptions.XCorrelationID))
+	}
+
+	if listDnszoneAccessRequestsOptions.Offset != nil {
+		builder.AddQuery("offset", fmt.Sprint(*listDnszoneAccessRequestsOptions.Offset))
+	}
+	if listDnszoneAccessRequestsOptions.Limit != nil {
+		builder.AddQuery("limit", fmt.Sprint(*listDnszoneAccessRequestsOptions.Limit))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalAccessRequestsList)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// GetDnszoneAccessRequest : Get an access request
+// Get details of an access request.
+func (dnsSvcs *DnsSvcsV1) GetDnszoneAccessRequest(getDnszoneAccessRequestOptions *GetDnszoneAccessRequestOptions) (result *AccessRequest, response *core.DetailedResponse, err error) {
+	return dnsSvcs.GetDnszoneAccessRequestWithContext(context.Background(), getDnszoneAccessRequestOptions)
+}
+
+// GetDnszoneAccessRequestWithContext is an alternate form of the GetDnszoneAccessRequest method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) GetDnszoneAccessRequestWithContext(ctx context.Context, getDnszoneAccessRequestOptions *GetDnszoneAccessRequestOptions) (result *AccessRequest, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(getDnszoneAccessRequestOptions, "getDnszoneAccessRequestOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(getDnszoneAccessRequestOptions, "getDnszoneAccessRequestOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *getDnszoneAccessRequestOptions.InstanceID,
+		"dnszone_id": *getDnszoneAccessRequestOptions.DnszoneID,
+		"request_id": *getDnszoneAccessRequestOptions.RequestID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/dnszones/{dnszone_id}/access_requests/{request_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range getDnszoneAccessRequestOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "GetDnszoneAccessRequest")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if getDnszoneAccessRequestOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*getDnszoneAccessRequestOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalAccessRequest)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// UpdateDnszoneAccessRequest : Update an access request
+// Update the state of an access request.
+func (dnsSvcs *DnsSvcsV1) UpdateDnszoneAccessRequest(updateDnszoneAccessRequestOptions *UpdateDnszoneAccessRequestOptions) (result *AccessRequest, response *core.DetailedResponse, err error) {
+	return dnsSvcs.UpdateDnszoneAccessRequestWithContext(context.Background(), updateDnszoneAccessRequestOptions)
+}
+
+// UpdateDnszoneAccessRequestWithContext is an alternate form of the UpdateDnszoneAccessRequest method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) UpdateDnszoneAccessRequestWithContext(ctx context.Context, updateDnszoneAccessRequestOptions *UpdateDnszoneAccessRequestOptions) (result *AccessRequest, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(updateDnszoneAccessRequestOptions, "updateDnszoneAccessRequestOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(updateDnszoneAccessRequestOptions, "updateDnszoneAccessRequestOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *updateDnszoneAccessRequestOptions.InstanceID,
+		"dnszone_id": *updateDnszoneAccessRequestOptions.DnszoneID,
+		"request_id": *updateDnszoneAccessRequestOptions.RequestID,
+	}
+
+	builder := core.NewRequestBuilder(core.PATCH)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/dnszones/{dnszone_id}/access_requests/{request_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range updateDnszoneAccessRequestOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "UpdateDnszoneAccessRequest")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if updateDnszoneAccessRequestOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*updateDnszoneAccessRequestOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if updateDnszoneAccessRequestOptions.Action != nil {
+		body["action"] = updateDnszoneAccessRequestOptions.Action
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalAccessRequest)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// ListLinkedPermittedNetworks : List permitted networks
+// List the permitted networks for a linked zone.
+func (dnsSvcs *DnsSvcsV1) ListLinkedPermittedNetworks(listLinkedPermittedNetworksOptions *ListLinkedPermittedNetworksOptions) (result *ListPermittedNetworks, response *core.DetailedResponse, err error) {
+	return dnsSvcs.ListLinkedPermittedNetworksWithContext(context.Background(), listLinkedPermittedNetworksOptions)
+}
+
+// ListLinkedPermittedNetworksWithContext is an alternate form of the ListLinkedPermittedNetworks method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) ListLinkedPermittedNetworksWithContext(ctx context.Context, listLinkedPermittedNetworksOptions *ListLinkedPermittedNetworksOptions) (result *ListPermittedNetworks, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(listLinkedPermittedNetworksOptions, "listLinkedPermittedNetworksOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(listLinkedPermittedNetworksOptions, "listLinkedPermittedNetworksOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *listLinkedPermittedNetworksOptions.InstanceID,
+		"linked_dnszone_id": *listLinkedPermittedNetworksOptions.LinkedDnszoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}/permitted_networks`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range listLinkedPermittedNetworksOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "ListLinkedPermittedNetworks")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if listLinkedPermittedNetworksOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*listLinkedPermittedNetworksOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalListPermittedNetworks)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// CreateLzPermittedNetwork : Create a permitted network
+// Create a permitted network for a linked zone.
+func (dnsSvcs *DnsSvcsV1) CreateLzPermittedNetwork(createLzPermittedNetworkOptions *CreateLzPermittedNetworkOptions) (result *PermittedNetwork, response *core.DetailedResponse, err error) {
+	return dnsSvcs.CreateLzPermittedNetworkWithContext(context.Background(), createLzPermittedNetworkOptions)
+}
+
+// CreateLzPermittedNetworkWithContext is an alternate form of the CreateLzPermittedNetwork method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) CreateLzPermittedNetworkWithContext(ctx context.Context, createLzPermittedNetworkOptions *CreateLzPermittedNetworkOptions) (result *PermittedNetwork, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(createLzPermittedNetworkOptions, "createLzPermittedNetworkOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(createLzPermittedNetworkOptions, "createLzPermittedNetworkOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *createLzPermittedNetworkOptions.InstanceID,
+		"linked_dnszone_id": *createLzPermittedNetworkOptions.LinkedDnszoneID,
+	}
+
+	builder := core.NewRequestBuilder(core.POST)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}/permitted_networks`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range createLzPermittedNetworkOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "CreateLzPermittedNetwork")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	builder.AddHeader("Content-Type", "application/json")
+	if createLzPermittedNetworkOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*createLzPermittedNetworkOptions.XCorrelationID))
+	}
+
+	body := make(map[string]interface{})
+	if createLzPermittedNetworkOptions.Type != nil {
+		body["type"] = createLzPermittedNetworkOptions.Type
+	}
+	if createLzPermittedNetworkOptions.PermittedNetwork != nil {
+		body["permitted_network"] = createLzPermittedNetworkOptions.PermittedNetwork
+	}
+	_, err = builder.SetBodyContentJSON(body)
+	if err != nil {
+		return
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalPermittedNetwork)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// DeleteLzPermittedNetwork : Remove a permitted network
+// Remove a permitted network from a linked zone.
+func (dnsSvcs *DnsSvcsV1) DeleteLzPermittedNetwork(deleteLzPermittedNetworkOptions *DeleteLzPermittedNetworkOptions) (result *PermittedNetwork, response *core.DetailedResponse, err error) {
+	return dnsSvcs.DeleteLzPermittedNetworkWithContext(context.Background(), deleteLzPermittedNetworkOptions)
+}
+
+// DeleteLzPermittedNetworkWithContext is an alternate form of the DeleteLzPermittedNetwork method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) DeleteLzPermittedNetworkWithContext(ctx context.Context, deleteLzPermittedNetworkOptions *DeleteLzPermittedNetworkOptions) (result *PermittedNetwork, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(deleteLzPermittedNetworkOptions, "deleteLzPermittedNetworkOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(deleteLzPermittedNetworkOptions, "deleteLzPermittedNetworkOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *deleteLzPermittedNetworkOptions.InstanceID,
+		"linked_dnszone_id": *deleteLzPermittedNetworkOptions.LinkedDnszoneID,
+		"permitted_network_id": *deleteLzPermittedNetworkOptions.PermittedNetworkID,
+	}
+
+	builder := core.NewRequestBuilder(core.DELETE)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}/permitted_networks/{permitted_network_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range deleteLzPermittedNetworkOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "DeleteLzPermittedNetwork")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if deleteLzPermittedNetworkOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*deleteLzPermittedNetworkOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalPermittedNetwork)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// GetLinkedPermittedNetwork : Get a permitted network
+// Get a permitted network of a linked zone.
+func (dnsSvcs *DnsSvcsV1) GetLinkedPermittedNetwork(getLinkedPermittedNetworkOptions *GetLinkedPermittedNetworkOptions) (result *PermittedNetwork, response *core.DetailedResponse, err error) {
+	return dnsSvcs.GetLinkedPermittedNetworkWithContext(context.Background(), getLinkedPermittedNetworkOptions)
+}
+
+// GetLinkedPermittedNetworkWithContext is an alternate form of the GetLinkedPermittedNetwork method which supports a Context parameter
+func (dnsSvcs *DnsSvcsV1) GetLinkedPermittedNetworkWithContext(ctx context.Context, getLinkedPermittedNetworkOptions *GetLinkedPermittedNetworkOptions) (result *PermittedNetwork, response *core.DetailedResponse, err error) {
+	err = core.ValidateNotNil(getLinkedPermittedNetworkOptions, "getLinkedPermittedNetworkOptions cannot be nil")
+	if err != nil {
+		return
+	}
+	err = core.ValidateStruct(getLinkedPermittedNetworkOptions, "getLinkedPermittedNetworkOptions")
+	if err != nil {
+		return
+	}
+
+	pathParamsMap := map[string]string{
+		"instance_id": *getLinkedPermittedNetworkOptions.InstanceID,
+		"linked_dnszone_id": *getLinkedPermittedNetworkOptions.LinkedDnszoneID,
+		"permitted_network_id": *getLinkedPermittedNetworkOptions.PermittedNetworkID,
+	}
+
+	builder := core.NewRequestBuilder(core.GET)
+	builder = builder.WithContext(ctx)
+	builder.EnableGzipCompression = dnsSvcs.GetEnableGzipCompression()
+	_, err = builder.ResolveRequestURL(dnsSvcs.Service.Options.URL, `/instances/{instance_id}/linked_dnszones/{linked_dnszone_id}/permitted_networks/{permitted_network_id}`, pathParamsMap)
+	if err != nil {
+		return
+	}
+
+	for headerName, headerValue := range getLinkedPermittedNetworkOptions.Headers {
+		builder.AddHeader(headerName, headerValue)
+	}
+
+	sdkHeaders := common.GetSdkHeaders("dns_svcs", "V1", "GetLinkedPermittedNetwork")
+	for headerName, headerValue := range sdkHeaders {
+		builder.AddHeader(headerName, headerValue)
+	}
+	builder.AddHeader("Accept", "application/json")
+	if getLinkedPermittedNetworkOptions.XCorrelationID != nil {
+		builder.AddHeader("X-Correlation-ID", fmt.Sprint(*getLinkedPermittedNetworkOptions.XCorrelationID))
+	}
+
+	request, err := builder.Build()
+	if err != nil {
+		return
+	}
+
+	var rawResponse map[string]json.RawMessage
+	response, err = dnsSvcs.Service.Request(request, &rawResponse)
+	if err != nil {
+		return
+	}
+	if rawResponse != nil {
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalPermittedNetwork)
+		if err != nil {
+			return
+		}
+		response.Result = result
+	}
+
+	return
+}
+
+// AccessRequestRequestor : The information of requestor.
+type AccessRequestRequestor struct {
+	// The account ID of requestor.
+	AccountID *string `json:"account_id,omitempty"`
+
+	// The requestor's DNS service instance ID.
+	InstanceID *string `json:"instance_id,omitempty"`
+
+	// The requestor's linked zone ID.
+	LinkedZoneID *string `json:"linked_zone_id,omitempty"`
+}
+
+// UnmarshalAccessRequestRequestor unmarshals an instance of AccessRequestRequestor from the specified map of raw messages.
+func UnmarshalAccessRequestRequestor(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(AccessRequestRequestor)
+	err = core.UnmarshalPrimitive(m, "account_id", &obj.AccountID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "instance_id", &obj.InstanceID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "linked_zone_id", &obj.LinkedZoneID)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
 // AddCustomResolverLocationOptions : The AddCustomResolverLocation options.
 type AddCustomResolverLocationOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Custom resolver location, subnet CRN.
 	SubnetCrn *string `json:"subnet_crn,omitempty"`
@@ -3319,7 +4642,7 @@ type AddCustomResolverLocationOptions struct {
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3372,7 +4695,7 @@ func (options *AddCustomResolverLocationOptions) SetHeaders(param map[string]str
 // CreateCustomResolverOptions : The CreateCustomResolver options.
 type CreateCustomResolverOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Name of the custom resolver.
 	Name *string `json:"name,omitempty"`
@@ -3384,7 +4707,7 @@ type CreateCustomResolverOptions struct {
 	Locations []LocationInput `json:"locations,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3436,7 +4759,7 @@ func (options *CreateCustomResolverOptions) SetHeaders(param map[string]string) 
 // CreateDnszoneOptions : The CreateDnszone options.
 type CreateDnszoneOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Name of DNS zone.
 	Name *string `json:"name,omitempty"`
@@ -3448,7 +4771,7 @@ type CreateDnszoneOptions struct {
 	Label *string `json:"label,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3500,10 +4823,10 @@ func (options *CreateDnszoneOptions) SetHeaders(param map[string]string) *Create
 // CreateForwardingRuleOptions : The CreateForwardingRule options.
 type CreateForwardingRuleOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Descriptive text of the forwarding rule.
 	Description *string `json:"description,omitempty"`
@@ -3518,7 +4841,7 @@ type CreateForwardingRuleOptions struct {
 	ForwardTo []string `json:"forward_to,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3586,13 +4909,86 @@ func (options *CreateForwardingRuleOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// CreateLinkedZoneOptions : The CreateLinkedZone options.
+type CreateLinkedZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// Owner's instance ID.
+	OwnerInstanceID *string `json:"owner_instance_id,omitempty"`
+
+	// Owner's DNS zone ID.
+	OwnerZoneID *string `json:"owner_zone_id,omitempty"`
+
+	// Descriptive text of the linked zone.
+	Description *string `json:"description,omitempty"`
+
+	// The label of linked zone.
+	Label *string `json:"label,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewCreateLinkedZoneOptions : Instantiate CreateLinkedZoneOptions
+func (*DnsSvcsV1) NewCreateLinkedZoneOptions(instanceID string) *CreateLinkedZoneOptions {
+	return &CreateLinkedZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *CreateLinkedZoneOptions) SetInstanceID(instanceID string) *CreateLinkedZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetOwnerInstanceID : Allow user to set OwnerInstanceID
+func (_options *CreateLinkedZoneOptions) SetOwnerInstanceID(ownerInstanceID string) *CreateLinkedZoneOptions {
+	_options.OwnerInstanceID = core.StringPtr(ownerInstanceID)
+	return _options
+}
+
+// SetOwnerZoneID : Allow user to set OwnerZoneID
+func (_options *CreateLinkedZoneOptions) SetOwnerZoneID(ownerZoneID string) *CreateLinkedZoneOptions {
+	_options.OwnerZoneID = core.StringPtr(ownerZoneID)
+	return _options
+}
+
+// SetDescription : Allow user to set Description
+func (_options *CreateLinkedZoneOptions) SetDescription(description string) *CreateLinkedZoneOptions {
+	_options.Description = core.StringPtr(description)
+	return _options
+}
+
+// SetLabel : Allow user to set Label
+func (_options *CreateLinkedZoneOptions) SetLabel(label string) *CreateLinkedZoneOptions {
+	_options.Label = core.StringPtr(label)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *CreateLinkedZoneOptions) SetXCorrelationID(xCorrelationID string) *CreateLinkedZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *CreateLinkedZoneOptions) SetHeaders(param map[string]string) *CreateLinkedZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // CreateLoadBalancerOptions : The CreateLoadBalancer options.
 type CreateLoadBalancerOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Name of the load balancer.
 	Name *string `json:"name,omitempty"`
@@ -3617,7 +5013,7 @@ type CreateLoadBalancerOptions struct {
 	AzPools []LoadBalancerAzPoolsItem `json:"az_pools,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3627,7 +5023,7 @@ type CreateLoadBalancerOptions struct {
 func (*DnsSvcsV1) NewCreateLoadBalancerOptions(instanceID string, dnszoneID string) *CreateLoadBalancerOptions {
 	return &CreateLoadBalancerOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -3697,10 +5093,81 @@ func (options *CreateLoadBalancerOptions) SetHeaders(param map[string]string) *C
 	return options
 }
 
+// CreateLzPermittedNetworkOptions : The CreateLzPermittedNetwork options.
+type CreateLzPermittedNetworkOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// The type of a permitted network.
+	Type *string `json:"type,omitempty"`
+
+	// Permitted network data for VPC.
+	PermittedNetwork *PermittedNetworkVpc `json:"permitted_network,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// Constants associated with the CreateLzPermittedNetworkOptions.Type property.
+// The type of a permitted network.
+const (
+	CreateLzPermittedNetworkOptions_Type_Vpc = "vpc"
+)
+
+// NewCreateLzPermittedNetworkOptions : Instantiate CreateLzPermittedNetworkOptions
+func (*DnsSvcsV1) NewCreateLzPermittedNetworkOptions(instanceID string, linkedDnszoneID string) *CreateLzPermittedNetworkOptions {
+	return &CreateLzPermittedNetworkOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *CreateLzPermittedNetworkOptions) SetInstanceID(instanceID string) *CreateLzPermittedNetworkOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *CreateLzPermittedNetworkOptions) SetLinkedDnszoneID(linkedDnszoneID string) *CreateLzPermittedNetworkOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetType : Allow user to set Type
+func (_options *CreateLzPermittedNetworkOptions) SetType(typeVar string) *CreateLzPermittedNetworkOptions {
+	_options.Type = core.StringPtr(typeVar)
+	return _options
+}
+
+// SetPermittedNetwork : Allow user to set PermittedNetwork
+func (_options *CreateLzPermittedNetworkOptions) SetPermittedNetwork(permittedNetwork *PermittedNetworkVpc) *CreateLzPermittedNetworkOptions {
+	_options.PermittedNetwork = permittedNetwork
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *CreateLzPermittedNetworkOptions) SetXCorrelationID(xCorrelationID string) *CreateLzPermittedNetworkOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *CreateLzPermittedNetworkOptions) SetHeaders(param map[string]string) *CreateLzPermittedNetworkOptions {
+	options.Headers = param
+	return options
+}
+
 // CreateMonitorOptions : The CreateMonitor options.
 type CreateMonitorOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The name of the load balancer monitor.
 	Name *string `json:"name,omitempty"`
@@ -3748,7 +5215,7 @@ type CreateMonitorOptions struct {
 	ExpectedBody *string `json:"expected_body,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3757,15 +5224,15 @@ type CreateMonitorOptions struct {
 // Constants associated with the CreateMonitorOptions.Type property.
 // The protocol to use for the health check. Currently supported protocols are 'HTTP','HTTPS' and 'TCP'.
 const (
-	CreateMonitorOptions_Type_Http  = "HTTP"
+	CreateMonitorOptions_Type_Http = "HTTP"
 	CreateMonitorOptions_Type_Https = "HTTPS"
-	CreateMonitorOptions_Type_Tcp   = "TCP"
+	CreateMonitorOptions_Type_Tcp = "TCP"
 )
 
 // Constants associated with the CreateMonitorOptions.Method property.
 // The method to use for the health check applicable to HTTP/HTTPS based checks, the default value is 'GET'.
 const (
-	CreateMonitorOptions_Method_Get  = "GET"
+	CreateMonitorOptions_Method_Get = "GET"
 	CreateMonitorOptions_Method_Head = "HEAD"
 )
 
@@ -3875,10 +5342,10 @@ func (options *CreateMonitorOptions) SetHeaders(param map[string]string) *Create
 // CreatePermittedNetworkOptions : The CreatePermittedNetwork options.
 type CreatePermittedNetworkOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The type of a permitted network.
 	Type *string `json:"type,omitempty"`
@@ -3886,8 +5353,12 @@ type CreatePermittedNetworkOptions struct {
 	// Permitted network data for VPC.
 	PermittedNetwork *PermittedNetworkVpc `json:"permitted_network,omitempty"`
 
+	// The account identifiers of the owner zone and linked zones in the format of "?account=account1,account2,account3".
+	// Maximum 5 accounts are allowed.
+	Accounts *string `json:"accounts,omitempty"`
+
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3903,7 +5374,7 @@ const (
 func (*DnsSvcsV1) NewCreatePermittedNetworkOptions(instanceID string, dnszoneID string) *CreatePermittedNetworkOptions {
 	return &CreatePermittedNetworkOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -3931,6 +5402,12 @@ func (_options *CreatePermittedNetworkOptions) SetPermittedNetwork(permittedNetw
 	return _options
 }
 
+// SetAccounts : Allow user to set Accounts
+func (_options *CreatePermittedNetworkOptions) SetAccounts(accounts string) *CreatePermittedNetworkOptions {
+	_options.Accounts = core.StringPtr(accounts)
+	return _options
+}
+
 // SetXCorrelationID : Allow user to set XCorrelationID
 func (_options *CreatePermittedNetworkOptions) SetXCorrelationID(xCorrelationID string) *CreatePermittedNetworkOptions {
 	_options.XCorrelationID = core.StringPtr(xCorrelationID)
@@ -3946,7 +5423,7 @@ func (options *CreatePermittedNetworkOptions) SetHeaders(param map[string]string
 // CreatePoolOptions : The CreatePool options.
 type CreatePoolOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Name of the load balancer pool.
 	Name *string `json:"name,omitempty"`
@@ -3978,7 +5455,7 @@ type CreatePoolOptions struct {
 	HealthcheckSubnets []string `json:"healthcheck_subnets,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -3987,11 +5464,11 @@ type CreatePoolOptions struct {
 // Constants associated with the CreatePoolOptions.HealthcheckRegion property.
 // Health check region of VSIs.
 const (
-	CreatePoolOptions_HealthcheckRegion_AuSyd   = "au-syd"
-	CreatePoolOptions_HealthcheckRegion_EuDu    = "eu-du"
-	CreatePoolOptions_HealthcheckRegion_EuGb    = "eu-gb"
-	CreatePoolOptions_HealthcheckRegion_JpTok   = "jp-tok"
-	CreatePoolOptions_HealthcheckRegion_UsEast  = "us-east"
+	CreatePoolOptions_HealthcheckRegion_AuSyd = "au-syd"
+	CreatePoolOptions_HealthcheckRegion_EuDu = "eu-du"
+	CreatePoolOptions_HealthcheckRegion_EuGb = "eu-gb"
+	CreatePoolOptions_HealthcheckRegion_JpTok = "jp-tok"
+	CreatePoolOptions_HealthcheckRegion_UsEast = "us-east"
 	CreatePoolOptions_HealthcheckRegion_UsSouth = "us-south"
 )
 
@@ -4077,10 +5554,10 @@ func (options *CreatePoolOptions) SetHeaders(param map[string]string) *CreatePoo
 // CreateResourceRecordOptions : The CreateResourceRecord options.
 type CreateResourceRecordOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Name of the resource record.
 	Name *string `json:"name,omitempty"`
@@ -4101,7 +5578,7 @@ type CreateResourceRecordOptions struct {
 	Protocol *string `json:"protocol,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4110,20 +5587,20 @@ type CreateResourceRecordOptions struct {
 // Constants associated with the CreateResourceRecordOptions.Type property.
 // Type of the resource record.
 const (
-	CreateResourceRecordOptions_Type_A     = "A"
-	CreateResourceRecordOptions_Type_Aaaa  = "AAAA"
+	CreateResourceRecordOptions_Type_A = "A"
+	CreateResourceRecordOptions_Type_Aaaa = "AAAA"
 	CreateResourceRecordOptions_Type_Cname = "CNAME"
-	CreateResourceRecordOptions_Type_Mx    = "MX"
-	CreateResourceRecordOptions_Type_Ptr   = "PTR"
-	CreateResourceRecordOptions_Type_Srv   = "SRV"
-	CreateResourceRecordOptions_Type_Txt   = "TXT"
+	CreateResourceRecordOptions_Type_Mx = "MX"
+	CreateResourceRecordOptions_Type_Ptr = "PTR"
+	CreateResourceRecordOptions_Type_Srv = "SRV"
+	CreateResourceRecordOptions_Type_Txt = "TXT"
 )
 
 // NewCreateResourceRecordOptions : Instantiate CreateResourceRecordOptions
 func (*DnsSvcsV1) NewCreateResourceRecordOptions(instanceID string, dnszoneID string) *CreateResourceRecordOptions {
 	return &CreateResourceRecordOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -4187,19 +5664,102 @@ func (options *CreateResourceRecordOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// CreateSecondaryZoneOptions : The CreateSecondaryZone options.
+type CreateSecondaryZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a custom resolver.
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
+
+	// Descriptive text of the secondary zone.
+	Description *string `json:"description,omitempty"`
+
+	// zone name.
+	Zone *string `json:"zone,omitempty"`
+
+	// Enable/Disable the secondary zone.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// The addresses of DNS servers where the secondary zone data should be transferred from.
+	TransferFrom []string `json:"transfer_from,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewCreateSecondaryZoneOptions : Instantiate CreateSecondaryZoneOptions
+func (*DnsSvcsV1) NewCreateSecondaryZoneOptions(instanceID string, resolverID string) *CreateSecondaryZoneOptions {
+	return &CreateSecondaryZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		ResolverID: core.StringPtr(resolverID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *CreateSecondaryZoneOptions) SetInstanceID(instanceID string) *CreateSecondaryZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetResolverID : Allow user to set ResolverID
+func (_options *CreateSecondaryZoneOptions) SetResolverID(resolverID string) *CreateSecondaryZoneOptions {
+	_options.ResolverID = core.StringPtr(resolverID)
+	return _options
+}
+
+// SetDescription : Allow user to set Description
+func (_options *CreateSecondaryZoneOptions) SetDescription(description string) *CreateSecondaryZoneOptions {
+	_options.Description = core.StringPtr(description)
+	return _options
+}
+
+// SetZone : Allow user to set Zone
+func (_options *CreateSecondaryZoneOptions) SetZone(zone string) *CreateSecondaryZoneOptions {
+	_options.Zone = core.StringPtr(zone)
+	return _options
+}
+
+// SetEnabled : Allow user to set Enabled
+func (_options *CreateSecondaryZoneOptions) SetEnabled(enabled bool) *CreateSecondaryZoneOptions {
+	_options.Enabled = core.BoolPtr(enabled)
+	return _options
+}
+
+// SetTransferFrom : Allow user to set TransferFrom
+func (_options *CreateSecondaryZoneOptions) SetTransferFrom(transferFrom []string) *CreateSecondaryZoneOptions {
+	_options.TransferFrom = transferFrom
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *CreateSecondaryZoneOptions) SetXCorrelationID(xCorrelationID string) *CreateSecondaryZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *CreateSecondaryZoneOptions) SetHeaders(param map[string]string) *CreateSecondaryZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // DeleteCustomResolverLocationOptions : The DeleteCustomResolverLocation options.
 type DeleteCustomResolverLocationOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Custom resolver location ID.
-	LocationID *string `json:"-" validate:"required,ne="`
+	LocationID *string `json:"location_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4247,13 +5807,13 @@ func (options *DeleteCustomResolverLocationOptions) SetHeaders(param map[string]
 // DeleteCustomResolverOptions : The DeleteCustomResolver options.
 type DeleteCustomResolverOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4294,13 +5854,13 @@ func (options *DeleteCustomResolverOptions) SetHeaders(param map[string]string) 
 // DeleteDnszoneOptions : The DeleteDnszone options.
 type DeleteDnszoneOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4310,7 +5870,7 @@ type DeleteDnszoneOptions struct {
 func (*DnsSvcsV1) NewDeleteDnszoneOptions(instanceID string, dnszoneID string) *DeleteDnszoneOptions {
 	return &DeleteDnszoneOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -4341,16 +5901,16 @@ func (options *DeleteDnszoneOptions) SetHeaders(param map[string]string) *Delete
 // DeleteForwardingRuleOptions : The DeleteForwardingRule options.
 type DeleteForwardingRuleOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
-	// The unique identifier of a forwarding rule.
-	RuleID *string `json:"-" validate:"required,ne="`
+	// The unique identifier of a rule.
+	RuleID *string `json:"rule_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4361,7 +5921,7 @@ func (*DnsSvcsV1) NewDeleteForwardingRuleOptions(instanceID string, resolverID s
 	return &DeleteForwardingRuleOptions{
 		InstanceID: core.StringPtr(instanceID),
 		ResolverID: core.StringPtr(resolverID),
-		RuleID:     core.StringPtr(ruleID),
+		RuleID: core.StringPtr(ruleID),
 	}
 }
 
@@ -4395,19 +5955,66 @@ func (options *DeleteForwardingRuleOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// DeleteLinkedZoneOptions : The DeleteLinkedZone options.
+type DeleteLinkedZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewDeleteLinkedZoneOptions : Instantiate DeleteLinkedZoneOptions
+func (*DnsSvcsV1) NewDeleteLinkedZoneOptions(instanceID string, linkedDnszoneID string) *DeleteLinkedZoneOptions {
+	return &DeleteLinkedZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *DeleteLinkedZoneOptions) SetInstanceID(instanceID string) *DeleteLinkedZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *DeleteLinkedZoneOptions) SetLinkedDnszoneID(linkedDnszoneID string) *DeleteLinkedZoneOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *DeleteLinkedZoneOptions) SetXCorrelationID(xCorrelationID string) *DeleteLinkedZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *DeleteLinkedZoneOptions) SetHeaders(param map[string]string) *DeleteLinkedZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // DeleteLoadBalancerOptions : The DeleteLoadBalancer options.
 type DeleteLoadBalancerOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer.
-	LbID *string `json:"-" validate:"required,ne="`
+	LbID *string `json:"lb_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4417,8 +6024,8 @@ type DeleteLoadBalancerOptions struct {
 func (*DnsSvcsV1) NewDeleteLoadBalancerOptions(instanceID string, dnszoneID string, lbID string) *DeleteLoadBalancerOptions {
 	return &DeleteLoadBalancerOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
-		LbID:       core.StringPtr(lbID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		LbID: core.StringPtr(lbID),
 	}
 }
 
@@ -4452,16 +6059,73 @@ func (options *DeleteLoadBalancerOptions) SetHeaders(param map[string]string) *D
 	return options
 }
 
+// DeleteLzPermittedNetworkOptions : The DeleteLzPermittedNetwork options.
+type DeleteLzPermittedNetworkOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// The unique identifier of a permitted network.
+	PermittedNetworkID *string `json:"permitted_network_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewDeleteLzPermittedNetworkOptions : Instantiate DeleteLzPermittedNetworkOptions
+func (*DnsSvcsV1) NewDeleteLzPermittedNetworkOptions(instanceID string, linkedDnszoneID string, permittedNetworkID string) *DeleteLzPermittedNetworkOptions {
+	return &DeleteLzPermittedNetworkOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+		PermittedNetworkID: core.StringPtr(permittedNetworkID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *DeleteLzPermittedNetworkOptions) SetInstanceID(instanceID string) *DeleteLzPermittedNetworkOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *DeleteLzPermittedNetworkOptions) SetLinkedDnszoneID(linkedDnszoneID string) *DeleteLzPermittedNetworkOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetPermittedNetworkID : Allow user to set PermittedNetworkID
+func (_options *DeleteLzPermittedNetworkOptions) SetPermittedNetworkID(permittedNetworkID string) *DeleteLzPermittedNetworkOptions {
+	_options.PermittedNetworkID = core.StringPtr(permittedNetworkID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *DeleteLzPermittedNetworkOptions) SetXCorrelationID(xCorrelationID string) *DeleteLzPermittedNetworkOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *DeleteLzPermittedNetworkOptions) SetHeaders(param map[string]string) *DeleteLzPermittedNetworkOptions {
+	options.Headers = param
+	return options
+}
+
 // DeleteMonitorOptions : The DeleteMonitor options.
 type DeleteMonitorOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer monitor.
-	MonitorID *string `json:"-" validate:"required,ne="`
+	MonitorID *string `json:"monitor_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4471,7 +6135,7 @@ type DeleteMonitorOptions struct {
 func (*DnsSvcsV1) NewDeleteMonitorOptions(instanceID string, monitorID string) *DeleteMonitorOptions {
 	return &DeleteMonitorOptions{
 		InstanceID: core.StringPtr(instanceID),
-		MonitorID:  core.StringPtr(monitorID),
+		MonitorID: core.StringPtr(monitorID),
 	}
 }
 
@@ -4502,16 +6166,16 @@ func (options *DeleteMonitorOptions) SetHeaders(param map[string]string) *Delete
 // DeletePermittedNetworkOptions : The DeletePermittedNetwork options.
 type DeletePermittedNetworkOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a permitted network.
-	PermittedNetworkID *string `json:"-" validate:"required,ne="`
+	PermittedNetworkID *string `json:"permitted_network_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4520,8 +6184,8 @@ type DeletePermittedNetworkOptions struct {
 // NewDeletePermittedNetworkOptions : Instantiate DeletePermittedNetworkOptions
 func (*DnsSvcsV1) NewDeletePermittedNetworkOptions(instanceID string, dnszoneID string, permittedNetworkID string) *DeletePermittedNetworkOptions {
 	return &DeletePermittedNetworkOptions{
-		InstanceID:         core.StringPtr(instanceID),
-		DnszoneID:          core.StringPtr(dnszoneID),
+		InstanceID: core.StringPtr(instanceID),
+		DnszoneID: core.StringPtr(dnszoneID),
 		PermittedNetworkID: core.StringPtr(permittedNetworkID),
 	}
 }
@@ -4559,13 +6223,13 @@ func (options *DeletePermittedNetworkOptions) SetHeaders(param map[string]string
 // DeletePoolOptions : The DeletePool options.
 type DeletePoolOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer pool.
-	PoolID *string `json:"-" validate:"required,ne="`
+	PoolID *string `json:"pool_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4575,7 +6239,7 @@ type DeletePoolOptions struct {
 func (*DnsSvcsV1) NewDeletePoolOptions(instanceID string, poolID string) *DeletePoolOptions {
 	return &DeletePoolOptions{
 		InstanceID: core.StringPtr(instanceID),
-		PoolID:     core.StringPtr(poolID),
+		PoolID: core.StringPtr(poolID),
 	}
 }
 
@@ -4606,16 +6270,16 @@ func (options *DeletePoolOptions) SetHeaders(param map[string]string) *DeletePoo
 // DeleteResourceRecordOptions : The DeleteResourceRecord options.
 type DeleteResourceRecordOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a resource record.
-	RecordID *string `json:"-" validate:"required,ne="`
+	RecordID *string `json:"record_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4625,8 +6289,8 @@ type DeleteResourceRecordOptions struct {
 func (*DnsSvcsV1) NewDeleteResourceRecordOptions(instanceID string, dnszoneID string, recordID string) *DeleteResourceRecordOptions {
 	return &DeleteResourceRecordOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
-		RecordID:   core.StringPtr(recordID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		RecordID: core.StringPtr(recordID),
 	}
 }
 
@@ -4660,16 +6324,73 @@ func (options *DeleteResourceRecordOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// DeleteSecondaryZoneOptions : The DeleteSecondaryZone options.
+type DeleteSecondaryZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a custom resolver.
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
+
+	// The unique identifier of a secondary zone.
+	SecondaryZoneID *string `json:"secondary_zone_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewDeleteSecondaryZoneOptions : Instantiate DeleteSecondaryZoneOptions
+func (*DnsSvcsV1) NewDeleteSecondaryZoneOptions(instanceID string, resolverID string, secondaryZoneID string) *DeleteSecondaryZoneOptions {
+	return &DeleteSecondaryZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		ResolverID: core.StringPtr(resolverID),
+		SecondaryZoneID: core.StringPtr(secondaryZoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *DeleteSecondaryZoneOptions) SetInstanceID(instanceID string) *DeleteSecondaryZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetResolverID : Allow user to set ResolverID
+func (_options *DeleteSecondaryZoneOptions) SetResolverID(resolverID string) *DeleteSecondaryZoneOptions {
+	_options.ResolverID = core.StringPtr(resolverID)
+	return _options
+}
+
+// SetSecondaryZoneID : Allow user to set SecondaryZoneID
+func (_options *DeleteSecondaryZoneOptions) SetSecondaryZoneID(secondaryZoneID string) *DeleteSecondaryZoneOptions {
+	_options.SecondaryZoneID = core.StringPtr(secondaryZoneID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *DeleteSecondaryZoneOptions) SetXCorrelationID(xCorrelationID string) *DeleteSecondaryZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *DeleteSecondaryZoneOptions) SetHeaders(param map[string]string) *DeleteSecondaryZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // ExportResourceRecordsOptions : The ExportResourceRecords options.
 type ExportResourceRecordsOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4679,7 +6400,7 @@ type ExportResourceRecordsOptions struct {
 func (*DnsSvcsV1) NewExportResourceRecordsOptions(instanceID string, dnszoneID string) *ExportResourceRecordsOptions {
 	return &ExportResourceRecordsOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -4710,13 +6431,13 @@ func (options *ExportResourceRecordsOptions) SetHeaders(param map[string]string)
 // GetCustomResolverOptions : The GetCustomResolver options.
 type GetCustomResolverOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4754,16 +6475,73 @@ func (options *GetCustomResolverOptions) SetHeaders(param map[string]string) *Ge
 	return options
 }
 
+// GetDnszoneAccessRequestOptions : The GetDnszoneAccessRequest options.
+type GetDnszoneAccessRequestOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a DNS zone.
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
+
+	// The unique identifier of an access request.
+	RequestID *string `json:"request_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewGetDnszoneAccessRequestOptions : Instantiate GetDnszoneAccessRequestOptions
+func (*DnsSvcsV1) NewGetDnszoneAccessRequestOptions(instanceID string, dnszoneID string, requestID string) *GetDnszoneAccessRequestOptions {
+	return &GetDnszoneAccessRequestOptions{
+		InstanceID: core.StringPtr(instanceID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		RequestID: core.StringPtr(requestID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *GetDnszoneAccessRequestOptions) SetInstanceID(instanceID string) *GetDnszoneAccessRequestOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetDnszoneID : Allow user to set DnszoneID
+func (_options *GetDnszoneAccessRequestOptions) SetDnszoneID(dnszoneID string) *GetDnszoneAccessRequestOptions {
+	_options.DnszoneID = core.StringPtr(dnszoneID)
+	return _options
+}
+
+// SetRequestID : Allow user to set RequestID
+func (_options *GetDnszoneAccessRequestOptions) SetRequestID(requestID string) *GetDnszoneAccessRequestOptions {
+	_options.RequestID = core.StringPtr(requestID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *GetDnszoneAccessRequestOptions) SetXCorrelationID(xCorrelationID string) *GetDnszoneAccessRequestOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *GetDnszoneAccessRequestOptions) SetHeaders(param map[string]string) *GetDnszoneAccessRequestOptions {
+	options.Headers = param
+	return options
+}
+
 // GetDnszoneOptions : The GetDnszone options.
 type GetDnszoneOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4773,7 +6551,7 @@ type GetDnszoneOptions struct {
 func (*DnsSvcsV1) NewGetDnszoneOptions(instanceID string, dnszoneID string) *GetDnszoneOptions {
 	return &GetDnszoneOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -4804,16 +6582,16 @@ func (options *GetDnszoneOptions) SetHeaders(param map[string]string) *GetDnszon
 // GetForwardingRuleOptions : The GetForwardingRule options.
 type GetForwardingRuleOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
-	// The unique identifier of a forwarding rule.
-	RuleID *string `json:"-" validate:"required,ne="`
+	// The unique identifier of a rule.
+	RuleID *string `json:"rule_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4824,7 +6602,7 @@ func (*DnsSvcsV1) NewGetForwardingRuleOptions(instanceID string, resolverID stri
 	return &GetForwardingRuleOptions{
 		InstanceID: core.StringPtr(instanceID),
 		ResolverID: core.StringPtr(resolverID),
-		RuleID:     core.StringPtr(ruleID),
+		RuleID: core.StringPtr(ruleID),
 	}
 }
 
@@ -4858,19 +6636,123 @@ func (options *GetForwardingRuleOptions) SetHeaders(param map[string]string) *Ge
 	return options
 }
 
+// GetLinkedPermittedNetworkOptions : The GetLinkedPermittedNetwork options.
+type GetLinkedPermittedNetworkOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// The unique identifier of a permitted network.
+	PermittedNetworkID *string `json:"permitted_network_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewGetLinkedPermittedNetworkOptions : Instantiate GetLinkedPermittedNetworkOptions
+func (*DnsSvcsV1) NewGetLinkedPermittedNetworkOptions(instanceID string, linkedDnszoneID string, permittedNetworkID string) *GetLinkedPermittedNetworkOptions {
+	return &GetLinkedPermittedNetworkOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+		PermittedNetworkID: core.StringPtr(permittedNetworkID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *GetLinkedPermittedNetworkOptions) SetInstanceID(instanceID string) *GetLinkedPermittedNetworkOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *GetLinkedPermittedNetworkOptions) SetLinkedDnszoneID(linkedDnszoneID string) *GetLinkedPermittedNetworkOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetPermittedNetworkID : Allow user to set PermittedNetworkID
+func (_options *GetLinkedPermittedNetworkOptions) SetPermittedNetworkID(permittedNetworkID string) *GetLinkedPermittedNetworkOptions {
+	_options.PermittedNetworkID = core.StringPtr(permittedNetworkID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *GetLinkedPermittedNetworkOptions) SetXCorrelationID(xCorrelationID string) *GetLinkedPermittedNetworkOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *GetLinkedPermittedNetworkOptions) SetHeaders(param map[string]string) *GetLinkedPermittedNetworkOptions {
+	options.Headers = param
+	return options
+}
+
+// GetLinkedZoneOptions : The GetLinkedZone options.
+type GetLinkedZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewGetLinkedZoneOptions : Instantiate GetLinkedZoneOptions
+func (*DnsSvcsV1) NewGetLinkedZoneOptions(instanceID string, linkedDnszoneID string) *GetLinkedZoneOptions {
+	return &GetLinkedZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *GetLinkedZoneOptions) SetInstanceID(instanceID string) *GetLinkedZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *GetLinkedZoneOptions) SetLinkedDnszoneID(linkedDnszoneID string) *GetLinkedZoneOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *GetLinkedZoneOptions) SetXCorrelationID(xCorrelationID string) *GetLinkedZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *GetLinkedZoneOptions) SetHeaders(param map[string]string) *GetLinkedZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // GetLoadBalancerOptions : The GetLoadBalancer options.
 type GetLoadBalancerOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer.
-	LbID *string `json:"-" validate:"required,ne="`
+	LbID *string `json:"lb_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4880,8 +6762,8 @@ type GetLoadBalancerOptions struct {
 func (*DnsSvcsV1) NewGetLoadBalancerOptions(instanceID string, dnszoneID string, lbID string) *GetLoadBalancerOptions {
 	return &GetLoadBalancerOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
-		LbID:       core.StringPtr(lbID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		LbID: core.StringPtr(lbID),
 	}
 }
 
@@ -4918,13 +6800,13 @@ func (options *GetLoadBalancerOptions) SetHeaders(param map[string]string) *GetL
 // GetMonitorOptions : The GetMonitor options.
 type GetMonitorOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer monitor.
-	MonitorID *string `json:"-" validate:"required,ne="`
+	MonitorID *string `json:"monitor_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4934,7 +6816,7 @@ type GetMonitorOptions struct {
 func (*DnsSvcsV1) NewGetMonitorOptions(instanceID string, monitorID string) *GetMonitorOptions {
 	return &GetMonitorOptions{
 		InstanceID: core.StringPtr(instanceID),
-		MonitorID:  core.StringPtr(monitorID),
+		MonitorID: core.StringPtr(monitorID),
 	}
 }
 
@@ -4965,16 +6847,16 @@ func (options *GetMonitorOptions) SetHeaders(param map[string]string) *GetMonito
 // GetPermittedNetworkOptions : The GetPermittedNetwork options.
 type GetPermittedNetworkOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a permitted network.
-	PermittedNetworkID *string `json:"-" validate:"required,ne="`
+	PermittedNetworkID *string `json:"permitted_network_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -4983,8 +6865,8 @@ type GetPermittedNetworkOptions struct {
 // NewGetPermittedNetworkOptions : Instantiate GetPermittedNetworkOptions
 func (*DnsSvcsV1) NewGetPermittedNetworkOptions(instanceID string, dnszoneID string, permittedNetworkID string) *GetPermittedNetworkOptions {
 	return &GetPermittedNetworkOptions{
-		InstanceID:         core.StringPtr(instanceID),
-		DnszoneID:          core.StringPtr(dnszoneID),
+		InstanceID: core.StringPtr(instanceID),
+		DnszoneID: core.StringPtr(dnszoneID),
 		PermittedNetworkID: core.StringPtr(permittedNetworkID),
 	}
 }
@@ -5022,13 +6904,13 @@ func (options *GetPermittedNetworkOptions) SetHeaders(param map[string]string) *
 // GetPoolOptions : The GetPool options.
 type GetPoolOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer pool.
-	PoolID *string `json:"-" validate:"required,ne="`
+	PoolID *string `json:"pool_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5038,7 +6920,7 @@ type GetPoolOptions struct {
 func (*DnsSvcsV1) NewGetPoolOptions(instanceID string, poolID string) *GetPoolOptions {
 	return &GetPoolOptions{
 		InstanceID: core.StringPtr(instanceID),
-		PoolID:     core.StringPtr(poolID),
+		PoolID: core.StringPtr(poolID),
 	}
 }
 
@@ -5069,16 +6951,16 @@ func (options *GetPoolOptions) SetHeaders(param map[string]string) *GetPoolOptio
 // GetResourceRecordOptions : The GetResourceRecord options.
 type GetResourceRecordOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a resource record.
-	RecordID *string `json:"-" validate:"required,ne="`
+	RecordID *string `json:"record_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5088,8 +6970,8 @@ type GetResourceRecordOptions struct {
 func (*DnsSvcsV1) NewGetResourceRecordOptions(instanceID string, dnszoneID string, recordID string) *GetResourceRecordOptions {
 	return &GetResourceRecordOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
-		RecordID:   core.StringPtr(recordID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		RecordID: core.StringPtr(recordID),
 	}
 }
 
@@ -5123,22 +7005,79 @@ func (options *GetResourceRecordOptions) SetHeaders(param map[string]string) *Ge
 	return options
 }
 
+// GetSecondaryZoneOptions : The GetSecondaryZone options.
+type GetSecondaryZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a custom resolver.
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
+
+	// The unique identifier of a secondary zone.
+	SecondaryZoneID *string `json:"secondary_zone_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewGetSecondaryZoneOptions : Instantiate GetSecondaryZoneOptions
+func (*DnsSvcsV1) NewGetSecondaryZoneOptions(instanceID string, resolverID string, secondaryZoneID string) *GetSecondaryZoneOptions {
+	return &GetSecondaryZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		ResolverID: core.StringPtr(resolverID),
+		SecondaryZoneID: core.StringPtr(secondaryZoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *GetSecondaryZoneOptions) SetInstanceID(instanceID string) *GetSecondaryZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetResolverID : Allow user to set ResolverID
+func (_options *GetSecondaryZoneOptions) SetResolverID(resolverID string) *GetSecondaryZoneOptions {
+	_options.ResolverID = core.StringPtr(resolverID)
+	return _options
+}
+
+// SetSecondaryZoneID : Allow user to set SecondaryZoneID
+func (_options *GetSecondaryZoneOptions) SetSecondaryZoneID(secondaryZoneID string) *GetSecondaryZoneOptions {
+	_options.SecondaryZoneID = core.StringPtr(secondaryZoneID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *GetSecondaryZoneOptions) SetXCorrelationID(xCorrelationID string) *GetSecondaryZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *GetSecondaryZoneOptions) SetHeaders(param map[string]string) *GetSecondaryZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // ImportResourceRecordsOptions : The ImportResourceRecords options.
 type ImportResourceRecordsOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// file to upload.
-	File io.ReadCloser `json:"-"`
+	File io.ReadCloser `json:"file,omitempty"`
 
 	// The content type of file.
-	FileContentType *string `json:"-"`
+	FileContentType *string `json:"file_content_type,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5148,7 +7087,7 @@ type ImportResourceRecordsOptions struct {
 func (*DnsSvcsV1) NewImportResourceRecordsOptions(instanceID string, dnszoneID string) *ImportResourceRecordsOptions {
 	return &ImportResourceRecordsOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -5188,13 +7127,37 @@ func (options *ImportResourceRecordsOptions) SetHeaders(param map[string]string)
 	return options
 }
 
+// LinkedDnszoneLinkedTo : The owner's instance and zone that the zone is linked to.
+type LinkedDnszoneLinkedTo struct {
+	// The owner's instance CRN.
+	InstanceCrn *string `json:"instance_crn,omitempty"`
+
+	// The owner's DNS zone.
+	ZoneID *string `json:"zone_id,omitempty"`
+}
+
+// UnmarshalLinkedDnszoneLinkedTo unmarshals an instance of LinkedDnszoneLinkedTo from the specified map of raw messages.
+func UnmarshalLinkedDnszoneLinkedTo(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(LinkedDnszoneLinkedTo)
+	err = core.UnmarshalPrimitive(m, "instance_crn", &obj.InstanceCrn)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "zone_id", &obj.ZoneID)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
 // ListCustomResolversOptions : The ListCustomResolvers options.
 type ListCustomResolversOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5225,19 +7188,87 @@ func (options *ListCustomResolversOptions) SetHeaders(param map[string]string) *
 	return options
 }
 
+// ListDnszoneAccessRequestsOptions : The ListDnszoneAccessRequests options.
+type ListDnszoneAccessRequestsOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a DNS zone.
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewListDnszoneAccessRequestsOptions : Instantiate ListDnszoneAccessRequestsOptions
+func (*DnsSvcsV1) NewListDnszoneAccessRequestsOptions(instanceID string, dnszoneID string) *ListDnszoneAccessRequestsOptions {
+	return &ListDnszoneAccessRequestsOptions{
+		InstanceID: core.StringPtr(instanceID),
+		DnszoneID: core.StringPtr(dnszoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *ListDnszoneAccessRequestsOptions) SetInstanceID(instanceID string) *ListDnszoneAccessRequestsOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetDnszoneID : Allow user to set DnszoneID
+func (_options *ListDnszoneAccessRequestsOptions) SetDnszoneID(dnszoneID string) *ListDnszoneAccessRequestsOptions {
+	_options.DnszoneID = core.StringPtr(dnszoneID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *ListDnszoneAccessRequestsOptions) SetXCorrelationID(xCorrelationID string) *ListDnszoneAccessRequestsOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetOffset : Allow user to set Offset
+func (_options *ListDnszoneAccessRequestsOptions) SetOffset(offset int64) *ListDnszoneAccessRequestsOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListDnszoneAccessRequestsOptions) SetLimit(limit int64) *ListDnszoneAccessRequestsOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *ListDnszoneAccessRequestsOptions) SetHeaders(param map[string]string) *ListDnszoneAccessRequestsOptions {
+	options.Headers = param
+	return options
+}
+
 // ListDnszonesOptions : The ListDnszones options.
 type ListDnszonesOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
-	// Specify how many resource records to skip over, the default value is 0.
-	Offset *int64 `json:"-"`
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
 
-	// Specify how many resource records are returned, the default value is 200.
-	Limit *int64 `json:"-"`
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
+
+	// Specify the VPC ID.
+	VpcID *string `json:"vpc_id,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5274,6 +7305,12 @@ func (_options *ListDnszonesOptions) SetLimit(limit int64) *ListDnszonesOptions 
 	return _options
 }
 
+// SetVpcID : Allow user to set VpcID
+func (_options *ListDnszonesOptions) SetVpcID(vpcID string) *ListDnszonesOptions {
+	_options.VpcID = core.StringPtr(vpcID)
+	return _options
+}
+
 // SetHeaders : Allow user to set Headers
 func (options *ListDnszonesOptions) SetHeaders(param map[string]string) *ListDnszonesOptions {
 	options.Headers = param
@@ -5283,13 +7320,19 @@ func (options *ListDnszonesOptions) SetHeaders(param map[string]string) *ListDns
 // ListForwardingRulesOptions : The ListForwardingRules options.
 type ListForwardingRulesOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5321,8 +7364,122 @@ func (_options *ListForwardingRulesOptions) SetXCorrelationID(xCorrelationID str
 	return _options
 }
 
+// SetOffset : Allow user to set Offset
+func (_options *ListForwardingRulesOptions) SetOffset(offset int64) *ListForwardingRulesOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListForwardingRulesOptions) SetLimit(limit int64) *ListForwardingRulesOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
 // SetHeaders : Allow user to set Headers
 func (options *ListForwardingRulesOptions) SetHeaders(param map[string]string) *ListForwardingRulesOptions {
+	options.Headers = param
+	return options
+}
+
+// ListLinkedPermittedNetworksOptions : The ListLinkedPermittedNetworks options.
+type ListLinkedPermittedNetworksOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewListLinkedPermittedNetworksOptions : Instantiate ListLinkedPermittedNetworksOptions
+func (*DnsSvcsV1) NewListLinkedPermittedNetworksOptions(instanceID string, linkedDnszoneID string) *ListLinkedPermittedNetworksOptions {
+	return &ListLinkedPermittedNetworksOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *ListLinkedPermittedNetworksOptions) SetInstanceID(instanceID string) *ListLinkedPermittedNetworksOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *ListLinkedPermittedNetworksOptions) SetLinkedDnszoneID(linkedDnszoneID string) *ListLinkedPermittedNetworksOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *ListLinkedPermittedNetworksOptions) SetXCorrelationID(xCorrelationID string) *ListLinkedPermittedNetworksOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *ListLinkedPermittedNetworksOptions) SetHeaders(param map[string]string) *ListLinkedPermittedNetworksOptions {
+	options.Headers = param
+	return options
+}
+
+// ListLinkedZonesOptions : The ListLinkedZones options.
+type ListLinkedZonesOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewListLinkedZonesOptions : Instantiate ListLinkedZonesOptions
+func (*DnsSvcsV1) NewListLinkedZonesOptions(instanceID string) *ListLinkedZonesOptions {
+	return &ListLinkedZonesOptions{
+		InstanceID: core.StringPtr(instanceID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *ListLinkedZonesOptions) SetInstanceID(instanceID string) *ListLinkedZonesOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *ListLinkedZonesOptions) SetXCorrelationID(xCorrelationID string) *ListLinkedZonesOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetOffset : Allow user to set Offset
+func (_options *ListLinkedZonesOptions) SetOffset(offset int64) *ListLinkedZonesOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListLinkedZonesOptions) SetLimit(limit int64) *ListLinkedZonesOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *ListLinkedZonesOptions) SetHeaders(param map[string]string) *ListLinkedZonesOptions {
 	options.Headers = param
 	return options
 }
@@ -5330,13 +7487,19 @@ func (options *ListForwardingRulesOptions) SetHeaders(param map[string]string) *
 // ListLoadBalancersOptions : The ListLoadBalancers options.
 type ListLoadBalancersOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5346,7 +7509,7 @@ type ListLoadBalancersOptions struct {
 func (*DnsSvcsV1) NewListLoadBalancersOptions(instanceID string, dnszoneID string) *ListLoadBalancersOptions {
 	return &ListLoadBalancersOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -5368,6 +7531,18 @@ func (_options *ListLoadBalancersOptions) SetXCorrelationID(xCorrelationID strin
 	return _options
 }
 
+// SetOffset : Allow user to set Offset
+func (_options *ListLoadBalancersOptions) SetOffset(offset int64) *ListLoadBalancersOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListLoadBalancersOptions) SetLimit(limit int64) *ListLoadBalancersOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
 // SetHeaders : Allow user to set Headers
 func (options *ListLoadBalancersOptions) SetHeaders(param map[string]string) *ListLoadBalancersOptions {
 	options.Headers = param
@@ -5377,10 +7552,16 @@ func (options *ListLoadBalancersOptions) SetHeaders(param map[string]string) *Li
 // ListMonitorsOptions : The ListMonitors options.
 type ListMonitorsOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5405,6 +7586,18 @@ func (_options *ListMonitorsOptions) SetXCorrelationID(xCorrelationID string) *L
 	return _options
 }
 
+// SetOffset : Allow user to set Offset
+func (_options *ListMonitorsOptions) SetOffset(offset int64) *ListMonitorsOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListMonitorsOptions) SetLimit(limit int64) *ListMonitorsOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
 // SetHeaders : Allow user to set Headers
 func (options *ListMonitorsOptions) SetHeaders(param map[string]string) *ListMonitorsOptions {
 	options.Headers = param
@@ -5414,19 +7607,17 @@ func (options *ListMonitorsOptions) SetHeaders(param map[string]string) *ListMon
 // ListPermittedNetworksOptions : The ListPermittedNetworks options.
 type ListPermittedNetworksOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
+
+	// The account identifiers of the owner zone and linked zones in the format of "?account=account1,account2,account3".
+	// Maximum 5 accounts are allowed.
+	Accounts *string `json:"accounts,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
-
-	// Specify how many resource records to skip over, the default value is 0.
-	Offset *int64 `json:"-"`
-
-	// Specify how many resource records are returned, the default value is 200.
-	Limit *int64 `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5436,7 +7627,7 @@ type ListPermittedNetworksOptions struct {
 func (*DnsSvcsV1) NewListPermittedNetworksOptions(instanceID string, dnszoneID string) *ListPermittedNetworksOptions {
 	return &ListPermittedNetworksOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -5452,21 +7643,15 @@ func (_options *ListPermittedNetworksOptions) SetDnszoneID(dnszoneID string) *Li
 	return _options
 }
 
+// SetAccounts : Allow user to set Accounts
+func (_options *ListPermittedNetworksOptions) SetAccounts(accounts string) *ListPermittedNetworksOptions {
+	_options.Accounts = core.StringPtr(accounts)
+	return _options
+}
+
 // SetXCorrelationID : Allow user to set XCorrelationID
 func (_options *ListPermittedNetworksOptions) SetXCorrelationID(xCorrelationID string) *ListPermittedNetworksOptions {
 	_options.XCorrelationID = core.StringPtr(xCorrelationID)
-	return _options
-}
-
-// SetOffset : Allow user to set Offset
-func (_options *ListPermittedNetworksOptions) SetOffset(offset int64) *ListPermittedNetworksOptions {
-	_options.Offset = core.Int64Ptr(offset)
-	return _options
-}
-
-// SetLimit : Allow user to set Limit
-func (_options *ListPermittedNetworksOptions) SetLimit(limit int64) *ListPermittedNetworksOptions {
-	_options.Limit = core.Int64Ptr(limit)
 	return _options
 }
 
@@ -5479,10 +7664,16 @@ func (options *ListPermittedNetworksOptions) SetHeaders(param map[string]string)
 // ListPoolsOptions : The ListPools options.
 type ListPoolsOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5507,6 +7698,18 @@ func (_options *ListPoolsOptions) SetXCorrelationID(xCorrelationID string) *List
 	return _options
 }
 
+// SetOffset : Allow user to set Offset
+func (_options *ListPoolsOptions) SetOffset(offset int64) *ListPoolsOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListPoolsOptions) SetLimit(limit int64) *ListPoolsOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
 // SetHeaders : Allow user to set Headers
 func (options *ListPoolsOptions) SetHeaders(param map[string]string) *ListPoolsOptions {
 	options.Headers = param
@@ -5516,19 +7719,25 @@ func (options *ListPoolsOptions) SetHeaders(param map[string]string) *ListPoolsO
 // ListResourceRecordsOptions : The ListResourceRecords options.
 type ListResourceRecordsOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
-	// Specify how many resource records to skip over, the default value is 0.
-	Offset *int64 `json:"-"`
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
 
-	// Specify how many resource records are returned, the default value is 200.
-	Limit *int64 `json:"-"`
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
+
+	// Specify the type of resource record to query.
+	Type *string `json:"type,omitempty"`
+
+	// Specify the name of resource record to query.
+	Name *string `json:"name,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5538,7 +7747,7 @@ type ListResourceRecordsOptions struct {
 func (*DnsSvcsV1) NewListResourceRecordsOptions(instanceID string, dnszoneID string) *ListResourceRecordsOptions {
 	return &ListResourceRecordsOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -5572,8 +7781,85 @@ func (_options *ListResourceRecordsOptions) SetLimit(limit int64) *ListResourceR
 	return _options
 }
 
+// SetType : Allow user to set Type
+func (_options *ListResourceRecordsOptions) SetType(typeVar string) *ListResourceRecordsOptions {
+	_options.Type = core.StringPtr(typeVar)
+	return _options
+}
+
+// SetName : Allow user to set Name
+func (_options *ListResourceRecordsOptions) SetName(name string) *ListResourceRecordsOptions {
+	_options.Name = core.StringPtr(name)
+	return _options
+}
+
 // SetHeaders : Allow user to set Headers
 func (options *ListResourceRecordsOptions) SetHeaders(param map[string]string) *ListResourceRecordsOptions {
+	options.Headers = param
+	return options
+}
+
+// ListSecondaryZonesOptions : The ListSecondaryZones options.
+type ListSecondaryZonesOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a custom resolver.
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Specify how many resources to skip over, the default value is 0.
+	Offset *int64 `json:"offset,omitempty"`
+
+	// Specify maximum resources might be returned.
+	Limit *int64 `json:"limit,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewListSecondaryZonesOptions : Instantiate ListSecondaryZonesOptions
+func (*DnsSvcsV1) NewListSecondaryZonesOptions(instanceID string, resolverID string) *ListSecondaryZonesOptions {
+	return &ListSecondaryZonesOptions{
+		InstanceID: core.StringPtr(instanceID),
+		ResolverID: core.StringPtr(resolverID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *ListSecondaryZonesOptions) SetInstanceID(instanceID string) *ListSecondaryZonesOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetResolverID : Allow user to set ResolverID
+func (_options *ListSecondaryZonesOptions) SetResolverID(resolverID string) *ListSecondaryZonesOptions {
+	_options.ResolverID = core.StringPtr(resolverID)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *ListSecondaryZonesOptions) SetXCorrelationID(xCorrelationID string) *ListSecondaryZonesOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetOffset : Allow user to set Offset
+func (_options *ListSecondaryZonesOptions) SetOffset(offset int64) *ListSecondaryZonesOptions {
+	_options.Offset = core.Int64Ptr(offset)
+	return _options
+}
+
+// SetLimit : Allow user to set Limit
+func (_options *ListSecondaryZonesOptions) SetLimit(limit int64) *ListSecondaryZonesOptions {
+	_options.Limit = core.Int64Ptr(limit)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *ListSecondaryZonesOptions) SetHeaders(param map[string]string) *ListSecondaryZonesOptions {
 	options.Headers = param
 	return options
 }
@@ -5640,7 +7926,7 @@ func UnmarshalPoolHealthcheckVsisItem(m map[string]json.RawMessage, result inter
 	return
 }
 
-// RecordsImportErrorModelError : RecordsImportErrorModelError struct
+// RecordsImportErrorModelError : Error container.
 type RecordsImportErrorModelError struct {
 	// Internal service error when DNS resource created fails by internal error.
 	Code *string `json:"code" validate:"required"`
@@ -5704,7 +7990,6 @@ type ResourceRecordInputRdata struct {
 	// Hostname of the relevant A or AAAA record.
 	Ptrdname *string `json:"ptrdname,omitempty"`
 }
-
 func (*ResourceRecordInputRdata) isaResourceRecordInputRdata() bool {
 	return true
 }
@@ -5800,7 +8085,6 @@ type ResourceRecordUpdateInputRdata struct {
 	// Hostname of the relevant A or AAAA record.
 	Ptrdname *string `json:"ptrdname,omitempty"`
 }
-
 func (*ResourceRecordUpdateInputRdata) isaResourceRecordUpdateInputRdata() bool {
 	return true
 }
@@ -5856,16 +8140,72 @@ func UnmarshalResourceRecordUpdateInputRdata(m map[string]json.RawMessage, resul
 	return
 }
 
+// UpdateCrLocationsOrderOptions : The UpdateCrLocationsOrder options.
+type UpdateCrLocationsOrderOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a custom resolver.
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
+
+	// Array of custom resolver location ID.
+	Locations []string `json:"locations,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewUpdateCrLocationsOrderOptions : Instantiate UpdateCrLocationsOrderOptions
+func (*DnsSvcsV1) NewUpdateCrLocationsOrderOptions(instanceID string, resolverID string) *UpdateCrLocationsOrderOptions {
+	return &UpdateCrLocationsOrderOptions{
+		InstanceID: core.StringPtr(instanceID),
+		ResolverID: core.StringPtr(resolverID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *UpdateCrLocationsOrderOptions) SetInstanceID(instanceID string) *UpdateCrLocationsOrderOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetResolverID : Allow user to set ResolverID
+func (_options *UpdateCrLocationsOrderOptions) SetResolverID(resolverID string) *UpdateCrLocationsOrderOptions {
+	_options.ResolverID = core.StringPtr(resolverID)
+	return _options
+}
+
+// SetLocations : Allow user to set Locations
+func (_options *UpdateCrLocationsOrderOptions) SetLocations(locations []string) *UpdateCrLocationsOrderOptions {
+	_options.Locations = locations
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *UpdateCrLocationsOrderOptions) SetXCorrelationID(xCorrelationID string) *UpdateCrLocationsOrderOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *UpdateCrLocationsOrderOptions) SetHeaders(param map[string]string) *UpdateCrLocationsOrderOptions {
+	options.Headers = param
+	return options
+}
+
 // UpdateCustomResolverLocationOptions : The UpdateCustomResolverLocation options.
 type UpdateCustomResolverLocationOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Custom resolver location ID.
-	LocationID *string `json:"-" validate:"required,ne="`
+	LocationID *string `json:"location_id" validate:"required,ne="`
 
 	// Enable/Disable custom resolver location.
 	Enabled *bool `json:"enabled,omitempty"`
@@ -5874,7 +8214,7 @@ type UpdateCustomResolverLocationOptions struct {
 	SubnetCrn *string `json:"subnet_crn,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -5934,10 +8274,10 @@ func (options *UpdateCustomResolverLocationOptions) SetHeaders(param map[string]
 // UpdateCustomResolverOptions : The UpdateCustomResolver options.
 type UpdateCustomResolverOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
 	// Name of the custom resolver.
 	Name *string `json:"name,omitempty"`
@@ -5949,7 +8289,7 @@ type UpdateCustomResolverOptions struct {
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6005,13 +8345,87 @@ func (options *UpdateCustomResolverOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// UpdateDnszoneAccessRequestOptions : The UpdateDnszoneAccessRequest options.
+type UpdateDnszoneAccessRequestOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a DNS zone.
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
+
+	// The unique identifier of an access request.
+	RequestID *string `json:"request_id" validate:"required,ne="`
+
+	// The action applies to the access request.
+	Action *string `json:"action,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// Constants associated with the UpdateDnszoneAccessRequestOptions.Action property.
+// The action applies to the access request.
+const (
+	UpdateDnszoneAccessRequestOptions_Action_Approve = "APPROVE"
+	UpdateDnszoneAccessRequestOptions_Action_Reject = "REJECT"
+	UpdateDnszoneAccessRequestOptions_Action_Revoke = "REVOKE"
+)
+
+// NewUpdateDnszoneAccessRequestOptions : Instantiate UpdateDnszoneAccessRequestOptions
+func (*DnsSvcsV1) NewUpdateDnszoneAccessRequestOptions(instanceID string, dnszoneID string, requestID string) *UpdateDnszoneAccessRequestOptions {
+	return &UpdateDnszoneAccessRequestOptions{
+		InstanceID: core.StringPtr(instanceID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		RequestID: core.StringPtr(requestID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *UpdateDnszoneAccessRequestOptions) SetInstanceID(instanceID string) *UpdateDnszoneAccessRequestOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetDnszoneID : Allow user to set DnszoneID
+func (_options *UpdateDnszoneAccessRequestOptions) SetDnszoneID(dnszoneID string) *UpdateDnszoneAccessRequestOptions {
+	_options.DnszoneID = core.StringPtr(dnszoneID)
+	return _options
+}
+
+// SetRequestID : Allow user to set RequestID
+func (_options *UpdateDnszoneAccessRequestOptions) SetRequestID(requestID string) *UpdateDnszoneAccessRequestOptions {
+	_options.RequestID = core.StringPtr(requestID)
+	return _options
+}
+
+// SetAction : Allow user to set Action
+func (_options *UpdateDnszoneAccessRequestOptions) SetAction(action string) *UpdateDnszoneAccessRequestOptions {
+	_options.Action = core.StringPtr(action)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *UpdateDnszoneAccessRequestOptions) SetXCorrelationID(xCorrelationID string) *UpdateDnszoneAccessRequestOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *UpdateDnszoneAccessRequestOptions) SetHeaders(param map[string]string) *UpdateDnszoneAccessRequestOptions {
+	options.Headers = param
+	return options
+}
+
 // UpdateDnszoneOptions : The UpdateDnszone options.
 type UpdateDnszoneOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The text describing the purpose of a DNS zone.
 	Description *string `json:"description,omitempty"`
@@ -6020,7 +8434,7 @@ type UpdateDnszoneOptions struct {
 	Label *string `json:"label,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6030,7 +8444,7 @@ type UpdateDnszoneOptions struct {
 func (*DnsSvcsV1) NewUpdateDnszoneOptions(instanceID string, dnszoneID string) *UpdateDnszoneOptions {
 	return &UpdateDnszoneOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
+		DnszoneID: core.StringPtr(dnszoneID),
 	}
 }
 
@@ -6073,13 +8487,13 @@ func (options *UpdateDnszoneOptions) SetHeaders(param map[string]string) *Update
 // UpdateForwardingRuleOptions : The UpdateForwardingRule options.
 type UpdateForwardingRuleOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a custom resolver.
-	ResolverID *string `json:"-" validate:"required,ne="`
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
 
-	// The unique identifier of a forwarding rule.
-	RuleID *string `json:"-" validate:"required,ne="`
+	// The unique identifier of a rule.
+	RuleID *string `json:"rule_id" validate:"required,ne="`
 
 	// Descriptive text of the forwarding rule.
 	Description *string `json:"description,omitempty"`
@@ -6091,7 +8505,7 @@ type UpdateForwardingRuleOptions struct {
 	ForwardTo []string `json:"forward_to,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6102,7 +8516,7 @@ func (*DnsSvcsV1) NewUpdateForwardingRuleOptions(instanceID string, resolverID s
 	return &UpdateForwardingRuleOptions{
 		InstanceID: core.StringPtr(instanceID),
 		ResolverID: core.StringPtr(resolverID),
-		RuleID:     core.StringPtr(ruleID),
+		RuleID: core.StringPtr(ruleID),
 	}
 }
 
@@ -6154,16 +8568,81 @@ func (options *UpdateForwardingRuleOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// UpdateLinkedZoneOptions : The UpdateLinkedZone options.
+type UpdateLinkedZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a linked zone.
+	LinkedDnszoneID *string `json:"linked_dnszone_id" validate:"required,ne="`
+
+	// Descriptive text of the linked zone.
+	Description *string `json:"description,omitempty"`
+
+	// The label of linked zone.
+	Label *string `json:"label,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewUpdateLinkedZoneOptions : Instantiate UpdateLinkedZoneOptions
+func (*DnsSvcsV1) NewUpdateLinkedZoneOptions(instanceID string, linkedDnszoneID string) *UpdateLinkedZoneOptions {
+	return &UpdateLinkedZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		LinkedDnszoneID: core.StringPtr(linkedDnszoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *UpdateLinkedZoneOptions) SetInstanceID(instanceID string) *UpdateLinkedZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetLinkedDnszoneID : Allow user to set LinkedDnszoneID
+func (_options *UpdateLinkedZoneOptions) SetLinkedDnszoneID(linkedDnszoneID string) *UpdateLinkedZoneOptions {
+	_options.LinkedDnszoneID = core.StringPtr(linkedDnszoneID)
+	return _options
+}
+
+// SetDescription : Allow user to set Description
+func (_options *UpdateLinkedZoneOptions) SetDescription(description string) *UpdateLinkedZoneOptions {
+	_options.Description = core.StringPtr(description)
+	return _options
+}
+
+// SetLabel : Allow user to set Label
+func (_options *UpdateLinkedZoneOptions) SetLabel(label string) *UpdateLinkedZoneOptions {
+	_options.Label = core.StringPtr(label)
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *UpdateLinkedZoneOptions) SetXCorrelationID(xCorrelationID string) *UpdateLinkedZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *UpdateLinkedZoneOptions) SetHeaders(param map[string]string) *UpdateLinkedZoneOptions {
+	options.Headers = param
+	return options
+}
+
 // UpdateLoadBalancerOptions : The UpdateLoadBalancer options.
 type UpdateLoadBalancerOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer.
-	LbID *string `json:"-" validate:"required,ne="`
+	LbID *string `json:"lb_id" validate:"required,ne="`
 
 	// Name of the load balancer.
 	Name *string `json:"name,omitempty"`
@@ -6188,7 +8667,7 @@ type UpdateLoadBalancerOptions struct {
 	AzPools []LoadBalancerAzPoolsItem `json:"az_pools,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6198,8 +8677,8 @@ type UpdateLoadBalancerOptions struct {
 func (*DnsSvcsV1) NewUpdateLoadBalancerOptions(instanceID string, dnszoneID string, lbID string) *UpdateLoadBalancerOptions {
 	return &UpdateLoadBalancerOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
-		LbID:       core.StringPtr(lbID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		LbID: core.StringPtr(lbID),
 	}
 }
 
@@ -6278,10 +8757,10 @@ func (options *UpdateLoadBalancerOptions) SetHeaders(param map[string]string) *U
 // UpdateMonitorOptions : The UpdateMonitor options.
 type UpdateMonitorOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer monitor.
-	MonitorID *string `json:"-" validate:"required,ne="`
+	MonitorID *string `json:"monitor_id" validate:"required,ne="`
 
 	// The name of the load balancer monitor.
 	Name *string `json:"name,omitempty"`
@@ -6330,7 +8809,7 @@ type UpdateMonitorOptions struct {
 	ExpectedBody *string `json:"expected_body,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6339,15 +8818,15 @@ type UpdateMonitorOptions struct {
 // Constants associated with the UpdateMonitorOptions.Type property.
 // The protocol to use for the health check. Currently supported protocols are 'HTTP','HTTPS' and 'TCP'.
 const (
-	UpdateMonitorOptions_Type_Http  = "HTTP"
+	UpdateMonitorOptions_Type_Http = "HTTP"
 	UpdateMonitorOptions_Type_Https = "HTTPS"
-	UpdateMonitorOptions_Type_Tcp   = "TCP"
+	UpdateMonitorOptions_Type_Tcp = "TCP"
 )
 
 // Constants associated with the UpdateMonitorOptions.Method property.
 // The method to use for the health check applicable to HTTP/HTTPS based checks, the default value is 'GET'.
 const (
-	UpdateMonitorOptions_Method_Get  = "GET"
+	UpdateMonitorOptions_Method_Get = "GET"
 	UpdateMonitorOptions_Method_Head = "HEAD"
 )
 
@@ -6355,7 +8834,7 @@ const (
 func (*DnsSvcsV1) NewUpdateMonitorOptions(instanceID string, monitorID string) *UpdateMonitorOptions {
 	return &UpdateMonitorOptions{
 		InstanceID: core.StringPtr(instanceID),
-		MonitorID:  core.StringPtr(monitorID),
+		MonitorID: core.StringPtr(monitorID),
 	}
 }
 
@@ -6464,10 +8943,10 @@ func (options *UpdateMonitorOptions) SetHeaders(param map[string]string) *Update
 // UpdatePoolOptions : The UpdatePool options.
 type UpdatePoolOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a load balancer pool.
-	PoolID *string `json:"-" validate:"required,ne="`
+	PoolID *string `json:"pool_id" validate:"required,ne="`
 
 	// Name of the load balancer pool.
 	Name *string `json:"name,omitempty"`
@@ -6499,7 +8978,7 @@ type UpdatePoolOptions struct {
 	HealthcheckSubnets []string `json:"healthcheck_subnets,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6508,11 +8987,11 @@ type UpdatePoolOptions struct {
 // Constants associated with the UpdatePoolOptions.HealthcheckRegion property.
 // Health check region of VSIs.
 const (
-	UpdatePoolOptions_HealthcheckRegion_AuSyd   = "au-syd"
-	UpdatePoolOptions_HealthcheckRegion_EuDu    = "eu-du"
-	UpdatePoolOptions_HealthcheckRegion_EuGb    = "eu-gb"
-	UpdatePoolOptions_HealthcheckRegion_JpTok   = "jp-tok"
-	UpdatePoolOptions_HealthcheckRegion_UsEast  = "us-east"
+	UpdatePoolOptions_HealthcheckRegion_AuSyd = "au-syd"
+	UpdatePoolOptions_HealthcheckRegion_EuDu = "eu-du"
+	UpdatePoolOptions_HealthcheckRegion_EuGb = "eu-gb"
+	UpdatePoolOptions_HealthcheckRegion_JpTok = "jp-tok"
+	UpdatePoolOptions_HealthcheckRegion_UsEast = "us-east"
 	UpdatePoolOptions_HealthcheckRegion_UsSouth = "us-south"
 )
 
@@ -6520,7 +8999,7 @@ const (
 func (*DnsSvcsV1) NewUpdatePoolOptions(instanceID string, poolID string) *UpdatePoolOptions {
 	return &UpdatePoolOptions{
 		InstanceID: core.StringPtr(instanceID),
-		PoolID:     core.StringPtr(poolID),
+		PoolID: core.StringPtr(poolID),
 	}
 }
 
@@ -6605,13 +9084,13 @@ func (options *UpdatePoolOptions) SetHeaders(param map[string]string) *UpdatePoo
 // UpdateResourceRecordOptions : The UpdateResourceRecord options.
 type UpdateResourceRecordOptions struct {
 	// The unique identifier of a service instance.
-	InstanceID *string `json:"-" validate:"required,ne="`
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
 
 	// The unique identifier of a DNS zone.
-	DnszoneID *string `json:"-" validate:"required,ne="`
+	DnszoneID *string `json:"dnszone_id" validate:"required,ne="`
 
 	// The unique identifier of a resource record.
-	RecordID *string `json:"-" validate:"required,ne="`
+	RecordID *string `json:"record_id" validate:"required,ne="`
 
 	// Name of the resource record.
 	Name *string `json:"name,omitempty"`
@@ -6629,7 +9108,7 @@ type UpdateResourceRecordOptions struct {
 	Protocol *string `json:"protocol,omitempty"`
 
 	// Uniquely identifying a request.
-	XCorrelationID *string `json:"-"`
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers map[string]string
@@ -6639,8 +9118,8 @@ type UpdateResourceRecordOptions struct {
 func (*DnsSvcsV1) NewUpdateResourceRecordOptions(instanceID string, dnszoneID string, recordID string) *UpdateResourceRecordOptions {
 	return &UpdateResourceRecordOptions{
 		InstanceID: core.StringPtr(instanceID),
-		DnszoneID:  core.StringPtr(dnszoneID),
-		RecordID:   core.StringPtr(recordID),
+		DnszoneID: core.StringPtr(dnszoneID),
+		RecordID: core.StringPtr(recordID),
 	}
 }
 
@@ -6704,6 +9183,256 @@ func (options *UpdateResourceRecordOptions) SetHeaders(param map[string]string) 
 	return options
 }
 
+// UpdateSecondaryZoneOptions : The UpdateSecondaryZone options.
+type UpdateSecondaryZoneOptions struct {
+	// The unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required,ne="`
+
+	// The unique identifier of a custom resolver.
+	ResolverID *string `json:"resolver_id" validate:"required,ne="`
+
+	// The unique identifier of a secondary zone.
+	SecondaryZoneID *string `json:"secondary_zone_id" validate:"required,ne="`
+
+	// Descriptive text of the secondary zone.
+	Description *string `json:"description,omitempty"`
+
+	// Enable/Disable the secondary zone.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// The addresses of DNS servers where the secondary zone data should be transferred from.
+	TransferFrom []string `json:"transfer_from,omitempty"`
+
+	// Uniquely identifying a request.
+	XCorrelationID *string `json:"X-Correlation-ID,omitempty"`
+
+	// Allows users to set headers on API requests
+	Headers map[string]string
+}
+
+// NewUpdateSecondaryZoneOptions : Instantiate UpdateSecondaryZoneOptions
+func (*DnsSvcsV1) NewUpdateSecondaryZoneOptions(instanceID string, resolverID string, secondaryZoneID string) *UpdateSecondaryZoneOptions {
+	return &UpdateSecondaryZoneOptions{
+		InstanceID: core.StringPtr(instanceID),
+		ResolverID: core.StringPtr(resolverID),
+		SecondaryZoneID: core.StringPtr(secondaryZoneID),
+	}
+}
+
+// SetInstanceID : Allow user to set InstanceID
+func (_options *UpdateSecondaryZoneOptions) SetInstanceID(instanceID string) *UpdateSecondaryZoneOptions {
+	_options.InstanceID = core.StringPtr(instanceID)
+	return _options
+}
+
+// SetResolverID : Allow user to set ResolverID
+func (_options *UpdateSecondaryZoneOptions) SetResolverID(resolverID string) *UpdateSecondaryZoneOptions {
+	_options.ResolverID = core.StringPtr(resolverID)
+	return _options
+}
+
+// SetSecondaryZoneID : Allow user to set SecondaryZoneID
+func (_options *UpdateSecondaryZoneOptions) SetSecondaryZoneID(secondaryZoneID string) *UpdateSecondaryZoneOptions {
+	_options.SecondaryZoneID = core.StringPtr(secondaryZoneID)
+	return _options
+}
+
+// SetDescription : Allow user to set Description
+func (_options *UpdateSecondaryZoneOptions) SetDescription(description string) *UpdateSecondaryZoneOptions {
+	_options.Description = core.StringPtr(description)
+	return _options
+}
+
+// SetEnabled : Allow user to set Enabled
+func (_options *UpdateSecondaryZoneOptions) SetEnabled(enabled bool) *UpdateSecondaryZoneOptions {
+	_options.Enabled = core.BoolPtr(enabled)
+	return _options
+}
+
+// SetTransferFrom : Allow user to set TransferFrom
+func (_options *UpdateSecondaryZoneOptions) SetTransferFrom(transferFrom []string) *UpdateSecondaryZoneOptions {
+	_options.TransferFrom = transferFrom
+	return _options
+}
+
+// SetXCorrelationID : Allow user to set XCorrelationID
+func (_options *UpdateSecondaryZoneOptions) SetXCorrelationID(xCorrelationID string) *UpdateSecondaryZoneOptions {
+	_options.XCorrelationID = core.StringPtr(xCorrelationID)
+	return _options
+}
+
+// SetHeaders : Allow user to set Headers
+func (options *UpdateSecondaryZoneOptions) SetHeaders(param map[string]string) *UpdateSecondaryZoneOptions {
+	options.Headers = param
+	return options
+}
+
+// AccessRequest : Access request.
+type AccessRequest struct {
+	// Access request ID.
+	ID *string `json:"id" validate:"required"`
+
+	// The information of requestor.
+	Requestor *AccessRequestRequestor `json:"requestor" validate:"required"`
+
+	// The zone ID that requestor requests access for.
+	ZoneID *string `json:"zone_id" validate:"required"`
+
+	// The zone name that requestor requests access for.
+	ZoneName *string `json:"zone_name" validate:"required"`
+
+	// The state of the access request.
+	State *string `json:"state" validate:"required"`
+
+	// The expired time of access request with state `pending`.
+	PendingExpiresAt *strfmt.DateTime `json:"pending_expires_at,omitempty"`
+
+	// The time when the linked zone is created.
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
+
+	// The recent time when the linked zone is modified.
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
+}
+
+// Constants associated with the AccessRequest.State property.
+// The state of the access request.
+const (
+	AccessRequest_State_Approved = "APPROVED"
+	AccessRequest_State_Pending = "PENDING"
+	AccessRequest_State_Rejected = "REJECTED"
+	AccessRequest_State_Revoked = "REVOKED"
+	AccessRequest_State_Timedout = "TIMEDOUT"
+)
+
+// UnmarshalAccessRequest unmarshals an instance of AccessRequest from the specified map of raw messages.
+func UnmarshalAccessRequest(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(AccessRequest)
+	err = core.UnmarshalPrimitive(m, "id", &obj.ID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "requestor", &obj.Requestor, UnmarshalAccessRequestRequestor)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "zone_id", &obj.ZoneID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "zone_name", &obj.ZoneName)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "state", &obj.State)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "pending_expires_at", &obj.PendingExpiresAt)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "created_on", &obj.CreatedOn)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "modified_on", &obj.ModifiedOn)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
+// AccessRequestsList : The list of access requests.
+type AccessRequestsList struct {
+	// The list of access requests.
+	AccessRequests []AccessRequest `json:"access_requests" validate:"required"`
+
+	// The number of resources to skip over.
+	Offset *int64 `json:"offset" validate:"required"`
+
+	// The maximum number of resources might be returned.
+	Limit *int64 `json:"limit" validate:"required"`
+
+	// The number of resources are returned.
+	Count *int64 `json:"count" validate:"required"`
+
+	// Total number of resources.
+	TotalCount *int64 `json:"total_count" validate:"required"`
+
+	// href.
+	First *PaginationRef `json:"first,omitempty"`
+
+	// href.
+	Last *PaginationRef `json:"last,omitempty"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
+}
+
+// UnmarshalAccessRequestsList unmarshals an instance of AccessRequestsList from the specified map of raw messages.
+func UnmarshalAccessRequestsList(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(AccessRequestsList)
+	err = core.UnmarshalModel(m, "access_requests", &obj.AccessRequests, UnmarshalAccessRequest)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "offset", &obj.Offset)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "limit", &obj.Limit)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "count", &obj.Count)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
+// Retrieve the value to be passed to a request to access the next page of results
+func (resp *AccessRequestsList) GetNextOffset() (*int64, error) {
+	if core.IsNil(resp.Next) {
+		return nil, nil
+	}
+	offset, err := core.GetQueryParam(resp.Next.Href, "offset")
+	if err != nil || offset == nil {
+		return nil, err
+	}
+	var offsetValue int64
+	offsetValue, err = strconv.ParseInt(*offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return core.Int64Ptr(offsetValue), nil
+}
+
 // CustomResolver : custom resolver details.
 type CustomResolver struct {
 	// Identifier of the custom resolver.
@@ -6736,7 +9465,7 @@ type CustomResolver struct {
 const (
 	CustomResolver_Health_Critical = "CRITICAL"
 	CustomResolver_Health_Degraded = "DEGRADED"
-	CustomResolver_Health_Healthy  = "HEALTHY"
+	CustomResolver_Health_Healthy = "HEALTHY"
 )
 
 // UnmarshalCustomResolver unmarshals an instance of CustomResolver from the specified map of raw messages.
@@ -6800,16 +9529,16 @@ type Dnszone struct {
 	// Unique identifier of a DNS zone.
 	ID *string `json:"id,omitempty"`
 
-	// the time when a DNS zone is created.
-	CreatedOn *string `json:"created_on,omitempty"`
+	// The time when a DNS zone is created.
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
 
-	// the recent time when a DNS zone is modified.
-	ModifiedOn *string `json:"modified_on,omitempty"`
+	// The recent time when a DNS zone is modified.
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
 
 	// Unique identifier of a service instance.
 	InstanceID *string `json:"instance_id,omitempty"`
 
-	// Name of DNS zone.
+	// Name of the DNS zone. Must be a fully qualified domain name.
 	Name *string `json:"name,omitempty"`
 
 	// The text describing the purpose of a DNS zone.
@@ -6825,10 +9554,10 @@ type Dnszone struct {
 // Constants associated with the Dnszone.State property.
 // State of DNS zone.
 const (
-	Dnszone_State_Active            = "active"
-	Dnszone_State_Deleted           = "deleted"
-	Dnszone_State_Disabled          = "disabled"
-	Dnszone_State_PendingDelete     = "pending_delete"
+	Dnszone_State_Active = "active"
+	Dnszone_State_Deleted = "deleted"
+	Dnszone_State_Disabled = "disabled"
+	Dnszone_State_PendingDelete = "pending_delete"
 	Dnszone_State_PendingNetworkAdd = "pending_network_add"
 )
 
@@ -6871,23 +9600,6 @@ func UnmarshalDnszone(m map[string]json.RawMessage, result interface{}) (err err
 	return
 }
 
-// FirstHref : href.
-type FirstHref struct {
-	// href.
-	Href *string `json:"href,omitempty"`
-}
-
-// UnmarshalFirstHref unmarshals an instance of FirstHref from the specified map of raw messages.
-func UnmarshalFirstHref(m map[string]json.RawMessage, result interface{}) (err error) {
-	obj := new(FirstHref)
-	err = core.UnmarshalPrimitive(m, "href", &obj.Href)
-	if err != nil {
-		return
-	}
-	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
-	return
-}
-
 // ForwardingRule : forwarding rule details.
 type ForwardingRule struct {
 	// Identifier of the forwarding rule.
@@ -6916,7 +9628,7 @@ type ForwardingRule struct {
 // Type of the forwarding rule.
 const (
 	ForwardingRule_Type_Default = "default"
-	ForwardingRule_Type_Zone    = "zone"
+	ForwardingRule_Type_Zone = "zone"
 )
 
 // UnmarshalForwardingRule unmarshals an instance of ForwardingRule from the specified map of raw messages.
@@ -6954,9 +9666,34 @@ func UnmarshalForwardingRule(m map[string]json.RawMessage, result interface{}) (
 	return
 }
 
-// ForwardingRuleList : An array of forwarding rules.
+// ForwardingRuleList : List of forwarding rules.
 type ForwardingRuleList struct {
-	ForwardingRules []ForwardingRule `json:"forwarding_rules,omitempty"`
+	// An array of forwarding rules.
+	ForwardingRules []ForwardingRule `json:"forwarding_rules" validate:"required"`
+
+	// The number of resources to skip over.
+	Offset *int64 `json:"offset" validate:"required"`
+
+	// The maximum number of resources might be returned.
+	Limit *int64 `json:"limit" validate:"required"`
+
+	// The number of resources are returned.
+	Count *int64 `json:"count" validate:"required"`
+
+	// Total number of resources.
+	TotalCount *int64 `json:"total_count" validate:"required"`
+
+	// href.
+	First *PaginationRef `json:"first" validate:"required"`
+
+	// href.
+	Last *PaginationRef `json:"last" validate:"required"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
 }
 
 // UnmarshalForwardingRuleList unmarshals an instance of ForwardingRuleList from the specified map of raw messages.
@@ -6966,8 +9703,57 @@ func UnmarshalForwardingRuleList(m map[string]json.RawMessage, result interface{
 	if err != nil {
 		return
 	}
+	err = core.UnmarshalPrimitive(m, "offset", &obj.Offset)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "limit", &obj.Limit)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "count", &obj.Count)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
 	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
 	return
+}
+
+// Retrieve the value to be passed to a request to access the next page of results
+func (resp *ForwardingRuleList) GetNextOffset() (*int64, error) {
+	if core.IsNil(resp.Next) {
+		return nil, nil
+	}
+	offset, err := core.GetQueryParam(resp.Next.Href, "offset")
+	if err != nil || offset == nil {
+		return nil, err
+	}
+	var offsetValue int64
+	offsetValue, err = strconv.ParseInt(*offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return core.Int64Ptr(offsetValue), nil
 }
 
 // HealthcheckHeader : The HTTP header of health check request.
@@ -6982,7 +9768,7 @@ type HealthcheckHeader struct {
 // NewHealthcheckHeader : Instantiate HealthcheckHeader (Generic Model Constructor)
 func (*DnsSvcsV1) NewHealthcheckHeader(name string, value []string) (_model *HealthcheckHeader, err error) {
 	_model = &HealthcheckHeader{
-		Name:  core.StringPtr(name),
+		Name: core.StringPtr(name),
 		Value: value,
 	}
 	err = core.ValidateStruct(_model, "required parameters")
@@ -7063,25 +9849,215 @@ func UnmarshalImportResourceRecordsResp(m map[string]json.RawMessage, result int
 	return
 }
 
+// LinkedDnszone : linked zone details.
+type LinkedDnszone struct {
+	// Identifier of the linked zone.
+	ID *string `json:"id" validate:"required"`
+
+	// Unique identifier of a service instance.
+	InstanceID *string `json:"instance_id" validate:"required"`
+
+	// Name of owner's DNS zone.
+	Name *string `json:"name" validate:"required"`
+
+	// Descriptive text of the linked zone.
+	Description *string `json:"description,omitempty"`
+
+	// The owner's instance and zone that the zone is linked to.
+	LinkedTo *LinkedDnszoneLinkedTo `json:"linked_to" validate:"required"`
+
+	// The state of linked zone.
+	State *string `json:"state" validate:"required"`
+
+	// The label of linked zone.
+	Label *string `json:"label,omitempty"`
+
+	// The expired time of linked zone with state `approval pending`.
+	ApprovalRequiredBefore *strfmt.DateTime `json:"approval_required_before,omitempty"`
+
+	// The time when the linked zone is created.
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
+
+	// The recent time when the linked zone is modified.
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
+}
+
+// Constants associated with the LinkedDnszone.State property.
+// The state of linked zone.
+const (
+	LinkedDnszone_State_Active = "ACTIVE"
+	LinkedDnszone_State_ApprovalRejected = "APPROVAL_REJECTED"
+	LinkedDnszone_State_ApprovalRevoked = "APPROVAL_REVOKED"
+	LinkedDnszone_State_ApprovalTimedout = "APPROVAL_TIMEDOUT"
+	LinkedDnszone_State_PendingApproval = "PENDING_APPROVAL"
+	LinkedDnszone_State_PendingNetworkAdd = "PENDING_NETWORK_ADD"
+)
+
+// UnmarshalLinkedDnszone unmarshals an instance of LinkedDnszone from the specified map of raw messages.
+func UnmarshalLinkedDnszone(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(LinkedDnszone)
+	err = core.UnmarshalPrimitive(m, "id", &obj.ID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "instance_id", &obj.InstanceID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "name", &obj.Name)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "description", &obj.Description)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "linked_to", &obj.LinkedTo, UnmarshalLinkedDnszoneLinkedTo)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "state", &obj.State)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "label", &obj.Label)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "approval_required_before", &obj.ApprovalRequiredBefore)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "created_on", &obj.CreatedOn)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "modified_on", &obj.ModifiedOn)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
+// LinkedDnszonesList : The list of linked zones.
+type LinkedDnszonesList struct {
+	// The list of linked zones.
+	LinkedDnszones []LinkedDnszone `json:"linked_dnszones" validate:"required"`
+
+	// The number of resources to skip over.
+	Offset *int64 `json:"offset" validate:"required"`
+
+	// The maximum number of resources might be returned.
+	Limit *int64 `json:"limit" validate:"required"`
+
+	// The number of resources are returned.
+	Count *int64 `json:"count" validate:"required"`
+
+	// Total number of resources.
+	TotalCount *int64 `json:"total_count" validate:"required"`
+
+	// href.
+	First *PaginationRef `json:"first,omitempty"`
+
+	// href.
+	Last *PaginationRef `json:"last,omitempty"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
+}
+
+// UnmarshalLinkedDnszonesList unmarshals an instance of LinkedDnszonesList from the specified map of raw messages.
+func UnmarshalLinkedDnszonesList(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(LinkedDnszonesList)
+	err = core.UnmarshalModel(m, "linked_dnszones", &obj.LinkedDnszones, UnmarshalLinkedDnszone)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "offset", &obj.Offset)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "limit", &obj.Limit)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "count", &obj.Count)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
+// Retrieve the value to be passed to a request to access the next page of results
+func (resp *LinkedDnszonesList) GetNextOffset() (*int64, error) {
+	if core.IsNil(resp.Next) {
+		return nil, nil
+	}
+	offset, err := core.GetQueryParam(resp.Next.Href, "offset")
+	if err != nil || offset == nil {
+		return nil, err
+	}
+	var offsetValue int64
+	offsetValue, err = strconv.ParseInt(*offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return core.Int64Ptr(offsetValue), nil
+}
+
 // ListDnszones : List DNS zones response.
 type ListDnszones struct {
 	// An array of DNS zones.
 	Dnszones []Dnszone `json:"dnszones" validate:"required"`
 
-	// Specify how many DNS zones to skip over, the default value is 0.
+	// The number of resources to skip over.
 	Offset *int64 `json:"offset" validate:"required"`
 
-	// Specify how many DNS zones are returned, the default value is 10.
+	// The maximum number of resources might be returned.
 	Limit *int64 `json:"limit" validate:"required"`
 
-	// Total number of DNS zones.
+	// The number of resources are returned.
+	Count *int64 `json:"count" validate:"required"`
+
+	// Total number of resources.
 	TotalCount *int64 `json:"total_count" validate:"required"`
 
 	// href.
-	First *FirstHref `json:"first" validate:"required"`
+	First *PaginationRef `json:"first" validate:"required"`
 
 	// href.
-	Next *NextHref `json:"next,omitempty"`
+	Last *PaginationRef `json:"last" validate:"required"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
 }
 
 // UnmarshalListDnszones unmarshals an instance of ListDnszones from the specified map of raw messages.
@@ -7099,15 +10075,27 @@ func UnmarshalListDnszones(m map[string]json.RawMessage, result interface{}) (er
 	if err != nil {
 		return
 	}
+	err = core.UnmarshalPrimitive(m, "count", &obj.Count)
+	if err != nil {
+		return
+	}
 	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalFirstHref)
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalNextHref)
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
@@ -7137,23 +10125,29 @@ type ListLoadBalancers struct {
 	// An array of Global Load Balancers.
 	LoadBalancers []LoadBalancer `json:"load_balancers" validate:"required"`
 
-	// Page number.
+	// The number of resources to skip over.
 	Offset *int64 `json:"offset" validate:"required"`
 
-	// Number of Global Load Balancers per page.
+	// The maximum number of resources might be returned.
 	Limit *int64 `json:"limit" validate:"required"`
 
-	// Number of Global Load Balancers.
+	// The number of resources are returned.
 	Count *int64 `json:"count" validate:"required"`
 
-	// Total number of Global Load Balancers.
+	// Total number of resources.
 	TotalCount *int64 `json:"total_count" validate:"required"`
 
 	// href.
-	First *FirstHref `json:"first" validate:"required"`
+	First *PaginationRef `json:"first" validate:"required"`
 
 	// href.
-	Next *NextHref `json:"next" validate:"required"`
+	Last *PaginationRef `json:"last" validate:"required"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
 }
 
 // UnmarshalListLoadBalancers unmarshals an instance of ListLoadBalancers from the specified map of raw messages.
@@ -7179,11 +10173,19 @@ func UnmarshalListLoadBalancers(m map[string]json.RawMessage, result interface{}
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalFirstHref)
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalNextHref)
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
@@ -7191,28 +10193,51 @@ func UnmarshalListLoadBalancers(m map[string]json.RawMessage, result interface{}
 	return
 }
 
+// Retrieve the value to be passed to a request to access the next page of results
+func (resp *ListLoadBalancers) GetNextOffset() (*int64, error) {
+	if core.IsNil(resp.Next) {
+		return nil, nil
+	}
+	offset, err := core.GetQueryParam(resp.Next.Href, "offset")
+	if err != nil || offset == nil {
+		return nil, err
+	}
+	var offsetValue int64
+	offsetValue, err = strconv.ParseInt(*offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return core.Int64Ptr(offsetValue), nil
+}
+
 // ListMonitors : List load balancer monitors response.
 type ListMonitors struct {
 	// An array of load balancer monitors.
 	Monitors []Monitor `json:"monitors" validate:"required"`
 
-	// Page number.
+	// The number of resources to skip over.
 	Offset *int64 `json:"offset" validate:"required"`
 
-	// Number of load balancer monitors per page.
+	// The maximum number of resources might be returned.
 	Limit *int64 `json:"limit" validate:"required"`
 
-	// Number of load balancers.
+	// The number of resources are returned.
 	Count *int64 `json:"count" validate:"required"`
 
-	// Total number of load balancers.
+	// Total number of resources.
 	TotalCount *int64 `json:"total_count" validate:"required"`
 
 	// href.
-	First *FirstHref `json:"first" validate:"required"`
+	First *PaginationRef `json:"first" validate:"required"`
 
 	// href.
-	Next *NextHref `json:"next" validate:"required"`
+	Last *PaginationRef `json:"last" validate:"required"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
 }
 
 // UnmarshalListMonitors unmarshals an instance of ListMonitors from the specified map of raw messages.
@@ -7238,63 +10263,19 @@ func UnmarshalListMonitors(m map[string]json.RawMessage, result interface{}) (er
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalFirstHref)
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalNextHref)
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
-	return
-}
-
-// ListPermittedNetworks : List permitted networks response.
-type ListPermittedNetworks struct {
-	// An array of permitted networks.
-	PermittedNetworks []PermittedNetwork `json:"permitted_networks" validate:"required"`
-
-	// Specify how many permitted networks to skip over, the default value is 0.
-	Offset *int64 `json:"offset" validate:"required"`
-
-	// Specify how many permitted networks are returned, the default value is 10.
-	Limit *int64 `json:"limit" validate:"required"`
-
-	// Total number of permitted networks.
-	TotalCount *int64 `json:"total_count" validate:"required"`
-
-	// href.
-	First *FirstHref `json:"first" validate:"required"`
-
-	// href.
-	Next *NextHref `json:"next,omitempty"`
-}
-
-// UnmarshalListPermittedNetworks unmarshals an instance of ListPermittedNetworks from the specified map of raw messages.
-func UnmarshalListPermittedNetworks(m map[string]json.RawMessage, result interface{}) (err error) {
-	obj := new(ListPermittedNetworks)
-	err = core.UnmarshalModel(m, "permitted_networks", &obj.PermittedNetworks, UnmarshalPermittedNetwork)
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalPrimitive(m, "offset", &obj.Offset)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalPrimitive(m, "limit", &obj.Limit)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalFirstHref)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalNextHref)
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
@@ -7303,7 +10284,7 @@ func UnmarshalListPermittedNetworks(m map[string]json.RawMessage, result interfa
 }
 
 // Retrieve the value to be passed to a request to access the next page of results
-func (resp *ListPermittedNetworks) GetNextOffset() (*int64, error) {
+func (resp *ListMonitors) GetNextOffset() (*int64, error) {
 	if core.IsNil(resp.Next) {
 		return nil, nil
 	}
@@ -7319,28 +10300,51 @@ func (resp *ListPermittedNetworks) GetNextOffset() (*int64, error) {
 	return core.Int64Ptr(offsetValue), nil
 }
 
+// ListPermittedNetworks : List permitted networks response.
+type ListPermittedNetworks struct {
+	// An array of permitted networks.
+	PermittedNetworks []PermittedNetwork `json:"permitted_networks" validate:"required"`
+}
+
+// UnmarshalListPermittedNetworks unmarshals an instance of ListPermittedNetworks from the specified map of raw messages.
+func UnmarshalListPermittedNetworks(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(ListPermittedNetworks)
+	err = core.UnmarshalModel(m, "permitted_networks", &obj.PermittedNetworks, UnmarshalPermittedNetwork)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
 // ListPools : List load balancer pools response.
 type ListPools struct {
 	// An array of load balancer pools.
 	Pools []Pool `json:"pools" validate:"required"`
 
-	// Page number.
+	// The number of resources to skip over.
 	Offset *int64 `json:"offset" validate:"required"`
 
-	// Number of load balancer pools per page.
+	// The maximum number of resources might be returned.
 	Limit *int64 `json:"limit" validate:"required"`
 
-	// Number of load balancers.
+	// The number of resources are returned.
 	Count *int64 `json:"count" validate:"required"`
 
-	// Total number of load balancers.
+	// Total number of resources.
 	TotalCount *int64 `json:"total_count" validate:"required"`
 
 	// href.
-	First *FirstHref `json:"first" validate:"required"`
+	First *PaginationRef `json:"first" validate:"required"`
 
 	// href.
-	Next *NextHref `json:"next" validate:"required"`
+	Last *PaginationRef `json:"last" validate:"required"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
 }
 
 // UnmarshalListPools unmarshals an instance of ListPools from the specified map of raw messages.
@@ -7366,11 +10370,19 @@ func UnmarshalListPools(m map[string]json.RawMessage, result interface{}) (err e
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalFirstHref)
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalNextHref)
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
@@ -7378,25 +10390,51 @@ func UnmarshalListPools(m map[string]json.RawMessage, result interface{}) (err e
 	return
 }
 
+// Retrieve the value to be passed to a request to access the next page of results
+func (resp *ListPools) GetNextOffset() (*int64, error) {
+	if core.IsNil(resp.Next) {
+		return nil, nil
+	}
+	offset, err := core.GetQueryParam(resp.Next.Href, "offset")
+	if err != nil || offset == nil {
+		return nil, err
+	}
+	var offsetValue int64
+	offsetValue, err = strconv.ParseInt(*offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return core.Int64Ptr(offsetValue), nil
+}
+
 // ListResourceRecords : List Resource Records response.
 type ListResourceRecords struct {
 	// An array of resource records.
 	ResourceRecords []ResourceRecord `json:"resource_records" validate:"required"`
 
-	// Specify how many resource records to skip over, the default value is 0.
+	// The number of resources to skip over.
 	Offset *int64 `json:"offset" validate:"required"`
 
-	// Specify how many resource records are returned, the default value is 20.
+	// The maximum number of resources might be returned.
 	Limit *int64 `json:"limit" validate:"required"`
 
-	// Total number of resource records.
+	// The number of resources are returned.
+	Count *int64 `json:"count" validate:"required"`
+
+	// Total number of resources.
 	TotalCount *int64 `json:"total_count" validate:"required"`
 
 	// href.
-	First *FirstHref `json:"first" validate:"required"`
+	First *PaginationRef `json:"first" validate:"required"`
 
 	// href.
-	Next *NextHref `json:"next,omitempty"`
+	Last *PaginationRef `json:"last" validate:"required"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
 }
 
 // UnmarshalListResourceRecords unmarshals an instance of ListResourceRecords from the specified map of raw messages.
@@ -7414,15 +10452,27 @@ func UnmarshalListResourceRecords(m map[string]json.RawMessage, result interface
 	if err != nil {
 		return
 	}
+	err = core.UnmarshalPrimitive(m, "count", &obj.Count)
+	if err != nil {
+		return
+	}
 	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalFirstHref)
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
-	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalNextHref)
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
 	if err != nil {
 		return
 	}
@@ -7478,10 +10528,10 @@ type LoadBalancer struct {
 	AzPools []LoadBalancerAzPoolsItem `json:"az_pools,omitempty"`
 
 	// The time when a load balancer is created.
-	CreatedOn *string `json:"created_on,omitempty"`
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
 
 	// The recent time when a load balancer is modified.
-	ModifiedOn *string `json:"modified_on,omitempty"`
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
 }
 
 // Constants associated with the LoadBalancer.Health property.
@@ -7489,7 +10539,7 @@ type LoadBalancer struct {
 const (
 	LoadBalancer_Health_Critical = "CRITICAL"
 	LoadBalancer_Health_Degraded = "DEGRADED"
-	LoadBalancer_Health_Healthy  = "HEALTHY"
+	LoadBalancer_Health_Healthy = "HEALTHY"
 )
 
 // UnmarshalLoadBalancer unmarshals an instance of LoadBalancer from the specified map of raw messages.
@@ -7672,16 +10722,16 @@ type Monitor struct {
 	ExpectedBody *string `json:"expected_body,omitempty"`
 
 	// the time when a load balancer monitor is created.
-	CreatedOn *string `json:"created_on,omitempty"`
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
 
 	// the recent time when a load balancer monitor is modified.
-	ModifiedOn *string `json:"modified_on,omitempty"`
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
 }
 
 // Constants associated with the Monitor.Method property.
 // The method to use for the health check applicable to HTTP/HTTPS based checks, the default value is 'GET'.
 const (
-	Monitor_Method_Get  = "GET"
+	Monitor_Method_Get = "GET"
 	Monitor_Method_Head = "HEAD"
 )
 
@@ -7749,23 +10799,6 @@ func UnmarshalMonitor(m map[string]json.RawMessage, result interface{}) (err err
 		return
 	}
 	err = core.UnmarshalPrimitive(m, "modified_on", &obj.ModifiedOn)
-	if err != nil {
-		return
-	}
-	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
-	return
-}
-
-// NextHref : href.
-type NextHref struct {
-	// href.
-	Href *string `json:"href,omitempty"`
-}
-
-// UnmarshalNextHref unmarshals an instance of NextHref from the specified map of raw messages.
-func UnmarshalNextHref(m map[string]json.RawMessage, result interface{}) (err error) {
-	obj := new(NextHref)
-	err = core.UnmarshalPrimitive(m, "href", &obj.Href)
 	if err != nil {
 		return
 	}
@@ -7863,16 +10896,33 @@ func UnmarshalOriginInput(m map[string]json.RawMessage, result interface{}) (err
 	return
 }
 
+// PaginationRef : href.
+type PaginationRef struct {
+	// href.
+	Href *string `json:"href,omitempty"`
+}
+
+// UnmarshalPaginationRef unmarshals an instance of PaginationRef from the specified map of raw messages.
+func UnmarshalPaginationRef(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(PaginationRef)
+	err = core.UnmarshalPrimitive(m, "href", &obj.Href)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
 // PermittedNetwork : Permitted network details.
 type PermittedNetwork struct {
 	// Unique identifier of a permitted network.
 	ID *string `json:"id,omitempty"`
 
 	// The time when a permitted network is created.
-	CreatedOn *string `json:"created_on,omitempty"`
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
 
 	// The recent time when a permitted network is modified.
-	ModifiedOn *string `json:"modified_on,omitempty"`
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
 
 	// Permitted network data for VPC.
 	PermittedNetwork *PermittedNetworkVpc `json:"permitted_network,omitempty"`
@@ -7882,6 +10932,9 @@ type PermittedNetwork struct {
 
 	// The state of a permitted network.
 	State *string `json:"state,omitempty"`
+
+	// Unique identifier of a linked zone through which the permitted network was added.
+	LinkedZoneID *string `json:"linked_zone_id,omitempty"`
 }
 
 // Constants associated with the PermittedNetwork.Type property.
@@ -7893,7 +10946,7 @@ const (
 // Constants associated with the PermittedNetwork.State property.
 // The state of a permitted network.
 const (
-	PermittedNetwork_State_Active            = "ACTIVE"
+	PermittedNetwork_State_Active = "ACTIVE"
 	PermittedNetwork_State_RemovalInProgress = "REMOVAL_IN_PROGRESS"
 )
 
@@ -7921,6 +10974,10 @@ func UnmarshalPermittedNetwork(m map[string]json.RawMessage, result interface{})
 		return
 	}
 	err = core.UnmarshalPrimitive(m, "state", &obj.State)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "linked_zone_id", &obj.LinkedZoneID)
 	if err != nil {
 		return
 	}
@@ -7995,10 +11052,10 @@ type Pool struct {
 	HealthcheckVsis []PoolHealthcheckVsisItem `json:"healthcheck_vsis,omitempty"`
 
 	// the time when a load balancer pool is created.
-	CreatedOn *string `json:"created_on,omitempty"`
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
 
 	// the recent time when a load balancer pool is modified.
-	ModifiedOn *string `json:"modified_on,omitempty"`
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
 }
 
 // Constants associated with the Pool.Health property.
@@ -8006,17 +11063,17 @@ type Pool struct {
 const (
 	Pool_Health_Critical = "CRITICAL"
 	Pool_Health_Degraded = "DEGRADED"
-	Pool_Health_Healthy  = "HEALTHY"
+	Pool_Health_Healthy = "HEALTHY"
 )
 
 // Constants associated with the Pool.HealthcheckRegion property.
 // Health check region of VSIs.
 const (
-	Pool_HealthcheckRegion_AuSyd   = "au-syd"
-	Pool_HealthcheckRegion_EuDu    = "eu-du"
-	Pool_HealthcheckRegion_EuGb    = "eu-gb"
-	Pool_HealthcheckRegion_JpTok   = "jp-tok"
-	Pool_HealthcheckRegion_UsEast  = "us-east"
+	Pool_HealthcheckRegion_AuSyd = "au-syd"
+	Pool_HealthcheckRegion_EuDu = "eu-du"
+	Pool_HealthcheckRegion_EuGb = "eu-gb"
+	Pool_HealthcheckRegion_JpTok = "jp-tok"
+	Pool_HealthcheckRegion_UsEast = "us-east"
 	Pool_HealthcheckRegion_UsSouth = "us-south"
 )
 
@@ -8147,6 +11204,7 @@ type RecordsImportErrorModel struct {
 	// resource record content in zone file.
 	ResourceRecord *string `json:"resource_record" validate:"required"`
 
+	// Error container.
 	Error *RecordsImportErrorModelError `json:"error" validate:"required"`
 }
 
@@ -8194,11 +11252,11 @@ type ResourceRecord struct {
 	// Identifier of the resource record.
 	ID *string `json:"id,omitempty"`
 
-	// the time when a resource record is created.
-	CreatedOn *string `json:"created_on,omitempty"`
+	// The time when a resource record is created.
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
 
-	// the recent time when a resource record is modified.
-	ModifiedOn *string `json:"modified_on,omitempty"`
+	// The recent time when a resource record is modified.
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
 
 	// Name of the resource record.
 	Name *string `json:"name,omitempty"`
@@ -8210,7 +11268,7 @@ type ResourceRecord struct {
 	TTL *int64 `json:"ttl,omitempty"`
 
 	// Content of the resource record.
-	Rdata interface{} `json:"rdata,omitempty"`
+	Rdata map[string]interface{} `json:"rdata,omitempty"`
 
 	// Only used for SRV record.
 	Service *string `json:"service,omitempty"`
@@ -8222,13 +11280,13 @@ type ResourceRecord struct {
 // Constants associated with the ResourceRecord.Type property.
 // Type of the resource record.
 const (
-	ResourceRecord_Type_A     = "A"
-	ResourceRecord_Type_Aaaa  = "AAAA"
+	ResourceRecord_Type_A = "A"
+	ResourceRecord_Type_Aaaa = "AAAA"
 	ResourceRecord_Type_Cname = "CNAME"
-	ResourceRecord_Type_Mx    = "MX"
-	ResourceRecord_Type_Ptr   = "PTR"
-	ResourceRecord_Type_Srv   = "SRV"
-	ResourceRecord_Type_Txt   = "TXT"
+	ResourceRecord_Type_Mx = "MX"
+	ResourceRecord_Type_Ptr = "PTR"
+	ResourceRecord_Type_Srv = "SRV"
+	ResourceRecord_Type_Txt = "TXT"
 )
 
 // UnmarshalResourceRecord unmarshals an instance of ResourceRecord from the specified map of raw messages.
@@ -8272,6 +11330,155 @@ func UnmarshalResourceRecord(m map[string]json.RawMessage, result interface{}) (
 	}
 	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
 	return
+}
+
+// SecondaryZone : Secondary zone details.
+type SecondaryZone struct {
+	// Identifier of the secondary zone.
+	ID *string `json:"id" validate:"required"`
+
+	// Descriptive text of the secondary zone.
+	Description *string `json:"description,omitempty"`
+
+	// zone name.
+	Zone *string `json:"zone" validate:"required"`
+
+	// Enable/Disable the secondary zone.
+	Enabled *bool `json:"enabled" validate:"required"`
+
+	// The addresses of DNS servers where the secondary zone data should be transferred from.
+	TransferFrom []string `json:"transfer_from" validate:"required"`
+
+	// The time when a secondary zone is created.
+	CreatedOn *strfmt.DateTime `json:"created_on,omitempty"`
+
+	// The recent time when a secondary zone is modified.
+	ModifiedOn *strfmt.DateTime `json:"modified_on,omitempty"`
+}
+
+// UnmarshalSecondaryZone unmarshals an instance of SecondaryZone from the specified map of raw messages.
+func UnmarshalSecondaryZone(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(SecondaryZone)
+	err = core.UnmarshalPrimitive(m, "id", &obj.ID)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "description", &obj.Description)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "zone", &obj.Zone)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "enabled", &obj.Enabled)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "transfer_from", &obj.TransferFrom)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "created_on", &obj.CreatedOn)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "modified_on", &obj.ModifiedOn)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
+// SecondaryZoneList : List of secondary zones.
+type SecondaryZoneList struct {
+	// Secondary zones.
+	SecondaryZones []SecondaryZone `json:"secondary_zones" validate:"required"`
+
+	// The number of resources to skip over.
+	Offset *int64 `json:"offset" validate:"required"`
+
+	// The maximum number of resources might be returned.
+	Limit *int64 `json:"limit" validate:"required"`
+
+	// The number of resources are returned.
+	Count *int64 `json:"count" validate:"required"`
+
+	// Total number of resources.
+	TotalCount *int64 `json:"total_count" validate:"required"`
+
+	// href.
+	First *PaginationRef `json:"first,omitempty"`
+
+	// href.
+	Last *PaginationRef `json:"last,omitempty"`
+
+	// href.
+	Previous *PaginationRef `json:"previous,omitempty"`
+
+	// href.
+	Next *PaginationRef `json:"next,omitempty"`
+}
+
+// UnmarshalSecondaryZoneList unmarshals an instance of SecondaryZoneList from the specified map of raw messages.
+func UnmarshalSecondaryZoneList(m map[string]json.RawMessage, result interface{}) (err error) {
+	obj := new(SecondaryZoneList)
+	err = core.UnmarshalModel(m, "secondary_zones", &obj.SecondaryZones, UnmarshalSecondaryZone)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "offset", &obj.Offset)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "limit", &obj.Limit)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "count", &obj.Count)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalPrimitive(m, "total_count", &obj.TotalCount)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "first", &obj.First, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "last", &obj.Last, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "previous", &obj.Previous, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	err = core.UnmarshalModel(m, "next", &obj.Next, UnmarshalPaginationRef)
+	if err != nil {
+		return
+	}
+	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
+	return
+}
+
+// Retrieve the value to be passed to a request to access the next page of results
+func (resp *SecondaryZoneList) GetNextOffset() (*int64, error) {
+	if core.IsNil(resp.Next) {
+		return nil, nil
+	}
+	offset, err := core.GetQueryParam(resp.Next.Href, "offset")
+	if err != nil || offset == nil {
+		return nil, err
+	}
+	var offsetValue int64
+	offsetValue, err = strconv.ParseInt(*offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return core.Int64Ptr(offsetValue), nil
 }
 
 // ResourceRecordInputRdataRdataARecord : The content of type-A resource record.
@@ -8380,7 +11587,7 @@ type ResourceRecordInputRdataRdataMxRecord struct {
 // NewResourceRecordInputRdataRdataMxRecord : Instantiate ResourceRecordInputRdataRdataMxRecord (Generic Model Constructor)
 func (*DnsSvcsV1) NewResourceRecordInputRdataRdataMxRecord(exchange string, preference int64) (_model *ResourceRecordInputRdataRdataMxRecord, err error) {
 	_model = &ResourceRecordInputRdataRdataMxRecord{
-		Exchange:   core.StringPtr(exchange),
+		Exchange: core.StringPtr(exchange),
 		Preference: core.Int64Ptr(preference),
 	}
 	err = core.ValidateStruct(_model, "required parameters")
@@ -8456,10 +11663,10 @@ type ResourceRecordInputRdataRdataSrvRecord struct {
 // NewResourceRecordInputRdataRdataSrvRecord : Instantiate ResourceRecordInputRdataRdataSrvRecord (Generic Model Constructor)
 func (*DnsSvcsV1) NewResourceRecordInputRdataRdataSrvRecord(port int64, priority int64, target string, weight int64) (_model *ResourceRecordInputRdataRdataSrvRecord, err error) {
 	_model = &ResourceRecordInputRdataRdataSrvRecord{
-		Port:     core.Int64Ptr(port),
+		Port: core.Int64Ptr(port),
 		Priority: core.Int64Ptr(priority),
-		Target:   core.StringPtr(target),
-		Weight:   core.Int64Ptr(weight),
+		Target: core.StringPtr(target),
+		Weight: core.Int64Ptr(weight),
 	}
 	err = core.ValidateStruct(_model, "required parameters")
 	return
@@ -8629,7 +11836,7 @@ type ResourceRecordUpdateInputRdataRdataMxRecord struct {
 // NewResourceRecordUpdateInputRdataRdataMxRecord : Instantiate ResourceRecordUpdateInputRdataRdataMxRecord (Generic Model Constructor)
 func (*DnsSvcsV1) NewResourceRecordUpdateInputRdataRdataMxRecord(exchange string, preference int64) (_model *ResourceRecordUpdateInputRdataRdataMxRecord, err error) {
 	_model = &ResourceRecordUpdateInputRdataRdataMxRecord{
-		Exchange:   core.StringPtr(exchange),
+		Exchange: core.StringPtr(exchange),
 		Preference: core.Int64Ptr(preference),
 	}
 	err = core.ValidateStruct(_model, "required parameters")
@@ -8705,10 +11912,10 @@ type ResourceRecordUpdateInputRdataRdataSrvRecord struct {
 // NewResourceRecordUpdateInputRdataRdataSrvRecord : Instantiate ResourceRecordUpdateInputRdataRdataSrvRecord (Generic Model Constructor)
 func (*DnsSvcsV1) NewResourceRecordUpdateInputRdataRdataSrvRecord(port int64, priority int64, target string, weight int64) (_model *ResourceRecordUpdateInputRdataRdataSrvRecord, err error) {
 	_model = &ResourceRecordUpdateInputRdataRdataSrvRecord{
-		Port:     core.Int64Ptr(port),
+		Port: core.Int64Ptr(port),
 		Priority: core.Int64Ptr(priority),
-		Target:   core.StringPtr(target),
-		Weight:   core.Int64Ptr(weight),
+		Target: core.StringPtr(target),
+		Weight: core.Int64Ptr(weight),
 	}
 	err = core.ValidateStruct(_model, "required parameters")
 	return
@@ -8770,4 +11977,787 @@ func UnmarshalResourceRecordUpdateInputRdataRdataTxtRecord(m map[string]json.Raw
 	}
 	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
 	return
+}
+
+//
+// DnszonesPager can be used to simplify the use of the "ListDnszones" method.
+//
+type DnszonesPager struct {
+	hasNext bool
+	options *ListDnszonesOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewDnszonesPager returns a new DnszonesPager instance.
+func (dnsSvcs *DnsSvcsV1) NewDnszonesPager(options *ListDnszonesOptions) (pager *DnszonesPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListDnszonesOptions = *options
+	pager = &DnszonesPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *DnszonesPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *DnszonesPager) GetNextWithContext(ctx context.Context) (page []Dnszone, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListDnszonesWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.Dnszones
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *DnszonesPager) GetAllWithContext(ctx context.Context) (allItems []Dnszone, err error) {
+	for pager.HasNext() {
+		var nextPage []Dnszone
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *DnszonesPager) GetNext() (page []Dnszone, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *DnszonesPager) GetAll() (allItems []Dnszone, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// ResourceRecordsPager can be used to simplify the use of the "ListResourceRecords" method.
+//
+type ResourceRecordsPager struct {
+	hasNext bool
+	options *ListResourceRecordsOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewResourceRecordsPager returns a new ResourceRecordsPager instance.
+func (dnsSvcs *DnsSvcsV1) NewResourceRecordsPager(options *ListResourceRecordsOptions) (pager *ResourceRecordsPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListResourceRecordsOptions = *options
+	pager = &ResourceRecordsPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *ResourceRecordsPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *ResourceRecordsPager) GetNextWithContext(ctx context.Context) (page []ResourceRecord, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListResourceRecordsWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.ResourceRecords
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *ResourceRecordsPager) GetAllWithContext(ctx context.Context) (allItems []ResourceRecord, err error) {
+	for pager.HasNext() {
+		var nextPage []ResourceRecord
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *ResourceRecordsPager) GetNext() (page []ResourceRecord, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *ResourceRecordsPager) GetAll() (allItems []ResourceRecord, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// LoadBalancersPager can be used to simplify the use of the "ListLoadBalancers" method.
+//
+type LoadBalancersPager struct {
+	hasNext bool
+	options *ListLoadBalancersOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewLoadBalancersPager returns a new LoadBalancersPager instance.
+func (dnsSvcs *DnsSvcsV1) NewLoadBalancersPager(options *ListLoadBalancersOptions) (pager *LoadBalancersPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListLoadBalancersOptions = *options
+	pager = &LoadBalancersPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *LoadBalancersPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *LoadBalancersPager) GetNextWithContext(ctx context.Context) (page []LoadBalancer, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListLoadBalancersWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.LoadBalancers
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *LoadBalancersPager) GetAllWithContext(ctx context.Context) (allItems []LoadBalancer, err error) {
+	for pager.HasNext() {
+		var nextPage []LoadBalancer
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *LoadBalancersPager) GetNext() (page []LoadBalancer, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *LoadBalancersPager) GetAll() (allItems []LoadBalancer, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// PoolsPager can be used to simplify the use of the "ListPools" method.
+//
+type PoolsPager struct {
+	hasNext bool
+	options *ListPoolsOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewPoolsPager returns a new PoolsPager instance.
+func (dnsSvcs *DnsSvcsV1) NewPoolsPager(options *ListPoolsOptions) (pager *PoolsPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListPoolsOptions = *options
+	pager = &PoolsPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *PoolsPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *PoolsPager) GetNextWithContext(ctx context.Context) (page []Pool, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListPoolsWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.Pools
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *PoolsPager) GetAllWithContext(ctx context.Context) (allItems []Pool, err error) {
+	for pager.HasNext() {
+		var nextPage []Pool
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *PoolsPager) GetNext() (page []Pool, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *PoolsPager) GetAll() (allItems []Pool, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// MonitorsPager can be used to simplify the use of the "ListMonitors" method.
+//
+type MonitorsPager struct {
+	hasNext bool
+	options *ListMonitorsOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewMonitorsPager returns a new MonitorsPager instance.
+func (dnsSvcs *DnsSvcsV1) NewMonitorsPager(options *ListMonitorsOptions) (pager *MonitorsPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListMonitorsOptions = *options
+	pager = &MonitorsPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *MonitorsPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *MonitorsPager) GetNextWithContext(ctx context.Context) (page []Monitor, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListMonitorsWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.Monitors
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *MonitorsPager) GetAllWithContext(ctx context.Context) (allItems []Monitor, err error) {
+	for pager.HasNext() {
+		var nextPage []Monitor
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *MonitorsPager) GetNext() (page []Monitor, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *MonitorsPager) GetAll() (allItems []Monitor, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// ForwardingRulesPager can be used to simplify the use of the "ListForwardingRules" method.
+//
+type ForwardingRulesPager struct {
+	hasNext bool
+	options *ListForwardingRulesOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewForwardingRulesPager returns a new ForwardingRulesPager instance.
+func (dnsSvcs *DnsSvcsV1) NewForwardingRulesPager(options *ListForwardingRulesOptions) (pager *ForwardingRulesPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListForwardingRulesOptions = *options
+	pager = &ForwardingRulesPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *ForwardingRulesPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *ForwardingRulesPager) GetNextWithContext(ctx context.Context) (page []ForwardingRule, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListForwardingRulesWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.ForwardingRules
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *ForwardingRulesPager) GetAllWithContext(ctx context.Context) (allItems []ForwardingRule, err error) {
+	for pager.HasNext() {
+		var nextPage []ForwardingRule
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *ForwardingRulesPager) GetNext() (page []ForwardingRule, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *ForwardingRulesPager) GetAll() (allItems []ForwardingRule, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// SecondaryZonesPager can be used to simplify the use of the "ListSecondaryZones" method.
+//
+type SecondaryZonesPager struct {
+	hasNext bool
+	options *ListSecondaryZonesOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewSecondaryZonesPager returns a new SecondaryZonesPager instance.
+func (dnsSvcs *DnsSvcsV1) NewSecondaryZonesPager(options *ListSecondaryZonesOptions) (pager *SecondaryZonesPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListSecondaryZonesOptions = *options
+	pager = &SecondaryZonesPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *SecondaryZonesPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *SecondaryZonesPager) GetNextWithContext(ctx context.Context) (page []SecondaryZone, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListSecondaryZonesWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.SecondaryZones
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *SecondaryZonesPager) GetAllWithContext(ctx context.Context) (allItems []SecondaryZone, err error) {
+	for pager.HasNext() {
+		var nextPage []SecondaryZone
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *SecondaryZonesPager) GetNext() (page []SecondaryZone, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *SecondaryZonesPager) GetAll() (allItems []SecondaryZone, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// LinkedZonesPager can be used to simplify the use of the "ListLinkedZones" method.
+//
+type LinkedZonesPager struct {
+	hasNext bool
+	options *ListLinkedZonesOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewLinkedZonesPager returns a new LinkedZonesPager instance.
+func (dnsSvcs *DnsSvcsV1) NewLinkedZonesPager(options *ListLinkedZonesOptions) (pager *LinkedZonesPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListLinkedZonesOptions = *options
+	pager = &LinkedZonesPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *LinkedZonesPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *LinkedZonesPager) GetNextWithContext(ctx context.Context) (page []LinkedDnszone, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListLinkedZonesWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.LinkedDnszones
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *LinkedZonesPager) GetAllWithContext(ctx context.Context) (allItems []LinkedDnszone, err error) {
+	for pager.HasNext() {
+		var nextPage []LinkedDnszone
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *LinkedZonesPager) GetNext() (page []LinkedDnszone, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *LinkedZonesPager) GetAll() (allItems []LinkedDnszone, err error) {
+	return pager.GetAllWithContext(context.Background())
+}
+
+//
+// DnszoneAccessRequestsPager can be used to simplify the use of the "ListDnszoneAccessRequests" method.
+//
+type DnszoneAccessRequestsPager struct {
+	hasNext bool
+	options *ListDnszoneAccessRequestsOptions
+	client  *DnsSvcsV1
+	pageContext struct {
+		next *int64
+	}
+}
+
+// NewDnszoneAccessRequestsPager returns a new DnszoneAccessRequestsPager instance.
+func (dnsSvcs *DnsSvcsV1) NewDnszoneAccessRequestsPager(options *ListDnszoneAccessRequestsOptions) (pager *DnszoneAccessRequestsPager, err error) {
+	if options.Offset != nil && *options.Offset != 0 {
+		err = fmt.Errorf("the 'options.Offset' field should not be set")
+		return
+	}
+
+	var optionsCopy ListDnszoneAccessRequestsOptions = *options
+	pager = &DnszoneAccessRequestsPager{
+		hasNext: true,
+		options: &optionsCopy,
+		client:  dnsSvcs,
+	}
+	return
+}
+
+// HasNext returns true if there are potentially more results to be retrieved.
+func (pager *DnszoneAccessRequestsPager) HasNext() bool {
+	return pager.hasNext
+}
+
+// GetNextWithContext returns the next page of results using the specified Context.
+func (pager *DnszoneAccessRequestsPager) GetNextWithContext(ctx context.Context) (page []AccessRequest, err error) {
+	if !pager.HasNext() {
+		return nil, fmt.Errorf("no more results available")
+	}
+
+	pager.options.Offset = pager.pageContext.next
+
+	result, _, err := pager.client.ListDnszoneAccessRequestsWithContext(ctx, pager.options)
+	if err != nil {
+		return
+	}
+
+	var next *int64
+	if result.Next != nil {
+		var offset *int64
+		offset, err = core.GetQueryParamAsInt(result.Next.Href, "offset")
+		if err != nil {
+			err = fmt.Errorf("error retrieving 'offset' query parameter from URL '%s': %s", *result.Next.Href, err.Error())
+			return
+		}
+		next = offset
+	}
+	pager.pageContext.next = next
+	pager.hasNext = (pager.pageContext.next != nil)
+	page = result.AccessRequests
+
+	return
+}
+
+// GetAllWithContext returns all results by invoking GetNextWithContext() repeatedly
+// until all pages of results have been retrieved.
+func (pager *DnszoneAccessRequestsPager) GetAllWithContext(ctx context.Context) (allItems []AccessRequest, err error) {
+	for pager.HasNext() {
+		var nextPage []AccessRequest
+		nextPage, err = pager.GetNextWithContext(ctx)
+		if err != nil {
+			return
+		}
+		allItems = append(allItems, nextPage...)
+	}
+	return
+}
+
+// GetNext invokes GetNextWithContext() using context.Background() as the Context parameter.
+func (pager *DnszoneAccessRequestsPager) GetNext() (page []AccessRequest, err error) {
+	return pager.GetNextWithContext(context.Background())
+}
+
+// GetAll invokes GetAllWithContext() using context.Background() as the Context parameter.
+func (pager *DnszoneAccessRequestsPager) GetAll() (allItems []AccessRequest, err error) {
+	return pager.GetAllWithContext(context.Background())
 }

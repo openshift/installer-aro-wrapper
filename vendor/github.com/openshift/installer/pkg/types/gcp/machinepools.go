@@ -18,10 +18,44 @@ type MachinePool struct {
 	// +optional
 	OSDisk `json:"osDisk"`
 
+	// OSImage defines a custom image for instance.
+	//
+	// +optional
+	OSImage *OSImage `json:"osImage,omitempty"`
+
 	// Tags defines a set of network tags which will be added to instances in the machineset
 	//
 	// +optional
 	Tags []string `json:"tags,omitempty"`
+
+	// SecureBoot Defines whether the instance should have secure boot enabled.
+	// secure boot Verify the digital signature of all boot components, and halt the boot process if signature verification fails.
+	// If omitted, the platform chooses a default, which is subject to change over time, currently that default is false.
+	// +kubebuilder:validation:Enum=Enabled;Disabled
+	// +optional
+	SecureBoot string `json:"secureBoot,omitempty"`
+
+	// OnHostMaintenance determines the behavior when a maintenance event occurs that might cause the instance to reboot.
+	// Allowed values are "Migrate" and "Terminate".
+	// If omitted, the platform chooses a default, which is subject to change over time, currently that default is "Migrate".
+	// +kubebuilder:validation:Enum=Migrate;Terminate;
+	// +optional
+	OnHostMaintenance string `json:"onHostMaintenance,omitempty"`
+
+	// ConfidentialCompute Defines whether the instance should have confidential compute enabled.
+	// If enabled OnHostMaintenance is required to be set to "Terminate".
+	// If omitted, the platform chooses a default, which is subject to change over time, currently that default is false.
+	// +kubebuilder:validation:Enum=Enabled;Disabled
+	// +optional
+	ConfidentialCompute string `json:"confidentialCompute,omitempty"`
+
+	// ServiceAccount is the email of a gcp service account to be used for shared
+	// vpc installations. The provided service account will be attached to control-plane nodes
+	// in order to provide the permissions required by the cloud provider in the host project.
+	// This field is only supported in the control-plane machinepool.
+	//
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 }
 
 // OSDisk defines the disk for machines on GCP.
@@ -29,7 +63,7 @@ type OSDisk struct {
 	// DiskType defines the type of disk.
 	// For control plane nodes, the valid value is pd-ssd.
 	// +optional
-	// +kubebuilder:validation:Enum=pd-ssd;pd-standard
+	// +kubebuilder:validation:Enum=pd-balanced;pd-ssd;pd-standard
 	DiskType string `json:"diskType"`
 
 	// DiskSizeGB defines the size of disk in GB.
@@ -42,6 +76,19 @@ type OSDisk struct {
 	//
 	// +optional
 	EncryptionKey *EncryptionKeyReference `json:"encryptionKey,omitempty"`
+}
+
+// OSImage defines the image to use for the OS.
+type OSImage struct {
+	// Name defines the name of the image.
+	//
+	// +required
+	Name string `json:"name"`
+
+	// Project defines the name of the project containing the image.
+	//
+	// +required
+	Project string `json:"project"`
 }
 
 // Set sets the values from `required` to `a`.
@@ -70,11 +117,30 @@ func (a *MachinePool) Set(required *MachinePool) {
 		a.OSDisk.DiskType = required.OSDisk.DiskType
 	}
 
+	if required.OSImage != nil {
+		a.OSImage = required.OSImage
+	}
+
 	if required.EncryptionKey != nil {
 		if a.EncryptionKey == nil {
 			a.EncryptionKey = &EncryptionKeyReference{}
 		}
 		a.EncryptionKey.Set(required.EncryptionKey)
+	}
+	if required.SecureBoot != "" {
+		a.SecureBoot = required.SecureBoot
+	}
+
+	if required.OnHostMaintenance != "" {
+		a.OnHostMaintenance = required.OnHostMaintenance
+	}
+
+	if required.ConfidentialCompute != "" {
+		a.ConfidentialCompute = required.ConfidentialCompute
+	}
+
+	if required.ServiceAccount != "" {
+		a.ServiceAccount = required.ServiceAccount
 	}
 }
 

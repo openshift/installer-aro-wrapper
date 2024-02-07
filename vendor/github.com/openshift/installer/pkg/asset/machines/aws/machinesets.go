@@ -4,26 +4,39 @@ package aws
 import (
 	"fmt"
 
-	machineapi "github.com/openshift/api/machine/v1beta1"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	machineapi "github.com/openshift/api/machine/v1beta1"
+	icaws "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/aws"
-	"github.com/pkg/errors"
 )
 
+// MachineSetInput holds the input arguments required to MachineSets for a machinepool.
+type MachineSetInput struct {
+	ClusterID                string
+	InstallConfigPlatformAWS *aws.Platform
+	Subnets                  icaws.Subnets
+	Zones                    icaws.Zones
+	Pool                     *types.MachinePool
+	Role                     string
+	UserDataSecret           string
+}
+
 // MachineSets returns a list of machinesets for a machinepool.
-func MachineSets(clusterID string, region string, subnets map[string]string, pool *types.MachinePool, role, userDataSecret string, userTags map[string]string) ([]*machineapi.MachineSet, error) {
-	if poolPlatform := pool.Platform.Name(); poolPlatform != aws.Name {
+func MachineSets(in *MachineSetInput) ([]*machineapi.MachineSet, error) {
+	if poolPlatform := in.Pool.Platform.Name(); poolPlatform != aws.Name {
 		return nil, fmt.Errorf("non-AWS machine-pool: %q", poolPlatform)
 	}
-	mpool := pool.Platform.AWS
+	mpool := in.Pool.Platform.AWS
 	azs := mpool.Zones
 
 	total := int64(0)
-	if pool.Replicas != nil {
-		total = *pool.Replicas
+	if in.Pool.Replicas != nil {
+		total = *in.Pool.Replicas
 	}
 	numOfAZs := int64(len(azs))
 	var machinesets []*machineapi.MachineSet
@@ -33,27 +46,70 @@ func MachineSets(clusterID string, region string, subnets map[string]string, poo
 			replicas++
 		}
 
-		subnet, ok := subnets[az]
-		if len(subnets) > 0 && !ok {
-			return nil, errors.Errorf("no subnet for zone %s", az)
+		nodeLabels := make(map[string]string, 3)
+		nodeTaints := []corev1.Taint{}
+		instanceType := mpool.InstanceType
+		publicSubnet := false
+		subnetID := ""
+		if len(in.Subnets) > 0 {
+			subnet, ok := in.Subnets[az]
+			if !ok {
+				return nil, errors.Errorf("no subnet for zone %s", az)
+			}
+			publicSubnet = subnet.Public
+			subnetID = subnet.ID
 		}
-		provider, err := provider(
-			clusterID,
-			region,
-			subnet,
-			mpool.InstanceType,
-			&mpool.EC2RootVolume,
-			mpool.EC2Metadata,
-			mpool.AMIID,
-			az,
-			role,
-			userDataSecret,
-			userTags,
-		)
+
+		if in.Pool.Name == types.MachinePoolEdgeRoleName {
+			// edge pools not share same instance type and regular cluster workloads.
+			// The instance type is selected based in the offerings for the location.
+			// The labels and taints are set to prevent regular workloads.
+			// https://github.com/openshift/enhancements/blob/master/enhancements/installer/aws-custom-edge-machineset-local-zones.md
+			zone := in.Zones[az]
+			if zone.PreferredInstanceType != "" {
+				instanceType = zone.PreferredInstanceType
+			}
+			nodeLabels = map[string]string{
+				"node-role.kubernetes.io/edge":          "",
+				"machine.openshift.io/zone-type":        zone.Type,
+				"machine.openshift.io/zone-group":       zone.GroupName,
+				"machine.openshift.io/parent-zone-name": zone.ParentZoneName,
+			}
+			nodeTaints = append(nodeTaints, corev1.Taint{
+				Key:    "node-role.kubernetes.io/edge",
+				Effect: "NoSchedule",
+			})
+		}
+
+		provider, err := provider(&machineProviderInput{
+			clusterID:        in.ClusterID,
+			region:           in.InstallConfigPlatformAWS.Region,
+			subnet:           subnetID,
+			instanceType:     instanceType,
+			osImage:          mpool.AMIID,
+			zone:             az,
+			role:             "worker",
+			userDataSecret:   in.UserDataSecret,
+			root:             &mpool.EC2RootVolume,
+			imds:             mpool.EC2Metadata,
+			userTags:         in.InstallConfigPlatformAWS.UserTags,
+			publicSubnet:     publicSubnet,
+			securityGroupIDs: in.Pool.Platform.AWS.AdditionalSecurityGroupIDs,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create provider")
 		}
-		name := fmt.Sprintf("%s-%s-%s", clusterID, pool.Name, az)
+		name := fmt.Sprintf("%s-%s-%s", in.ClusterID, in.Pool.Name, az)
+		spec := machineapi.MachineSpec{
+			ProviderSpec: machineapi.ProviderSpec{
+				Value: &runtime.RawExtension{Object: provider},
+			},
+			ObjectMeta: machineapi.ObjectMeta{
+				Labels: nodeLabels,
+			},
+			Taints: nodeTaints,
+		}
+
 		mset := &machineapi.MachineSet{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "machine.openshift.io/v1beta1",
@@ -63,7 +119,7 @@ func MachineSets(clusterID string, region string, subnets map[string]string, poo
 				Namespace: "openshift-machine-api",
 				Name:      name,
 				Labels: map[string]string{
-					"machine.openshift.io/cluster-api-cluster": clusterID,
+					"machine.openshift.io/cluster-api-cluster": in.ClusterID,
 				},
 			},
 			Spec: machineapi.MachineSetSpec{
@@ -71,24 +127,20 @@ func MachineSets(clusterID string, region string, subnets map[string]string, poo
 				Selector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"machine.openshift.io/cluster-api-machineset": name,
-						"machine.openshift.io/cluster-api-cluster":    clusterID,
+						"machine.openshift.io/cluster-api-cluster":    in.ClusterID,
 					},
 				},
 				Template: machineapi.MachineTemplateSpec{
 					ObjectMeta: machineapi.ObjectMeta{
 						Labels: map[string]string{
 							"machine.openshift.io/cluster-api-machineset":   name,
-							"machine.openshift.io/cluster-api-cluster":      clusterID,
-							"machine.openshift.io/cluster-api-machine-role": role,
-							"machine.openshift.io/cluster-api-machine-type": role,
+							"machine.openshift.io/cluster-api-cluster":      in.ClusterID,
+							"machine.openshift.io/cluster-api-machine-role": in.Role,
+							"machine.openshift.io/cluster-api-machine-type": in.Role,
 						},
 					},
-					Spec: machineapi.MachineSpec{
-						ProviderSpec: machineapi.ProviderSpec{
-							Value: &runtime.RawExtension{Object: provider},
-						},
-						// we don't need to set Versions, because we control those via cluster operators.
-					},
+					Spec: spec,
+					// we don't need to set Versions, because we control those via cluster operators.
 				},
 			},
 		}

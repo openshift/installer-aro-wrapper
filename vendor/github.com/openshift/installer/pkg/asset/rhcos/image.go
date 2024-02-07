@@ -4,6 +4,7 @@ package rhcos
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
 	"github.com/openshift/installer/pkg/types/libvirt"
@@ -155,7 +157,24 @@ func osImage(config *types.InstallConfig) (string, error) {
 		}
 
 		if a, ok := streamArch.Artifacts["vmware"]; ok {
-			return rhcos.FindArtifactURL(a)
+			// for an unknown reason vSphere OVAs are not
+			// integrity checked. Instead of going through
+			// FindArtifactURL just create the URL here.
+			artifact := a.Formats["ova"].Disk
+			u, err := url.Parse(artifact.Location)
+
+			if err != nil {
+				return "", err
+			}
+
+			// Add the sha256 query to the url
+			// This will later be used in pkg/tfvars/internal/cache/cache.go
+			q := u.Query()
+			q.Set("sha256", artifact.Sha256)
+
+			u.RawQuery = q.Encode()
+
+			return u.String(), nil
 		}
 		return "", fmt.Errorf("%s: No vmware build found", st.FormatPrefix(archName))
 	case alibabacloud.Name:
@@ -178,6 +197,8 @@ func osImage(config *types.InstallConfig) (string, error) {
 		}
 
 		return "", fmt.Errorf("%s: No Power VS build found", st.FormatPrefix(archName))
+	case external.Name:
+		return "", nil
 	case none.Name:
 		return "", nil
 	case nutanix.Name:

@@ -13,6 +13,7 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/types/agent"
 	"github.com/openshift/installer/pkg/types/agent/conversion"
+	"github.com/openshift/installer/pkg/types/baremetal/validation"
 	"github.com/openshift/installer/pkg/validate"
 )
 
@@ -57,6 +58,7 @@ metadata:
   namespace: cluster0
 # All fields are optional
 rendezvousIP: your-node0-ip
+bootArtifactsBaseURL: http://user-specified-infra.com
 additionalNTPSources:
 - 0.rhel.pool.ntp.org
 - 1.rhel.pool.ntp.org
@@ -91,6 +93,12 @@ hosts:
 
 	a.Template = agentConfigTemplate
 
+	// Set the File field correctly with the generated agent config YAML content
+	a.File = &asset.File{
+		Filename: agentConfigFilename,
+		Data:     []byte(a.Template),
+	}
+
 	// TODO: template is not validated
 	return nil
 }
@@ -100,7 +108,7 @@ func (a *AgentConfig) PersistToFile(directory string) error {
 	templatePath := filepath.Join(directory, agentConfigFilename)
 	templateByte := []byte(a.Template)
 
-	err := os.WriteFile(templatePath, templateByte, 0644)
+	err := os.WriteFile(templatePath, templateByte, 0600)
 	if err != nil {
 		return err
 	}
@@ -165,6 +173,14 @@ func (a *AgentConfig) validateAgent() field.ErrorList {
 	}
 
 	if err := a.validateAdditionalNTPSources(field.NewPath("AdditionalNTPSources"), a.Config.AdditionalNTPSources); err != nil {
+		allErrs = append(allErrs, err...)
+	}
+
+	if err := a.validateRendevousIPNotWorker(a.Config.RendezvousIP, a.Config.Hosts); err != nil {
+		allErrs = append(allErrs, err...)
+	}
+
+	if err := a.validateBootArtifactsBaseURL(); err != nil {
 		allErrs = append(allErrs, err...)
 	}
 
@@ -243,15 +259,16 @@ func (a *AgentConfig) validateHostInterfaces(hostPath *field.Path, host agent.Ho
 }
 
 func (a *AgentConfig) validateHostRootDeviceHints(hostPath *field.Path, host agent.Host) field.ErrorList {
-	var allErrs field.ErrorList
+	rdhPath := hostPath.Child("rootDeviceHints")
+	allErrs := validation.ValidateHostRootDeviceHints(&host.RootDeviceHints, rdhPath)
 
 	if host.RootDeviceHints.WWNWithExtension != "" {
 		allErrs = append(allErrs, field.Forbidden(
-			hostPath.Child("RootDeviceHints", "WWNWithExtension"), "WWN extensions are not supported in root device hints"))
+			rdhPath.Child("wwnWithExtension"), "WWN extensions are not supported in root device hints"))
 	}
 
 	if host.RootDeviceHints.WWNVendorExtension != "" {
-		allErrs = append(allErrs, field.Forbidden(hostPath.Child("RootDeviceHints", "WWNVendorExtension"), "WWN vendor extensions are not supported in root device hints"))
+		allErrs = append(allErrs, field.Forbidden(rdhPath.Child("wwnVendorExtension"), "WWN vendor extensions are not supported in root device hints"))
 	}
 
 	return allErrs
@@ -278,6 +295,40 @@ func (a *AgentConfig) validateAdditionalNTPSources(additionalNTPSourcesPath *fie
 				allErrs = append(allErrs, field.Invalid(additionalNTPSourcesPath.Index(i), source, "NTP source is not a valid domain name nor a valid IP"))
 			}
 		}
+	}
+
+	return allErrs
+}
+
+func (a *AgentConfig) validateRendevousIPNotWorker(rendezvousIP string, hosts []agent.Host) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if rendezvousIP != "" {
+		for i, host := range hosts {
+			hostPath := field.NewPath("Hosts").Index(i)
+			if strings.Contains(string(host.NetworkConfig.Raw), rendezvousIP) && host.Role != "master" {
+				if len(host.Role) > 0 {
+					errMsg := "Host " + host.Hostname + " is not of role 'master' and has the rendevousIP assigned to it. The rendevousIP must be assigned to a host of role 'master'"
+					allErrs = append(allErrs, field.Forbidden(hostPath.Child("Host"), errMsg))
+				}
+			}
+		}
+	}
+	return allErrs
+}
+
+func (a *AgentConfig) validateBootArtifactsBaseURL() field.ErrorList {
+	var allErrs field.ErrorList
+
+	bootArtifactsBaseURL := field.NewPath("bootArtifactsBaseURL")
+
+	// empty bootArtifactsBaseURL is fine
+	if a.Config.BootArtifactsBaseURL == "" {
+		return nil
+	}
+
+	if err := validate.URI(a.Config.BootArtifactsBaseURL); err != nil {
+		allErrs = append(allErrs, field.Invalid(bootArtifactsBaseURL, a.Config.BootArtifactsBaseURL, err.Error()))
 	}
 
 	return allErrs

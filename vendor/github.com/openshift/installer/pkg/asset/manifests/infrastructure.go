@@ -6,13 +6,14 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	externalinfra "github.com/openshift/installer/pkg/asset/manifests/external"
 	gcpmanifests "github.com/openshift/installer/pkg/asset/manifests/gcp"
 	vsphereinfra "github.com/openshift/installer/pkg/asset/manifests/vsphere"
 	"github.com/openshift/installer/pkg/types"
@@ -20,6 +21,7 @@ import (
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
 	"github.com/openshift/installer/pkg/types/libvirt"
@@ -92,6 +94,7 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 
 	config.Status.InfrastructureTopology = infrastructureTopology
 	config.Status.ControlPlaneTopology = controlPlaneTopology
+	config.Status.CPUPartitioning = determineCPUPartitioning(installConfig.Config)
 
 	switch installConfig.Config.Platform.Name() {
 	case aws.Name:
@@ -139,6 +142,13 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 		if installConfig.Config.Platform.Azure.CloudName == azure.StackCloud {
 			config.Status.PlatformStatus.Azure.ARMEndpoint = installConfig.Config.Platform.Azure.ARMEndpoint
 		}
+		if len(installConfig.Config.Azure.UserTags) > 0 {
+			resourceTags := make([]configv1.AzureResourceTag, 0, len(installConfig.Config.Azure.UserTags))
+			for k, v := range installConfig.Config.Azure.UserTags {
+				resourceTags = append(resourceTags, configv1.AzureResourceTag{Key: k, Value: v})
+			}
+			config.Status.PlatformStatus.Azure.ResourceTags = resourceTags
+		}
 	case alibabacloud.Name:
 		config.Spec.PlatformSpec.Type = configv1.AlibabaCloudPlatformType
 		config.Status.PlatformStatus.AlibabaCloud = &configv1.AlibabaCloudPlatformStatus{
@@ -152,6 +162,7 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 			IngressIP:            installConfig.Config.Platform.BareMetal.IngressVIPs[0],
 			APIServerInternalIPs: installConfig.Config.Platform.BareMetal.APIVIPs,
 			IngressIPs:           installConfig.Config.Platform.BareMetal.IngressVIPs,
+			LoadBalancer:         installConfig.Config.Platform.BareMetal.LoadBalancer,
 		}
 	case gcp.Name:
 		config.Spec.PlatformSpec.Type = configv1.GCPPlatformType
@@ -168,6 +179,20 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 			Filename: cloudControllerUIDFilename,
 			Data:     content,
 		})
+		if len(installConfig.Config.GCP.UserLabels) > 0 {
+			resourceLabels := make([]configv1.GCPResourceLabel, len(installConfig.Config.GCP.UserLabels))
+			for i, label := range installConfig.Config.GCP.UserLabels {
+				resourceLabels[i] = configv1.GCPResourceLabel{Key: label.Key, Value: label.Value}
+			}
+			config.Status.PlatformStatus.GCP.ResourceLabels = resourceLabels
+		}
+		if len(installConfig.Config.GCP.UserTags) > 0 {
+			resourceTags := make([]configv1.GCPResourceTag, len(installConfig.Config.GCP.UserTags))
+			for i, tag := range installConfig.Config.GCP.UserTags {
+				resourceTags[i] = configv1.GCPResourceTag{ParentID: tag.ParentID, Key: tag.Key, Value: tag.Value}
+			}
+			config.Status.PlatformStatus.GCP.ResourceTags = resourceTags
+		}
 	case ibmcloud.Name:
 		config.Spec.PlatformSpec.Type = configv1.IBMCloudPlatformType
 		var cisInstanceCRN, dnsInstanceCRN string
@@ -193,6 +218,10 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 		}
 	case libvirt.Name:
 		config.Spec.PlatformSpec.Type = configv1.LibvirtPlatformType
+	case external.Name:
+		config.Spec.PlatformSpec.Type = configv1.ExternalPlatformType
+		config.Spec.PlatformSpec.External = externalinfra.GetInfraPlatformSpec(installConfig)
+		config.Status.PlatformStatus.External = externalinfra.GetInfraPlatformStatus(installConfig)
 	case none.Name:
 		config.Spec.PlatformSpec.Type = configv1.NonePlatformType
 	case openstack.Name:
@@ -202,6 +231,7 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 			IngressIP:            installConfig.Config.OpenStack.IngressVIPs[0],
 			APIServerInternalIPs: installConfig.Config.OpenStack.APIVIPs,
 			IngressIPs:           installConfig.Config.OpenStack.IngressVIPs,
+			LoadBalancer:         installConfig.Config.OpenStack.LoadBalancer,
 		}
 	case vsphere.Name:
 		config.Spec.PlatformSpec.Type = configv1.VSpherePlatformType
@@ -211,8 +241,10 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 				IngressIP:            installConfig.Config.VSphere.IngressVIPs[0],
 				APIServerInternalIPs: installConfig.Config.VSphere.APIVIPs,
 				IngressIPs:           installConfig.Config.VSphere.IngressVIPs,
+				LoadBalancer:         installConfig.Config.VSphere.LoadBalancer,
 			}
 		}
+
 		config.Spec.PlatformSpec.VSphere = vsphereinfra.GetInfraPlatformSpec(installConfig)
 
 		if _, exists := cloudproviderconfig.ConfigMap.Data["vsphere.conf"]; exists {
@@ -226,6 +258,7 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 			IngressIP:            installConfig.Config.Ovirt.IngressVIPs[0],
 			APIServerInternalIPs: installConfig.Config.Ovirt.APIVIPs,
 			IngressIPs:           installConfig.Config.Ovirt.IngressVIPs,
+			LoadBalancer:         installConfig.Config.Ovirt.LoadBalancer,
 		}
 	case powervs.Name:
 		config.Spec.PlatformSpec.Type = configv1.PowerVSPlatformType
@@ -248,6 +281,7 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 		config.Status.PlatformStatus.PowerVS = &configv1.PowerVSPlatformStatus{
 			Region:         installConfig.Config.Platform.PowerVS.Region,
 			Zone:           installConfig.Config.Platform.PowerVS.Zone,
+			ResourceGroup:  installConfig.Config.Platform.PowerVS.PowerVSResourceGroup,
 			CISInstanceCRN: cisInstanceCRN,
 			DNSInstanceCRN: dnsInstanceCRN,
 		}
@@ -295,6 +329,7 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 				IngressIP:            installConfig.Config.Nutanix.IngressVIPs[0],
 				APIServerInternalIPs: installConfig.Config.Nutanix.APIVIPs,
 				IngressIPs:           installConfig.Config.Nutanix.IngressVIPs,
+				LoadBalancer:         installConfig.Config.Nutanix.LoadBalancer,
 			}
 		}
 	default:

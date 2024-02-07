@@ -3,8 +3,9 @@ package manifests
 import (
 	"path/filepath"
 
-	"github.com/openshift/installer/pkg/asset"
 	"github.com/pkg/errors"
+
+	"github.com/openshift/installer/pkg/asset"
 )
 
 const (
@@ -57,4 +58,9 @@ func (em *ExtraManifests) Load(f asset.FileFetcher) (found bool, err error) {
 	asset.SortFiles(em.FileList)
 
 	return len(em.FileList) > 0, nil
+}
+
+// OpenshiftManifestDir returns the name of directory to add extra manifests.
+func OpenshiftManifestDir() string {
+	return openshiftManifestDir
 }

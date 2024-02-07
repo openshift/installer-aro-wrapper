@@ -3,25 +3,57 @@ package vsphere
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"net"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/coreos/stream-metadata-go/stream"
+	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/vmware/govmomi/find"
+	vapitags "github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/mo"
 	vim25types "github.com/vmware/govmomi/vim25/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/vsphere"
 	"github.com/openshift/installer/pkg/types/vsphere/validation"
 )
 
+//go:generate mockgen -source=./validation.go -destination=./mock/tagmanager_generated.go -package=mock
+
+// TagManager defines an interface to an implementation of the AuthorizationManager to facilitate mocking.
+type TagManager interface {
+	ListCategories(ctx context.Context) ([]string, error)
+	GetCategories(ctx context.Context) ([]vapitags.Category, error)
+	GetCategory(ctx context.Context, id string) (*vapitags.Category, error)
+	GetTagsForCategory(ctx context.Context, id string) ([]vapitags.Tag, error)
+	GetAttachedTags(ctx context.Context, ref mo.Reference) ([]vapitags.Tag, error)
+	GetAttachedTagsOnObjects(ctx context.Context, objectID []mo.Reference) ([]vapitags.AttachedTags, error)
+}
+
+const (
+	esxi7U2BuildNumber    int    = 17630552
+	vcenter7U2BuildNumber int    = 17694817
+	vcenter7U2Version     string = "7.0.2"
+)
+
+var localLogger = logrus.New()
+
 type validationContext struct {
-	AuthManager AuthManager
-	Finder      Finder
-	Client      *vim25.Client
+	AuthManager         AuthManager
+	Finder              Finder
+	Client              *vim25.Client
+	TagManager          TagManager
+	regionTagCategoryID string
+	zoneTagCategoryID   string
+	rhcosStream         *stream.Stream
 }
 
 // Validate executes platform-specific validation.
@@ -29,7 +61,7 @@ func Validate(ic *types.InstallConfig) error {
 	if ic.Platform.VSphere == nil {
 		return errors.New(field.Required(field.NewPath("platform", "vsphere"), "vSphere validation requires a vSphere platform configuration").Error())
 	}
-	return validation.ValidatePlatform(ic.Platform.VSphere, field.NewPath("platform").Child("vsphere")).ToAggregate()
+	return validation.ValidatePlatform(ic.Platform.VSphere, false, field.NewPath("platform").Child("vsphere"), ic).ToAggregate()
 }
 
 func getVCenterClient(failureDomain vsphere.FailureDomain, ic *types.InstallConfig) (*validationContext, ClientLogout, error) {
@@ -37,7 +69,7 @@ func getVCenterClient(failureDomain vsphere.FailureDomain, ic *types.InstallConf
 	ctx := context.TODO()
 	for _, vcenter := range ic.VSphere.VCenters {
 		if vcenter.Server == server {
-			vim25Client, _, cleanup, err := CreateVSphereClients(ctx,
+			vim25Client, vim25RestClient, cleanup, err := CreateVSphereClients(ctx,
 				vcenter.Server,
 				vcenter.Username,
 				vcenter.Password)
@@ -47,6 +79,7 @@ func getVCenterClient(failureDomain vsphere.FailureDomain, ic *types.InstallConf
 			}
 
 			validationCtx := validationContext{
+				TagManager:  vapitags.NewManager(vim25RestClient),
 				AuthManager: newAuthManager(vim25Client),
 				Finder:      find.NewFinder(vim25Client),
 				Client:      vim25Client,
@@ -57,36 +90,60 @@ func getVCenterClient(failureDomain vsphere.FailureDomain, ic *types.InstallConf
 	return nil, nil, fmt.Errorf("vcenter %s not defined in vcenters", server)
 }
 
-// ValidateMultiZoneForProvisioning performs platform validation specifically
+// ValidateForProvisioning performs platform validation specifically
 // for multi-zone installer-provisioned infrastructure. In this case,
 // self-hosted networking is a requirement when the installer creates
 // infrastructure for vSphere clusters.
-func ValidateMultiZoneForProvisioning(ic *types.InstallConfig) error {
+func ValidateForProvisioning(ic *types.InstallConfig) error {
 	allErrs := field.ErrorList{}
 
-	err := ValidateForProvisioning(ic)
-	if err != nil {
-		return err
+	// If APIVIPs and IngressVIPs is equal to zero
+	// then don't validate the VIPs.
+	// Instead, ensure there is a configured
+	// DNS record for api and test if the load
+	// balancer is configured.
+
+	// The VIP parameters within the Infrastructure status object
+	// will be empty. This will cause MCO to not deploy
+	// the static pods: haproxy, keepalived and coredns.
+	// This will allow the use of an external load balancer
+	// and RHCOS nodes to be on multiple L2 segments.
+	if len(ic.Platform.VSphere.APIVIPs) == 0 && len(ic.Platform.VSphere.IngressVIPs) == 0 {
+		allErrs = append(allErrs, ensureDNS(ic, field.NewPath("platform"), nil)...)
+		ensureLoadBalancer(ic)
 	}
 
 	var clients = make(map[string]*validationContext, 0)
-	for _, failureDomain := range ic.VSphere.FailureDomains {
+
+	checkTags := false
+	if len(ic.VSphere.FailureDomains) > 1 {
+		checkTags = true
+	}
+
+	for i, failureDomain := range ic.VSphere.FailureDomains {
 		if _, exists := clients[failureDomain.Server]; !exists {
 			validationCtx, cleanup, err := getVCenterClient(failureDomain, ic)
 			if err != nil {
 				return err
 			}
 			defer cleanup()
+
+			err = getRhcosStream(validationCtx)
+			if err != nil {
+				return err
+			}
+
+			allErrs = append(allErrs, validateVCenterVersion(validationCtx, field.NewPath("platform").Child("vsphere").Child("vcenters"))...)
 			clients[failureDomain.Server] = validationCtx
 		}
 
 		validationCtx := clients[failureDomain.Server]
-		allErrs = append(allErrs, validateMultiZoneProvisioning(validationCtx, &failureDomain)...)
+		allErrs = append(allErrs, validateFailureDomain(validationCtx, &ic.VSphere.FailureDomains[i], checkTags)...)
 	}
 	return allErrs.ToAggregate()
 }
 
-func validateMultiZoneProvisioning(validationCtx *validationContext, failureDomain *vsphere.FailureDomain) field.ErrorList {
+func validateFailureDomain(validationCtx *validationContext, failureDomain *vsphere.FailureDomain, checkTags bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	checkDatacenterPrivileges := true
 	checkComputeClusterPrivileges := true
@@ -100,6 +157,15 @@ func validateMultiZoneProvisioning(validationCtx *validationContext, failureDoma
 	vsphereField := field.NewPath("platform").Child("vsphere")
 	topologyField := vsphereField.Child("failureDomains").Child("topology")
 
+	if checkTags {
+		regionTagCategoryID, zoneTagCategoryID, err := validateTagCategories(validationCtx)
+		if err != nil {
+			allErrs = append(allErrs, field.InternalError(vsphereField, err))
+		}
+		validationCtx.regionTagCategoryID = regionTagCategoryID
+		validationCtx.zoneTagCategoryID = zoneTagCategoryID
+	}
+
 	allErrs = append(allErrs, resourcePoolExists(validationCtx, resourcePool, topologyField.Child("resourcePool"))...)
 
 	if len(failureDomain.Topology.Folder) > 0 {
@@ -107,114 +173,21 @@ func validateMultiZoneProvisioning(validationCtx *validationContext, failureDoma
 		checkDatacenterPrivileges = false
 	}
 
-	computeCluster := failureDomain.Topology.ComputeCluster
-	clusterPathRegexp := regexp.MustCompile("^\\/(.*?)\\/host\\/(.*?)$")
-	clusterPathParts := clusterPathRegexp.FindStringSubmatch(computeCluster)
-	if len(clusterPathParts) < 3 {
-		return append(allErrs, field.Invalid(topologyField.Child("computeCluster"), computeCluster, "full path of cluster is required"))
-	}
-	computeClusterName := clusterPathParts[2]
-	errs := validateVcenterPrivileges(validationCtx, topologyField.Child("server"))
-	if len(errs) > 0 {
-		return append(allErrs, errs...)
-	}
-	errs = computeClusterExists(validationCtx, computeCluster, topologyField.Child("computeCluster"), checkComputeClusterPrivileges)
-	if len(errs) > 0 {
-		return append(allErrs, errs...)
-	}
-	errs = datacenterExists(validationCtx, failureDomain.Topology.Datacenter, topologyField.Child("datacenter"), checkDatacenterPrivileges)
-	if len(errs) > 0 {
-		return append(allErrs, errs...)
-	}
-	errs = datastoreExists(validationCtx, failureDomain.Topology.Datacenter, failureDomain.Topology.Datastore, topologyField.Child("datastore"))
-	if len(errs) > 0 {
-		return append(allErrs, errs...)
+	allErrs = append(allErrs, validateESXiVersion(validationCtx, failureDomain.Topology.ComputeCluster, vsphereField, topologyField.Child("computeCluster"))...)
+	allErrs = append(allErrs, validateVcenterPrivileges(validationCtx, topologyField.Child("server"))...)
+	allErrs = append(allErrs, computeClusterExists(validationCtx, failureDomain.Topology.ComputeCluster, topologyField.Child("computeCluster"), checkComputeClusterPrivileges, checkTags)...)
+	allErrs = append(allErrs, datacenterExists(validationCtx, failureDomain.Topology.Datacenter, topologyField.Child("datacenter"), checkDatacenterPrivileges)...)
+	allErrs = append(allErrs, datastoreExists(validationCtx, failureDomain.Topology.Datacenter, failureDomain.Topology.Datastore, topologyField.Child("datastore"))...)
+
+	if failureDomain.Topology.Template != "" {
+		allErrs = append(allErrs, validateTemplate(validationCtx, failureDomain.Topology.Template, topologyField.Child("template"))...)
 	}
 
 	for _, network := range failureDomain.Topology.Networks {
-		allErrs = append(allErrs, validateNetwork(validationCtx, failureDomain.Topology.Datacenter, computeClusterName, network, topologyField)...)
+		allErrs = append(allErrs, validateNetwork(validationCtx, failureDomain.Topology.Datacenter, failureDomain.Topology.ComputeCluster, network, topologyField)...)
 	}
 
 	return allErrs
-}
-
-// ValidateForProvisioning performs platform validation specifically for installer-
-// provisioned infrastructure. In this case, self-hosted networking is a requirement
-// when the installer creates infrastructure for vSphere clusters.
-func ValidateForProvisioning(ic *types.InstallConfig) error {
-	if ic.Platform.VSphere == nil {
-		return errors.New(field.Required(field.NewPath("platform", "vsphere"), "vSphere validation requires a vSphere platform configuration").Error())
-	}
-
-	p := ic.Platform.VSphere
-	vim25Client, _, cleanup, err := CreateVSphereClients(context.TODO(),
-		p.VCenter,
-		p.Username,
-		p.Password)
-
-	if err != nil {
-		return errors.New(field.InternalError(field.NewPath("platform", "vsphere"), errors.Wrapf(err, "unable to connect to vCenter %s.", p.VCenter)).Error())
-	}
-	defer cleanup()
-
-	finder := NewFinder(vim25Client)
-	validationCtx := &validationContext{
-		AuthManager: newAuthManager(vim25Client),
-		Finder:      finder,
-		Client:      vim25Client,
-	}
-	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
-	defer cancel()
-
-	err = pruneToAvailablePermissions(ctx, validationCtx.AuthManager)
-	if err != nil {
-		return errors.New(field.InternalError(field.NewPath("platform", "vsphere"), errors.Wrapf(err, "unable to determine available vCenter privileges.")).Error())
-	}
-
-	return validateProvisioning(validationCtx, ic)
-}
-
-func validateProvisioning(validationCtx *validationContext, ic *types.InstallConfig) error {
-	allErrs := field.ErrorList{}
-	platform := ic.Platform.VSphere
-	vsphereField := field.NewPath("platform").Child("vsphere")
-	checkDatacenterPrivileges := ic.VSphere.Folder == ""
-	checkComputeClusterPrivileges := ic.VSphere.ResourcePool == ""
-	allErrs = append(allErrs, validation.ValidateForProvisioning(platform, vsphereField)...)
-	allErrs = append(allErrs, validateVcenterPrivileges(validationCtx, vsphereField.Child("vcenter"))...)
-	allErrs = append(allErrs, folderExists(validationCtx, ic.VSphere.Folder, vsphereField.Child("folder"))...)
-	allErrs = append(allErrs, resourcePoolExists(validationCtx, ic.VSphere.ResourcePool, vsphereField.Child("resourcePool"))...)
-
-	// if the datacenter or cluster fail to be found or is missing privileges, this will cascade through the balance
-	// of checks.  exit if they fail to limit multiple errors from being thrown.
-	errs := datacenterExists(validationCtx, platform.Datacenter, vsphereField.Child("datacenter"), checkDatacenterPrivileges)
-	if len(errs) > 0 {
-		allErrs = append(allErrs, errs...)
-		return allErrs.ToAggregate()
-	}
-	computeCluster := platform.Cluster
-	if computeCluster == "" {
-		return field.Required(vsphereField.Child("cluster"), "must specify the cluster")
-	}
-	clusterPathRegexp := regexp.MustCompile("^\\/(.*?)\\/host\\/(.*?)$")
-	clusterPathParts := clusterPathRegexp.FindStringSubmatch(computeCluster)
-	if len(clusterPathParts) < 3 {
-		computeCluster = fmt.Sprintf("/%s/host/%s", platform.Datacenter, computeCluster)
-	}
-	errs = computeClusterExists(validationCtx, computeCluster, vsphereField.Child("cluster"), checkComputeClusterPrivileges)
-	if len(errs) > 0 {
-		allErrs = append(allErrs, errs...)
-		return allErrs.ToAggregate()
-	}
-
-	errs = validateNetwork(validationCtx, platform.Datacenter, platform.Cluster, platform.Network, vsphereField.Child("network"))
-	if len(errs) > 0 {
-		allErrs = append(allErrs, errs...)
-		return allErrs.ToAggregate()
-	}
-
-	allErrs = append(allErrs, datastoreExists(validationCtx, platform.Datacenter, platform.DefaultDatastore, vsphereField.Child("defaultDatastore"))...)
-	return allErrs.ToAggregate()
 }
 
 // folderExists returns an error if a folder is specified in the vSphere platform but a folder with that name is not found in the datacenter.
@@ -238,6 +211,108 @@ func folderExists(validationCtx *validationContext, folderPath string, fldPath *
 	err = comparePrivileges(ctx, validationCtx, folder.Reference(), permissionGroup)
 	if err != nil {
 		return append(allErrs, field.InternalError(fldPath, err))
+	}
+	return allErrs
+}
+
+func validateVCenterVersion(validationCtx *validationContext, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	constraints, err := version.NewConstraint(fmt.Sprintf("< %s", vcenter7U2Version))
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(fldPath, err))
+	}
+
+	vCenterVersion, err := version.NewVersion(validationCtx.Client.ServiceContent.About.Version)
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(fldPath, err))
+	}
+	build, err := strconv.Atoi(validationCtx.Client.ServiceContent.About.Build)
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(fldPath, err))
+	}
+
+	detail := fmt.Sprintf("The vSphere storage driver requires a minimum of vSphere 7 Update 2. Current vCenter version: %s, build: %s",
+		validationCtx.Client.ServiceContent.About.Version, validationCtx.Client.ServiceContent.About.Build)
+
+	if constraints.Check(vCenterVersion) {
+		allErrs = append(allErrs, field.Required(fldPath, detail))
+	} else if build < vcenter7U2BuildNumber {
+		allErrs = append(allErrs, field.Required(fldPath, detail))
+	}
+
+	return allErrs
+}
+
+func validateESXiVersion(validationCtx *validationContext, clusterPath string, vSphereFldPath, computeClusterFldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	finder := validationCtx.Finder
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
+	clusters, err := finder.ClusterComputeResourceList(ctx, clusterPath)
+
+	if err != nil {
+		var notFoundError *find.NotFoundError
+		var defaultNotFoundError *find.DefaultNotFoundError
+
+		/* These error types also exist, but it seems less likely to occur.
+		var *find.MultipleFoundError
+		var *find.DefaultMultipleFoundError
+		*/
+		switch {
+		case errors.As(err, &notFoundError):
+			return field.ErrorList{field.Invalid(computeClusterFldPath, clusterPath, notFoundError.Error())}
+		case errors.As(err, &defaultNotFoundError):
+			return field.ErrorList{field.Invalid(computeClusterFldPath, clusterPath, defaultNotFoundError.Error())}
+		default:
+			return append(allErrs, field.InternalError(vSphereFldPath, err))
+		}
+	}
+
+	v7, err := version.NewVersion("7.0")
+	if err != nil {
+		return append(allErrs, field.InternalError(vSphereFldPath, err))
+	}
+
+	hosts, err := clusters[0].Hosts(context.TODO())
+	if err != nil {
+		err = errors.Wrapf(err, "unable to find hosts from cluster on path: %s", clusterPath)
+		return append(allErrs, field.InternalError(vSphereFldPath, err))
+	}
+
+	for _, h := range hosts {
+		var esxiHostVersion *version.Version
+		var mh mo.HostSystem
+		err := h.Properties(context.TODO(), h.Reference(), []string{"config.product"}, &mh)
+		if err != nil {
+			return append(allErrs, field.InternalError(vSphereFldPath, err))
+		}
+
+		if mh.Config != nil {
+			esxiHostVersion, err = version.NewVersion(mh.Config.Product.Version)
+			if err != nil {
+				return append(allErrs, field.InternalError(vSphereFldPath, err))
+			}
+		} else {
+			return append(allErrs, field.InternalError(vSphereFldPath, errors.Errorf("vCenter is failing to retrieve config product version information for the ESXi host: %s", h.Name())))
+		}
+
+		detail := fmt.Sprintf("The vSphere storage driver requires a minimum of vSphere 7 Update 2. The ESXi host: %s is version: %s and build: %s",
+			h.Name(), mh.Config.Product.Version, mh.Config.Product.Build)
+
+		if esxiHostVersion.LessThan(v7) {
+			allErrs = append(allErrs, field.Required(computeClusterFldPath, detail))
+		} else {
+			build, err := strconv.Atoi(mh.Config.Product.Build)
+			if err != nil {
+				return append(allErrs, field.InternalError(vSphereFldPath, err))
+			}
+			if build < esxi7U2BuildNumber {
+				allErrs = append(allErrs, field.Required(computeClusterFldPath, detail))
+			}
+		}
 	}
 	return allErrs
 }
@@ -278,7 +353,7 @@ func validateNetwork(validationCtx *validationContext, datacenterName string, cl
 }
 
 // resourcePoolExists returns an error if a resourcePool is specified in the vSphere platform but a resourcePool with that name is not found in the datacenter.
-func computeClusterExists(validationCtx *validationContext, computeCluster string, fldPath *field.Path, checkPrivileges bool) field.ErrorList {
+func computeClusterExists(validationCtx *validationContext, computeCluster string, fldPath *field.Path, checkPrivileges, checkTagAttachment bool) field.ErrorList {
 	if computeCluster == "" {
 		return field.ErrorList{field.Required(fldPath, "must specify the cluster")}
 	}
@@ -295,6 +370,13 @@ func computeClusterExists(validationCtx *validationContext, computeCluster strin
 		permissionGroup := permissions[permissionCluster]
 		err = comparePrivileges(ctx, validationCtx, computeClusterMo.Reference(), permissionGroup)
 
+		if err != nil {
+			return field.ErrorList{field.InternalError(fldPath, err)}
+		}
+	}
+
+	if checkTagAttachment {
+		err = validateTagAttachment(validationCtx, computeClusterMo.Reference())
 		if err != nil {
 			return field.ErrorList{field.InternalError(fldPath, err)}
 		}
@@ -374,7 +456,7 @@ func datastoreExists(validationCtx *validationContext, datacenterName string, da
 
 	var datastoreMo *vim25types.ManagedObjectReference
 	for _, datastore := range datastores {
-		if datastore.Name() == datastoreName {
+		if datastore.InventoryPath == datastoreName || datastore.Name() == datastoreName {
 			mo := datastore.Reference()
 			datastoreMo = &mo
 		}
@@ -407,4 +489,238 @@ func validateVcenterPrivileges(validationCtx *validationContext, fldPath *field.
 		return field.ErrorList{field.InternalError(fldPath, err)}
 	}
 	return field.ErrorList{}
+}
+
+func ensureDNS(installConfig *types.InstallConfig, fldPath *field.Path, resolver *net.Resolver) field.ErrorList {
+	var uris []string
+	errList := field.ErrorList{}
+	ctx, cancel := context.WithTimeout(context.TODO(), 30*time.Second)
+	defer cancel()
+
+	uris = append(uris, fmt.Sprintf("api.%s", installConfig.ClusterDomain()))
+	uris = append(uris, fmt.Sprintf("api-int.%s", installConfig.ClusterDomain()))
+
+	if resolver == nil {
+		resolver = &net.Resolver{
+			PreferGo: true,
+		}
+	}
+
+	// DNS lookup uri
+	for _, u := range uris {
+		logrus.Debugf("Performing DNS Lookup: %s", u)
+		_, err := resolver.LookupHost(ctx, u)
+		// Append error if DNS entry does not exist
+		if err != nil {
+			errList = append(errList, field.Invalid(fldPath, u, err.Error()))
+		}
+	}
+
+	return errList
+}
+
+func ensureLoadBalancer(installConfig *types.InstallConfig) {
+	var lastErr error
+	dialTimeout := time.Second
+	tcpTimeout := time.Second * 10
+	errorCount := 0
+	apiURIPort := fmt.Sprintf("api.%s:%s", installConfig.ClusterDomain(), "6443")
+	tcpContext, cancel := context.WithTimeout(context.TODO(), tcpTimeout)
+	defer cancel()
+
+	// If the load balancer is configured properly even
+	// without members we should be available to make
+	// a connection to port 6443. Check for 10 seconds
+	// emit debug message every 2 failures. If unavailable
+	// after timeout emit warning only.
+	wait.Until(func() {
+		conn, err := net.DialTimeout("tcp", apiURIPort, dialTimeout)
+		if err == nil {
+			conn.Close()
+			cancel()
+		} else {
+			lastErr = err
+			if errorCount == 2 {
+				logrus.Debug("Still waiting for load balancer...")
+				errorCount = 0
+			} else {
+				errorCount++
+			}
+		}
+	}, 2*time.Second, tcpContext.Done())
+
+	err := tcpContext.Err()
+	if err != nil && !errors.Is(err, context.Canceled) {
+		if lastErr != nil {
+			localLogger.Warnf("Installation may fail, load balancer not available: %v", lastErr)
+		}
+	}
+}
+
+func validateTagCategories(validationCtx *validationContext) (string, string, error) {
+	if validationCtx.TagManager == nil {
+		return "", "", nil
+	}
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
+	categories, err := validationCtx.TagManager.GetCategories(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	regionTagCategoryID := ""
+	zoneTagCategoryID := ""
+	for _, category := range categories {
+		switch category.Name {
+		case vsphere.TagCategoryRegion:
+			regionTagCategoryID = category.ID
+		case vsphere.TagCategoryZone:
+			zoneTagCategoryID = category.ID
+		}
+		if len(zoneTagCategoryID) > 0 && len(regionTagCategoryID) > 0 {
+			break
+		}
+	}
+	if len(zoneTagCategoryID) == 0 || len(regionTagCategoryID) == 0 {
+		return "", "", errors.New("tag categories openshift-zone and openshift-region must be created")
+	}
+	return regionTagCategoryID, zoneTagCategoryID, nil
+}
+
+func validateTagAttachment(validationCtx *validationContext, reference vim25types.ManagedObjectReference) error {
+	if validationCtx.TagManager == nil {
+		return nil
+	}
+	client := validationCtx.Client
+	tagManager := validationCtx.TagManager
+	regionTagCategoryID := validationCtx.regionTagCategoryID
+	zoneTagCategoryID := validationCtx.zoneTagCategoryID
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
+	referencesToCheck := []mo.Reference{reference}
+	ancestors, err := mo.Ancestors(ctx,
+		client.RoundTripper,
+		client.ServiceContent.PropertyCollector,
+		reference)
+	if err != nil {
+		return err
+	}
+	for _, ancestor := range ancestors {
+		referencesToCheck = append(referencesToCheck, ancestor.Reference())
+	}
+	attachedTags, err := tagManager.GetAttachedTagsOnObjects(ctx, referencesToCheck)
+	if err != nil {
+		return err
+	}
+	regionTagAttached := false
+	zoneTagAttached := false
+	for _, attachedTag := range attachedTags {
+		for _, tag := range attachedTag.Tags {
+			if !regionTagAttached {
+				if tag.CategoryID == regionTagCategoryID {
+					regionTagAttached = true
+				}
+			}
+			if !zoneTagAttached {
+				if tag.CategoryID == zoneTagCategoryID {
+					zoneTagAttached = true
+				}
+			}
+			if regionTagAttached && zoneTagAttached {
+				return nil
+			}
+		}
+	}
+	var errs []string
+	if !regionTagAttached {
+		errs = append(errs, fmt.Sprintf("tag associated with tag category %s not attached to this resource or ancestor", vsphere.TagCategoryRegion))
+	}
+	if !zoneTagAttached {
+		errs = append(errs, fmt.Sprintf("tag associated with tag category %s not attached to this resource or ancestor", vsphere.TagCategoryZone))
+	}
+	return errors.New(strings.Join(errs, ","))
+}
+
+func validateTemplate(validationCtx *validationContext, template string, fldPath *field.Path) field.ErrorList {
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+	var vmMo mo.VirtualMachine
+	var arch stream.Arch
+	var platformArtifacts stream.PlatformArtifacts
+	var ok bool
+
+	// Not using GetArchitectures() here to make it easier to test
+	if arch, ok = validationCtx.rhcosStream.Architectures["x86_64"]; !ok {
+		return field.ErrorList{field.InternalError(fldPath, errors.New("unable to find vmware rhcos artifacts"))}
+	}
+
+	if platformArtifacts, ok = arch.Artifacts["vmware"]; !ok {
+		return field.ErrorList{field.InternalError(fldPath, errors.New("unable to find vmware rhcos artifacts"))}
+	}
+	rhcosReleaseVersion := platformArtifacts.Release
+
+	vm, err := validationCtx.Finder.VirtualMachine(ctx, template)
+
+	if err != nil {
+		return field.ErrorList{field.Invalid(fldPath, template, errors.Wrapf(err, "unable to find template %s", template).Error())}
+	}
+	err = vm.Properties(ctx, vm.Reference(), nil, &vmMo)
+	if err != nil {
+		return field.ErrorList{field.InternalError(fldPath, err)}
+	}
+
+	if vmMo.Summary.Config.Product != nil {
+		templateProductVersion := vmMo.Summary.Config.Product.Version
+		if templateProductVersion == "" {
+			localLogger.Warnf("unable to determine RHCOS version of virtual machine: %s, installation may fail.", template)
+			return nil
+		}
+
+		err := compareCurrentToTemplate(templateProductVersion, rhcosReleaseVersion)
+		if err != nil {
+			return field.ErrorList{field.InternalError(fldPath, fmt.Errorf("current template: %s %w", template, err))}
+		}
+	} else {
+		localLogger.Warnf("unable to determine RHCOS version of virtual machine: %s, installation may fail.", template)
+	}
+
+	return nil
+}
+
+func compareCurrentToTemplate(templateProductVersion, rhcosStreamVersion string) error {
+	if templateProductVersion != rhcosStreamVersion {
+		templateVersion, err := strconv.Atoi(strings.Split(templateProductVersion, ".")[0])
+		if err != nil {
+			return err
+		}
+		currentRhcosVersion, err := strconv.Atoi(strings.Split(rhcosStreamVersion, ".")[0])
+		if err != nil {
+			return err
+		}
+
+		switch versionDiff := currentRhcosVersion - templateVersion; {
+		case versionDiff < 0:
+			return fmt.Errorf("rhcos version: %s is too many revisions ahead current version: %s", templateProductVersion, rhcosStreamVersion)
+		case versionDiff >= 2:
+			return fmt.Errorf("rhcos version: %s is too many revisions behind current version: %s", templateProductVersion, rhcosStreamVersion)
+		case versionDiff == 1:
+			localLogger.Warnf("rhcos version: %s is behind current version: %s, installation may fail", templateProductVersion, rhcosStreamVersion)
+		}
+	}
+	return nil
+}
+
+func getRhcosStream(validationCtx *validationContext) error {
+	var err error
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
+	validationCtx.rhcosStream, err = rhcos.FetchCoreOSBuild(ctx)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }

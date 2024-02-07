@@ -6,10 +6,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/gcp"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/gcp"
 )
 
 // ValidateMachinePool checks that the specified machine pool is valid.
@@ -29,7 +30,7 @@ func ValidateMachinePool(platform *gcp.Platform, p *gcp.MachinePool, fldPath *fi
 	}
 
 	if p.OSDisk.DiskType != "" {
-		diskTypes := sets.NewString("pd-standard", "pd-ssd")
+		diskTypes := sets.NewString("pd-balanced", "pd-ssd", "pd-standard")
 		if !diskTypes.Has(p.OSDisk.DiskType) {
 			allErrs = append(allErrs, field.NotSupported(fldPath.Child("diskType"), p.OSDisk.DiskType, diskTypes.List()))
 		}
@@ -49,14 +50,31 @@ func ValidateMachinePool(platform *gcp.Platform, p *gcp.MachinePool, fldPath *fi
 	return allErrs
 }
 
+// ValidateServiceAccount checks that the service account is only supplied for control plane nodes and during
+// a shared vpn installation.
+func ValidateServiceAccount(platform *gcp.Platform, p *types.MachinePool, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if p.Platform.GCP.ServiceAccount != "" {
+		if p.Name != "master" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceAccount"), p.Platform.GCP.ServiceAccount, fmt.Sprintf("service accounts only valid for master nodes, provided for %s nodes", p.Name)))
+		}
+		if platform.NetworkProjectID == "" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceAccount"), p.Platform.GCP.ServiceAccount, "service accounts only valid for xpn installs"))
+		}
+	}
+	return allErrs
+}
+
 // ValidateMasterDiskType checks that the specified disk type is valid for control plane.
 func ValidateMasterDiskType(p *types.MachinePool, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-
-	if p.Name == "master" && p.Platform.GCP.OSDisk.DiskType == "pd-standard" {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("diskType"), p.Platform.GCP.OSDisk.DiskType, fmt.Sprintf("%s not compatible with control planes.", p.Platform.GCP.OSDisk.DiskType)))
+	if p.Name == "master" && p.Platform.GCP.OSDisk.DiskType != "" {
+		diskTypes := sets.NewString("pd-ssd")
+		if !diskTypes.Has(p.Platform.GCP.OSDisk.DiskType) {
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("diskType"), p.Platform.GCP.OSDisk.DiskType, diskTypes.List()))
+		}
 	}
-
 	return allErrs
 }
 

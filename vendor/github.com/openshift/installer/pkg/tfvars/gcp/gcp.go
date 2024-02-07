@@ -4,13 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 
-	machineapi "github.com/openshift/api/machine/v1beta1"
+	"github.com/pkg/errors"
 
+	machineapi "github.com/openshift/api/machine/v1beta1"
 	"github.com/openshift/installer/pkg/types"
 )
 
 const (
 	kmsKeyNameFmt = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s"
+
+	// ocpDefaultLabelFmt is the format string for the default label
+	// added to the OpenShift created GCP resources.
+	ocpDefaultLabelFmt = "kubernetes-io-cluster-%s"
 )
 
 // Auth is the collection of credentials that will be used by terrform.
@@ -21,53 +26,43 @@ type Auth struct {
 }
 
 type config struct {
-	Auth                     `json:",inline"`
-	Region                   string   `json:"gcp_region,omitempty"`
-	BootstrapInstanceType    string   `json:"gcp_bootstrap_instance_type,omitempty"`
-	CreateFirewallRules      bool     `json:"gcp_create_firewall_rules"`
-	CreatePrivateZone        bool     `json:"gcp_create_private_zone"`
-	CreatePrivateZoneRecords bool     `json:"gcp_create_private_zone_records"`
-	CreatePublicZoneRecords  bool     `json:"gcp_create_public_zone_records"`
-	MasterInstanceType       string   `json:"gcp_master_instance_type,omitempty"`
-	MasterAvailabilityZones  []string `json:"gcp_master_availability_zones"`
-	ImageURI                 string   `json:"gcp_image_uri,omitempty"`
-	Image                    string   `json:"gcp_image,omitempty"`
-	PreexistingImage         bool     `json:"gcp_preexisting_image"`
-	InstanceServiceAccount   string   `json:"gcp_instance_service_account,omitempty"`
-	ImageLicenses            []string `json:"gcp_image_licenses,omitempty"`
-	VolumeType               string   `json:"gcp_master_root_volume_type"`
-	VolumeSize               int64    `json:"gcp_master_root_volume_size"`
-	VolumeKMSKeyLink         string   `json:"gcp_root_volume_kms_key_link"`
-	PrivateZoneName          string   `json:"gcp_private_zone_name,omitempty"`
-	PrivateZoneProject       string   `json:"gcp_private_zone_project,omitempty"`
-	PublicZoneName           string   `json:"gcp_public_zone_name,omitempty"`
-	PublicZoneProject        string   `json:"gcp_public_zone_project,omitempty"`
-	PublishStrategy          string   `json:"gcp_publish_strategy,omitempty"`
-	PreexistingNetwork       bool     `json:"gcp_preexisting_network,omitempty"`
-	ClusterNetwork           string   `json:"gcp_cluster_network,omitempty"`
-	ControlPlaneSubnet       string   `json:"gcp_control_plane_subnet,omitempty"`
-	ComputeSubnet            string   `json:"gcp_compute_subnet,omitempty"`
-	ControlPlaneTags         []string `json:"gcp_control_plane_tags,omitempty"`
+	Auth                      `json:",inline"`
+	Region                    string            `json:"gcp_region,omitempty"`
+	BootstrapInstanceType     string            `json:"gcp_bootstrap_instance_type,omitempty"`
+	CreateBootstrapSA         bool              `json:"gcp_create_bootstrap_sa"`
+	CreateFirewallRules       bool              `json:"gcp_create_firewall_rules"`
+	MasterInstanceType        string            `json:"gcp_master_instance_type,omitempty"`
+	MasterAvailabilityZones   []string          `json:"gcp_master_availability_zones"`
+	Image                     string            `json:"gcp_image,omitempty"`
+	InstanceServiceAccount    string            `json:"gcp_instance_service_account,omitempty"`
+	VolumeType                string            `json:"gcp_master_root_volume_type"`
+	VolumeSize                int64             `json:"gcp_master_root_volume_size"`
+	VolumeKMSKeyLink          string            `json:"gcp_root_volume_kms_key_link"`
+	PublicZoneName            string            `json:"gcp_public_zone_name,omitempty"`
+	PrivateZoneName           string            `json:"gcp_private_zone_name,omitempty"`
+	PublishStrategy           string            `json:"gcp_publish_strategy,omitempty"`
+	PreexistingNetwork        bool              `json:"gcp_preexisting_network,omitempty"`
+	ClusterNetwork            string            `json:"gcp_cluster_network,omitempty"`
+	ControlPlaneSubnet        string            `json:"gcp_control_plane_subnet,omitempty"`
+	ComputeSubnet             string            `json:"gcp_compute_subnet,omitempty"`
+	ControlPlaneTags          []string          `json:"gcp_control_plane_tags,omitempty"`
+	SecureBoot                string            `json:"gcp_master_secure_boot,omitempty"`
+	OnHostMaintenance         string            `json:"gcp_master_on_host_maintenance,omitempty"`
+	EnableConfidentialCompute string            `json:"gcp_master_confidential_compute,omitempty"`
+	ExtraLabels               map[string]string `json:"gcp_extra_labels,omitempty"`
 }
 
 // TFVarsSources contains the parameters to be converted into Terraform variables
 type TFVarsSources struct {
-	Auth                     Auth
-	CreateFirewallRules      bool
-	CreatePrivateZone        bool
-	CreatePrivateZoneRecords bool
-	CreatePublicZoneRecords  bool
-	ImageURI                 string
-	ImageLicenses            []string
-	InstanceServiceAccount   string
-	MasterConfigs            []*machineapi.GCPMachineProviderSpec
-	WorkerConfigs            []*machineapi.GCPMachineProviderSpec
-	PrivateZoneName          string
-	PrivateZoneProject       string
-	PublicZoneName           string
-	PublicZoneProject        string
-	PublishStrategy          types.PublishingStrategy
-	PreexistingNetwork       bool
+	Auth                Auth
+	CreateFirewallRules bool
+	MasterConfigs       []*machineapi.GCPMachineProviderSpec
+	WorkerConfigs       []*machineapi.GCPMachineProviderSpec
+	PublicZoneName      string
+	PrivateZoneName     string
+	PublishStrategy     types.PublishingStrategy
+	PreexistingNetwork  bool
+	InfrastructureName  string
 }
 
 // TFVars generates gcp-specific Terraform variables launching the cluster.
@@ -79,41 +74,60 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		masterAvailabilityZones[i] = c.Zone
 	}
 
-	cfg := &config{
-		Auth:                     sources.Auth,
-		Region:                   masterConfig.Region,
-		BootstrapInstanceType:    masterConfig.MachineType,
-		CreateFirewallRules:      sources.CreateFirewallRules,
-		CreatePrivateZone:        sources.CreatePrivateZone,
-		CreatePrivateZoneRecords: sources.CreatePrivateZoneRecords,
-		CreatePublicZoneRecords:  sources.CreatePublicZoneRecords,
-		MasterInstanceType:       masterConfig.MachineType,
-		MasterAvailabilityZones:  masterAvailabilityZones,
-		VolumeType:               masterConfig.Disks[0].Type,
-		VolumeSize:               masterConfig.Disks[0].SizeGB,
-		ImageURI:                 sources.ImageURI,
-		Image:                    masterConfig.Disks[0].Image,
-		ImageLicenses:            sources.ImageLicenses,
-		InstanceServiceAccount:   sources.InstanceServiceAccount,
-		PrivateZoneName:          sources.PrivateZoneName,
-		PrivateZoneProject:       sources.PrivateZoneProject,
-		PublicZoneName:           sources.PublicZoneName,
-		PublicZoneProject:        sources.PublicZoneProject,
-		PublishStrategy:          string(sources.PublishStrategy),
-		ClusterNetwork:           masterConfig.NetworkInterfaces[0].Network,
-		ControlPlaneSubnet:       masterConfig.NetworkInterfaces[0].Subnetwork,
-		ComputeSubnet:            workerConfig.NetworkInterfaces[0].Subnetwork,
-		PreexistingNetwork:       sources.PreexistingNetwork,
-		ControlPlaneTags:         masterConfig.Tags,
+	labels := make(map[string]string, len(masterConfig.Labels)+1)
+	// add OCP default label
+	labels[fmt.Sprintf(ocpDefaultLabelFmt, sources.InfrastructureName)] = "owned"
+	for k, v := range masterConfig.Labels {
+		labels[k] = v
 	}
-	cfg.PreexistingImage = true
-	if len(sources.ImageLicenses) > 0 {
-		cfg.PreexistingImage = false
+
+	cfg := &config{
+		Auth:                      sources.Auth,
+		Region:                    masterConfig.Region,
+		BootstrapInstanceType:     masterConfig.MachineType,
+		CreateFirewallRules:       sources.CreateFirewallRules,
+		MasterInstanceType:        masterConfig.MachineType,
+		MasterAvailabilityZones:   masterAvailabilityZones,
+		VolumeType:                masterConfig.Disks[0].Type,
+		VolumeSize:                masterConfig.Disks[0].SizeGB,
+		Image:                     masterConfig.Disks[0].Image,
+		PublicZoneName:            sources.PublicZoneName,
+		PrivateZoneName:           sources.PrivateZoneName,
+		PublishStrategy:           string(sources.PublishStrategy),
+		ClusterNetwork:            masterConfig.NetworkInterfaces[0].Network,
+		ControlPlaneSubnet:        masterConfig.NetworkInterfaces[0].Subnetwork,
+		ComputeSubnet:             workerConfig.NetworkInterfaces[0].Subnetwork,
+		PreexistingNetwork:        sources.PreexistingNetwork,
+		ControlPlaneTags:          masterConfig.Tags,
+		SecureBoot:                string(masterConfig.ShieldedInstanceConfig.SecureBoot),
+		EnableConfidentialCompute: string(masterConfig.ConfidentialCompute),
+		OnHostMaintenance:         string(masterConfig.OnHostMaintenance),
+		ExtraLabels:               labels,
 	}
 
 	if masterConfig.Disks[0].EncryptionKey != nil {
 		cfg.VolumeKMSKeyLink = generateDiskEncryptionKeyLink(masterConfig.Disks[0].EncryptionKey, masterConfig.ProjectID)
 	}
+
+	instanceServiceAccount := ""
+	// Service Account for masters set for xpn installs
+	if len(cfg.Auth.NetworkProjectID) > 0 {
+		if len(masterConfig.ServiceAccounts) > 0 {
+			instanceServiceAccount = masterConfig.ServiceAccounts[0].Email
+		}
+	}
+	cfg.InstanceServiceAccount = instanceServiceAccount
+
+	serviceAccount := make(map[string]interface{})
+
+	if err := json.Unmarshal([]byte(cfg.Auth.ServiceAccount), &serviceAccount); len(cfg.Auth.ServiceAccount) > 0 && err != nil {
+		return nil, errors.Wrapf(err, "unmarshaling service account")
+	}
+
+	// A private key is needed to sign the URL for bootstrap ignition.
+	// If there is no key in the credentials, we need to generate a new SA.
+	_, foundKey := serviceAccount["private_key"]
+	cfg.CreateBootstrapSA = !foundKey
 
 	return json.MarshalIndent(cfg, "", "  ")
 }

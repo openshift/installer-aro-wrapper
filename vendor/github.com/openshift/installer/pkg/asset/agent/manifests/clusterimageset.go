@@ -5,15 +5,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/yaml"
+
 	hivev1 "github.com/openshift/hive/apis/hive/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/version"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -54,27 +55,30 @@ func (a *ClusterImageSet) Generate(dependencies asset.Parents) error {
 		return err
 	}
 
+	clusterImageSet := &hivev1.ClusterImageSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("openshift-%s", currentVersion),
+		},
+		Spec: hivev1.ClusterImageSetSpec{
+			ReleaseImage: releaseImage.PullSpec,
+		},
+	}
+
 	if installConfig.Config != nil {
-		clusterImageSet := &hivev1.ClusterImageSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("openshift-%s", currentVersion),
-				Namespace: getObjectMetaNamespace(installConfig),
-			},
-			Spec: hivev1.ClusterImageSetSpec{
-				ReleaseImage: releaseImage.PullSpec,
-			},
-		}
-		a.Config = clusterImageSet
+		clusterImageSet.ObjectMeta.Namespace = getObjectMetaNamespace(installConfig)
 
-		configData, err := yaml.Marshal(clusterImageSet)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal agent cluster image set")
-		}
+	}
 
-		a.File = &asset.File{
-			Filename: clusterImageSetFilename,
-			Data:     configData,
-		}
+	a.Config = clusterImageSet
+
+	configData, err := yaml.Marshal(clusterImageSet)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal agent cluster image set")
+	}
+
+	a.File = &asset.File{
+		Filename: clusterImageSetFilename,
+		Data:     configData,
 	}
 
 	return a.finish()

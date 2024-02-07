@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -27,6 +27,7 @@ import (
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
 	libvirttypes "github.com/openshift/installer/pkg/types/libvirt"
@@ -99,7 +100,7 @@ func (m *Metadata) Generate(parents asset.Parents) (err error) {
 		metadata.ClusterPlatformMetadata.AlibabaCloud = alibabacloud.Metadata(installConfig.Config)
 	case powervstypes.Name:
 		metadata.ClusterPlatformMetadata.PowerVS = powervs.Metadata(installConfig.Config, installConfig.PowerVS)
-	case nonetypes.Name:
+	case externaltypes.Name, nonetypes.Name:
 	case nutanixtypes.Name:
 		metadata.ClusterPlatformMetadata.Nutanix = nutanix.Metadata(installConfig.Config)
 	default:
@@ -136,7 +137,7 @@ func (m *Metadata) Load(f asset.FileFetcher) (found bool, err error) {
 // LoadMetadata loads the cluster metadata from an asset directory.
 func LoadMetadata(dir string) (*types.ClusterMetadata, error) {
 	path := filepath.Join(dir, metadataFileName)
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

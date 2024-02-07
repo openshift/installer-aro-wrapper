@@ -1,8 +1,10 @@
 package baremetal
 
 import (
-	"github.com/openshift/installer/pkg/ipnet"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/installer/pkg/ipnet"
 )
 
 // BMC stores the information about a baremetal host's management controller.
@@ -225,4 +227,15 @@ type Platform struct {
 	// +kubebuilder:validation:Format=ip
 	// +optional
 	BootstrapExternalStaticGateway string `json:"bootstrapExternalStaticGateway,omitempty"`
+
+	// LoadBalancer defines how the load balancer used by the cluster is configured.
+	// LoadBalancer is available in TechPreview.
+	// +optional
+	LoadBalancer *configv1.BareMetalPlatformLoadBalancer `json:"loadBalancer,omitempty"`
+
+	// BootstrapExternalStaticDNS is the static network DNS of the bootstrap node.
+	// This can be useful in environments without a DHCP server.
+	// +kubebuilder:validation:Format=ip
+	// +optional
+	BootstrapExternalStaticDNS string `json:"bootstrapExternalStaticDNS,omitempty"`
 }

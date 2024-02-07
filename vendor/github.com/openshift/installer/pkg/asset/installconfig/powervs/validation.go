@@ -2,10 +2,15 @@ package powervs
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/openshift/installer/pkg/types"
-	"k8s.io/apimachinery/pkg/util/validation/field"
+	powervstypes "github.com/openshift/installer/pkg/types/powervs"
 )
 
 // Validate executes platform specific validation/
@@ -23,6 +28,15 @@ func Validate(config *types.InstallConfig) error {
 			fldPath := field.NewPath("compute").Index(idx)
 			allErrs = append(allErrs, validateMachinePool(fldPath, &compute)...)
 		}
+		// Machine pool CIDR check
+		for i := range config.Networking.MachineNetwork {
+			// Each machine pool CIDR must have 24 significant bits (/24)
+			if bits, _ := config.Networking.MachineNetwork[i].CIDR.Mask.Size(); bits != 24 {
+				// If not, create an error displaying the CIDR in the install config vs the expectation (/24)
+				fldPath := field.NewPath("Networking")
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("MachineNetwork").Child("CIDR"), (&config.Networking.MachineNetwork[i].CIDR).String(), "Machine Pool CIDR must be /24."))
+			}
+		}
 	}
 	return allErrs.ToAggregate()
 }
@@ -33,6 +47,32 @@ func validateMachinePool(fldPath *field.Path, machinePool *types.MachinePool) fi
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("architecture"), machinePool.Architecture, []string{"ppc64le"}))
 	}
 	return allErrs
+}
+
+// ValidatePERAvailability ensures the target datacenter has PER enabled.
+func ValidatePERAvailability(client API, ic *types.InstallConfig) error {
+	capabilities, err := client.GetDatacenterCapabilities(context.TODO(), ic.PowerVS.Zone)
+	if err != nil {
+		return err
+	}
+	const per = "power-edge-router"
+	perAvail, ok := capabilities[per]
+	if !ok {
+		return fmt.Errorf("%s capability unknown at: %s", per, ic.PowerVS.Zone)
+	}
+	if !perAvail {
+		return fmt.Errorf("%s is not available at: %s", per, ic.PowerVS.Zone)
+	}
+
+	capabilities, err = client.GetWorkspaceCapabilities(context.TODO(), ic.PowerVS.ServiceInstanceID)
+	if err != nil {
+		return err
+	}
+	if !capabilities[per] {
+		return fmt.Errorf("%s is not available in workspace: %s", per, ic.PowerVS.ServiceInstanceID)
+	}
+
+	return nil
 }
 
 // ValidatePreExistingDNS ensures no pre-existing DNS record exists in the CIS
@@ -108,4 +148,147 @@ func validatePreExistingPrivateDNS(fldPath *field.Path, client API, ic *types.In
 		}
 	}
 	return allErrs
+}
+
+// ValidateCustomVPCSetup ensures optional VPC settings, if specified, are all legit.
+func ValidateCustomVPCSetup(client API, ic *types.InstallConfig) error {
+	allErrs := field.ErrorList{}
+	var vpcRegion = ic.PowerVS.VPCRegion
+	var vpcName = ic.PowerVS.VPCName
+	var err error
+	fldPath := field.NewPath("VPC")
+
+	if vpcRegion != "" {
+		if !powervstypes.ValidateVPCRegion(vpcRegion) {
+			allErrs = append(allErrs, field.NotFound(fldPath.Child("vpcRegion"), vpcRegion))
+		}
+	} else {
+		vpcRegion, err = powervstypes.VPCRegionForPowerVSRegion(ic.PowerVS.Region)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("region"), nil, ic.PowerVS.Region))
+		}
+	}
+
+	if vpcName != "" {
+		allErrs = append(allErrs, findVPCInRegion(client, vpcName, vpcRegion, fldPath)...)
+		allErrs = append(allErrs, findSubnetInVPC(client, ic.PowerVS.VPCSubnets, vpcRegion, vpcName, fldPath)...)
+	} else if len(ic.PowerVS.VPCSubnets) != 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("vpcSubnets"), nil, "invalid without vpcName"))
+	}
+
+	return allErrs.ToAggregate()
+}
+
+func findVPCInRegion(client API, name string, region string, path *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if name == "" {
+		return allErrs
+	}
+
+	vpcs, err := client.GetVPCs(context.TODO(), region)
+	if err != nil {
+		return append(allErrs, field.InternalError(path.Child("vpcRegion"), err))
+	}
+
+	found := false
+	for _, vpc := range vpcs {
+		if *vpc.Name == name {
+			found = true
+			break
+		}
+	}
+	if !found {
+		allErrs = append(allErrs, field.NotFound(path.Child("vpcName"), name))
+	}
+
+	return allErrs
+}
+
+func findSubnetInVPC(client API, subnets []string, region string, name string, path *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if len(subnets) == 0 {
+		return allErrs
+	}
+
+	subnet, err := client.GetSubnetByName(context.TODO(), subnets[0], region)
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(path.Child("vpcSubnets"), err))
+	} else if *subnet.VPC.Name != name {
+		allErrs = append(allErrs, field.Invalid(path.Child("vpcSubnets"), nil, "not attached to VPC"))
+	}
+
+	return allErrs
+}
+
+// ValidateResourceGroup validates the resource group in our install config.
+func ValidateResourceGroup(client API, ic *types.InstallConfig) error {
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
+	defer cancel()
+
+	resourceGroups, err := client.ListResourceGroups(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to list resourceGroups: %w", err)
+	}
+
+	switch ic.PowerVS.PowerVSResourceGroup {
+	case "":
+		return errors.New("platform:powervs:powervsresourcegroup is empty")
+	case "Default":
+		found := false
+		for _, resourceGroup := range resourceGroups.Resources {
+			if resourceGroup.Default != nil && *resourceGroup.Default {
+				found = true
+				ic.PowerVS.PowerVSResourceGroup = *resourceGroup.Name
+				break
+			}
+		}
+		if !found {
+			return errors.New("platform:powervs:powervsresourcegroup is default but no default exists")
+		}
+	default:
+		found := false
+		for _, resourceGroup := range resourceGroups.Resources {
+			if *resourceGroup.Name == ic.PowerVS.PowerVSResourceGroup {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New("platform:powervs:powervsresourcegroup has an invalid name")
+		}
+	}
+
+	return nil
+}
+
+// ValidateServiceInstance validates the service instance in our install config.
+func ValidateServiceInstance(client API, ic *types.InstallConfig) error {
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
+	defer cancel()
+
+	serviceInstances, err := client.ListServiceInstances(ctx)
+	if err != nil {
+		return err
+	}
+
+	switch ic.PowerVS.ServiceInstanceID {
+	case "":
+		return errors.New("platform:powervs:serviceinstance is empty")
+	default:
+		found := false
+		for _, serviceInstance := range serviceInstances {
+			guid := strings.SplitN(serviceInstance, " ", 2)[1]
+			if guid == ic.PowerVS.ServiceInstanceID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New("platform:powervs:serviceinstance has an invalid guid")
+		}
+	}
+
+	return nil
 }

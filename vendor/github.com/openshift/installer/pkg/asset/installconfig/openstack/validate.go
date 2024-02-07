@@ -3,6 +3,7 @@ package openstack
 import (
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/openshift/installer/pkg/asset/installconfig/openstack/validation"
@@ -10,7 +11,6 @@ import (
 	"github.com/openshift/installer/pkg/types/openstack"
 	openstackdefaults "github.com/openshift/installer/pkg/types/openstack/defaults"
 	"github.com/openshift/installer/pkg/types/openstack/validation/networkextensions"
-	"github.com/sirupsen/logrus"
 )
 
 // Validate validates the given installconfig for OpenStack platform
@@ -43,7 +43,7 @@ func Validate(ic *types.InstallConfig) error {
 	controlPlane.Set(ic.Platform.OpenStack.DefaultMachinePlatform)
 	controlPlane.Set(ic.ControlPlane.Platform.OpenStack)
 	if controlPlane.RootVolume != nil && controlPlane.RootVolume.Zones == nil {
-		controlPlane.RootVolume.Zones = openstackdefaults.DefaultRootVolumeAZ()
+		controlPlane.RootVolume.Zones = []string{openstackdefaults.DefaultRootVolumeAZ()}
 	}
 	allErrs = append(allErrs, validation.ValidateMachinePool(&controlPlane, ci, true, field.NewPath("controlPlane", "platform", "openstack"))...)
 
@@ -53,7 +53,7 @@ func Validate(ic *types.InstallConfig) error {
 		compute.Set(ic.Platform.OpenStack.DefaultMachinePlatform)
 		compute.Set(ic.Compute[idx].Platform.OpenStack)
 		if compute.RootVolume != nil && compute.RootVolume.Zones == nil {
-			compute.RootVolume.Zones = openstackdefaults.DefaultRootVolumeAZ()
+			compute.RootVolume.Zones = []string{openstackdefaults.DefaultRootVolumeAZ()}
 		}
 		fldPath := field.NewPath("compute").Index(idx)
 		allErrs = append(allErrs, validation.ValidateMachinePool(&compute, ci, false, fldPath.Child("platform", "openstack"))...)
