@@ -149,119 +149,132 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
+	rhcosImage, err := rhcos.Image(ctx)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
 	installConfig := &installconfig.InstallConfig{
-		Config: &types.InstallConfig{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: domain[:strings.IndexByte(domain, '.')],
-			},
-			SSHKey:     sshkey.Type() + " " + base64.StdEncoding.EncodeToString(sshkey.Marshal()),
-			BaseDomain: domain[strings.IndexByte(domain, '.')+1:],
-			Networking: &types.Networking{
-				MachineNetwork: []types.MachineNetworkEntry{
-					{
-						CIDR: *ipnet.MustParseCIDR("127.0.0.0/8"), // dummy
-					},
+		AssetBase: installconfig.AssetBase{
+			Config: &types.InstallConfig{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
 				},
-				NetworkType: SoftwareDefinedNetwork,
-				ClusterNetwork: []types.ClusterNetworkEntry{
-					{
-						CIDR:       *ipnet.MustParseCIDR(m.oc.Properties.NetworkProfile.PodCIDR),
-						HostPrefix: 23,
-					},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: domain[:strings.IndexByte(domain, '.')],
 				},
-				ServiceNetwork: []ipnet.IPNet{
-					*ipnet.MustParseCIDR(m.oc.Properties.NetworkProfile.ServiceCIDR),
-				},
-			},
-			ControlPlane: &types.MachinePool{
-				Name:     "master",
-				Replicas: to.Int64Ptr(3),
-				Platform: types.MachinePoolPlatform{
-					Azure: &azuretypes.MachinePool{
-						Zones:            masterZones,
-						InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
-						EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
-						VMNetworkingType: masterVMNetworkingType,
-						OSDisk: azuretypes.OSDisk{
-							DiskEncryptionSet: masterDiskEncryptionSet,
-							DiskSizeGB:        1024,
+				SSHKey:     sshkey.Type() + " " + base64.StdEncoding.EncodeToString(sshkey.Marshal()),
+				BaseDomain: domain[strings.IndexByte(domain, '.')+1:],
+				Networking: &types.Networking{
+					MachineNetwork: []types.MachineNetworkEntry{
+						{
+							CIDR: *ipnet.MustParseCIDR("127.0.0.0/8"), // dummy
 						},
 					},
+					NetworkType: SoftwareDefinedNetwork,
+					ClusterNetwork: []types.ClusterNetworkEntry{
+						{
+							CIDR:       *ipnet.MustParseCIDR(m.oc.Properties.NetworkProfile.PodCIDR),
+							HostPrefix: 23,
+						},
+					},
+					ServiceNetwork: []ipnet.IPNet{
+						*ipnet.MustParseCIDR(m.oc.Properties.NetworkProfile.ServiceCIDR),
+					},
 				},
-				Hyperthreading: "Enabled",
-				Architecture:   types.ArchitectureAMD64,
-			},
-			Compute: []types.MachinePool{
-				{
-					Name:     m.oc.Properties.WorkerProfiles[0].Name,
-					Replicas: to.Int64Ptr(int64(m.oc.Properties.WorkerProfiles[0].Count)),
+				ControlPlane: &types.MachinePool{
+					Name:     "master",
+					Replicas: to.Int64Ptr(3),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
-							Zones:            workerZones,
-							InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
-							EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
-							VMNetworkingType: workerVMNetworkingType,
+							Zones:            masterZones,
+							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
+							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
+							VMNetworkingType: masterVMNetworkingType,
 							OSDisk: azuretypes.OSDisk{
-								DiskEncryptionSet: workerDiskEncryptionSet,
-								DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
+								DiskEncryptionSet: masterDiskEncryptionSet,
+								DiskSizeGB:        1024,
 							},
+							OSImage: *rhcosImage,
 						},
 					},
 					Hyperthreading: "Enabled",
 					Architecture:   types.ArchitectureAMD64,
 				},
-			},
-			Platform: types.Platform{
-				Azure: &azuretypes.Platform{
-					Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
-					NetworkResourceGroupName: vnetr.ResourceGroup,
-					VirtualNetwork:           vnetr.ResourceName,
-					ControlPlaneSubnet:       masterSubnetName,
-					ComputeSubnet:            workerSubnetName,
-					CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
-					OutboundType:             outboundType,
-					ResourceGroupName:        resourceGroup,
-				},
-			},
-			PullSecret: pullSecret,
-			FIPS:       m.oc.Properties.ClusterProfile.FipsValidatedModules == api.FipsValidatedModulesEnabled,
-			ImageContentSources: []types.ImageContentSource{
-				{
-					Source: "quay.io/openshift-release-dev/ocp-release",
-					Mirrors: []string{
-						fmt.Sprintf("%s/openshift-release-dev/ocp-release", m.env.ACRDomain()),
+				Compute: []types.MachinePool{
+					{
+						Name:     m.oc.Properties.WorkerProfiles[0].Name,
+						Replicas: to.Int64Ptr(int64(m.oc.Properties.WorkerProfiles[0].Count)),
+						Platform: types.MachinePoolPlatform{
+							Azure: &azuretypes.MachinePool{
+								Zones:            workerZones,
+								InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
+								EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
+								VMNetworkingType: workerVMNetworkingType,
+								OSDisk: azuretypes.OSDisk{
+									DiskEncryptionSet: workerDiskEncryptionSet,
+									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
+								},
+								OSImage: *rhcosImage,
+							},
+						},
+						Hyperthreading: "Enabled",
+						Architecture:   types.ArchitectureAMD64,
 					},
 				},
-				{
-					Source: "quay.io/openshift-release-dev/ocp-release-nightly",
-					Mirrors: []string{
-						fmt.Sprintf("%s/openshift-release-dev/ocp-release-nightly", m.env.ACRDomain()),
+				Platform: types.Platform{
+					Azure: &azuretypes.Platform{
+						Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
+						NetworkResourceGroupName: vnetr.ResourceGroup,
+						VirtualNetwork:           vnetr.ResourceName,
+						ControlPlaneSubnet:       masterSubnetName,
+						ComputeSubnet:            workerSubnetName,
+						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
+						OutboundType:             outboundType,
+						ResourceGroupName:        resourceGroup,
 					},
 				},
-				{
-					Source: "quay.io/openshift-release-dev/ocp-v4.0-art-dev",
-					Mirrors: []string{
-						fmt.Sprintf("%s/openshift-release-dev/ocp-v4.0-art-dev", m.env.ACRDomain()),
+				PullSecret: pullSecret,
+				FIPS:       m.oc.Properties.ClusterProfile.FipsValidatedModules == api.FipsValidatedModulesEnabled,
+				ImageDigestSources: []types.ImageDigestSource{
+					{
+						Source: "quay.io/openshift-release-dev/ocp-release",
+						Mirrors: []string{
+							fmt.Sprintf("%s/openshift-release-dev/ocp-release", m.env.ACRDomain()),
+						},
+					},
+					{
+						Source: "quay.io/openshift-release-dev/ocp-release-nightly",
+						Mirrors: []string{
+							fmt.Sprintf("%s/openshift-release-dev/ocp-release-nightly", m.env.ACRDomain()),
+						},
+					},
+					{
+						Source: "quay.io/openshift-release-dev/ocp-v4.0-art-dev",
+						Mirrors: []string{
+							fmt.Sprintf("%s/openshift-release-dev/ocp-v4.0-art-dev", m.env.ACRDomain()),
+						},
 					},
 				},
-			},
-			Publish: types.ExternalPublishingStrategy,
-			Capabilities: &types.Capabilities{
-				// don't include the baremetal capability (in the baseline default)
-				BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
-				AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
-					configv1.ClusterVersionCapabilityConsole,
-					configv1.ClusterVersionCapabilityCSISnapshot,
-					configv1.ClusterVersionCapabilityInsights,
-					configv1.ClusterVersionCapabilityMarketplace,
-					configv1.ClusterVersionCapabilityOpenShiftSamples,
-					configv1.ClusterVersionCapabilityStorage,
+				Publish: types.ExternalPublishingStrategy,
+				Capabilities: &types.Capabilities{
+					// don't include the baremetal capability (in the baseline default)
+					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
+					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
+						configv1.ClusterVersionCapabilityBuild,
+						configv1.ClusterVersionCapabilityConsole,
+						configv1.ClusterVersionCapabilityCSISnapshot,
+						configv1.ClusterVersionCapabilityDeploymentConfig,
+						configv1.ClusterVersionCapabilityImageRegistry,
+						configv1.ClusterVersionCapabilityInsights,
+						configv1.ClusterVersionCapabilityMachineAPI,
+						configv1.ClusterVersionCapabilityMarketplace,
+						configv1.ClusterVersionCapabilityNodeTuning,
+						configv1.ClusterVersionCapabilityOpenShiftSamples,
+						configv1.ClusterVersionCapabilityStorage,
+					},
 				},
-			},
-		},
+			}},
 		Azure: icazure.NewMetadataWithCredentials(
 			azuretypes.CloudEnvironment(m.env.Environment().Name),
 			m.env.Environment().ResourceManagerEndpoint,
@@ -278,11 +291,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
-	installConfig.Config.Azure.Image, err = rhcos.Image(ctx)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
 	if releaseImageOverride == "" {
 		return nil, nil, fmt.Errorf("no release image in 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE'")
@@ -292,7 +300,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		PullSpec: releaseImageOverride,
 	}
 
-	err = validation.ValidateInstallConfig(installConfig.Config).ToAggregate()
+	err = validation.ValidateInstallConfig(installConfig.Config, false).ToAggregate()
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
