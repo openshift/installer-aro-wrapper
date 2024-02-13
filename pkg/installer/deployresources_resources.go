@@ -112,10 +112,10 @@ func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig)
 			},
 			StorageProfile: &mgmtcompute.StorageProfile{
 				ImageReference: &mgmtcompute.ImageReference{
-					Publisher: &installConfig.Config.Azure.Image.Publisher,
-					Offer:     &installConfig.Config.Azure.Image.Offer,
-					Sku:       &installConfig.Config.Azure.Image.SKU,
-					Version:   &installConfig.Config.Azure.Image.Version,
+					Publisher: &installConfig.Config.ControlPlane.Platform.Azure.OSImage.Publisher,
+					Offer:     &installConfig.Config.ControlPlane.Platform.Azure.OSImage.Offer,
+					Sku:       &installConfig.Config.ControlPlane.Platform.Azure.OSImage.SKU,
+					Version:   &installConfig.Config.ControlPlane.Platform.Azure.OSImage.Version,
 				},
 				OsDisk: &mgmtcompute.OSDisk{
 					Name:         to.StringPtr(m.oc.Properties.InfraID + "-bootstrap_OSDisk"),
@@ -184,10 +184,10 @@ func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, z
 			},
 			StorageProfile: &mgmtcompute.StorageProfile{
 				ImageReference: &mgmtcompute.ImageReference{
-					Publisher: &installConfig.Config.Azure.Image.Publisher,
-					Offer:     &installConfig.Config.Azure.Image.Offer,
-					Sku:       &installConfig.Config.Azure.Image.SKU,
-					Version:   &installConfig.Config.Azure.Image.Version,
+					Publisher: &installConfig.Config.ControlPlane.Platform.Azure.OSImage.Publisher,
+					Offer:     &installConfig.Config.ControlPlane.Platform.Azure.OSImage.Offer,
+					Sku:       &installConfig.Config.ControlPlane.Platform.Azure.OSImage.SKU,
+					Version:   &installConfig.Config.ControlPlane.Platform.Azure.OSImage.Version,
 				},
 				OsDisk: &mgmtcompute.OSDisk{
 					Name:         to.StringPtr("[concat('" + m.oc.Properties.InfraID + "-master-', copyIndex(), '_OSDisk')]"),

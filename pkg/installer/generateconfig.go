@@ -149,6 +149,11 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
+	rhcosImage, err := rhcos.Image(ctx)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
 	installConfig := &installconfig.InstallConfig{
 		AssetBase: installconfig.AssetBase{
 			Config: &types.InstallConfig{
@@ -190,6 +195,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 								DiskEncryptionSet: masterDiskEncryptionSet,
 								DiskSizeGB:        1024,
 							},
+							OSImage: *rhcosImage,
 						},
 					},
 					Hyperthreading: "Enabled",
@@ -209,6 +215,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 									DiskEncryptionSet: workerDiskEncryptionSet,
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
 								},
+								OSImage: *rhcosImage,
 							},
 						},
 						Hyperthreading: "Enabled",
@@ -229,7 +236,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 				PullSecret: pullSecret,
 				FIPS:       m.oc.Properties.ClusterProfile.FipsValidatedModules == api.FipsValidatedModulesEnabled,
-				ImageContentSources: []types.ImageContentSource{
+				ImageDigestSources: []types.ImageDigestSource{
 					{
 						Source: "quay.io/openshift-release-dev/ocp-release",
 						Mirrors: []string{
@@ -254,17 +261,20 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					// don't include the baremetal capability (in the baseline default)
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
+						configv1.ClusterVersionCapabilityBuild,
 						configv1.ClusterVersionCapabilityConsole,
 						configv1.ClusterVersionCapabilityCSISnapshot,
+						configv1.ClusterVersionCapabilityDeploymentConfig,
+						configv1.ClusterVersionCapabilityImageRegistry,
 						configv1.ClusterVersionCapabilityInsights,
+						configv1.ClusterVersionCapabilityMachineAPI,
 						configv1.ClusterVersionCapabilityMarketplace,
+						configv1.ClusterVersionCapabilityNodeTuning,
 						configv1.ClusterVersionCapabilityOpenShiftSamples,
 						configv1.ClusterVersionCapabilityStorage,
-						configv1.ClusterVersionCapabilityNodeTuning,
 					},
 				},
-			},
-		},
+			}},
 		Azure: icazure.NewMetadataWithCredentials(
 			azuretypes.CloudEnvironment(m.env.Environment().Name),
 			m.env.Environment().ResourceManagerEndpoint,
@@ -279,11 +289,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	if m.oc.Properties.IngressProfiles[0].Visibility == api.VisibilityPrivate {
 		installConfig.Config.Publish = types.InternalPublishingStrategy
-	}
-
-	installConfig.Config.Azure.Image, err = rhcos.Image(ctx)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
 	}
 
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
