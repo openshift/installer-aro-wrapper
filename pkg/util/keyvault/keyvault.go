@@ -214,17 +214,14 @@ func (m *manager) SetSecret(ctx context.Context, secretName string, parameters a
 }
 
 func (m *manager) WaitForCertificateOperation(ctx context.Context, certificateName string) error {
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
-	defer cancel()
-
-	err := wait.PollImmediateUntil(10*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 15*time.Minute, true, func(_ context.Context) (bool, error) {
 		op, err := m.kv.GetCertificateOperation(ctx, m.keyvaultURI, certificateName)
 		if err != nil {
 			return false, err
 		}
 
 		return checkOperation(&op)
-	}, ctx.Done())
+	})
 	return err
 }
 
