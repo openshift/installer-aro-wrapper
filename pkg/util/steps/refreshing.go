@@ -54,24 +54,21 @@ func (s *authorizationRefreshingActionStep) run(ctx context.Context, log *logrus
 		pollInterval = s.pollInterval
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, retryTimeout)
-	defer cancel()
-
 	// Run the step immediately. If an Azure authorization error is returned and
 	// we have not hit the retry timeout, the authorizer is refreshed and the
 	// step is called again after runner.pollInterval. If we have timed out or
 	// any other error is returned, the error from the step is returned
 	// directly.
-	return wait.PollImmediateUntil(pollInterval, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, pollInterval, retryTimeout, true, func(ctx2 context.Context) (bool, error) {
 		// We use the outer context, not the timeout context, as we do not want
 		// to time out the condition function itself, only stop retrying once
-		// timeoutCtx's timeout has fired.
+		// the timeout context has fired.
 		err := s.f(ctx)
 
 		// If we haven't timed out and there is an error that is either an
 		// unauthorized client (AADSTS700016) or "AuthorizationFailed" (likely
 		// role propagation delay) then refresh and retry.
-		if timeoutCtx.Err() == nil && err != nil &&
+		if ctx2.Err() == nil && err != nil &&
 			(azureerrors.IsUnauthorizedClientError(err) ||
 				azureerrors.HasAuthorizationFailedError(err) ||
 				azureerrors.IsInvalidSecretError(err) ||
@@ -82,7 +79,7 @@ func (s *authorizationRefreshingActionStep) run(ctx context.Context, log *logrus
 			return false, err // retry step
 		}
 		return true, err
-	}, timeoutCtx.Done())
+	})
 }
 
 func (s *authorizationRefreshingActionStep) String() string {
