@@ -12,7 +12,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	mock_features "github.com/openshift/ARO-Installer/pkg/util/mocks/azureclient/mgmt/features"
 )
@@ -71,9 +70,9 @@ func TestDeployARMTemplate(t *testing.T) {
 					Return(activeErr)
 				dc.EXPECT().
 					Wait(ctx, resourceGroup, deploymentName).
-					Return(wait.ErrWaitTimeout)
+					Return(context.DeadlineExceeded)
 			},
-			wantErr: "timed out waiting for the condition",
+			wantErr: "context deadline exceeded",
 		},
 		{
 			name: "DetailedError which should be returned to user",

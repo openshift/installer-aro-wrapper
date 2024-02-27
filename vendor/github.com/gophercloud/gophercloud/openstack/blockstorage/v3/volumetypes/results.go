@@ -30,6 +30,10 @@ type VolumeTypePage struct {
 
 // IsEmpty returns true if a ListResult contains no Volume Types.
 func (r VolumeTypePage) IsEmpty() (bool, error) {
+	if r.StatusCode == 204 {
+		return true, nil
+	}
+
 	volumetypes, err := ExtractVolumeTypes(r)
 	return len(volumetypes) == 0, err
 }
@@ -168,6 +172,10 @@ type AccessPage struct {
 
 // IsEmpty indicates whether an AccessPage is empty.
 func (page AccessPage) IsEmpty() (bool, error) {
+	if page.StatusCode == 204 {
+		return true, nil
+	}
+
 	v, err := ExtractAccesses(page)
 	return len(v) == 0, err
 }
@@ -191,4 +199,101 @@ type AddAccessResult struct {
 // ExtractErr method to determine if the request succeeded or failed.
 type RemoveAccessResult struct {
 	gophercloud.ErrResult
+}
+
+type EncryptionType struct {
+	// Unique identifier for the volume type.
+	VolumeTypeID string `json:"volume_type_id"`
+	// Notional service where encryption is performed.
+	ControlLocation string `json:"control_location"`
+	// Unique identifier for encryption type.
+	EncryptionID string `json:"encryption_id"`
+	// Size of encryption key.
+	KeySize int `json:"key_size"`
+	// Class that provides encryption support.
+	Provider string `json:"provider"`
+	// The encryption algorithm or mode.
+	Cipher string `json:"cipher"`
+}
+
+type encryptionResult struct {
+	gophercloud.Result
+}
+
+func (r encryptionResult) Extract() (*EncryptionType, error) {
+	var s EncryptionType
+	err := r.ExtractInto(&s)
+	return &s, err
+}
+
+// ExtractInto converts our response data into a volume type struct
+func (r encryptionResult) ExtractInto(v interface{}) error {
+	return r.Result.ExtractIntoStructPtr(v, "encryption")
+}
+
+type CreateEncryptionResult struct {
+	encryptionResult
+}
+
+// UpdateResult contains the response body and error from an UpdateEncryption request.
+type UpdateEncryptionResult struct {
+	encryptionResult
+}
+
+// DeleteEncryptionResult contains the response body and error from a DeleteEncryprion request.
+type DeleteEncryptionResult struct {
+	gophercloud.ErrResult
+}
+
+type GetEncryptionType struct {
+	// Unique identifier for the volume type.
+	VolumeTypeID string `json:"volume_type_id"`
+	// Notional service where encryption is performed.
+	ControlLocation string `json:"control_location"`
+	// Shows if the resource is deleted or Notional
+	Deleted bool `json:"deleted"`
+	// Shows the date and time the resource was created.
+	CreatedAt string `json:"created_at"`
+	// Shows the date and time when resource was updated.
+	UpdatedAt string `json:"updated_at"`
+	// Unique identifier for encryption type.
+	EncryptionID string `json:"encryption_id"`
+	// Size of encryption key.
+	KeySize int `json:"key_size"`
+	// Class that provides encryption support.
+	Provider string `json:"provider"`
+	// Shows the date and time the reousrce was deleted.
+	DeletedAt string `json:"deleted_at"`
+	// The encryption algorithm or mode.
+	Cipher string `json:"cipher"`
+}
+
+type encryptionShowResult struct {
+	gophercloud.Result
+}
+
+// Extract interprets any extraSpecResult as an ExtraSpec, if possible.
+func (r encryptionShowResult) Extract() (*GetEncryptionType, error) {
+	var s GetEncryptionType
+	err := r.ExtractInto(&s)
+	return &s, err
+}
+
+type GetEncryptionResult struct {
+	encryptionShowResult
+}
+
+type encryptionShowSpecResult struct {
+	gophercloud.Result
+}
+
+// Extract interprets any empty interface Result as an empty interface.
+func (r encryptionShowSpecResult) Extract() (map[string]interface{}, error) {
+	var s map[string]interface{}
+	err := r.ExtractInto(&s)
+	return s, err
+}
+
+type GetEncryptionSpecResult struct {
+	encryptionShowSpecResult
 }

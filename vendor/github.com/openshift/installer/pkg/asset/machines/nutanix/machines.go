@@ -4,24 +4,24 @@ package nutanix
 import (
 	"fmt"
 
-	machinev1 "github.com/openshift/api/machine/v1"
-	machineapi "github.com/openshift/api/machine/v1beta1"
-	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/nutanix"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	machinev1 "github.com/openshift/api/machine/v1"
+	machineapi "github.com/openshift/api/machine/v1beta1"
+	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/nutanix"
 )
 
 // Machines returns a list of machines for a machinepool.
-func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string) ([]machineapi.Machine, error) {
+func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string) ([]machineapi.Machine, *machinev1.ControlPlaneMachineSet, error) {
 	if configPlatform := config.Platform.Name(); configPlatform != nutanix.Name {
-		return nil, fmt.Errorf("non nutanix configuration: %q", configPlatform)
+		return nil, nil, fmt.Errorf("non nutanix configuration: %q", configPlatform)
 	}
 	if poolPlatform := pool.Platform.Name(); poolPlatform != nutanix.Name {
-		return nil, fmt.Errorf("non-nutanix machine-pool: %q", poolPlatform)
+		return nil, nil, fmt.Errorf("non-nutanix machine-pool: %q", poolPlatform)
 	}
 	platform := config.Platform.Nutanix
 	mpool := pool.Platform.Nutanix
@@ -31,11 +31,12 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 		total = *pool.Replicas
 	}
 	var machines []machineapi.Machine
+	machineSetProvider := &machinev1.NutanixMachineProviderConfig{}
 	for idx := int64(0); idx < total; idx++ {
 		provider, err := provider(clusterID, platform, mpool, osImage, userDataSecret)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create provider")
+			return nil, nil, fmt.Errorf("failed to create provider: %w", err)
 		}
 		machine := machineapi.Machine{
 			TypeMeta: metav1.TypeMeta{
@@ -58,9 +59,54 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 				// we don't need to set Versions, because we control those via operators.
 			},
 		}
+		*machineSetProvider = *provider
 		machines = append(machines, machine)
 	}
-	return machines, nil
+
+	replicas := int32(total)
+	controlPlaneMachineSet := &machinev1.ControlPlaneMachineSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "machine.openshift.io/v1",
+			Kind:       "ControlPlaneMachineSet",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "openshift-machine-api",
+			Name:      "cluster",
+			Labels: map[string]string{
+				"machine.openshift.io/cluster-api-cluster": clusterID,
+			},
+		},
+		Spec: machinev1.ControlPlaneMachineSetSpec{
+			Replicas: &replicas,
+			State:    machinev1.ControlPlaneMachineSetStateActive,
+			Selector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"machine.openshift.io/cluster-api-machine-role": role,
+					"machine.openshift.io/cluster-api-machine-type": role,
+					"machine.openshift.io/cluster-api-cluster":      clusterID,
+				},
+			},
+			Template: machinev1.ControlPlaneMachineSetTemplate{
+				MachineType: machinev1.OpenShiftMachineV1Beta1MachineType,
+				OpenShiftMachineV1Beta1Machine: &machinev1.OpenShiftMachineV1Beta1MachineTemplate{
+					ObjectMeta: machinev1.ControlPlaneMachineSetTemplateObjectMeta{
+						Labels: map[string]string{
+							"machine.openshift.io/cluster-api-cluster":      clusterID,
+							"machine.openshift.io/cluster-api-machine-role": role,
+							"machine.openshift.io/cluster-api-machine-type": role,
+						},
+					},
+					Spec: machineapi.MachineSpec{
+						ProviderSpec: machineapi.ProviderSpec{
+							Value: &runtime.RawExtension{Object: machineSetProvider},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return machines, controlPlaneMachineSet, nil
 }
 
 func provider(clusterID string, platform *nutanix.Platform, mpool *nutanix.MachinePool, osImage string, userDataSecret string) (*machinev1.NutanixMachineProviderConfig, error) {
@@ -74,7 +120,7 @@ func provider(clusterID string, platform *nutanix.Platform, mpool *nutanix.Machi
 		subnets = append(subnets, subnet)
 	}
 
-	return &machinev1.NutanixMachineProviderConfig{
+	providerCfg := &machinev1.NutanixMachineProviderConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: machinev1.GroupVersion.String(),
 			Kind:       "NutanixMachineProviderConfig",
@@ -94,7 +140,24 @@ func provider(clusterID string, platform *nutanix.Platform, mpool *nutanix.Machi
 			UUID: &platform.PrismElements[0].UUID,
 		},
 		SystemDiskSize: resource.MustParse(fmt.Sprintf("%dGi", mpool.OSDisk.DiskSizeGiB)),
-	}, nil
+	}
+
+	if len(mpool.BootType) != 0 {
+		providerCfg.BootType = mpool.BootType
+	}
+
+	if mpool.Project != nil && mpool.Project.Type == machinev1.NutanixIdentifierUUID {
+		providerCfg.Project = machinev1.NutanixResourceIdentifier{
+			Type: machinev1.NutanixIdentifierUUID,
+			UUID: mpool.Project.UUID,
+		}
+	}
+
+	if len(mpool.Categories) > 0 {
+		providerCfg.Categories = mpool.Categories
+	}
+
+	return providerCfg, nil
 }
 
 // ConfigMasters sets the PublicIP flag and assigns a set of load balancers to the given machines

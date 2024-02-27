@@ -1,9 +1,10 @@
 package agent
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
 	"github.com/openshift/installer/pkg/types/baremetal"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // AgentConfigVersion is the version supported by this package.
@@ -23,8 +24,9 @@ type Config struct {
 	// +optional
 	AdditionalNTPSources []string `json:"additionalNTPSources,omitempty"`
 	// ip address of node0
-	RendezvousIP string `json:"rendezvousIP,omitempty"`
-	Hosts        []Host `json:"hosts,omitempty"`
+	RendezvousIP         string `json:"rendezvousIP,omitempty"`
+	BootArtifactsBaseURL string `json:"bootArtifactsBaseURL,omitempty"`
+	Hosts                []Host `json:"hosts,omitempty"`
 }
 
 // Host defines per host configurations

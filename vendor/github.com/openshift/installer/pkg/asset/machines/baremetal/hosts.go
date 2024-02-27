@@ -3,16 +3,14 @@ package baremetal
 import (
 	"fmt"
 
-	"github.com/ghodss/yaml"
-	"github.com/metal3-io/baremetal-operator/pkg/hardware"
+	baremetalhost "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	hardware "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1/profile"
 	"github.com/pkg/errors"
-
-	machineapi "github.com/openshift/api/machine/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
-	baremetalhost "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
-
+	machineapi "github.com/openshift/api/machine/v1beta1"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
 )
@@ -143,6 +141,12 @@ func Hosts(config *types.InstallConfig, machines []machineapi.Machine) (*HostSet
 			// with a machine without triggering provisioning. We only
 			// want to do that for control plane hosts.
 			newHost.Spec.ExternallyProvisioned = true
+			// Setting CustomDeploy early ensures that the
+			// corresponding Ironic node gets correctly configured
+			// from the beginning.
+			newHost.Spec.CustomDeploy = &baremetalhost.CustomDeploy{
+				Method: "install_coreos",
+			}
 			// Pause reconciliation until we can annotate with the initial
 			// status containing the HardwareDetails
 			newHost.ObjectMeta.Annotations = map[string]string{"baremetalhost.metal3.io/paused": ""}

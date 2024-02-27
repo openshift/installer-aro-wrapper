@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	baremetaldefaults "github.com/openshift/installer/pkg/types/baremetal/defaults"
+	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/none"
+	"github.com/openshift/installer/pkg/types/validation"
 	"github.com/openshift/installer/pkg/types/vsphere"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 const (
@@ -23,9 +27,11 @@ const (
 // OptionalInstallConfig is an InstallConfig where the default is empty, rather
 // than generated from running the survey.
 type OptionalInstallConfig struct {
-	installconfig.InstallConfig
+	installconfig.AssetBase
 	Supplied bool
 }
+
+var _ asset.WritableAsset = (*OptionalInstallConfig)(nil)
 
 // Dependencies returns all of the dependencies directly needed by an
 // InstallConfig asset.
@@ -44,21 +50,24 @@ func (a *OptionalInstallConfig) Generate(parents asset.Parents) error {
 
 // Load returns the installconfig from disk.
 func (a *OptionalInstallConfig) Load(f asset.FileFetcher) (bool, error) {
-
-	var foundValidatedDefaultInstallConfig bool
-
-	foundValidatedDefaultInstallConfig, err := a.InstallConfig.Load(f)
-	if foundValidatedDefaultInstallConfig && err == nil {
+	found, err := a.LoadFromFile(f)
+	if found && err == nil {
 		a.Supplied = true
 		if err := a.validateInstallConfig(a.Config).ToAggregate(); err != nil {
 			return false, errors.Wrapf(err, "invalid install-config configuration")
 		}
+		if err := a.RecordFile(); err != nil {
+			return false, err
+		}
 	}
-	return foundValidatedDefaultInstallConfig, err
+	return found, err
 }
 
 func (a *OptionalInstallConfig) validateInstallConfig(installConfig *types.InstallConfig) field.ErrorList {
 	var allErrs field.ErrorList
+	if err := validation.ValidateInstallConfig(a.Config, true); err != nil {
+		allErrs = append(allErrs, err...)
+	}
 
 	if err := a.validateSupportedPlatforms(installConfig); err != nil {
 		allErrs = append(allErrs, err...)
@@ -69,6 +78,9 @@ func (a *OptionalInstallConfig) validateInstallConfig(installConfig *types.Insta
 	}
 
 	warnUnusedConfig(installConfig)
+
+	numMasters, numWorkers := GetReplicaCount(installConfig)
+	logrus.Infof(fmt.Sprintf("Configuration has %d master replicas and %d worker replicas", numMasters, numWorkers))
 
 	if err := a.validateSNOConfiguration(installConfig); err != nil {
 		allErrs = append(allErrs, err...)
@@ -85,6 +97,17 @@ func (a *OptionalInstallConfig) validateSupportedPlatforms(installConfig *types.
 	if installConfig.Platform.Name() != "" && !IsSupportedPlatform(HivePlatformType(installConfig.Platform)) {
 		allErrs = append(allErrs, field.NotSupported(fieldPath, installConfig.Platform.Name(), SupportedInstallerPlatforms()))
 	}
+	if installConfig.Platform.Name() == external.Name {
+		if installConfig.Platform.External.PlatformName != string(models.PlatformTypeOci) {
+			fieldPath = field.NewPath("Platform", "External", "PlatformName")
+			allErrs = append(allErrs, field.NotSupported(fieldPath, installConfig.Platform.External.PlatformName, []string{string(models.PlatformTypeOci)}))
+		}
+		if installConfig.Platform.External.PlatformName == string(models.PlatformTypeOci) &&
+			installConfig.Platform.External.CloudControllerManager != external.CloudControllerManagerTypeExternal {
+			fieldPath = field.NewPath("Platform", "External", "CloudControllerManager")
+			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.External.CloudControllerManager, fmt.Sprintf("When using external %s platform, %s must be set to %s", string(models.PlatformTypeOci), fieldPath, external.CloudControllerManagerTypeExternal)))
+		}
+	}
 	return allErrs
 }
 
@@ -95,8 +118,9 @@ func (a *OptionalInstallConfig) validateSupportedArchs(installConfig *types.Inst
 
 	switch string(installConfig.ControlPlane.Architecture) {
 	case types.ArchitectureAMD64:
+	case types.ArchitectureARM64:
 	default:
-		allErrs = append(allErrs, field.NotSupported(fieldPath, installConfig.ControlPlane.Architecture, []string{types.ArchitectureAMD64}))
+		allErrs = append(allErrs, field.NotSupported(fieldPath, installConfig.ControlPlane.Architecture, []string{types.ArchitectureAMD64, types.ArchitectureARM64}))
 	}
 
 	for i, compute := range installConfig.Compute {
@@ -104,8 +128,9 @@ func (a *OptionalInstallConfig) validateSupportedArchs(installConfig *types.Inst
 
 		switch string(compute.Architecture) {
 		case types.ArchitectureAMD64:
+		case types.ArchitectureARM64:
 		default:
-			allErrs = append(allErrs, field.NotSupported(fieldPath, compute.Architecture, []string{types.ArchitectureAMD64}))
+			allErrs = append(allErrs, field.NotSupported(fieldPath, compute.Architecture, []string{types.ArchitectureAMD64, types.ArchitectureARM64}))
 		}
 	}
 
@@ -121,29 +146,21 @@ func (a *OptionalInstallConfig) validateSNOConfiguration(installConfig *types.In
 		workers = workers + int(*worker.Replicas)
 	}
 
-	//  platform None always imply SNO cluster
-	if installConfig.Platform.Name() == none.Name {
-		if installConfig.Networking.NetworkType != "OVNKubernetes" {
-			fieldPath = field.NewPath("Networking", "NetworkType")
-			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Networking.NetworkType, "Only OVNKubernetes network type is allowed for Single Node OpenShift (SNO) cluster"))
-		}
-
-		if *installConfig.ControlPlane.Replicas != 1 {
-			fieldPath = field.NewPath("ControlPlane", "Replicas")
-			allErrs = append(allErrs, field.Required(fieldPath, fmt.Sprintf("ControlPlane.Replicas must be 1 for %s platform. Found %v", none.Name, *installConfig.ControlPlane.Replicas)))
-		}
-
-		if workers != 0 {
+	if installConfig.ControlPlane != nil && *installConfig.ControlPlane.Replicas == 1 {
+		if workers == 0 {
+			if (installConfig.Platform.Name() == none.Name || installConfig.Platform.Name() == external.Name) && installConfig.Networking.NetworkType != "OVNKubernetes" {
+				fieldPath = field.NewPath("Networking", "NetworkType")
+				allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Networking.NetworkType, "Only OVNKubernetes network type is allowed for Single Node OpenShift (SNO) cluster"))
+			}
+			if installConfig.Platform.Name() != none.Name && installConfig.Platform.Name() != external.Name {
+				fieldPath = field.NewPath("Platform")
+				allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.Name(), fmt.Sprintf("Only platform %s and %s supports 1 ControlPlane and 0 Compute nodes", none.Name, external.Name)))
+			}
+		} else {
 			fieldPath = field.NewPath("Compute", "Replicas")
-			allErrs = append(allErrs, field.Required(fieldPath, fmt.Sprintf("Total number of Compute.Replicas must be 0 for %s platform. Found %v", none.Name, workers)))
+			allErrs = append(allErrs, field.Required(fieldPath, fmt.Sprintf("Total number of Compute.Replicas must be 0 when ControlPlane.Replicas is 1 for platform %s or %s. Found %v", none.Name, external.Name, workers)))
 		}
 	}
-
-	if installConfig.ControlPlane != nil && *installConfig.ControlPlane.Replicas == 1 && workers == 0 && installConfig.Platform.Name() != none.Name {
-		fieldPath = field.NewPath("Platform")
-		allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.Name(), fmt.Sprintf("Platform should be set to %s if the ControlPlane.Replicas is %d and total number of Compute.Replicas is %d", none.Name, *installConfig.ControlPlane.Replicas, workers)))
-	}
-
 	return allErrs
 }
 
@@ -250,7 +267,7 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 			}
 			if host.BMC.Password != "" {
 				fieldPath := field.NewPath("Platform", "Baremetal", fmt.Sprintf("Hosts[%d]", i), "BMC", "Password")
-				logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, host.BMC.Password))
+				logrus.Warnf(fmt.Sprintf("%s is ignored", fieldPath))
 			}
 			if host.BMC.Address != "" {
 				fieldPath := field.NewPath("Platform", "Baremetal", fmt.Sprintf("Hosts[%d]", i), "BMC", "Address")
@@ -308,37 +325,37 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 	case vsphere.Name:
 		vspherePlatform := installConfig.Platform.VSphere
 
-		if vspherePlatform.VCenter != "" {
+		if vspherePlatform.DeprecatedVCenter != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "VCenter")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.VCenter))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedVCenter))
 		}
-		if vspherePlatform.Username != "" {
+		if vspherePlatform.DeprecatedUsername != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Username")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Username))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedUsername))
 		}
-		if vspherePlatform.Password != "" {
+		if vspherePlatform.DeprecatedPassword != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Password")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Password))
+			logrus.Warnf(fmt.Sprintf("%s is ignored", fieldPath))
 		}
-		if vspherePlatform.Datacenter != "" {
+		if vspherePlatform.DeprecatedDatacenter != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Datacenter")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Datacenter))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedDatacenter))
 		}
-		if vspherePlatform.DefaultDatastore != "" {
+		if vspherePlatform.DeprecatedDefaultDatastore != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "DefaultDatastore")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DefaultDatastore))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedDefaultDatastore))
 		}
-		if vspherePlatform.Folder != "" {
+		if vspherePlatform.DeprecatedFolder != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Folder")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Folder))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedFolder))
 		}
-		if vspherePlatform.Cluster != "" {
+		if vspherePlatform.DeprecatedCluster != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Cluster")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Cluster))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedCluster))
 		}
-		if vspherePlatform.ResourcePool != "" {
+		if vspherePlatform.DeprecatedResourcePool != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "ResourcePool")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.ResourcePool))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedResourcePool))
 		}
 		if vspherePlatform.ClusterOSImage != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "ClusterOSImage")
@@ -348,9 +365,9 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 			fieldPath := field.NewPath("Platform", "VSphere", "DefaultMachinePlatform")
 			logrus.Warnf(fmt.Sprintf("%s: %v is ignored", fieldPath, vspherePlatform.DefaultMachinePlatform))
 		}
-		if vspherePlatform.Network != "" {
+		if vspherePlatform.DeprecatedNetwork != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "Network")
-			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.Network))
+			logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, vspherePlatform.DeprecatedNetwork))
 		}
 		if vspherePlatform.DiskType != "" {
 			fieldPath := field.NewPath("Platform", "VSphere", "DiskType")
@@ -378,4 +395,21 @@ func warnUnusedConfig(installConfig *types.InstallConfig) {
 		fieldPath := field.NewPath("BootstrapInPlace", "InstallationDisk")
 		logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, installConfig.BootstrapInPlace.InstallationDisk))
 	}
+}
+
+// GetReplicaCount gets the configured master and worker replicas.
+func GetReplicaCount(installConfig *types.InstallConfig) (numMasters, numWorkers int64) {
+	numRequiredMasters := int64(0)
+	if installConfig.ControlPlane != nil && installConfig.ControlPlane.Replicas != nil {
+		numRequiredMasters += *installConfig.ControlPlane.Replicas
+	}
+
+	numRequiredWorkers := int64(0)
+	for _, worker := range installConfig.Compute {
+		if worker.Replicas != nil {
+			numRequiredWorkers += *worker.Replicas
+		}
+	}
+
+	return numRequiredMasters, numRequiredWorkers
 }

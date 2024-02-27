@@ -7,31 +7,32 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
-	machinev1 "github.com/openshift/api/machine/v1"
-	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
-	baremetalapi "github.com/openshift/cluster-api-provider-baremetal/pkg/apis"
-	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
-	ibmcloudapi "github.com/openshift/cluster-api-provider-ibmcloud/pkg/apis"
-	ibmcloudprovider "github.com/openshift/cluster-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
-	libvirtapi "github.com/openshift/cluster-api-provider-libvirt/pkg/apis"
-	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
-	ovirtproviderapi "github.com/openshift/cluster-api-provider-ovirt/pkg/apis"
-	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
-	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	openstackapi "sigs.k8s.io/cluster-api-provider-openstack/pkg/apis"
-	openstackprovider "sigs.k8s.io/cluster-api-provider-openstack/pkg/apis/openstackproviderconfig/v1alpha1"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/yaml"
+
+	configv1 "github.com/openshift/api/config/v1"
+	machinev1 "github.com/openshift/api/machine/v1"
+	machinev1alpha1 "github.com/openshift/api/machine/v1alpha1"
+	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
+	baremetalapi "github.com/openshift/cluster-api-provider-baremetal/pkg/apis"
+	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
+	libvirtapi "github.com/openshift/cluster-api-provider-libvirt/pkg/apis"
+	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
+	ovirtproviderapi "github.com/openshift/cluster-api-provider-ovirt/pkg/apis"
+	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	icaws "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
+	icgcp "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	"github.com/openshift/installer/pkg/asset/machines/alibabacloud"
 	"github.com/openshift/installer/pkg/asset/machines/aws"
 	"github.com/openshift/installer/pkg/asset/machines/azure"
@@ -55,6 +56,7 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	azuredefaults "github.com/openshift/installer/pkg/types/azure/defaults"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
 	libvirttypes "github.com/openshift/installer/pkg/types/libvirt"
@@ -64,11 +66,17 @@ import (
 	ovirttypes "github.com/openshift/installer/pkg/types/ovirt"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
+	ibmcloudapi "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis"
+	ibmcloudprovider "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
+	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
 
 const (
 	// workerMachineSetFileName is the format string for constructing the worker MachineSet filenames.
 	workerMachineSetFileName = "99_openshift-cluster-api_worker-machineset-%s.yaml"
+
+	// workerMachineFileName is the format string for constructing the worker Machine filenames.
+	workerMachineFileName = "99_openshift-cluster-api_worker-machines-%s.yaml"
 
 	// workerUserDataFileName is the filename used for the worker user-data secret.
 	workerUserDataFileName = "99_openshift-cluster-api_worker-user-data-secret.yaml"
@@ -86,14 +94,23 @@ const (
 
 var (
 	workerMachineSetFileNamePattern = fmt.Sprintf(workerMachineSetFileName, "*")
+	workerMachineFileNamePattern    = fmt.Sprintf(workerMachineFileName, "*")
 
 	_ asset.WritableAsset = (*Worker)(nil)
 )
 
-func defaultAWSMachinePoolPlatform() awstypes.MachinePool {
+func defaultAWSMachinePoolPlatform(poolName string) awstypes.MachinePool {
+	defaultEBSType := awstypes.VolumeTypeGp3
+
+	// gp3 is not offered in all local-zones locations used by Edge Pools.
+	// Once it is available, it can be used as default for all machine pools.
+	// https://aws.amazon.com/about-aws/global-infrastructure/localzones/features
+	if poolName == types.MachinePoolEdgeRoleName {
+		defaultEBSType = awstypes.VolumeTypeGp2
+	}
 	return awstypes.MachinePool{
 		EC2RootVolume: awstypes.EC2RootVolume{
-			Type: "gp3",
+			Type: defaultEBSType,
 			Size: decimalRootVolumeSize,
 		},
 	}
@@ -112,9 +129,9 @@ func defaultAzureMachinePoolPlatform() azuretypes.MachinePool {
 	}
 }
 
-func defaultGCPMachinePoolPlatform() gcptypes.MachinePool {
+func defaultGCPMachinePoolPlatform(arch types.Architecture) gcptypes.MachinePool {
 	return gcptypes.MachinePool{
-		InstanceType: "n2-standard-4",
+		InstanceType: icgcp.DefaultInstanceTypeForArch(arch),
 		OSDisk: gcptypes.OSDisk{
 			DiskSizeGB: powerOfTwoRootVolumeSize,
 			DiskType:   "pd-ssd",
@@ -185,13 +202,23 @@ func defaultNutanixMachinePoolPlatform() nutanixtypes.MachinePool {
 	}
 }
 
-func awsDefaultMachineTypes(region string, arch types.Architecture) []string {
-	classes := awsdefaults.InstanceClasses(region, arch)
-	types := make([]string, len(classes))
-	for i, c := range classes {
-		types[i] = fmt.Sprintf("%s.xlarge", c)
+// awsSetPreferredInstanceByEdgeZone discovers supported instanceType for each edge pool
+// using the existing preferred instance list used by worker compute pool.
+// Each machine set in the edge pool, created for each zone, can use different instance
+// types depending on the instance offerings in the location (Local Zones).
+func awsSetPreferredInstanceByEdgeZone(ctx context.Context, defaultTypes []string, meta *icaws.Metadata, zones icaws.Zones) (ok bool, err error) {
+	for zone := range zones {
+		preferredType, err := aws.PreferredInstanceType(ctx, meta, defaultTypes, []string{zone})
+		if err != nil {
+			logrus.Warn(errors.Wrap(err, fmt.Sprintf("unable to select instanceType on the zone[%v] from the preferred list: %v. You must update the MachineSet manifest", zone, defaultTypes)))
+			continue
+		}
+		if _, ok := zones[zone]; !ok {
+			zones[zone] = &icaws.Zone{Name: zone}
+		}
+		zones[zone].PreferredInstanceType = preferredType
 	}
-	return types
+	return true, nil
 }
 
 // Worker generates the machinesets for `worker` machine pool.
@@ -199,6 +226,7 @@ type Worker struct {
 	UserDataFile       *asset.File
 	MachineConfigFiles []*asset.File
 	MachineSetFiles    []*asset.File
+	MachineFiles       []*asset.File
 }
 
 // Name returns a human friendly name for the Worker Asset.
@@ -236,6 +264,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 
 	workerUserDataSecretName := "worker-user-data"
 
+	machines := []machinev1beta1.Machine{}
 	machineConfigs := []*mcfgv1.MachineConfig{}
 	machineSets := []runtime.Object{}
 	var err error
@@ -263,7 +292,27 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			}
 			machineConfigs = append(machineConfigs, ignFIPS)
 		}
-		ignARODNS, err := dnsmasq.MachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, "worker", aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
+		if ic.Platform.Name() == powervstypes.Name {
+			// always enable multipath for powervs.
+			ignMultipath, err := machineconfig.ForMultipathEnabled("worker")
+			if err != nil {
+				return errors.Wrap(err, "failed to create ignition for multipath enabled for worker machines")
+			}
+			machineConfigs = append(machineConfigs, ignMultipath)
+		}
+		// The maximum number of networks supported on ServiceNetwork is two, one IPv4 and one IPv6 network.
+		// The cluster-network-operator handles the validation of this field.
+		// Reference: https://github.com/openshift/cluster-network-operator/blob/fc3e0e25b4cfa43e14122bdcdd6d7f2585017d75/pkg/network/cluster_config.go#L45-L52
+		if ic.Networking != nil && len(ic.Networking.ServiceNetwork) == 2 &&
+			(ic.Platform.Name() == openstacktypes.Name || ic.Platform.Name() == vspheretypes.Name) {
+			// Only configure kernel args for dual-stack clusters.
+			ignIPv6, err := machineconfig.ForDualStackAddresses("worker")
+			if err != nil {
+				return errors.Wrap(err, "failed to create ignition to configure IPv6 for worker machines")
+			}
+			machineConfigs = append(machineConfigs, ignIPv6)
+		}
+		ignARODNS, err := dnsmasq.MachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, "worker", aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, true)
 		if err != nil {
 			return errors.Wrap(err, "failed to create ignition for ARO DNS for worker machines")
 		}
@@ -314,18 +363,27 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				machineSets = append(machineSets, set)
 			}
 		case awstypes.Name:
-			subnets := map[string]string{}
+			subnets := icaws.Subnets{}
+			zones := icaws.Zones{}
 			if len(ic.Platform.AWS.Subnets) > 0 {
-				subnetMeta, err := installConfig.AWS.PrivateSubnets(ctx)
-				if err != nil {
-					return err
+				var subnetsMeta icaws.Subnets
+				switch pool.Name {
+				case types.MachinePoolEdgeRoleName:
+					subnetsMeta, err = installConfig.AWS.EdgeSubnets(ctx)
+					if err != nil {
+						return err
+					}
+				default:
+					subnetsMeta, err = installConfig.AWS.PrivateSubnets(ctx)
+					if err != nil {
+						return err
+					}
 				}
-				for id, subnet := range subnetMeta {
-					subnets[subnet.Zone] = id
+				for _, subnet := range subnetsMeta {
+					subnets[subnet.Zone.Name] = subnet
 				}
 			}
-
-			mpool := defaultAWSMachinePoolPlatform()
+			mpool := defaultAWSMachinePoolPlatform(pool.Name)
 
 			osImage := strings.SplitN(string(*rhcosImage), ",", 2)
 			osImageID := osImage[0]
@@ -339,8 +397,12 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			zoneDefaults := false
 			if len(mpool.Zones) == 0 {
 				if len(subnets) > 0 {
-					for zone := range subnets {
-						mpool.Zones = append(mpool.Zones, zone)
+					for _, subnet := range subnets {
+						if subnet.Zone == nil {
+							return errors.Wrapf(err, "failed to find zone attributes for subnet %s", subnet.ID)
+						}
+						mpool.Zones = append(mpool.Zones, subnet.Zone.Name)
+						zones[subnet.Zone.Name] = subnets[subnet.Zone.Name].Zone
 					}
 				} else {
 					mpool.Zones, err = installConfig.AWS.AvailabilityZones(ctx)
@@ -350,11 +412,37 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 					zoneDefaults = true
 				}
 			}
-			if mpool.InstanceType == "" {
-				mpool.InstanceType, err = aws.PreferredInstanceType(ctx, installConfig.AWS, awsDefaultMachineTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture), mpool.Zones)
+
+			// Requirements when using edge compute pools to populate machine sets.
+			if pool.Name == types.MachinePoolEdgeRoleName {
+				err = installConfig.AWS.SetZoneAttributes(ctx, mpool.Zones, zones)
 				if err != nil {
-					logrus.Warn(errors.Wrap(err, "failed to find default instance type"))
-					mpool.InstanceType = awsDefaultMachineTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture)[0]
+					return errors.Wrap(err, "failed to retrieve zone attributes for edge compute pool")
+				}
+
+				if pool.Replicas == nil || *pool.Replicas == 0 {
+					pool.Replicas = pointer.Int64(int64(len(mpool.Zones)))
+				}
+			}
+
+			if mpool.InstanceType == "" {
+				instanceTypes := awsdefaults.InstanceTypes(installConfig.Config.Platform.AWS.Region, installConfig.Config.ControlPlane.Architecture, configv1.HighlyAvailableTopologyMode)
+				switch pool.Name {
+				case types.MachinePoolEdgeRoleName:
+					ok, err := awsSetPreferredInstanceByEdgeZone(ctx, instanceTypes, installConfig.AWS, zones)
+					if err != nil {
+						return errors.Wrap(err, "failed to find default instance type for edge pool, you must define on the compute pool")
+					}
+					if !ok {
+						logrus.Warn(errors.Wrap(err, "failed to find preferred instance type for edge pool, using default"))
+						mpool.InstanceType = instanceTypes[0]
+					}
+				default:
+					mpool.InstanceType, err = aws.PreferredInstanceType(ctx, installConfig.AWS, instanceTypes, mpool.Zones)
+					if err != nil {
+						logrus.Warn(errors.Wrapf(err, "failed to find default instance type for %s pool", pool.Name))
+						mpool.InstanceType = instanceTypes[0]
+					}
 				}
 			}
 			// if the list of zones is the default we need to try to filter the list in case there are some zones where the instance might not be available
@@ -366,15 +454,15 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			}
 
 			pool.Platform.AWS = &mpool
-			sets, err := aws.MachineSets(
-				clusterID.InfraID,
-				installConfig.Config.Platform.AWS.Region,
-				subnets,
-				&pool,
-				"worker",
-				workerUserDataSecretName,
-				installConfig.Config.Platform.AWS.UserTags,
-			)
+			sets, err := aws.MachineSets(&aws.MachineSetInput{
+				ClusterID:                clusterID.InfraID,
+				InstallConfigPlatformAWS: installConfig.Config.Platform.AWS,
+				Subnets:                  subnets,
+				Zones:                    zones,
+				Pool:                     &pool,
+				Role:                     pool.Name,
+				UserDataSecret:           workerUserDataSecretName,
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to create worker machine objects")
 			}
@@ -396,11 +484,6 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				return errors.Wrap(err, "failed to fetch session")
 			}
 
-			// Default to current subscription if one was not specified
-			if mpool.OSDisk.DiskEncryptionSet != nil && mpool.OSDisk.DiskEncryptionSet.SubscriptionID == "" {
-				mpool.OSDisk.DiskEncryptionSet.SubscriptionID = session.Credentials.SubscriptionID
-			}
-
 			client := icazure.NewClient(session)
 			if len(mpool.Zones) == 0 {
 				azs, err := client.GetAvailabilityZones(context.TODO(), ic.Platform.Azure.Region, mpool.InstanceType)
@@ -415,6 +498,18 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				}
 			}
 
+			if mpool.OSImage.Publisher != "" {
+				img, ierr := client.GetMarketplaceImage(context.TODO(), ic.Platform.Azure.Region, mpool.OSImage.Publisher, mpool.OSImage.Offer, mpool.OSImage.SKU, mpool.OSImage.Version)
+				if ierr != nil {
+					return fmt.Errorf("failed to fetch marketplace image: %w", ierr)
+				}
+				// Publisher is case-sensitive and matched against exactly. Also
+				// the Plan's publisher might not be exactly the same as the
+				// Image's publisher
+				if img.Plan != nil && img.Plan.Publisher != nil {
+					mpool.OSImage.Publisher = *img.Plan.Publisher
+				}
+			}
 			pool.Platform.Azure = &mpool
 
 			capabilities, err := client.GetVMCapabilities(context.TODO(), mpool.InstanceType, installConfig.Config.Platform.Azure.Region)
@@ -447,11 +542,11 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				machineSets = append(machineSets, set)
 			}
 		case gcptypes.Name:
-			mpool := defaultGCPMachinePoolPlatform()
+			mpool := defaultGCPMachinePoolPlatform(pool.Architecture)
 			mpool.Set(ic.Platform.GCP.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.GCP)
 			if len(mpool.Zones) == 0 {
-				azs, err := gcp.AvailabilityZones(ic.Platform.GCP.ProjectID, ic.Platform.GCP.Region)
+				azs, err := gcp.ZonesForInstanceType(ic.Platform.GCP.ProjectID, ic.Platform.GCP.Region, mpool.InstanceType)
 				if err != nil {
 					return errors.Wrap(err, "failed to fetch availability zones")
 				}
@@ -525,14 +620,6 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			mpool := defaultVSphereMachinePoolPlatform()
 			mpool.Set(ic.Platform.VSphere.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.VSphere)
-			// The machinepool has no zones defined, there are FailureDomains
-			// This is a vSphere zonal installation. Generate machinepool zone
-			// list.
-			if len(mpool.Zones) == 0 && len(ic.VSphere.FailureDomains) != 0 {
-				for _, fd := range ic.VSphere.FailureDomains {
-					mpool.Zones = append(mpool.Zones, fd.Name)
-				}
-			}
 			pool.Platform.VSphere = &mpool
 			templateName := clusterID.InfraID + "-rhcos"
 
@@ -542,6 +629,22 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			}
 			for _, set := range sets {
 				machineSets = append(machineSets, set)
+			}
+
+			// If static IPs are configured, we must generate worker machines and scale the machinesets to 0.
+			if ic.Platform.VSphere.Hosts != nil {
+				logrus.Debug("Generating worker machines with static IPs.")
+				templateName := clusterID.InfraID + "-rhcos"
+
+				machines, err = vsphere.Machines(clusterID.InfraID, ic, &pool, templateName, "worker", workerUserDataSecretName)
+				if err != nil {
+					return errors.Wrap(err, "failed to create worker machine objects")
+				}
+				logrus.Debugf("Generated %v worker machines.", len(machines))
+
+				for _, ms := range sets {
+					ms.Spec.Replicas = pointer.Int32(0)
+				}
 			}
 		case ovirttypes.Name:
 			mpool := defaultOvirtMachinePoolPlatform()
@@ -570,11 +673,14 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			for _, set := range sets {
 				machineSets = append(machineSets, set)
 			}
-		case nonetypes.Name:
+		case externaltypes.Name, nonetypes.Name:
 		case nutanixtypes.Name:
 			mpool := defaultNutanixMachinePoolPlatform()
 			mpool.Set(ic.Platform.Nutanix.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.Nutanix)
+			if err = mpool.ValidateConfig(ic.Platform.Nutanix); err != nil {
+				return errors.Wrap(err, "failed to create master machine objects")
+			}
 			pool.Platform.Nutanix = &mpool
 			imageName := nutanixtypes.RHCOSImageName(clusterID.InfraID)
 
@@ -618,6 +724,20 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			Data:     data,
 		}
 	}
+
+	w.MachineFiles = make([]*asset.File, len(machines))
+	for i, machineDef := range machines {
+		data, err := yaml.Marshal(machineDef)
+		if err != nil {
+			return errors.Wrapf(err, "marshal master %d", i)
+		}
+
+		padded := fmt.Sprintf(padFormat, i)
+		w.MachineFiles[i] = &asset.File{
+			Filename: filepath.Join(directory, fmt.Sprintf(workerMachineFileName, padded)),
+			Data:     data,
+		}
+	}
 	return nil
 }
 
@@ -629,6 +749,7 @@ func (w *Worker) Files() []*asset.File {
 	}
 	files = append(files, w.MachineConfigFiles...)
 	files = append(files, w.MachineSetFiles...)
+	files = append(files, w.MachineFiles...)
 	return files
 }
 
@@ -654,6 +775,13 @@ func (w *Worker) Load(f asset.FileFetcher) (found bool, err error) {
 	}
 
 	w.MachineSetFiles = fileList
+
+	fileList, err = f.FetchByPattern(filepath.Join(directory, workerMachineFileNamePattern))
+	if err != nil {
+		return true, err
+	}
+	w.MachineFiles = fileList
+
 	return true, nil
 }
 
@@ -663,8 +791,10 @@ func (w *Worker) MachineSets() ([]machinev1beta1.MachineSet, error) {
 	baremetalapi.AddToScheme(scheme)
 	ibmcloudapi.AddToScheme(scheme)
 	libvirtapi.AddToScheme(scheme)
-	openstackapi.AddToScheme(scheme)
 	ovirtproviderapi.AddToScheme(scheme)
+	scheme.AddKnownTypes(machinev1alpha1.GroupVersion,
+		&machinev1alpha1.OpenstackProviderSpec{},
+	)
 	scheme.AddKnownTypes(machinev1beta1.SchemeGroupVersion,
 		&machinev1beta1.AWSMachineProviderConfig{},
 		&machinev1beta1.VSphereMachineProviderSpec{},
@@ -683,7 +813,7 @@ func (w *Worker) MachineSets() ([]machinev1beta1.MachineSet, error) {
 		ibmcloudprovider.SchemeGroupVersion,
 		libvirtprovider.SchemeGroupVersion,
 		machinev1.GroupVersion,
-		openstackprovider.SchemeGroupVersion,
+		machinev1alpha1.GroupVersion,
 		ovirtprovider.SchemeGroupVersion,
 		machinev1beta1.SchemeGroupVersion,
 	)

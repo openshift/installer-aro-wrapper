@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -14,11 +15,10 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
 	"github.com/openshift/installer/pkg/validate"
-	"github.com/pkg/errors"
 )
 
 const (
-	pullSecretKey       = ".dockerconfigjson"
+	pullSecretKey       = ".dockerconfigjson" //nolint:gosec // not a secret despite the word
 	agentPullSecretName = "pull-secret"
 )
 
@@ -47,7 +47,6 @@ func (*AgentPullSecret) Dependencies() []asset.Asset {
 
 // Generate generates the AgentPullSecret manifest.
 func (a *AgentPullSecret) Generate(dependencies asset.Parents) error {
-
 	installConfig := &agent.OptionalInstallConfig{}
 	dependencies.Get(installConfig)
 
@@ -104,7 +103,6 @@ func (a *AgentPullSecret) Load(f asset.FileFetcher) (bool, error) {
 }
 
 func (a *AgentPullSecret) finish() error {
-
 	if a.Config == nil {
 		return errors.New("missing configuration or manifest file")
 	}
@@ -158,7 +156,6 @@ func (a *AgentPullSecret) validatePullSecret() field.ErrorList {
 }
 
 func (a *AgentPullSecret) validateSecretIsNotEmpty() field.ErrorList {
-
 	var allErrs field.ErrorList
 
 	fieldPath := field.NewPath("StringData")
@@ -180,4 +177,9 @@ func (a *AgentPullSecret) validateSecretIsNotEmpty() field.ErrorList {
 	}
 
 	return allErrs
+}
+
+// GetPullSecretData returns the content of the pull secret.
+func (a *AgentPullSecret) GetPullSecretData() string {
+	return a.Config.StringData[".dockerconfigjson"]
 }

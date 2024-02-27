@@ -42,34 +42,29 @@ type conditionStep struct {
 }
 
 func (c conditionStep) run(ctx context.Context, log *logrus.Entry) error {
-	var pollInterval time.Duration
-	timeoutCtx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	// If no pollInterval has been set, use a default
+	var pollInterval time.Duration
 	if c.pollInterval == time.Duration(0) {
 		pollInterval = 10 * time.Second
 	} else {
 		pollInterval = c.pollInterval
 	}
 
-	// Run the condition function immediately, and then every
-	// runner.pollInterval, until the condition returns true or timeoutCtx's
-	// timeout fires. Errors from `f` are returned directly unless the error
-	// is ErrWaitTimeout. Internal ErrWaitTimeout errors are wrapped to avoid
-	// confusion with wait.PollImmediateUntil's own behavior of returning
-	// ErrWaitTimeout when the condition is not met.
-	err := wait.PollImmediateUntil(pollInterval, func() (bool, error) {
+	// Errors from `f` are returned directly unless the error
+	// is contextDeadlineExceeded. Internal ErrWaitTimeout errors are wrapped to avoid
+	// confusion with wait.PollUntilContextTimeout's own behavior of returning
+	// DeadlineExceeded when the condition is not met.
+	err := wait.PollUntilContextTimeout(ctx, pollInterval, c.timeout, true, func(_ context.Context) (bool, error) {
 		// We use the outer context, not the timeout context, as we do not want
 		// to time out the condition function itself, only stop retrying once
 		// timeoutCtx's timeout has fired.
 		cnd, cndErr := c.f(ctx)
-		if errors.Is(cndErr, wait.ErrWaitTimeout) {
+		if errors.Is(cndErr, context.DeadlineExceeded) {
 			return cnd, fmt.Errorf("condition encountered internal timeout: %w", cndErr)
 		}
 
 		return cnd, cndErr
-	}, timeoutCtx.Done())
+	})
 
 	if err != nil && !c.fail {
 		log.Warnf("step %s failed but has configured 'fail=%t'. Continuing. Error: %s", c, c.fail, err.Error())

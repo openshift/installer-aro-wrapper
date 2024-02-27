@@ -11,25 +11,50 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	typesaws "github.com/openshift/installer/pkg/types/aws"
 )
 
 // Subnet holds metadata for a subnet.
 type Subnet struct {
+	// ID is the subnet's Identifier.
+	ID string
+
 	// ARN is the subnet's Amazon Resource Name.
 	ARN string
 
 	// Zone is the subnet's availability zone.
-	Zone string
+	Zone *Zone
 
 	// CIDR is the subnet's CIDR block.
 	CIDR string
+
+	// Public is the flag to define the subnet public.
+	Public bool
+}
+
+// Subnets is the map for the Subnet metadata indexed by zone.
+type Subnets map[string]Subnet
+
+// SubnetGroups is the group of subnets used by installer.
+type SubnetGroups struct {
+	Public  Subnets
+	Private Subnets
+	Edge    Subnets
+	VPC     string
 }
 
 // subnets retrieves metadata for the given subnet(s).
-func subnets(ctx context.Context, session *session.Session, region string, ids []string) (vpc string, private map[string]Subnet, public map[string]Subnet, err error) {
-	metas := make(map[string]Subnet, len(ids))
-	private = map[string]Subnet{}
-	public = map[string]Subnet{}
+func subnets(ctx context.Context, session *session.Session, region string, ids []string) (subnetGroups SubnetGroups, err error) {
+	metas := make(Subnets, len(ids))
+	zoneNames := make([]*string, len(ids))
+	availabilityZones := make(map[string]*ec2.AvailabilityZone, len(ids))
+	subnetGroups = SubnetGroups{
+		Public:  make(Subnets, len(ids)),
+		Private: make(Subnets, len(ids)),
+		Edge:    make(Subnets, len(ids)),
+	}
+
 	var vpcFromSubnet string
 	client := ec2.New(session, aws.NewConfig().WithRegion(region))
 
@@ -60,19 +85,21 @@ func subnets(ctx context.Context, session *session.Session, region string, ids [
 					return false
 				}
 
-				if vpc == "" {
-					vpc = *subnet.VpcId
+				if subnetGroups.VPC == "" {
+					subnetGroups.VPC = *subnet.VpcId
 					vpcFromSubnet = *subnet.SubnetId
-				} else if *subnet.VpcId != vpc {
-					lastError = errors.Errorf("all subnets must belong to the same VPC: %s is from %s, but %s is from %s", *subnet.SubnetId, *subnet.VpcId, vpcFromSubnet, vpc)
+				} else if *subnet.VpcId != subnetGroups.VPC {
+					lastError = errors.Errorf("all subnets must belong to the same VPC: %s is from %s, but %s is from %s", *subnet.SubnetId, *subnet.VpcId, vpcFromSubnet, subnetGroups.VPC)
 					return false
 				}
-
-				metas[*subnet.SubnetId] = Subnet{
-					ARN:  *subnet.SubnetArn,
-					Zone: *subnet.AvailabilityZone,
-					CIDR: *subnet.CidrBlock,
+				metas[aws.StringValue(subnet.SubnetId)] = Subnet{
+					ID:     aws.StringValue(subnet.SubnetId),
+					ARN:    aws.StringValue(subnet.SubnetArn),
+					Zone:   &Zone{Name: aws.StringValue(subnet.AvailabilityZone)},
+					CIDR:   aws.StringValue(subnet.CidrBlock),
+					Public: false,
 				}
+				zoneNames = append(zoneNames, subnet.AvailabilityZone)
 			}
 			return !lastPage
 		},
@@ -81,7 +108,7 @@ func subnets(ctx context.Context, session *session.Session, region string, ids [
 		err = lastError
 	}
 	if err != nil {
-		return vpc, nil, nil, errors.Wrap(err, "describing subnets")
+		return subnetGroups, errors.Wrap(err, "describing subnets")
 	}
 
 	var routeTables []*ec2.RouteTable
@@ -90,7 +117,7 @@ func subnets(ctx context.Context, session *session.Session, region string, ids [
 		&ec2.DescribeRouteTablesInput{
 			Filters: []*ec2.Filter{{
 				Name:   aws.String("vpc-id"),
-				Values: []*string{aws.String(vpc)},
+				Values: []*string{aws.String(subnetGroups.VPC)},
 			}},
 		},
 		func(results *ec2.DescribeRouteTablesOutput, lastPage bool) bool {
@@ -99,7 +126,15 @@ func subnets(ctx context.Context, session *session.Session, region string, ids [
 		},
 	)
 	if err != nil {
-		return vpc, nil, nil, errors.Wrap(err, "describing route tables")
+		return subnetGroups, errors.Wrap(err, "describing route tables")
+	}
+
+	azs, err := client.DescribeAvailabilityZonesWithContext(ctx, &ec2.DescribeAvailabilityZonesInput{ZoneNames: zoneNames})
+	if err != nil {
+		return subnetGroups, errors.Wrap(err, "describing availability zones")
+	}
+	for _, az := range azs.AvailabilityZones {
+		availabilityZones[*az.ZoneName] = az
 	}
 
 	publicOnlySubnets := os.Getenv("OPENSHIFT_INSTALL_AWS_PUBLIC_ONLY") != ""
@@ -107,30 +142,49 @@ func subnets(ctx context.Context, session *session.Session, region string, ids [
 	for _, id := range ids {
 		meta, ok := metas[id]
 		if !ok {
-			return vpc, nil, nil, errors.Errorf("failed to find %s", id)
+			return subnetGroups, errors.Errorf("failed to find %s", id)
 		}
 
 		isPublic, err := isSubnetPublic(routeTables, id)
 		if err != nil {
-			return vpc, nil, nil, err
+			return subnetGroups, err
 		}
-		if isPublic {
-			public[id] = meta
-		} else {
-			private[id] = meta
+		meta.Public = isPublic
+
+		zoneName := meta.Zone.Name
+		if _, ok := availabilityZones[zoneName]; !ok {
+			errMsg := fmt.Sprintf("unable to read properties of zone name %s from the list %v", zoneName, zoneNames)
+			return subnetGroups, errors.Wrap(err, errMsg)
+		}
+		zone := availabilityZones[zoneName]
+		meta.Zone.Type = aws.StringValue(zone.ZoneType)
+		meta.Zone.GroupName = aws.StringValue(zone.GroupName)
+		if availabilityZones[zoneName].ParentZoneName != nil {
+			meta.Zone.ParentZoneName = aws.StringValue(zone.ParentZoneName)
 		}
 
-		// Let public subnets work as if they were private. This allows us to
-		// have clusters with public-only subnets without having to introduce a
-		// lot of changes in the installer. Such clusters can be used in a
-		// NAT-less GW scenario, therefore decreasing costs in cases where node
-		// security is not a concern (e.g, ephemeral clusters in CI)
-		if publicOnlySubnets && isPublic {
-			private[id] = meta
+		// AWS Local Zones are grouped as Edge subnets
+		if meta.Zone.Type == typesaws.LocalZoneType {
+			subnetGroups.Edge[id] = meta
+			continue
 		}
+		if meta.Public {
+			subnetGroups.Public[id] = meta
+
+			// Let public subnets work as if they were private. This allows us to
+			// have clusters with public-only subnets without having to introduce a
+			// lot of changes in the installer. Such clusters can be used in a
+			// NAT-less GW scenario, therefore decreasing costs in cases where node
+			// security is not a concern (e.g, ephemeral clusters in CI)
+			if publicOnlySubnets {
+				subnetGroups.Private[id] = meta
+			}
+			continue
+		}
+		// Subnet is grouped by default as private
+		subnetGroups.Private[id] = meta
 	}
-
-	return vpc, private, public, nil
+	return subnetGroups, nil
 }
 
 // https://github.com/kubernetes/kubernetes/blob/9f036cd43d35a9c41d7ac4ca82398a6d0bef957b/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L3376-L3419

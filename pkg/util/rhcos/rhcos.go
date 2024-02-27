@@ -17,7 +17,7 @@ import (
 var rxRHCOS = regexp.MustCompile(`rhcos-((\d+)\.\d+\.\d{8})\d{4}\-\d+-azure\.x86_64\.vhd`)
 
 // Image returns an image object containing VM image SKU information.
-func Image(ctx context.Context) (*azuretypes.Image, error) {
+func Image(ctx context.Context) (*azuretypes.OSImage, error) {
 	osImage, err := VHD(ctx, types.ArchitectureAMD64)
 	if err != nil {
 		return nil, err
@@ -28,11 +28,12 @@ func Image(ctx context.Context) (*azuretypes.Image, error) {
 		return nil, fmt.Errorf("couldn't match osImage %q", osImage)
 	}
 
-	return &azuretypes.Image{
+	return &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		SKU:       "aro_" + m[2], // "aro_4x"
 		Version:   m[1],          // "4x.yy.2020zzzz"
+		Plan:      azuretypes.ImageNoPurchasePlan,
 	}, nil
 }
 

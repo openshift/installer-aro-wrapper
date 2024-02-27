@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	utilsslice "k8s.io/utils/strings/slices"
 
 	operv1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/installer/pkg/ipnet"
@@ -15,7 +16,7 @@ import (
 	"github.com/openshift/installer/pkg/types/openstack"
 	"github.com/openshift/installer/pkg/types/ovirt"
 	"github.com/openshift/installer/pkg/types/vsphere"
-	utilsslice "k8s.io/utils/strings/slices"
+	vsphereconversion "github.com/openshift/installer/pkg/types/vsphere/conversion"
 )
 
 // ConvertInstallConfig is modeled after the k8s conversion schemes, which is
@@ -33,7 +34,6 @@ func ConvertInstallConfig(config *types.InstallConfig) error {
 		return field.Invalid(field.NewPath("apiVersion"), config.APIVersion, fmt.Sprintf("cannot upconvert from version %s", config.APIVersion))
 	}
 	convertNetworking(config)
-
 	switch config.Platform.Name() {
 	case baremetal.Name:
 		if err := convertBaremetal(config); err != nil {
@@ -52,6 +52,9 @@ func ConvertInstallConfig(config *types.InstallConfig) error {
 			return err
 		}
 	case vsphere.Name:
+		if err := vsphereconversion.ConvertInstallConfig(config); err != nil {
+			return err
+		}
 		if err := convertVSphere(config); err != nil {
 			return err
 		}
@@ -165,12 +168,57 @@ func convertOpenStack(config *types.InstallConfig) error {
 		config.Platform.OpenStack.DefaultMachinePlatform.FlavorName = config.Platform.OpenStack.DeprecatedFlavorName
 	}
 
+	// type has been deprecated in favor of types in the machinePools.
+	if config.ControlPlane != nil &&
+		config.ControlPlane.Platform.OpenStack != nil &&
+		config.ControlPlane.Platform.OpenStack.RootVolume != nil &&
+		config.ControlPlane.Platform.OpenStack.RootVolume.DeprecatedType != "" {
+		if len(config.ControlPlane.Platform.OpenStack.RootVolume.Types) > 0 {
+			// Return error if both type and types of rootVolume are specified in the config
+			return field.Forbidden(field.NewPath("controlPlane").Child("platform").Child("openstack").Child("rootVolume").Child("type"), "cannot specify type and types in rootVolume together")
+		}
+		config.ControlPlane.Platform.OpenStack.RootVolume.Types = []string{config.ControlPlane.Platform.OpenStack.RootVolume.DeprecatedType}
+		config.ControlPlane.Platform.OpenStack.RootVolume.DeprecatedType = ""
+	}
+	for _, pool := range config.Compute {
+		mpool := pool.Platform.OpenStack
+		if mpool != nil && mpool.RootVolume != nil && mpool.RootVolume.DeprecatedType != "" {
+			if mpool.RootVolume.Types != nil && len(mpool.RootVolume.Types) > 0 {
+				// Return error if both type and types of rootVolume are specified in the config
+				return field.Forbidden(field.NewPath("compute").Child("platform").Child("openstack").Child("rootVolume").Child("type"), "cannot specify type and types in rootVolume together")
+			}
+			mpool.RootVolume.Types = []string{mpool.RootVolume.DeprecatedType}
+			mpool.RootVolume.DeprecatedType = ""
+		}
+	}
+	if config.Platform.OpenStack.DefaultMachinePlatform != nil && config.Platform.OpenStack.DefaultMachinePlatform.RootVolume != nil && config.Platform.OpenStack.DefaultMachinePlatform.RootVolume.DeprecatedType != "" {
+		if len(config.Platform.OpenStack.DefaultMachinePlatform.RootVolume.Types) > 0 {
+			// Return error if both type and types of defaultMachinePlatform are specified in the config
+			return field.Forbidden(field.NewPath("platform").Child("openstack").Child("type"), "cannot specify type and types in defaultMachinePlatform together")
+		}
+		config.Platform.OpenStack.DefaultMachinePlatform.RootVolume.Types = []string{config.Platform.OpenStack.DefaultMachinePlatform.RootVolume.DeprecatedType}
+		config.Platform.OpenStack.DefaultMachinePlatform.RootVolume.DeprecatedType = ""
+	}
+
 	if err := upconvertVIP(&config.Platform.OpenStack.APIVIPs, config.Platform.OpenStack.DeprecatedAPIVIP, "apiVIP", "apiVIPs", field.NewPath("platform").Child("openstack")); err != nil {
 		return err
 	}
 
 	if err := upconvertVIP(&config.Platform.OpenStack.IngressVIPs, config.Platform.OpenStack.DeprecatedIngressVIP, "ingressVIP", "ingressVIPs", field.NewPath("platform").Child("openstack")); err != nil {
 		return err
+	}
+
+	// machinesSubnet has been deprecated in favor of ControlPlanePort
+	controlPlanePort := config.Platform.OpenStack.ControlPlanePort
+	deprecatedMachinesSubnet := config.Platform.OpenStack.DeprecatedMachinesSubnet
+	if deprecatedMachinesSubnet != "" && controlPlanePort == nil {
+		fixedIPs := []openstack.FixedIP{{Subnet: openstack.SubnetFilter{ID: deprecatedMachinesSubnet}}}
+		config.Platform.OpenStack.ControlPlanePort = &openstack.PortTarget{FixedIPs: fixedIPs}
+	} else if deprecatedMachinesSubnet != "" &&
+		controlPlanePort != nil {
+		if !(len(controlPlanePort.FixedIPs) == 1 && controlPlanePort.FixedIPs[0].Subnet.ID == deprecatedMachinesSubnet) {
+			return field.Invalid(field.NewPath("platform").Child("openstack").Child("machinesSubnet"), deprecatedMachinesSubnet, fmt.Sprintf("%s is deprecated; only %s needs to be specified", "machinesSubnet", "controlPlanePort"))
+		}
 	}
 
 	return nil

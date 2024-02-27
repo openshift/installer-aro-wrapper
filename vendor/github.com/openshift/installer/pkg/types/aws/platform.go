@@ -2,7 +2,15 @@ package aws
 
 import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+
 	configv1 "github.com/openshift/api/config/v1"
+)
+
+const (
+	// VolumeTypeGp2 is the type of EBS volume for General Purpose SSD gp2.
+	VolumeTypeGp2 = "gp2"
+	// VolumeTypeGp3 is the type of EBS volume for General Purpose SSD gp3.
+	VolumeTypeGp3 = "gp3"
 )
 
 // Platform stores all the global configuration that all machinesets
@@ -32,6 +40,15 @@ type Platform struct {
 	// on your behalf.
 	// +optional
 	HostedZone string `json:"hostedZone,omitempty"`
+
+	// HostedZoneRole is the ARN of an IAM role to be assumed when performing
+	// operations on the provided HostedZone. HostedZoneRole can be used
+	// in a shared VPC scenario when the private hosted zone belongs to a
+	// different account than the rest of the cluster resources.
+	// If HostedZoneRole is set, HostedZone must also be set.
+	//
+	// +optional
+	HostedZoneRole string `json:"hostedZoneRole,omitempty"`
 
 	// UserTags additional keys and values that the installer will add
 	// as tags to all resources that it creates. Resources created by the
@@ -84,6 +101,11 @@ type Platform struct {
 	//
 	// +optional
 	LBType configv1.AWSLBType `json:"lbType,omitempty"`
+
+	// PreserveBootstrapIgnition is an optional field that can be used to make the S3 deletion optional
+	// during bootstrap destroy.
+	// +optional
+	PreserveBootstrapIgnition bool `json:"preserveBootstrapIgnition,omitempty"`
 }
 
 // ServiceEndpoint store the configuration for services to

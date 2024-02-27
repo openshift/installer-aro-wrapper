@@ -9,9 +9,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/vincent-petithory/dataurl"
+	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -19,6 +19,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
+	"github.com/openshift/installer/pkg/types/vsphere"
 )
 
 const (
@@ -64,6 +65,8 @@ func (m *Manifests) Dependencies() []asset.Asset {
 		&Proxy{},
 		&Scheduler{},
 		&ImageContentSourcePolicy{},
+		&ClusterCSIDriverConfig{},
+		&ImageDigestMirrorSet{},
 		&tls.RootCA{},
 		&tls.MCSCertKey{},
 
@@ -90,7 +93,10 @@ func (m *Manifests) Generate(dependencies asset.Parents) error {
 	proxy := &Proxy{}
 	scheduler := &Scheduler{}
 	imageContentSourcePolicy := &ImageContentSourcePolicy{}
-	dependencies.Get(installConfig, ingress, dns, network, infra, proxy, scheduler, imageContentSourcePolicy)
+	clusterCSIDriverConfig := &ClusterCSIDriverConfig{}
+	imageDigestMirrorSet := &ImageDigestMirrorSet{}
+
+	dependencies.Get(installConfig, ingress, dns, network, infra, proxy, scheduler, imageContentSourcePolicy, imageDigestMirrorSet, clusterCSIDriverConfig)
 
 	redactedConfig, err := redactedInstallConfig(*installConfig.Config)
 	if err != nil {
@@ -125,6 +131,8 @@ func (m *Manifests) Generate(dependencies asset.Parents) error {
 	m.FileList = append(m.FileList, proxy.Files()...)
 	m.FileList = append(m.FileList, scheduler.Files()...)
 	m.FileList = append(m.FileList, imageContentSourcePolicy.Files()...)
+	m.FileList = append(m.FileList, clusterCSIDriverConfig.Files()...)
+	m.FileList = append(m.FileList, imageDigestMirrorSet.Files()...)
 
 	asset.SortFiles(m.FileList)
 
@@ -162,7 +170,7 @@ func (m *Manifests) generateBootKubeManifests(dependencies asset.Parents) []*ass
 		IsFCOS:                        installConfig.Config.IsFCOS(),
 		IsSCOS:                        installConfig.Config.IsSCOS(),
 		IsOKD:                         installConfig.Config.IsOKD(),
-		AROWorkerRegistries:           aroWorkerRegistries(installConfig.Config.ImageContentSources),
+		AROWorkerRegistries:           aroWorkerRegistries(installConfig.Config.ImageDigestSources),
 		AROIngressIP:                  aroDNSConfig.IngressIP,
 		AROIngressInternal:            installConfig.Config.Publish == types.InternalPublishingStrategy,
 		AROImageRegistryHTTPSecret:    aroImageRegistryConfig.HTTPSecret,
@@ -251,14 +259,40 @@ func (m *Manifests) Load(f asset.FileFetcher) (bool, error) {
 }
 
 func redactedInstallConfig(config types.InstallConfig) ([]byte, error) {
-	config.PullSecret = ""
-	if config.Platform.VSphere != nil {
-		p := *config.Platform.VSphere
-		p.Username = ""
-		p.Password = ""
-		config.Platform.VSphere = &p
+	newConfig := config
+
+	newConfig.PullSecret = ""
+	if newConfig.Platform.VSphere != nil {
+		p := config.VSphere
+		newVCenters := make([]vsphere.VCenter, len(p.VCenters))
+		for i, v := range p.VCenters {
+			newVCenters[i].Server = v.Server
+			newVCenters[i].Datacenters = v.Datacenters
+		}
+		newVSpherePlatform := vsphere.Platform{
+			DeprecatedVCenter:          p.DeprecatedVCenter,
+			DeprecatedUsername:         "",
+			DeprecatedPassword:         "",
+			DeprecatedDatacenter:       p.DeprecatedDatacenter,
+			DeprecatedDefaultDatastore: p.DeprecatedDefaultDatastore,
+			DeprecatedFolder:           p.DeprecatedFolder,
+			DeprecatedCluster:          p.DeprecatedCluster,
+			DeprecatedResourcePool:     p.DeprecatedResourcePool,
+			ClusterOSImage:             p.ClusterOSImage,
+			DeprecatedAPIVIP:           p.DeprecatedAPIVIP,
+			APIVIPs:                    p.APIVIPs,
+			DeprecatedIngressVIP:       p.DeprecatedIngressVIP,
+			IngressVIPs:                p.IngressVIPs,
+			DefaultMachinePlatform:     p.DefaultMachinePlatform,
+			DeprecatedNetwork:          p.DeprecatedNetwork,
+			DiskType:                   p.DiskType,
+			VCenters:                   newVCenters,
+			FailureDomains:             p.FailureDomains,
+		}
+		newConfig.Platform.VSphere = &newVSpherePlatform
 	}
-	return yaml.Marshal(config)
+
+	return yaml.Marshal(newConfig)
 }
 
 func indent(indention int, v string) string {
@@ -266,15 +300,15 @@ func indent(indention int, v string) string {
 	return strings.Replace(v, "\n", newline, -1)
 }
 
-func aroWorkerRegistries(icss []types.ImageContentSource) string {
+func aroWorkerRegistries(idss []types.ImageDigestSource) string {
 	b := &bytes.Buffer{}
 
 	fmt.Fprintf(b, "unqualified-search-registries = [\"registry.access.redhat.com\", \"docker.io\"]\n")
 
-	for _, ics := range icss {
-		fmt.Fprintf(b, "\n[[registry]]\n  prefix = \"\"\n  location = \"%s\"\n  mirror-by-digest-only = true\n", ics.Source)
+	for _, ids := range idss {
+		fmt.Fprintf(b, "\n[[registry]]\n  prefix = \"\"\n  location = \"%s\"\n  mirror-by-digest-only = true\n", ids.Source)
 
-		for _, mirror := range ics.Mirrors {
+		for _, mirror := range ids.Mirrors {
 			fmt.Fprintf(b, "\n  [[registry.mirror]]\n    location = \"%s\"\n", mirror)
 		}
 	}

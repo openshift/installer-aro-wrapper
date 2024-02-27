@@ -19,6 +19,7 @@ const (
 	sectorSize         uint32 = 2048
 	systemAreaSize            = sectorSize * 16
 	standardIdentifier        = "CD001"
+	udfIdentifier             = "BEA01"
 
 	volumeTypeBoot          byte = 0
 	volumeTypePrimary       byte = 1
@@ -47,6 +48,8 @@ const (
 )
 
 var standardIdentifierBytes = [5]byte{'C', 'D', '0', '0', '1'}
+
+var ErrUDFNotSupported = errors.New("UDF volumes are not supported")
 
 // volumeDescriptorHeader represents the data in bytes 0-6
 // of a Volume Descriptor as defined in ECMA-119 8.1
@@ -127,7 +130,7 @@ var _ encoding.BinaryMarshaler = PrimaryVolumeDescriptorBody{}
 type DirectoryEntry struct {
 	ExtendedAtributeRecordLength byte
 	ExtentLocation               int32
-	ExtentLength                 int32
+	ExtentLength                 uint32
 	RecordingDateTime            RecordingTimestamp
 	FileFlags                    byte
 	FileUnitSize                 byte
@@ -135,6 +138,7 @@ type DirectoryEntry struct {
 	VolumeSequenceNumber         int16
 	Identifier                   string
 	SystemUse                    []byte
+	SystemUseEntries             SystemUseEntrySlice
 }
 
 var _ encoding.BinaryUnmarshaler = &DirectoryEntry{}
@@ -155,7 +159,7 @@ func (de *DirectoryEntry) UnmarshalBinary(data []byte) error {
 		return err
 	}
 
-	if de.ExtentLength, err = UnmarshalInt32LSBMSB(data[10:18]); err != nil {
+	if de.ExtentLength, err = UnmarshalUint32LSBMSB(data[10:18]); err != nil {
 		return err
 	}
 
@@ -196,7 +200,7 @@ func (de *DirectoryEntry) MarshalBinary() ([]byte, error) {
 	data[1] = de.ExtendedAtributeRecordLength
 
 	WriteInt32LSBMSB(data[2:10], de.ExtentLocation)
-	WriteInt32LSBMSB(data[10:18], de.ExtentLength)
+	WriteInt32LSBMSB(data[10:18], int32(de.ExtentLength))
 	de.RecordingDateTime.MarshalBinary(data[18:25])
 	data[25] = de.FileFlags
 	data[26] = de.FileUnitSize
@@ -400,11 +404,16 @@ func (vd *volumeDescriptor) UnmarshalBinary(data []byte) error {
 	}
 
 	if err := vd.Header.UnmarshalBinary(data); err != nil {
+		// this should never fail, since volumeDescriptorHeader.UnmarshalBinary( ) only checks data size too
 		return err
 	}
 
-	if string(vd.Header.Identifier[:]) != standardIdentifier {
-		return fmt.Errorf("volume descriptor %q != %q", string(vd.Header.Identifier[:]), standardIdentifier)
+	id := string(vd.Header.Identifier[:])
+	if id != standardIdentifier {
+		if id == udfIdentifier {
+			return ErrUDFNotSupported
+		}
+		return fmt.Errorf("volume descriptor %q != %q", id, standardIdentifier)
 	}
 
 	switch vd.Header.Type {

@@ -9,13 +9,17 @@ import (
 var aro bool
 
 // OutboundType is a strategy for how egress from cluster is achieved.
-// +kubebuilder:validation:Enum="";Loadbalancer;UserDefinedRouting
+// +kubebuilder:validation:Enum="";Loadbalancer;NatGateway;UserDefinedRouting
 type OutboundType string
 
 const (
 	// LoadbalancerOutboundType uses Standard loadbalancer for egress from the cluster.
 	// see https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-connections#lb
 	LoadbalancerOutboundType OutboundType = "Loadbalancer"
+
+	// NatGatewayOutboundType uses NAT gateway for egress from the cluster
+	// see https://learn.microsoft.com/en-us/azure/virtual-network/nat-gateway/nat-gateway-resource
+	NatGatewayOutboundType OutboundType = "NatGateway"
 
 	// UserDefinedRoutingOutboundType uses user defined routing for egress from the cluster.
 	// see https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-udr-overview
@@ -72,6 +76,7 @@ type Platform struct {
 	CloudName CloudEnvironment `json:"cloudName,omitempty"`
 
 	// OutboundType is a strategy for how egress from cluster is achieved. When not specified default is "Loadbalancer".
+	// "NatGateway" is only available in TechPreview.
 	//
 	// +kubebuilder:default=Loadbalancer
 	// +optional
@@ -87,27 +92,11 @@ type Platform struct {
 	// +optional
 	ResourceGroupName string `json:"resourceGroupName,omitempty"`
 
-	// Image specifies the image parameters with which a cluster should be built
-	Image *Image `json:"image,omitempty"`
-}
-
-// Image specifies the image parameters with which a cluster should be built.
-// Either ResourceID or Publisher/Offer/SKU/Version should be set.
-type Image struct {
-	// ResourceID is the resource ID of an existing Image resource
-	ResourceID string `json:"resourceId,omitempty"`
-
-	// Publisher is the image publisher
-	Publisher string `json:"publisher,omitempty"`
-
-	// Offer is the image offer
-	Offer string `json:"offer,omitempty"`
-
-	// SKU is the image SKU
-	SKU string `json:"sku,omitempty"`
-
-	// Version is the image version
-	Version string `json:"version,omitempty"`
+	// UserTags has additional keys and values that the installer will add
+	// as tags to all resources that it creates on AzurePublicCloud alone.
+	// Resources created by the cluster itself may not include these tags.
+	// +optional
+	UserTags map[string]string `json:"userTags,omitempty"`
 }
 
 // CloudEnvironment is the name of the Azure cloud environment
