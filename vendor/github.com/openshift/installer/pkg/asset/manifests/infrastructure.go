@@ -6,13 +6,14 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	externalinfra "github.com/openshift/installer/pkg/asset/manifests/external"
 	gcpmanifests "github.com/openshift/installer/pkg/asset/manifests/gcp"
 	vsphereinfra "github.com/openshift/installer/pkg/asset/manifests/vsphere"
 	"github.com/openshift/installer/pkg/types"
@@ -20,6 +21,7 @@ import (
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
 	"github.com/openshift/installer/pkg/types/libvirt"
@@ -177,6 +179,20 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 			Filename: cloudControllerUIDFilename,
 			Data:     content,
 		})
+		if len(installConfig.Config.GCP.UserLabels) > 0 {
+			resourceLabels := make([]configv1.GCPResourceLabel, len(installConfig.Config.GCP.UserLabels))
+			for i, label := range installConfig.Config.GCP.UserLabels {
+				resourceLabels[i] = configv1.GCPResourceLabel{Key: label.Key, Value: label.Value}
+			}
+			config.Status.PlatformStatus.GCP.ResourceLabels = resourceLabels
+		}
+		if len(installConfig.Config.GCP.UserTags) > 0 {
+			resourceTags := make([]configv1.GCPResourceTag, len(installConfig.Config.GCP.UserTags))
+			for i, tag := range installConfig.Config.GCP.UserTags {
+				resourceTags[i] = configv1.GCPResourceTag{ParentID: tag.ParentID, Key: tag.Key, Value: tag.Value}
+			}
+			config.Status.PlatformStatus.GCP.ResourceTags = resourceTags
+		}
 	case ibmcloud.Name:
 		config.Spec.PlatformSpec.Type = configv1.IBMCloudPlatformType
 		var cisInstanceCRN, dnsInstanceCRN string
@@ -202,6 +218,10 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 		}
 	case libvirt.Name:
 		config.Spec.PlatformSpec.Type = configv1.LibvirtPlatformType
+	case external.Name:
+		config.Spec.PlatformSpec.Type = configv1.ExternalPlatformType
+		config.Spec.PlatformSpec.External = externalinfra.GetInfraPlatformSpec(installConfig)
+		config.Status.PlatformStatus.External = externalinfra.GetInfraPlatformStatus(installConfig)
 	case none.Name:
 		config.Spec.PlatformSpec.Type = configv1.NonePlatformType
 	case openstack.Name:

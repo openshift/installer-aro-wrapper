@@ -132,8 +132,8 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 
 func provider(clusterID string, platform *gcp.Platform, mpool *gcp.MachinePool, osImage string, azIdx int, role, userDataSecret string, credentialsMode types.CredentialsMode) (*machineapi.GCPMachineProviderSpec, error) {
 	az := mpool.Zones[azIdx]
-	if len(platform.Licenses) > 0 {
-		osImage = fmt.Sprintf("%s-rhcos-image", clusterID)
+	if mpool.OSImage != nil {
+		osImage = fmt.Sprintf("projects/%s/global/images/%s", mpool.OSImage.Project, mpool.OSImage.Name)
 	}
 	network, subnetwork, err := getNetworks(platform, clusterID, role)
 	if err != nil {
@@ -155,31 +155,39 @@ func provider(clusterID string, platform *gcp.Platform, mpool *gcp.MachinePool, 
 	}
 
 	instanceServiceAccount := fmt.Sprintf("%s-%s@%s.iam.gserviceaccount.com", clusterID, role[0:1], platform.ProjectID)
-	// In a vanilla install, the installer will create a service account with the naming convention above.
-	// These service accounts require permissions to check for firewalls. In a GCP XPN install, that permission
-	// would be required in the host project, but the installer is not likely to have permissions to create
-	// service accounts with host project privileges. Instead, we can use the existing service account provided
-	// to the installer.
-	if len(platform.NetworkProjectID) > 0 {
-		sess, err := gcpconfig.GetSession(context.TODO())
-		if err != nil {
-			return nil, err
-		}
+	// The installer will create a service account for compute nodes with the above naming convention.
+	// The same service account will be used for control plane nodes during a vanilla installation. During a
+	// xpn installation, the installer will attempt to use an existing service account either through the
+	// credentials or through a user supplied value from the install-config.
+	if role == "master" && len(platform.NetworkProjectID) > 0 {
+		instanceServiceAccount = mpool.ServiceAccount
 
-		var found bool
-		serviceAccount := make(map[string]interface{})
-		err = json.Unmarshal([]byte(sess.Credentials.JSON), &serviceAccount)
-		if err != nil {
-			return nil, err
-		}
-		instanceServiceAccount, found = serviceAccount["client_email"].(string)
-		if !found {
-			return nil, errors.New("could not find google service account")
+		if instanceServiceAccount == "" {
+			sess, err := gcpconfig.GetSession(context.TODO())
+			if err != nil {
+				return nil, err
+			}
+
+			var found bool
+			serviceAccount := make(map[string]interface{})
+			err = json.Unmarshal(sess.Credentials.JSON, &serviceAccount)
+			if err != nil {
+				return nil, err
+			}
+			instanceServiceAccount, found = serviceAccount["client_email"].(string)
+			if !found {
+				return nil, errors.New("could not find google service account")
+			}
 		}
 	}
+
 	shieldedInstanceConfig := machineapi.GCPShieldedInstanceConfig{}
 	if mpool.SecureBoot == string(machineapi.SecureBootPolicyEnabled) {
 		shieldedInstanceConfig.SecureBoot = machineapi.SecureBootPolicyEnabled
+	}
+	labels := make(map[string]string, len(platform.UserLabels))
+	for _, label := range platform.UserLabels {
+		labels[label.Key] = label.Value
 	}
 	return &machineapi.GCPMachineProviderSpec{
 		TypeMeta: metav1.TypeMeta{
@@ -194,6 +202,7 @@ func provider(clusterID string, platform *gcp.Platform, mpool *gcp.MachinePool, 
 			SizeGB:        mpool.OSDisk.DiskSizeGB,
 			Type:          mpool.OSDisk.DiskType,
 			Image:         osImage,
+			Labels:        labels,
 			EncryptionKey: encryptionKey,
 		}},
 		NetworkInterfaces: []*machineapi.GCPNetworkInterface{{
@@ -213,6 +222,7 @@ func provider(clusterID string, platform *gcp.Platform, mpool *gcp.MachinePool, 
 		ShieldedInstanceConfig: shieldedInstanceConfig,
 		ConfidentialCompute:    machineapi.ConfidentialComputePolicy(mpool.ConfidentialCompute),
 		OnHostMaintenance:      machineapi.GCPHostMaintenanceType(mpool.OnHostMaintenance),
+		Labels:                 labels,
 	}, nil
 }
 

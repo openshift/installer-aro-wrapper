@@ -15,7 +15,7 @@
  */
 
 /*
- * IBM OpenAPI SDK Code Generator Version: 3.80.0-29334a73-20230925-151553
+ * IBM OpenAPI SDK Code Generator Version: 3.78.0-67aec9b7-20230818-174940
  */
 
 // Package vpcv1 : Operations and models for the VpcV1 service
@@ -38,7 +38,7 @@ import (
 // VpcV1 : The IBM Cloud Virtual Private Cloud (VPC) API can be used to programmatically provision and manage virtual
 // server instances, along with subnets, volumes, load balancers, and more.
 //
-// API Version: 2023-11-22
+// API Version: 2023-10-18
 type VpcV1 struct {
 	Service *core.BaseService
 
@@ -47,7 +47,7 @@ type VpcV1 struct {
 	generation *int64
 
 	// The API version, in format `YYYY-MM-DD`. For the API behavior documented here, specify any date between `2023-10-10`
-	// and `2023-11-22`.
+	// and `2023-10-18`.
 	Version *string
 }
 
@@ -64,7 +64,7 @@ type VpcV1Options struct {
 	Authenticator core.Authenticator
 
 	// The API version, in format `YYYY-MM-DD`. For the API behavior documented here, specify any date between `2023-10-10`
-	// and `2023-11-22`.
+	// and `2023-10-18`.
 	Version *string
 }
 
@@ -122,7 +122,7 @@ func NewVpcV1(options *VpcV1Options) (service *VpcV1, err error) {
 	}
 
 	if options.Version == nil {
-		options.Version = core.StringPtr("2023-10-24")
+		options.Version = core.StringPtr("2023-10-17")
 	}
 
 	service = &VpcV1{
@@ -1248,14 +1248,13 @@ func (vpc *VpcV1) CreateVPCDnsResolutionBindingWithContext(ctx context.Context, 
 // DeleteVPCDnsResolutionBinding : Delete a DNS resolution binding
 // This request deletes a DNS resolution binding. This operation cannot be reversed.
 //
-// For this request to succeed, the VPC specified by the identifier in the URL must not have
-// `dns.resolver.type` set to `delegated`.
-func (vpc *VpcV1) DeleteVPCDnsResolutionBinding(deleteVPCDnsResolutionBindingOptions *DeleteVPCDnsResolutionBindingOptions) (result *VpcdnsResolutionBinding, response *core.DetailedResponse, err error) {
+// A DNS resolution binding for a VPC with `dns.enable_hub` set to `true` cannot be deleted.
+func (vpc *VpcV1) DeleteVPCDnsResolutionBinding(deleteVPCDnsResolutionBindingOptions *DeleteVPCDnsResolutionBindingOptions) (response *core.DetailedResponse, err error) {
 	return vpc.DeleteVPCDnsResolutionBindingWithContext(context.Background(), deleteVPCDnsResolutionBindingOptions)
 }
 
 // DeleteVPCDnsResolutionBindingWithContext is an alternate form of the DeleteVPCDnsResolutionBinding method which supports a Context parameter
-func (vpc *VpcV1) DeleteVPCDnsResolutionBindingWithContext(ctx context.Context, deleteVPCDnsResolutionBindingOptions *DeleteVPCDnsResolutionBindingOptions) (result *VpcdnsResolutionBinding, response *core.DetailedResponse, err error) {
+func (vpc *VpcV1) DeleteVPCDnsResolutionBindingWithContext(ctx context.Context, deleteVPCDnsResolutionBindingOptions *DeleteVPCDnsResolutionBindingOptions) (response *core.DetailedResponse, err error) {
 	err = core.ValidateNotNil(deleteVPCDnsResolutionBindingOptions, "deleteVPCDnsResolutionBindingOptions cannot be nil")
 	if err != nil {
 		return
@@ -1286,7 +1285,6 @@ func (vpc *VpcV1) DeleteVPCDnsResolutionBindingWithContext(ctx context.Context, 
 	for headerName, headerValue := range sdkHeaders {
 		builder.AddHeader(headerName, headerValue)
 	}
-	builder.AddHeader("Accept", "application/json")
 
 	builder.AddQuery("version", fmt.Sprint(*vpc.Version))
 	builder.AddQuery("generation", fmt.Sprint(*vpc.generation))
@@ -1296,18 +1294,7 @@ func (vpc *VpcV1) DeleteVPCDnsResolutionBindingWithContext(ctx context.Context, 
 		return
 	}
 
-	var rawResponse map[string]json.RawMessage
-	response, err = vpc.Service.Request(request, &rawResponse)
-	if err != nil {
-		return
-	}
-	if rawResponse != nil {
-		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalVpcdnsResolutionBinding)
-		if err != nil {
-			return
-		}
-		response.Result = result
-	}
+	response, err = vpc.Service.Request(request, nil)
 
 	return
 }
@@ -14837,12 +14824,12 @@ func (vpc *VpcV1) DeleteShareSourceWithContext(ctx context.Context, deleteShareS
 // GetShareSource : Retrieve the source file share for a replica file share
 // This request retrieves the source file share associated with the replica file share specified by the identifier in
 // the URL.
-func (vpc *VpcV1) GetShareSource(getShareSourceOptions *GetShareSourceOptions) (result *ShareReference, response *core.DetailedResponse, err error) {
+func (vpc *VpcV1) GetShareSource(getShareSourceOptions *GetShareSourceOptions) (result *Share, response *core.DetailedResponse, err error) {
 	return vpc.GetShareSourceWithContext(context.Background(), getShareSourceOptions)
 }
 
 // GetShareSourceWithContext is an alternate form of the GetShareSource method which supports a Context parameter
-func (vpc *VpcV1) GetShareSourceWithContext(ctx context.Context, getShareSourceOptions *GetShareSourceOptions) (result *ShareReference, response *core.DetailedResponse, err error) {
+func (vpc *VpcV1) GetShareSourceWithContext(ctx context.Context, getShareSourceOptions *GetShareSourceOptions) (result *Share, response *core.DetailedResponse, err error) {
 	err = core.ValidateNotNil(getShareSourceOptions, "getShareSourceOptions cannot be nil")
 	if err != nil {
 		return
@@ -14888,7 +14875,7 @@ func (vpc *VpcV1) GetShareSourceWithContext(ctx context.Context, getShareSourceO
 		return
 	}
 	if rawResponse != nil {
-		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalShareReference)
+		err = core.UnmarshalModel(rawResponse, "", &result, UnmarshalShare)
 		if err != nil {
 			return
 		}
@@ -17400,7 +17387,7 @@ func (vpc *VpcV1) ListSecurityGroupTargetsWithContext(ctx context.Context, listS
 // - A bare metal server network interface identifier
 // - A virtual network interface identifier
 // - A VPN server identifier
-// - A load balancer identifier
+// - An application load balancer identifier
 // - An endpoint gateway identifier
 // - An instance network interface identifier
 //
@@ -17527,7 +17514,7 @@ func (vpc *VpcV1) GetSecurityGroupTargetWithContext(ctx context.Context, getSecu
 // - A bare metal server network interface identifier
 // - A virtual network interface identifier
 // - A VPN server identifier
-// - A load balancer identifier
+// - An application load balancer identifier
 // - An endpoint gateway identifier
 // - An instance network interface identifier
 //
@@ -26486,10 +26473,10 @@ type BareMetalServerNetworkInterface struct {
 	//   server is stopped
 	//   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 	//     to use the PCI interface
-	//   - Cannot directly use an IEEE 802.1Q tag.
+	//   - Cannot directly use an IEEE 802.1q VLAN tag.
 	// - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its
 	//   array of `allowed_vlans`.
-	//   - Must use an IEEE 802.1Q tag.
+	//   - Must use an IEEE 802.1q tag.
 	//   - Has its own security groups and does not inherit those of the PCI device through
 	//     which traffic flows.
 	//
@@ -26525,22 +26512,15 @@ type BareMetalServerNetworkInterface struct {
 	// The bare metal server network interface type.
 	Type *string `json:"type" validate:"required"`
 
-	// The VLAN IDs allowed for `vlan` interfaces using this PCI interface.
+	// Indicates what VLAN IDs (for VLAN type only) can use this physical (PCI type) interface.
 	AllowedVlans []int64 `json:"allowed_vlans,omitempty"`
 
-	// Indicates if the data path for the network interface can float to another bare metal server. Can only be `true` for
-	// network interfaces with an `interface_type` of `vlan`.
-	//
-	// If `true`, and the network detects traffic for this data path on another bare metal server in the resource group,
-	// the network interface will be automatically deleted from this bare metal server and a new network interface with the
-	// same `id`, `name` and `vlan` will be created on the other bare metal server.
-	//
-	// For the data path to float, the other bare metal server must be in the same
-	// `resource_group`, and must have a network interface with `interface_type` of `pci` with `allowed_vlans` including
-	// this network interface's `vlan`.
+	// Indicates if the interface can float to any other server within the same
+	// `resource_group`. The interface will float automatically if the network detects a GARP or RARP on another bare metal
+	// server in the resource group.  Applies only to `vlan` type interfaces.
 	AllowInterfaceToFloat *bool `json:"allow_interface_to_float,omitempty"`
 
-	// The VLAN ID used in the IEEE 802.1Q tag present in all traffic on this interface.
+	// Indicates the 802.1Q VLAN ID tag that must be used for all traffic on this interface.
 	Vlan *int64 `json:"vlan,omitempty"`
 }
 
@@ -26552,10 +26532,10 @@ type BareMetalServerNetworkInterface struct {
 //     server is stopped
 //   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 //     to use the PCI interface
-//   - Cannot directly use an IEEE 802.1Q tag.
+//   - Cannot directly use an IEEE 802.1q VLAN tag.
 //   - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its
 //     array of `allowed_vlans`.
-//   - Must use an IEEE 802.1Q tag.
+//   - Must use an IEEE 802.1q tag.
 //   - Has its own security groups and does not inherit those of the PCI device through
 //     which traffic flows.
 //
@@ -26720,8 +26700,7 @@ type BareMetalServerNetworkInterfacePatch struct {
 	// Indicates whether source IP spoofing is allowed on this bare metal server network interface.
 	AllowIPSpoofing *bool `json:"allow_ip_spoofing,omitempty"`
 
-	// The VLAN IDs to allow for `vlan` interfaces using this PCI interface, replacing any existing VLAN IDs. The specified
-	// values must include IDs for all `vlan` interfaces currently using this PCI interface.
+	// Indicates what VLAN IDs (for VLAN type only) can use this physical (PCI type) interface.
 	AllowedVlans []int64 `json:"allowed_vlans,omitempty"`
 
 	// If `true`:
@@ -26801,11 +26780,11 @@ type BareMetalServerNetworkInterfacePrototype struct {
 	//   server is stopped
 	//   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 	//     to use the PCI interface
-	//   - Cannot directly use an IEEE 802.1Q tag.
+	//   - Cannot directly use an IEEE 802.1q VLAN tag.
 	//   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`
 	// - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its
 	//   array of `allowed_vlans`.
-	//   - Must use an IEEE 802.1Q tag.
+	//   - Must use an IEEE 802.1q tag.
 	//   - Has its own security groups and does not inherit those of the PCI device through
 	//     which traffic flows.
 	//   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
@@ -26830,22 +26809,15 @@ type BareMetalServerNetworkInterfacePrototype struct {
 	// The associated subnet.
 	Subnet SubnetIdentityIntf `json:"subnet" validate:"required"`
 
-	// The VLAN IDs to allow for `vlan` interfaces using this PCI interface.
+	// Indicates what VLAN IDs (for VLAN type only) can use this physical (PCI type) interface.
 	AllowedVlans []int64 `json:"allowed_vlans,omitempty"`
 
-	// Indicates if the data path for the network interface can float to another bare metal server. Can only be `true` for
-	// network interfaces with an `interface_type` of `vlan`.
-	//
-	// If `true`, and the network detects traffic for this data path on another bare metal server in the resource group,
-	// the network interface will be automatically deleted from this bare metal server and a new network interface with the
-	// same `id`, `name` and `vlan` will be created on the other bare metal server.
-	//
-	// For the data path to float, the other bare metal server must be in the same
-	// `resource_group`, and must have a network interface with `interface_type` of `pci` with `allowed_vlans` including
-	// this network interface's `vlan`.
+	// Indicates if the interface can float to any other server within the same
+	// `resource_group`. The interface will float automatically if the network detects a GARP or RARP on another bare metal
+	// server in the resource group.  Applies only to `vlan` type interfaces.
 	AllowInterfaceToFloat *bool `json:"allow_interface_to_float,omitempty"`
 
-	// The VLAN ID used in the IEEE 802.1Q tag present in all traffic on this interface.
+	// Indicates the 802.1Q VLAN ID tag that must be used for all traffic on this interface.
 	Vlan *int64 `json:"vlan,omitempty"`
 }
 
@@ -26858,11 +26830,11 @@ type BareMetalServerNetworkInterfacePrototype struct {
 //     server is stopped
 //   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 //     to use the PCI interface
-//   - Cannot directly use an IEEE 802.1Q tag.
+//   - Cannot directly use an IEEE 802.1q VLAN tag.
 //   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`
 //   - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its
 //     array of `allowed_vlans`.
-//   - Must use an IEEE 802.1Q tag.
+//   - Must use an IEEE 802.1q tag.
 //   - Has its own security groups and does not inherit those of the PCI device through
 //     which traffic flows.
 //   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
@@ -26991,7 +26963,7 @@ type BareMetalServerPrimaryNetworkInterfacePrototype struct {
 	// Indicates whether source IP spoofing is allowed on this bare metal server network interface.
 	AllowIPSpoofing *bool `json:"allow_ip_spoofing,omitempty"`
 
-	// The VLAN IDs allowed for `vlan` interfaces using this PCI interface.
+	// Indicates what VLAN IDs (for VLAN type only) can use this physical (PCI type) interface.
 	AllowedVlans []int64 `json:"allowed_vlans,omitempty"`
 
 	// If `true`:
@@ -27013,7 +26985,7 @@ type BareMetalServerPrimaryNetworkInterfacePrototype struct {
 	//   server is stopped
 	//   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 	//     to use the PCI interface
-	//   - Cannot directly use an IEEE 802.1Q tag.
+	//   - Cannot directly use an IEEE 802.1q VLAN tag.
 	//   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
 	InterfaceType *string `json:"interface_type,omitempty"`
 
@@ -27046,7 +27018,7 @@ type BareMetalServerPrimaryNetworkInterfacePrototype struct {
 //     server is stopped
 //   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 //     to use the PCI interface
-//   - Cannot directly use an IEEE 802.1Q tag.
+//   - Cannot directly use an IEEE 802.1q VLAN tag.
 //   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
 const (
 	BareMetalServerPrimaryNetworkInterfacePrototypeInterfaceTypeHipersocketConst = "hipersocket"
@@ -29261,8 +29233,7 @@ type CreateFlowLogCollectorOptions struct {
 	// The Cloud Object Storage bucket where the collected flows will be logged.
 	// The bucket must exist and an IAM service authorization must grant
 	// `IBM Cloud Flow Logs` resources of `VPC Infrastructure Services` writer
-	// access to the bucket. For more information, see [Creating a flow log
-	// collector](https://cloud.ibm.com/docs/vpc?topic=vpc-ordering-flow-log-collector).
+	// access to the bucket.
 	StorageBucket LegacyCloudObjectStorageBucketIdentityIntf `json:"storage_bucket" validate:"required"`
 
 	// The target this collector will collect flow logs for. If the target is an instance,
@@ -29892,7 +29863,7 @@ type CreateInstanceNetworkInterfaceOptions struct {
 	// The associated subnet.
 	Subnet SubnetIdentityIntf `json:"subnet" validate:"required"`
 
-	// Indicates whether source IP spoofing is allowed on this instance network interface.
+	// Indicates whether source IP spoofing is allowed on this instance interface.
 	AllowIPSpoofing *bool `json:"allow_ip_spoofing,omitempty"`
 
 	// The name for the instance network interface. The name must not be used by another network interface on the virtual
@@ -37028,10 +36999,6 @@ type EndpointGateway struct {
 	// The reserved IPs bound to this endpoint gateway.
 	Ips []ReservedIPReference `json:"ips" validate:"required"`
 
-	// The reasons for the current `lifecycle_state` (if any):
-	// - `dns_resolution_binding_pending`: the DNS resolution binding is being set up.
-	LifecycleReasons []EndpointGatewayLifecycleReason `json:"lifecycle_reasons" validate:"required"`
-
 	// The lifecycle state of the endpoint gateway.
 	LifecycleState *string `json:"lifecycle_state" validate:"required"`
 
@@ -37122,10 +37089,6 @@ func UnmarshalEndpointGateway(m map[string]json.RawMessage, result interface{}) 
 		return
 	}
 	err = core.UnmarshalModel(m, "ips", &obj.Ips, UnmarshalReservedIPReference)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalModel(m, "lifecycle_reasons", &obj.LifecycleReasons, UnmarshalEndpointGatewayLifecycleReason)
 	if err != nil {
 		return
 	}
@@ -37254,44 +37217,6 @@ type EndpointGatewayCollectionNext struct {
 func UnmarshalEndpointGatewayCollectionNext(m map[string]json.RawMessage, result interface{}) (err error) {
 	obj := new(EndpointGatewayCollectionNext)
 	err = core.UnmarshalPrimitive(m, "href", &obj.Href)
-	if err != nil {
-		return
-	}
-	reflect.ValueOf(result).Elem().Set(reflect.ValueOf(obj))
-	return
-}
-
-// EndpointGatewayLifecycleReason : EndpointGatewayLifecycleReason struct
-type EndpointGatewayLifecycleReason struct {
-	// A snake case string succinctly identifying the reason for this lifecycle state.
-	Code *string `json:"code" validate:"required"`
-
-	// An explanation of the reason for this lifecycle state.
-	Message *string `json:"message" validate:"required"`
-
-	// Link to documentation about the reason for this lifecycle state.
-	MoreInfo *string `json:"more_info,omitempty"`
-}
-
-// Constants associated with the EndpointGatewayLifecycleReason.Code property.
-// A snake case string succinctly identifying the reason for this lifecycle state.
-const (
-	EndpointGatewayLifecycleReasonCodeDnsResolutionBindingPendingConst = "dns_resolution_binding_pending"
-	EndpointGatewayLifecycleReasonCodeResourceSuspendedByProviderConst = "resource_suspended_by_provider"
-)
-
-// UnmarshalEndpointGatewayLifecycleReason unmarshals an instance of EndpointGatewayLifecycleReason from the specified map of raw messages.
-func UnmarshalEndpointGatewayLifecycleReason(m map[string]json.RawMessage, result interface{}) (err error) {
-	obj := new(EndpointGatewayLifecycleReason)
-	err = core.UnmarshalPrimitive(m, "code", &obj.Code)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalPrimitive(m, "message", &obj.Message)
-	if err != nil {
-		return
-	}
-	err = core.UnmarshalPrimitive(m, "more_info", &obj.MoreInfo)
 	if err != nil {
 		return
 	}
@@ -37623,8 +37548,8 @@ type FailoverShareOptions struct {
 	// - `fail`: Fail the operation, resulting in the replication relationship being unchanged.
 	// - `split`: Split the replica from its source, resulting in two individual read-write
 	//     file shares. Because the final sync was not completed, the replica may be
-	//     out-of-date. This occurs in disaster recovery scenarios where the source is known to
-	//     be unreachable.
+	//     out-of-date. This is useful in disaster recovery scenarios where the source is known
+	//     to be unreachable.
 	FallbackPolicy *string `json:"fallback_policy,omitempty"`
 
 	// The failover timeout in seconds.
@@ -37641,8 +37566,8 @@ type FailoverShareOptions struct {
 //   - `fail`: Fail the operation, resulting in the replication relationship being unchanged.
 //   - `split`: Split the replica from its source, resulting in two individual read-write
 //     file shares. Because the final sync was not completed, the replica may be
-//     out-of-date. This occurs in disaster recovery scenarios where the source is known to
-//     be unreachable.
+//     out-of-date. This is useful in disaster recovery scenarios where the source is known
+//     to be unreachable.
 const (
 	FailoverShareOptionsFallbackPolicyFailConst  = "fail"
 	FailoverShareOptionsFallbackPolicySplitConst = "split"
@@ -38234,9 +38159,7 @@ type FlowLogCollector struct {
 	// The resource group for this flow log collector.
 	ResourceGroup *ResourceGroupReference `json:"resource_group" validate:"required"`
 
-	// The Cloud Object Storage bucket where the collected flows are logged. For more
-	// information, see [Viewing flow log
-	// objects](https://cloud.ibm.com/docs/vpc?topic=vpc-fl-analyze).
+	// The Cloud Object Storage bucket where the collected flows are logged.
 	StorageBucket *LegacyCloudObjectStorageBucketReference `json:"storage_bucket" validate:"required"`
 
 	// The target this collector is collecting flow logs for.
@@ -53628,8 +53551,6 @@ type LoadBalancer struct {
 
 	// The security groups targeting this load balancer.
 	//
-	// If empty, all inbound and outbound traffic is allowed.
-	//
 	// Applicable only for load balancers that support security groups.
 	SecurityGroups []SecurityGroupReference `json:"security_groups" validate:"required"`
 
@@ -58720,7 +58641,7 @@ func UnmarshalNetworkACLRuleReferenceDeleted(m map[string]json.RawMessage, resul
 
 // NetworkInterface : NetworkInterface struct
 type NetworkInterface struct {
-	// Indicates whether source IP spoofing is allowed on this instance network interface.
+	// Indicates whether source IP spoofing is allowed on this instance interface.
 	AllowIPSpoofing *bool `json:"allow_ip_spoofing" validate:"required"`
 
 	// The date and time that the instance network interface was created.
@@ -59069,7 +58990,7 @@ func UnmarshalNetworkInterfaceInstanceContextReferenceDeleted(m map[string]json.
 
 // NetworkInterfacePatch : NetworkInterfacePatch struct
 type NetworkInterfacePatch struct {
-	// Indicates whether source IP spoofing is allowed on this instance network interface.
+	// Indicates whether source IP spoofing is allowed on this instance interface.
 	AllowIPSpoofing *bool `json:"allow_ip_spoofing,omitempty"`
 
 	// The name for the instance network interface. The name must not be used by another network interface on the virtual
@@ -59104,7 +59025,7 @@ func (networkInterfacePatch *NetworkInterfacePatch) AsPatch() (_patch map[string
 
 // NetworkInterfacePrototype : NetworkInterfacePrototype struct
 type NetworkInterfacePrototype struct {
-	// Indicates whether source IP spoofing is allowed on this instance network interface.
+	// Indicates whether source IP spoofing is allowed on this instance interface.
 	AllowIPSpoofing *bool `json:"allow_ip_spoofing,omitempty"`
 
 	// The name for the instance network interface. The name must not be used by another network interface on the virtual
@@ -64932,8 +64853,7 @@ type ShareMountTargetVirtualNetworkInterfacePrototype struct {
 	// for the subnet is used.
 	SecurityGroups []SecurityGroupIdentityIntf `json:"security_groups,omitempty"`
 
-	// The associated subnet. Required if `primary_ip` does not specify a reserved IP
-	// identity.
+	// The associated subnet. Required if `primary_ip` does not specify a reserved IP.
 	Subnet SubnetIdentityIntf `json:"subnet,omitempty"`
 }
 
@@ -65489,9 +65409,7 @@ type SharePrototype struct {
 	UserTags []string `json:"user_tags,omitempty"`
 
 	// The zone this file share will reside in.
-	//
-	// For a replica share, this must be a different zone in the same region as the
-	// source share.
+	// For a replica share, this must be a different zone in the same region as the source share.
 	Zone ZoneIdentityIntf `json:"zone" validate:"required"`
 
 	// The access control mode for the share:
@@ -69490,7 +69408,6 @@ type UpdateVPCOptions struct {
 	VPCPatch map[string]interface{} `json:"VPC_patch" validate:"required"`
 
 	// If present, the request will fail if the specified ETag value does not match the resource's current ETag value.
-	// Required if the request body includes an array.
 	IfMatch *string `json:"If-Match,omitempty"`
 
 	// Allows users to set headers on API requests
@@ -70475,14 +70392,6 @@ type VpcdnsResolver struct {
 	VPC *VPCReferenceDnsResolverContext `json:"vpc,omitempty"`
 
 	// The manually specified DNS servers for this VPC.
-	//
-	// If the DNS servers have `zone_affinity`, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for a zone will list the DNS server with the
-	// affinity for that zone first, followed by the unique DNS servers from other zones.
-	//
-	// If the DNS servers do not have `zone_affinity`, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for each zone will list all the manual DNS
-	// servers in the order specified.
 	ManualServers []DnsServer `json:"manual_servers,omitempty"`
 
 	// The configuration of the system DNS resolver for this VPC.
@@ -70585,14 +70494,6 @@ type VpcdnsResolverPatch struct {
 	// - have a unique `zone_affinity`, or
 	// - not have a `zone_affinity`.
 	//
-	// If `zone_affinity` is specified, exactly one DNS server must be specified for each zone in the region. The DHCP
-	// [Domain Name Server Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for a zone will list this DNS
-	// server first, followed by unique DNS servers from other zones if available.
-	//
-	// If `zone_affinity` is not specified, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for each zone will list all the manual DNS
-	// servers in the order specified.
-	//
 	// `dns.resolver.manual_servers` must be set if and only if `dns.resolver.type` is `manual`.
 	ManualServers []DnsServerPrototype `json:"manual_servers,omitempty"`
 
@@ -70680,14 +70581,6 @@ type VpcdnsResolverPrototype struct {
 	//
 	// - have a unique `zone_affinity`, or
 	// - not have a `zone_affinity`.
-	//
-	// If `zone_affinity` is specified, exactly one DNS server must be specified for each zone in the region. The DHCP
-	// [Domain Name Server Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for a zone will list this DNS
-	// server first, followed by unique DNS servers from other zones if available.
-	//
-	// If `zone_affinity` is not specified, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for each zone will list all the manual DNS
-	// servers in the order specified.
 	ManualServers []DnsServerPrototype `json:"manual_servers,omitempty"`
 }
 
@@ -70789,8 +70682,7 @@ type VPCHealthReason struct {
 // Constants associated with the VPCHealthReason.Code property.
 // A snake case string succinctly identifying the reason for this health state.
 const (
-	VPCHealthReasonCodeDnsResolutionBindingFailedConst = "dns_resolution_binding_failed"
-	VPCHealthReasonCodeInternalErrorConst              = "internal_error"
+	VPCHealthReasonCodeInternalErrorConst = "internal_error"
 )
 
 // UnmarshalVPCHealthReason unmarshals an instance of VPCHealthReason from the specified map of raw messages.
@@ -76897,14 +76789,14 @@ type BareMetalServerNetworkInterfaceByPci struct {
 	// The bare metal server network interface type.
 	Type *string `json:"type" validate:"required"`
 
-	// The VLAN IDs allowed for `vlan` interfaces using this PCI interface.
+	// Indicates what VLAN IDs (for VLAN type only) can use this physical (PCI type) interface.
 	AllowedVlans []int64 `json:"allowed_vlans" validate:"required"`
 
 	// - `pci`: a physical PCI device which can only be created or deleted when the bare metal
 	//   server is stopped
 	//   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 	//     to use the PCI interface
-	//   - Cannot directly use an IEEE 802.1Q tag.
+	//   - Cannot directly use an IEEE 802.1q VLAN tag.
 	InterfaceType *string `json:"interface_type" validate:"required"`
 }
 
@@ -76935,7 +76827,7 @@ const (
 //     server is stopped
 //   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 //     to use the PCI interface
-//   - Cannot directly use an IEEE 802.1Q tag.
+//   - Cannot directly use an IEEE 802.1q VLAN tag.
 const (
 	BareMetalServerNetworkInterfaceByPciInterfaceTypePciConst = "pci"
 )
@@ -77075,26 +76967,19 @@ type BareMetalServerNetworkInterfaceByVlan struct {
 	// The bare metal server network interface type.
 	Type *string `json:"type" validate:"required"`
 
-	// Indicates if the data path for the network interface can float to another bare metal server. Can only be `true` for
-	// network interfaces with an `interface_type` of `vlan`.
-	//
-	// If `true`, and the network detects traffic for this data path on another bare metal server in the resource group,
-	// the network interface will be automatically deleted from this bare metal server and a new network interface with the
-	// same `id`, `name` and `vlan` will be created on the other bare metal server.
-	//
-	// For the data path to float, the other bare metal server must be in the same
-	// `resource_group`, and must have a network interface with `interface_type` of `pci` with `allowed_vlans` including
-	// this network interface's `vlan`.
+	// Indicates if the interface can float to any other server within the same
+	// `resource_group`. The interface will float automatically if the network detects a GARP or RARP on another bare metal
+	// server in the resource group.  Applies only to `vlan` type interfaces.
 	AllowInterfaceToFloat *bool `json:"allow_interface_to_float" validate:"required"`
 
 	// - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its array
 	//    of `allowed_vlans`.
-	//   - Must use an IEEE 802.1Q tag.
+	//   - Must use an IEEE 802.1q tag.
 	//   - Has its own security groups and does not inherit those of the PCI device through
 	//     which traffic flows.
 	InterfaceType *string `json:"interface_type" validate:"required"`
 
-	// The VLAN ID used in the IEEE 802.1Q tag present in all traffic on this interface.
+	// Indicates the 802.1Q VLAN ID tag that must be used for all traffic on this interface.
 	Vlan *int64 `json:"vlan" validate:"required"`
 }
 
@@ -77123,7 +77008,7 @@ const (
 // Constants associated with the BareMetalServerNetworkInterfaceByVlan.InterfaceType property.
 //   - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its array
 //     of `allowed_vlans`.
-//   - Must use an IEEE 802.1Q tag.
+//   - Must use an IEEE 802.1q tag.
 //   - Has its own security groups and does not inherit those of the PCI device through
 //     which traffic flows.
 const (
@@ -77348,14 +77233,14 @@ type BareMetalServerNetworkInterfacePrototypeBareMetalServerNetworkInterfaceByPc
 	// The associated subnet.
 	Subnet SubnetIdentityIntf `json:"subnet" validate:"required"`
 
-	// The VLAN IDs to allow for `vlan` interfaces using this PCI interface.
+	// Indicates what VLAN IDs (for VLAN type only) can use this physical (PCI type) interface.
 	AllowedVlans []int64 `json:"allowed_vlans,omitempty"`
 
 	// - `pci`: a physical PCI device which can only be created or deleted when the bare metal
 	//   server is stopped
 	//   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 	//     to use the PCI interface
-	//   - Cannot directly use an IEEE 802.1Q tag.
+	//   - Cannot directly use an IEEE 802.1q VLAN tag.
 	//   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
 	InterfaceType *string `json:"interface_type" validate:"required"`
 }
@@ -77365,7 +77250,7 @@ type BareMetalServerNetworkInterfacePrototypeBareMetalServerNetworkInterfaceByPc
 //     server is stopped
 //   - Has an `allowed_vlans` property which controls the VLANs that will be permitted
 //     to use the PCI interface
-//   - Cannot directly use an IEEE 802.1Q tag.
+//   - Cannot directly use an IEEE 802.1q VLAN tag.
 //   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
 const (
 	BareMetalServerNetworkInterfacePrototypeBareMetalServerNetworkInterfaceByPciPrototypeInterfaceTypePciConst = "pci"
@@ -77460,34 +77345,27 @@ type BareMetalServerNetworkInterfacePrototypeBareMetalServerNetworkInterfaceByVl
 	// The associated subnet.
 	Subnet SubnetIdentityIntf `json:"subnet" validate:"required"`
 
-	// Indicates if the data path for the network interface can float to another bare metal server. Can only be `true` for
-	// network interfaces with an `interface_type` of `vlan`.
-	//
-	// If `true`, and the network detects traffic for this data path on another bare metal server in the resource group,
-	// the network interface will be automatically deleted from this bare metal server and a new network interface with the
-	// same `id`, `name` and `vlan` will be created on the other bare metal server.
-	//
-	// For the data path to float, the other bare metal server must be in the same
-	// `resource_group`, and must have a network interface with `interface_type` of `pci` with `allowed_vlans` including
-	// this network interface's `vlan`.
+	// Indicates if the interface can float to any other server within the same
+	// `resource_group`. The interface will float automatically if the network detects a GARP or RARP on another bare metal
+	// server in the resource group.  Applies only to `vlan` type interfaces.
 	AllowInterfaceToFloat *bool `json:"allow_interface_to_float,omitempty"`
 
 	// - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its array
 	//    of `allowed_vlans`.
-	//   - Must use an IEEE 802.1Q tag.
+	//   - Must use an IEEE 802.1q tag.
 	//   - Has its own security groups and does not inherit those of the PCI device through
 	//     which traffic flows.
 	//   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
 	InterfaceType *string `json:"interface_type" validate:"required"`
 
-	// The VLAN ID used in the IEEE 802.1Q tag present in all traffic on this interface.
+	// Indicates the 802.1Q VLAN ID tag that must be used for all traffic on this interface.
 	Vlan *int64 `json:"vlan" validate:"required"`
 }
 
 // Constants associated with the BareMetalServerNetworkInterfacePrototypeBareMetalServerNetworkInterfaceByVlanPrototype.InterfaceType property.
 //   - `vlan`: a virtual device, used through a `pci` device that has the `vlan` in its array
 //     of `allowed_vlans`.
-//   - Must use an IEEE 802.1Q tag.
+//   - Must use an IEEE 802.1q tag.
 //   - Has its own security groups and does not inherit those of the PCI device through
 //     which traffic flows.
 //   - Not supported on bare metal servers with a `cpu.architecture` of `s390x`.
@@ -92253,8 +92131,7 @@ type ShareMountTargetVirtualNetworkInterfacePrototypeVirtualNetworkInterfaceProt
 	// for the subnet is used.
 	SecurityGroups []SecurityGroupIdentityIntf `json:"security_groups,omitempty"`
 
-	// The associated subnet. Required if `primary_ip` does not specify a reserved IP
-	// identity.
+	// The associated subnet. Required if `primary_ip` does not specify a reserved IP.
 	Subnet SubnetIdentityIntf `json:"subnet,omitempty"`
 }
 
@@ -92742,9 +92619,8 @@ type SharePrototypeShareBySize struct {
 	// Tags for this resource.
 	UserTags []string `json:"user_tags,omitempty"`
 
-	// The zone this file share will reside in.
-	//
-	// For a replica share, this must be a different zone in the same region as the source share.
+	// The zone this file share will reside in. For a replica share, this must be a different zone in the same region as
+	// the source share.
 	Zone ZoneIdentityIntf `json:"zone" validate:"required"`
 
 	// The access control mode for the share:
@@ -92886,9 +92762,8 @@ type SharePrototypeShareBySourceShare struct {
 	// Tags for this resource.
 	UserTags []string `json:"user_tags,omitempty"`
 
-	// The zone this file share will reside in.
-	//
-	// For a replica share, this must be a different zone in the same region as the source share.
+	// The zone this file share will reside in. For a replica share, this must be a different zone in the same region as
+	// the source share.
 	Zone ZoneIdentityIntf `json:"zone" validate:"required"`
 
 	// The cron specification for the file share replication schedule.
@@ -93652,14 +93527,6 @@ type VpcdnsResolverPrototypeVpcdnsResolverTypeManualPrototype struct {
 	//
 	// - have a unique `zone_affinity`, or
 	// - not have a `zone_affinity`.
-	//
-	// If `zone_affinity` is specified, exactly one DNS server must be specified for each zone in the region. The DHCP
-	// [Domain Name Server Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for a zone will list this DNS
-	// server first, followed by unique DNS servers from other zones if available.
-	//
-	// If `zone_affinity` is not specified, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for each zone will list all the manual DNS
-	// servers in the order specified.
 	ManualServers []DnsServerPrototype `json:"manual_servers" validate:"required"`
 
 	// The type of the DNS resolver to use.
@@ -93790,14 +93657,6 @@ type VpcdnsResolverTypeManual struct {
 	Servers []DnsServer `json:"servers" validate:"required"`
 
 	// The manually specified DNS servers for this VPC.
-	//
-	// If the DNS servers have `zone_affinity`, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for a zone will list the DNS server with the
-	// affinity for that zone first, followed by the unique DNS servers from other zones.
-	//
-	// If the DNS servers do not have `zone_affinity`, the DHCP [Domain Name Server
-	// Option](https://datatracker.ietf.org/doc/html/rfc2132#section-3.8) for each zone will list all the manual DNS
-	// servers in the order specified.
 	ManualServers []DnsServer `json:"manual_servers" validate:"required"`
 
 	// The type of the DNS resolver used for the VPC.

@@ -32,9 +32,13 @@ func portTargetToTerraformPort(networkClient *gophercloud.ServiceClient, portTar
 		}
 	}
 
-	terraformFixedIPs := make([]terraformFixedIP, len(portTarget.FixedIPs))
-	for i := range terraformFixedIPs {
-		resolvedSubnetID, resolvedNetworkID, err := resolveSubnetFilter(networkClient, networkID, portTarget.FixedIPs[i].Subnet)
+	terraformFixedIPs := make([]terraformFixedIP, 0, len(portTarget.FixedIPs))
+	for _, fixedIP := range portTarget.FixedIPs {
+		subnetFilter := machinev1alpha1.SubnetFilter{
+			ID:   fixedIP.Subnet.ID,
+			Name: fixedIP.Subnet.Name,
+		}
+		resolvedSubnetID, resolvedNetworkID, err := resolveSubnetFilter(networkClient, networkID, subnetFilter)
 		if err != nil {
 			return terraformPort{}, fmt.Errorf("failed to resolve the subnet filter: %w", err)
 		}
@@ -44,12 +48,12 @@ func portTargetToTerraformPort(networkClient *gophercloud.ServiceClient, portTar
 		}
 
 		if networkID != resolvedNetworkID {
-			return terraformPort{}, fmt.Errorf("port target has ports on multiple networks")
+			return terraformPort{}, fmt.Errorf("control plane port has ports on multiple networks")
 		}
 
-		terraformFixedIPs[i] = terraformFixedIP{
+		terraformFixedIPs = append(terraformFixedIPs, terraformFixedIP{
 			SubnetID: resolvedSubnetID,
-		}
+		})
 	}
 
 	return terraformPort{
@@ -63,22 +67,9 @@ func resolveSubnetFilter(networkClient *gophercloud.ServiceClient, networkID str
 		subnetFilter.TenantID = ""
 	}
 	if err = subnets.List(networkClient, subnets.ListOpts{
-		NetworkID:       networkID,
-		Name:            subnetFilter.Name,
-		Description:     subnetFilter.Description,
-		TenantID:        subnetFilter.TenantID,
-		ProjectID:       subnetFilter.ProjectID,
-		IPVersion:       subnetFilter.IPVersion,
-		GatewayIP:       subnetFilter.GatewayIP,
-		CIDR:            subnetFilter.CIDR,
-		IPv6AddressMode: subnetFilter.IPv6AddressMode,
-		IPv6RAMode:      subnetFilter.IPv6RAMode,
-		ID:              subnetFilter.ID,
-		SubnetPoolID:    subnetFilter.SubnetPoolID,
-		Tags:            subnetFilter.Tags,
-		TagsAny:         subnetFilter.TagsAny,
-		NotTags:         subnetFilter.NotTags,
-		NotTagsAny:      subnetFilter.NotTagsAny,
+		NetworkID: networkID,
+		Name:      subnetFilter.Name,
+		ID:        subnetFilter.ID,
 	}).EachPage(func(page pagination.Page) (bool, error) {
 		returnedSubnets, err := subnets.ExtractSubnets(page)
 		if err != nil {

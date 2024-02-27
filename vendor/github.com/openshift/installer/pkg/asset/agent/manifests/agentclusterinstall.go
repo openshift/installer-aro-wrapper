@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/swag"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +26,7 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/openshift/installer/pkg/types/defaults"
+	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/vsphere"
 )
@@ -54,6 +56,13 @@ type agentClusterInstallOnPremPlatform struct {
 	IngressVIPs []string `json:"ingressVIPs,omitempty"`
 }
 
+type agentClusterInstallOnPremExternalPlatform struct {
+	// PlatformName holds the arbitrary string representing the infrastructure provider name, expected to be set at the installation time.
+	PlatformName string `json:"platformName,omitempty"`
+	// CloudControllerManager when set to external, this property will enable an external cloud provider.
+	CloudControllerManager external.CloudControllerManager `json:"cloudControllerManager,omitempty"`
+}
+
 type agentClusterInstallPlatform struct {
 	// BareMetal is the configuration used when installing on bare metal.
 	// +optional
@@ -61,6 +70,9 @@ type agentClusterInstallPlatform struct {
 	// VSphere is the configuration used when installing on vSphere.
 	// +optional
 	VSphere *agentClusterInstallOnPremPlatform `json:"vsphere,omitempty"`
+	// External is the configuration used when installing on external cloud provider.
+	// +optional
+	External *agentClusterInstallOnPremExternalPlatform `json:"external,omitempty"`
 }
 
 // Used to generate InstallConfig overrides for Assisted Service to apply
@@ -79,6 +91,8 @@ type agentClusterInstallInstallConfigOverrides struct {
 	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
 	// Allow override of network type
 	Networking *types.Networking `json:"networking,omitempty"`
+	// Allow override of CPUPartitioning
+	CPUPartitioning types.CPUPartitioningMode `json:"cpuPartitioningMode,omitempty"`
 }
 
 var _ asset.WritableAsset = (*AgentClusterInstall)(nil)
@@ -155,6 +169,17 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 			},
 		}
 
+		if agentClusterInstall.Spec.PlatformType == hiveext.ExternalPlatformType {
+			agentClusterInstall.Spec.ExternalPlatformSpec = &hiveext.ExternalPlatformSpec{
+				PlatformName: installConfig.Config.Platform.External.PlatformName,
+			}
+		}
+
+		if installConfig.Config.Platform.Name() == none.Name || installConfig.Config.Platform.Name() == external.Name {
+			logrus.Debugf("Setting UserManagedNetworking to true for %s platform", installConfig.Config.Platform.Name())
+			agentClusterInstall.Spec.Networking.UserManagedNetworking = swag.Bool(true)
+		}
+
 		icOverridden := false
 		icOverrides := agentClusterInstallInstallConfigOverrides{}
 		if installConfig.Config.FIPS {
@@ -190,6 +215,14 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 			}
 			agentClusterInstall.Spec.APIVIP = installConfig.Config.Platform.VSphere.APIVIPs[0]
 			agentClusterInstall.Spec.IngressVIP = installConfig.Config.Platform.VSphere.IngressVIPs[0]
+		} else if installConfig.Config.Platform.External != nil {
+			icOverridden = true
+			icOverrides.Platform = &agentClusterInstallPlatform{
+				External: &agentClusterInstallOnPremExternalPlatform{
+					PlatformName:           installConfig.Config.External.PlatformName,
+					CloudControllerManager: installConfig.Config.External.CloudControllerManager,
+				},
+			}
 		}
 
 		networkOverridden := setNetworkType(agentClusterInstall, installConfig.Config, "NetworkType is not specified in InstallConfig.")
@@ -210,27 +243,24 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 			icOverrides.AdditionalTrustBundle = installConfig.Config.AdditionalTrustBundle
 			icOverridden = true
 		}
+
+		if installConfig.Config.CPUPartitioning != "" {
+			icOverridden = true
+			icOverrides.CPUPartitioning = installConfig.Config.CPUPartitioning
+		}
+
 		if icOverridden {
 			overrides, err := json.Marshal(icOverrides)
 			if err != nil {
 				return errors.Wrap(err, "failed to marshal AgentClusterInstall installConfigOverrides")
 			}
 			agentClusterInstall.SetAnnotations(map[string]string{
-				installConfigOverrides: fmt.Sprintf("%s", overrides),
+				installConfigOverrides: string(overrides),
 			})
 		}
 
 		a.Config = agentClusterInstall
 
-		agentClusterInstallData, err := yaml.Marshal(agentClusterInstall)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal agent installer AgentClusterInstall")
-		}
-
-		a.File = &asset.File{
-			Filename: agentClusterInstallFilename,
-			Data:     agentClusterInstallData,
-		}
 	}
 	return a.finish()
 }
@@ -243,6 +273,15 @@ func (a *AgentClusterInstall) Files() []*asset.File {
 	return []*asset.File{}
 }
 
+// FIPSEnabled returns whether FIPS is enabled in the cluster configuration.
+func (a *AgentClusterInstall) FIPSEnabled() bool {
+	icOverrides := agentClusterInstallInstallConfigOverrides{}
+	if err := json.Unmarshal([]byte(a.Config.Annotations[installConfigOverrides]), &icOverrides); err == nil {
+		return icOverrides.FIPS
+	}
+	return false
+}
+
 // Load returns agentclusterinstall asset from the disk.
 func (a *AgentClusterInstall) Load(f asset.FileFetcher) (bool, error) {
 
@@ -253,8 +292,6 @@ func (a *AgentClusterInstall) Load(f asset.FileFetcher) (bool, error) {
 		}
 		return false, errors.Wrap(err, fmt.Sprintf("failed to load %s file", agentClusterInstallFilename))
 	}
-
-	a.File = agentClusterInstallFile
 
 	agentClusterInstall := &hiveext.AgentClusterInstall{}
 	if err := yaml.UnmarshalStrict(agentClusterInstallFile.Data, agentClusterInstall); err != nil {
@@ -270,10 +307,22 @@ func (a *AgentClusterInstall) Load(f asset.FileFetcher) (bool, error) {
 	switch string(agentClusterInstall.Spec.PlatformType) {
 	case baremetal.Name:
 		agentClusterInstall.Spec.PlatformType = hiveext.BareMetalPlatformType
+	case external.Name:
+		agentClusterInstall.Spec.PlatformType = hiveext.ExternalPlatformType
 	case none.Name:
 		agentClusterInstall.Spec.PlatformType = hiveext.NonePlatformType
 	case vsphere.Name:
 		agentClusterInstall.Spec.PlatformType = hiveext.VSpherePlatformType
+	}
+
+	// Set the default value for userManagedNetworking, as would be done by the
+	// mutating webhook in ZTP.
+	if agentClusterInstall.Spec.Networking.UserManagedNetworking == nil {
+		switch agentClusterInstall.Spec.PlatformType {
+		case hiveext.NonePlatformType, hiveext.ExternalPlatformType:
+			logrus.Debugf("Setting UserManagedNetworking to true for %s platform", agentClusterInstall.Spec.PlatformType)
+			agentClusterInstall.Spec.Networking.UserManagedNetworking = swag.Bool(true)
+		}
 	}
 
 	a.Config = agentClusterInstall
@@ -298,6 +347,15 @@ func (a *AgentClusterInstall) finish() error {
 		return errors.Wrapf(err, "invalid PlatformType configured")
 	}
 
+	agentClusterInstallData, err := yaml.Marshal(a.Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal agent installer AgentClusterInstall")
+	}
+
+	a.File = &asset.File{
+		Filename: agentClusterInstallFilename,
+		Data:     agentClusterInstallData,
+	}
 	return nil
 }
 
@@ -384,10 +442,27 @@ func (a *AgentClusterInstall) validateIPAddressAndNetworkType() field.ErrorList 
 func (a *AgentClusterInstall) validateSupportedPlatforms() field.ErrorList {
 	var allErrs field.ErrorList
 
-	fieldPath := field.NewPath("spec", "platformType")
-
 	if a.Config.Spec.PlatformType != "" && !agent.IsSupportedPlatform(a.Config.Spec.PlatformType) {
+		fieldPath := field.NewPath("spec", "platformType")
 		allErrs = append(allErrs, field.NotSupported(fieldPath, a.Config.Spec.PlatformType, agent.SupportedHivePlatforms()))
 	}
+
+	switch a.Config.Spec.PlatformType {
+	case hiveext.NonePlatformType, hiveext.ExternalPlatformType:
+		if a.Config.Spec.Networking.UserManagedNetworking != nil && !*a.Config.Spec.Networking.UserManagedNetworking {
+			fieldPath := field.NewPath("spec", "networking", "userManagedNetworking")
+			allErrs = append(allErrs, field.Forbidden(fieldPath,
+				fmt.Sprintf("%s platform requires user-managed networking",
+					a.Config.Spec.PlatformType)))
+		}
+	}
 	return allErrs
+}
+
+// GetExternalPlatformName returns the platform name for the external platform.
+func (a *AgentClusterInstall) GetExternalPlatformName() string {
+	if a.Config != nil && a.Config.Spec.ExternalPlatformSpec != nil {
+		return a.Config.Spec.ExternalPlatformSpec.PlatformName
+	}
+	return ""
 }

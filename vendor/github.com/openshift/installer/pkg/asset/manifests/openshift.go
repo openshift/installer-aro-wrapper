@@ -8,9 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -159,6 +161,16 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 			cloud.CACertFile = "/etc/kubernetes/static-pod-resources/configmaps/cloud-config/ca-bundle.pem"
 		}
 
+		// Application credentials are easily rotated in the event of a leak and should be preferred. Encourage their use.
+		authTypes := sets.New(clientconfig.AuthPassword, clientconfig.AuthV2Password, clientconfig.AuthV3Password)
+		if cloud.AuthInfo != nil && authTypes.Has(cloud.AuthType) {
+			logrus.Warnf(
+				"clouds.yaml file is using %q type auth. Consider using the %q auth type instead to rotate credentials more easily.",
+				cloud.AuthType,
+				clientconfig.AuthV3ApplicationCredential,
+			)
+		}
+
 		clouds := make(map[string]map[string]*clientconfig.Cloud)
 		clouds["clouds"] = map[string]*clientconfig.Cloud{
 			osmachine.CloudName: cloud,
@@ -258,7 +270,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 		assetData["99_baremetal-provisioning-config.yaml"] = applyTemplateData(baremetalConfig.Files()[0].Data, bmTemplateData)
 	}
 
-	if platform == azuretypes.Name && installConfig.Config.Azure.IsARO() {
+	if platform == azuretypes.Name && installConfig.Config.Azure.IsARO() && installConfig.Config.CredentialsMode != types.ManualCredentialsMode {
 		// config is used to created compatible secret to trigger azure cloud
 		// controller config merge behaviour
 		// https://github.com/openshift/origin/blob/90c050f5afb4c52ace82b15e126efe98fa798d88/vendor/k8s.io/legacy-cloud-providers/azure/azure_config.go#L83

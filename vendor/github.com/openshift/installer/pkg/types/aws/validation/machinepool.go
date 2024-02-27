@@ -29,6 +29,9 @@ var (
 	validMetadataAuthValues = sets.NewString("Required", "Optional")
 )
 
+// https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html
+const maxSecurityGroupsCount = 16
+
 // ValidateMachinePool checks that the specified machine pool is valid.
 func ValidateMachinePool(platform *aws.Platform, p *aws.MachinePool, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
@@ -45,6 +48,23 @@ func ValidateMachinePool(platform *aws.Platform, p *aws.MachinePool, fldPath *fi
 
 	if p.EC2Metadata.Authentication != "" && !validMetadataAuthValues.Has(p.EC2Metadata.Authentication) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("authentication"), p.EC2Metadata.Authentication, "must be either Required or Optional"))
+	}
+
+	allErrs = append(allErrs, validateSecurityGroups(platform, p, fldPath)...)
+
+	return allErrs
+}
+
+func validateSecurityGroups(platform *aws.Platform, p *aws.MachinePool, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if len(p.AdditionalSecurityGroupIDs) > 0 && len(platform.Subnets) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("platform.subnets"), "subnets must be provided when additional security groups are present"))
+	}
+
+	// The installer also creates a security group: `${var.cluster_id}-master-sg/${var.cluster_id}-worker-sg`
+	if count := len(p.AdditionalSecurityGroupIDs); count > maxSecurityGroupsCount-1 {
+		allErrs = append(allErrs, field.TooMany(fldPath, count, maxSecurityGroupsCount-1))
 	}
 
 	return allErrs
@@ -95,7 +115,7 @@ func ValidateAMIID(platform *aws.Platform, p *aws.MachinePool, fldPath *field.Pa
 
 	// regions is a list of regions for which the user should set AMI ID as copying the AMI to these regions
 	// is known to not be supported.
-	regions := sets.NewString("us-iso-east-1", "cn-north-1", "cn-northwest-1")
+	regions := sets.NewString("us-iso-east-1", "us-isob-east-1", "us-iso-west-1", "cn-north-1", "cn-northwest-1")
 	if pool.AMIID == "" && regions.Has(platform.Region) {
 		allErrs = append(allErrs, field.Required(fldPath, fmt.Sprintf("AMI ID must be provided for regions %s", strings.Join(regions.List(), ", "))))
 	}

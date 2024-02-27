@@ -71,14 +71,21 @@ func (client *Client) ListResourcesWithCallback(request *ListResourcesRequest, c
 // ListResourcesRequest is the request struct for api ListResources
 type ListResourcesRequest struct {
 	*requests.RpcRequest
-	PageNumber      requests.Integer `position:"Query" name:"PageNumber"`
-	ResourceGroupId string           `position:"Query" name:"ResourceGroupId"`
-	PageSize        requests.Integer `position:"Query" name:"PageSize"`
-	ResourceId      string           `position:"Query" name:"ResourceId"`
-	ResourceType    string           `position:"Query" name:"ResourceType"`
-	Service         string           `position:"Query" name:"Service"`
-	Region          string           `position:"Query" name:"Region"`
-	ResourceIds     string           `position:"Query" name:"ResourceIds"`
+	PageNumber      requests.Integer              `position:"Query" name:"PageNumber"`
+	ResourceGroupId string                        `position:"Query" name:"ResourceGroupId"`
+	PageSize        requests.Integer              `position:"Query" name:"PageSize"`
+	ResourceId      string                        `position:"Query" name:"ResourceId"`
+	ResourceTypes   *[]ListResourcesResourceTypes `position:"Query" name:"ResourceTypes"  type:"Repeated"`
+	ResourceType    string                        `position:"Query" name:"ResourceType"`
+	Service         string                        `position:"Query" name:"Service"`
+	Region          string                        `position:"Query" name:"Region"`
+	ResourceIds     string                        `position:"Query" name:"ResourceIds"`
+}
+
+// ListResourcesResourceTypes is a repeated param struct in ListResourcesRequest
+type ListResourcesResourceTypes struct {
+	Service      string `name:"Service"`
+	ResourceType string `name:"ResourceType"`
 }
 
 // ListResourcesResponse is the response struct for api ListResources
