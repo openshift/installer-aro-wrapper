@@ -37,7 +37,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/crypto v0.15.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/tools v0.15.0
 	gotest.tools/gotestsum v1.6.4
 	k8s.io/api v0.28.4
@@ -329,8 +329,8 @@ require (
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.4.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
