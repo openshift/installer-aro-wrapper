@@ -1325,8 +1325,6 @@ github.com/jackc/pgx/v4 v4.16.0 h1:4k1tROTJctHotannFYzu77dY3bgtMRymQP7tXQjqpPk=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234 h1:R0Hokq55Hv3SpbXyfZRh8vIrKFAPZ+SQqyTsRc7J/4E=
 github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234/go.mod h1:kZxm8EB19+pd3nT92t0aQblXb7K4sHG8cp59cleqdNc=
-github.com/jewzaam/installer-aro v0.9.0-master.0.20231127080144-4632dc500a4f h1:PxmlC0udmcwZ7dkmDm195MOrmdX1MkkCYSbzZUuOcNs=
-github.com/jewzaam/installer-aro v0.9.0-master.0.20231127080144-4632dc500a4f/go.mod h1:OxA34zSWG9hykTspreKS3wD0XR5LI4F4hKKOVyl0dFs=
 github.com/jgautheron/goconst v1.5.1 h1:HxVbL1MhydKs8R8n/HE5NPvzfaYmQJA3o879lE4+WcM=
 github.com/jgautheron/goconst v1.5.1/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jingyugao/rowserrcheck v1.1.1 h1:zibz55j/MJtLsjP1OF4bSdgXxwL1b+Vn7Tjzq7gFzUs=
@@ -1615,6 +1613,8 @@ github.com/openshift/custom-resource-status v1.1.2 h1:C3DL44LEbvlbItfd8mT5jWrqPf
 github.com/openshift/custom-resource-status v1.1.2/go.mod h1:DB/Mf2oTeiAmVVX1gN+NEqweonAPY0TKUwADizj8+ZA=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8 h1:7e4sMDIstjEKW6SmPv8VhusDaYinDBrspd1M7ybIHC8=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
+github.com/openshift/installer-aro v0.9.0-master.0.20240110213613-2bc92decda79 h1:WfhexkdYFhkT9yTZscl+YLk1qUju+oKozWY2Vs9mfHE=
+github.com/openshift/installer-aro v0.9.0-master.0.20240110213613-2bc92decda79/go.mod h1:OxA34zSWG9hykTspreKS3wD0XR5LI4F4hKKOVyl0dFs=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20230124105206-50aa171a52e1 h1:winAA43R7imUj8uzAF7NVs3QWIxheF+rhpRF+O+0/R8=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20230124105206-50aa171a52e1/go.mod h1:UDA+gKaUSWbZsKbUbzybyaIqdksOQF5iKc+OsYnHL9k=
 github.com/openshift/machine-config-operator v0.0.1-0.20230912144553-fb94e20d06d5 h1:qB3js6p+GxA32TS06VsOwCkG03VUtpJWSweLikScjgs=
