@@ -72,5 +72,9 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		}
 	}
 
+	if err = m.testSecrets(g); err != nil {
+		return nil, err
+	}
+
 	return g, nil
 }

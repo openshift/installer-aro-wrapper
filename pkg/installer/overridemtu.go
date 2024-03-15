@@ -5,13 +5,17 @@ package installer
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/coreos/ignition/v2/config/v3_2/types"
+	"github.com/ghodss/yaml"
+	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/machines/machineconfig"
 	mcv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
@@ -28,6 +32,35 @@ fi`
 
 func newMTUIgnitionFile() types.File {
 	return ignition.FileFromString(IgnFilePath, "root", 0555, IgnFileData)
+}
+
+// Similar to installer - https://github.com/openshift/installer/blob/master/pkg/asset/ignition/bootstrap/common.go#L547C1-L562C3
+func newSecretFile() (types.File, error) {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "openshift-machine-api",
+		},
+		StringData: map[string]string{
+			"username": "test-username",
+			"password": "test-password",
+		},
+	}
+
+	secretData, err := yaml.Marshal(secret)
+	if err != nil {
+		return types.File{}, err
+	}
+	manifest := &asset.File{
+		Filename: filepath.Join("/opt/openshift/manifests", "test-secret.yaml"),
+		Data:     secretData,
+	}
+
+	return ignition.FileFromBytes(manifest.Filename, "root", 0644, manifest.Data), nil
 }
 
 func newMTUMachineConfigIgnitionFile(role string) (types.File, error) {
@@ -99,6 +132,25 @@ func (m *manager) overrideEthernetMTU(g graph.Graph) error {
 		return err
 	}
 	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, ignitionFile)
+
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to Marshal Ignition config")
+	}
+	bootstrap.File.Data = data
+
+	return nil
+}
+
+func (m *manager) testSecrets(g graph.Graph) error {
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+
+	secretFile, err := newSecretFile()
+	if err != nil {
+		return err
+	}
+
+	bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, secretFile)
 
 	data, err := ignition.Marshal(bootstrap.Config)
 	if err != nil {
