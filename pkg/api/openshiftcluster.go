@@ -116,7 +116,9 @@ type OpenShiftClusterProperties struct {
 
 	ConsoleProfile ConsoleProfile `json:"consoleProfile,omitempty"`
 
-	ServicePrincipalProfile ServicePrincipalProfile `json:"servicePrincipalProfile,omitempty"`
+	ServicePrincipalProfile *ServicePrincipalProfile `json:"servicePrincipalProfile,omitempty"`
+
+	PlatformWorkloadIdentityProfile *PlatformWorkloadIdentityProfile `json:"platformWorkloadIdentityProfile,omitempty"`
 
 	NetworkProfile NetworkProfile `json:"networkProfile,omitempty"`
 
@@ -228,6 +230,25 @@ type ServicePrincipalProfile struct {
 	ClientID     string       `json:"clientId,omitempty"`
 	ClientSecret SecureString `json:"clientSecret,omitempty"`
 	SPObjectID   string       `json:"spObjectId,omitempty"`
+}
+
+// PlatformWorkloadIdentityProfile encapsulates all information that is specific to workload identity clusters.
+type PlatformWorkloadIdentityProfile struct {
+	MissingFields
+
+	UpgradeableTo              *UpgradeableTo             `json:"upgradeableTo,omitempty" mutable:"true"`
+	PlatformWorkloadIdentities []PlatformWorkloadIdentity `json:"platformWorkloadIdentities,omitempty" mutable:"true"`
+}
+
+// UpgradeableTo stores a single OpenShift version a workload identity cluster can be upgraded to
+type UpgradeableTo string
+
+// PlatformWorkloadIdentity stores information representing a single workload identity.
+type PlatformWorkloadIdentity struct {
+	OperatorName string `json:"operatorName,omitempty" mutable:"true"`
+	ResourceID   string `json:"resourceId,omitempty" mutable:"true"`
+	ClientID     string `json:"clientId,omitempty" swagger:"readOnly" mutable:"true"`
+	ObjectID     string `json:"objectId,omitempty" swagger:"readOnly" mutable:"true"`
 }
 
 // SoftwareDefinedNetwork

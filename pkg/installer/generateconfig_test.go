@@ -8,7 +8,10 @@ import (
 
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/azure"
+
+	"github.com/openshift/ARO-Installer/pkg/api"
 )
 
 func TestVMNetworkingType(t *testing.T) {
@@ -41,6 +44,34 @@ func TestVMNetworkingType(t *testing.T) {
 
 			if result != tt.wantType {
 				t.Error(result)
+			}
+		})
+	}
+}
+
+func TestDetermineCredentialsMode(t *testing.T) {
+	tt := []struct {
+		Name     string
+		PWIP     *api.PlatformWorkloadIdentityProfile
+		Expected types.CredentialsMode
+	}{
+		{
+			Name:     "profile specified",
+			PWIP:     &api.PlatformWorkloadIdentityProfile{},
+			Expected: types.ManualCredentialsMode,
+		},
+		{
+			Name:     "profile not specified",
+			PWIP:     nil,
+			Expected: types.PassthroughCredentialsMode,
+		},
+	}
+
+	for _, test := range tt {
+		t.Run(test.Name, func(t *testing.T) {
+			actual := determineCredentialsMode(test.PWIP)
+			if actual != test.Expected {
+				t.Errorf("got: %s, expected: %s", actual, test.Expected)
 			}
 		})
 	}

@@ -222,6 +222,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Architecture:   types.ArchitectureAMD64,
 					},
 				},
+				CredentialsMode: determineCredentialsMode(m.oc.Properties.PlatformWorkloadIdentityProfile),
 				Platform: types.Platform{
 					Azure: &azuretypes.Platform{
 						Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
@@ -317,4 +318,11 @@ func determineVMNetworkingType(vmSku *mgmtcompute.ResourceSku) string {
 		vmNetworkingType = azuretypes.VMNetworkingTypeBasic
 	}
 	return string(vmNetworkingType)
+}
+
+func determineCredentialsMode(pwip *api.PlatformWorkloadIdentityProfile) types.CredentialsMode {
+	if pwip != nil {
+		return types.ManualCredentialsMode
+	}
+	return types.PassthroughCredentialsMode
 }
