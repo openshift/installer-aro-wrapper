@@ -291,6 +291,10 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
+	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
+		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
+	}
+
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
 	if releaseImageOverride == "" {
 		return nil, nil, fmt.Errorf("no release image in 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE'")
