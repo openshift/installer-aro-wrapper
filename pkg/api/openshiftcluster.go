@@ -20,6 +20,7 @@ type OpenShiftCluster struct {
 	SystemData SystemData                 `json:"systemData,omitempty"`
 	Tags       map[string]string          `json:"tags,omitempty"`
 	Properties OpenShiftClusterProperties `json:"properties,omitempty"`
+	Identity   *Identity                  `json:"identity,omitempty"`
 }
 
 // CreatedByType by defines user type, which executed the request
@@ -249,6 +250,26 @@ type PlatformWorkloadIdentity struct {
 	ResourceID   string `json:"resourceId,omitempty" mutable:"true"`
 	ClientID     string `json:"clientId,omitempty" swagger:"readOnly" mutable:"true"`
 	ObjectID     string `json:"objectId,omitempty" swagger:"readOnly" mutable:"true"`
+}
+
+// ClusterUserAssignedIdentity stores information about a user-assigned managed identity in a predefined format required by Microsoft's Managed Identity team.
+type ClusterUserAssignedIdentity struct {
+	MissingFields
+
+	ClientID    string `json:"clientId,omitempty"`
+	PrincipalID string `json:"principalId,omitempty"`
+}
+
+// UserAssignedIdentities stores a mapping from resource IDs of managed identities to their client/principal IDs.
+type UserAssignedIdentities map[string]ClusterUserAssignedIdentity
+
+// Identity stores information about the cluster MSI(s) in a workload identity cluster.
+type Identity struct {
+	MissingFields
+
+	Type                   string                 `json:"type,omitempty"`
+	UserAssignedIdentities UserAssignedIdentities `json:"userAssignedIdentities,omitempty"`
+	IdentityURL            string                 `json:"identityURL,omitempty" mutable:"true"`
 }
 
 // SoftwareDefinedNetwork
