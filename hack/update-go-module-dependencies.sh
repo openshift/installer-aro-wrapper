@@ -26,6 +26,7 @@
 # with github.com/openshift/cluster-api-provider-azure (just an example, there are more).
 
 RELEASE=release-4.15
+K8S_RELEASE=v0.28.3
 GO_VERSION=1.20
 
 for x in vendor/github.com/openshift/*; do
@@ -43,7 +44,7 @@ for x in vendor/github.com/openshift/*; do
 		# It is only used indirectly and intermediate dependencies pin to different incompatible commits.
 		# We force a specific commit here to make all dependencies happy.
 		vendor/github.com/openshift/cloud-credential-operator)
-			go mod edit -replace github.com/openshift/cloud-credential-operator=github.com/openshift/cloud-credential-operator@v0.0.0-20200316201045-d10080b52c9e
+			go mod edit -replace github.com/openshift/cloud-credential-operator=github.com/openshift/cloud-credential-operator@v0.0.0-20240422222427-55199c9b5870
 			;;
 
 		# MCO is pinned to an old version of MCO, and newer versions don' contain MCO's API anymore, it moved to openshift/api.
@@ -61,6 +62,18 @@ for x in vendor/github.com/openshift/*; do
 			go mod edit -replace "${x##vendor/}"="$(go list -mod=mod -m ${x##vendor/}@$RELEASE | sed -e 's/ /@/')"
 			;;
 	esac
+done
+
+for x in vendor/k8s.io/*; do
+  case $x in
+    # skip, it's replaced by openshift
+    vendor/k8s.io/cloud-provider-vsphere)
+      ;;
+    *)
+      # ignore errors, they are from components which aren't tagged following the v0.x.y schema
+      go mod edit -replace "${x##vendor/}"="$(go list -mod=mod -m ${x##vendor/}@$K8S_RELEASE | sed -e 's/ /@/')" || true
+      ;;
+  esac
 done
 
 go mod edit -replace sigs.k8s.io/cluster-api="$(go list -mod=mod -m github.com/openshift/cluster-api@$RELEASE | sed -e 's/ /@/')"
