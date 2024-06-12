@@ -22,6 +22,7 @@ import (
 	hivev1 "github.com/openshift/hive/apis/hive/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
+	"github.com/openshift/installer/pkg/asset/agent/agentconfig"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
@@ -54,6 +55,26 @@ type agentClusterInstallOnPremPlatform struct {
 	// IngressVIPs contains the VIP(s) to use for ingress traffic. In dual stack
 	// clusters it contains an IPv4 and IPv6 address, otherwise only one VIP
 	IngressVIPs []string `json:"ingressVIPs,omitempty"`
+
+	// Host, including BMC, configuration.
+	Hosts []baremetal.Host `json:"hosts,omitempty"`
+
+	// ClusterProvisioningIP is the IP on the dedicated provisioning network.
+	ClusterProvisioningIP string `json:"clusterProvisioningIP,omitempty"`
+
+	// ProvisioningNetwork is used to indicate if we will have a provisioning network, and how it will be managed.
+	ProvisioningNetwork baremetal.ProvisioningNetwork `json:"provisioningNetwork,omitempty"`
+
+	// ProvisioningNetworkInterface is the name of the network interface on a control plane
+	// baremetal host that is connected to the provisioning network.
+	ProvisioningNetworkInterface string `json:"provisioningNetworkInterface,omitempty"`
+
+	// ProvisioningNetworkCIDR defines the network to use for provisioning.
+	ProvisioningNetworkCIDR *ipnet.IPNet `json:"provisioningNetworkCIDR,omitempty"`
+
+	// ProvisioningDHCPRange is used to provide DHCP services to hosts
+	// for provisioning.
+	ProvisioningDHCPRange string `json:"provisioningDHCPRange,omitempty"`
 }
 
 type agentClusterInstallOnPremExternalPlatform struct {
@@ -69,7 +90,7 @@ type agentClusterInstallPlatform struct {
 	BareMetal *agentClusterInstallOnPremPlatform `json:"baremetal,omitempty"`
 	// VSphere is the configuration used when installing on vSphere.
 	// +optional
-	VSphere *agentClusterInstallOnPremPlatform `json:"vsphere,omitempty"`
+	VSphere *vsphere.Platform `json:"vsphere,omitempty"`
 	// External is the configuration used when installing on external cloud provider.
 	// +optional
 	External *agentClusterInstallOnPremExternalPlatform `json:"external,omitempty"`
@@ -87,8 +108,6 @@ type agentClusterInstallInstallConfigOverrides struct {
 	Platform *agentClusterInstallPlatform `json:"platform,omitempty"`
 	// Capabilities selects the managed set of optional, core cluster components.
 	Capabilities *types.Capabilities `json:"capabilities,omitempty"`
-	// AdditionalTrustBundle must be set here when mirroring not configured
-	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
 	// Allow override of network type
 	Networking *types.Networking `json:"networking,omitempty"`
 	// Allow override of CPUPartitioning
@@ -107,13 +126,15 @@ func (*AgentClusterInstall) Name() string {
 func (*AgentClusterInstall) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&agent.OptionalInstallConfig{},
+		&agentconfig.AgentHosts{},
 	}
 }
 
 // Generate generates the AgentClusterInstall manifest.
 func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 	installConfig := &agent.OptionalInstallConfig{}
-	dependencies.Get(installConfig)
+	agentHosts := &agentconfig.AgentHosts{}
+	dependencies.Get(agentHosts, installConfig)
 
 	if installConfig.Config != nil {
 		var numberOfWorkers int = 0
@@ -192,29 +213,72 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 		}
 
 		if installConfig.Config.Platform.BareMetal != nil {
-			if len(installConfig.Config.Platform.BareMetal.APIVIPs) > 1 {
-				icOverridden = true
-				icOverrides.Platform = &agentClusterInstallPlatform{
-					BareMetal: &agentClusterInstallOnPremPlatform{
-						APIVIPs:     installConfig.Config.Platform.BareMetal.APIVIPs,
-						IngressVIPs: installConfig.Config.Platform.BareMetal.IngressVIPs,
-					},
+			baremetalPlatform := agentClusterInstallOnPremPlatform{}
+			bmIcOverridden := false
+
+			for _, host := range agentHosts.Hosts {
+				// Override if BMC values are not the same as default
+				if host.BMC.Username != "" || host.BMC.Password != "" || host.BMC.Address != "" {
+					bmhost := baremetal.Host{
+						Name: host.Hostname,
+						Role: host.Role,
+					}
+					if len(host.Interfaces) > 0 {
+						// Boot MAC address is stored as first interface
+						bmhost.BootMACAddress = host.Interfaces[0].MacAddress
+					} else {
+						logrus.Infof("Could not obtain baremetal BootMacAddress for %s", installConfig.Config.Platform.Name())
+					}
+					bmIcOverridden = true
+					bmhost.BMC = host.BMC
+					baremetalPlatform.Hosts = append(baremetalPlatform.Hosts, bmhost)
+
+					// Set provisioning network configuration
+					baremetalPlatform.ClusterProvisioningIP = installConfig.Config.Platform.BareMetal.ClusterProvisioningIP
+					baremetalPlatform.ProvisioningNetwork = installConfig.Config.Platform.BareMetal.ProvisioningNetwork
+					baremetalPlatform.ProvisioningNetworkInterface = installConfig.Config.Platform.BareMetal.ProvisioningNetworkInterface
+					baremetalPlatform.ProvisioningNetworkCIDR = installConfig.Config.Platform.BareMetal.ProvisioningNetworkCIDR
+					baremetalPlatform.ProvisioningDHCPRange = installConfig.Config.Platform.BareMetal.ProvisioningDHCPRange
 				}
 			}
-			agentClusterInstall.Spec.APIVIP = installConfig.Config.Platform.BareMetal.APIVIPs[0]
-			agentClusterInstall.Spec.IngressVIP = installConfig.Config.Platform.BareMetal.IngressVIPs[0]
+			if bmIcOverridden {
+				icOverridden = true
+				icOverrides.Platform = &agentClusterInstallPlatform{}
+				icOverrides.Platform = &agentClusterInstallPlatform{
+					BareMetal: &baremetalPlatform,
+				}
+			}
+
+			agentClusterInstall.Spec.APIVIPs = installConfig.Config.Platform.BareMetal.APIVIPs
+			agentClusterInstall.Spec.IngressVIPs = installConfig.Config.Platform.BareMetal.IngressVIPs
 		} else if installConfig.Config.Platform.VSphere != nil {
+			vspherePlatform := vsphere.Platform{}
 			if len(installConfig.Config.Platform.VSphere.APIVIPs) > 1 {
 				icOverridden = true
-				icOverrides.Platform = &agentClusterInstallPlatform{
-					VSphere: &agentClusterInstallOnPremPlatform{
-						APIVIPs:     installConfig.Config.Platform.VSphere.APIVIPs,
-						IngressVIPs: installConfig.Config.Platform.VSphere.IngressVIPs,
-					},
+				vspherePlatform.APIVIPs = installConfig.Config.Platform.VSphere.APIVIPs
+				vspherePlatform.IngressVIPs = installConfig.Config.Platform.VSphere.IngressVIPs
+			}
+			hasCredentials := false
+			if len(installConfig.Config.Platform.VSphere.VCenters) > 0 {
+				for _, vcenter := range installConfig.Config.Platform.VSphere.VCenters {
+					if agent.VCenterCredentialsAreProvided(vcenter) {
+						icOverridden = true
+						hasCredentials = true
+						vspherePlatform.VCenters = append(vspherePlatform.VCenters, vcenter)
+					}
 				}
 			}
-			agentClusterInstall.Spec.APIVIP = installConfig.Config.Platform.VSphere.APIVIPs[0]
-			agentClusterInstall.Spec.IngressVIP = installConfig.Config.Platform.VSphere.IngressVIPs[0]
+			if hasCredentials && len(installConfig.Config.Platform.VSphere.FailureDomains) > 0 {
+				icOverridden = true
+				vspherePlatform.FailureDomains = append(vspherePlatform.FailureDomains, installConfig.Config.VSphere.FailureDomains...)
+			}
+			if icOverridden {
+				icOverrides.Platform = &agentClusterInstallPlatform{
+					VSphere: &vspherePlatform,
+				}
+			}
+			agentClusterInstall.Spec.APIVIPs = installConfig.Config.Platform.VSphere.APIVIPs
+			agentClusterInstall.Spec.IngressVIPs = installConfig.Config.Platform.VSphere.IngressVIPs
 		} else if installConfig.Config.Platform.External != nil {
 			icOverridden = true
 			icOverrides.Platform = &agentClusterInstallPlatform{
@@ -233,14 +297,6 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 
 		if installConfig.Config.Capabilities != nil {
 			icOverrides.Capabilities = installConfig.Config.Capabilities
-			icOverridden = true
-		}
-
-		if installConfig.Config.AdditionalTrustBundle != "" {
-			// Add trust bundle to the config overrides to be included in installed image
-			// TODO: when MGMT-11520 adds support for AdditionalTrustBundle as part of the InfraEnv CRD
-			// then it must be set in the infraEnv manifest instead of below
-			icOverrides.AdditionalTrustBundle = installConfig.Config.AdditionalTrustBundle
 			icOverridden = true
 		}
 
@@ -271,15 +327,6 @@ func (a *AgentClusterInstall) Files() []*asset.File {
 		return []*asset.File{a.File}
 	}
 	return []*asset.File{}
-}
-
-// FIPSEnabled returns whether FIPS is enabled in the cluster configuration.
-func (a *AgentClusterInstall) FIPSEnabled() bool {
-	icOverrides := agentClusterInstallInstallConfigOverrides{}
-	if err := json.Unmarshal([]byte(a.Config.Annotations[installConfigOverrides]), &icOverrides); err == nil {
-		return icOverrides.FIPS
-	}
-	return false
 }
 
 // Load returns agentclusterinstall asset from the disk.
@@ -457,6 +504,15 @@ func (a *AgentClusterInstall) validateSupportedPlatforms() field.ErrorList {
 		}
 	}
 	return allErrs
+}
+
+// FIPSEnabled returns whether FIPS is enabled in the cluster configuration.
+func (a *AgentClusterInstall) FIPSEnabled() bool {
+	icOverrides := agentClusterInstallInstallConfigOverrides{}
+	if err := json.Unmarshal([]byte(a.Config.Annotations[installConfigOverrides]), &icOverrides); err == nil {
+		return icOverrides.FIPS
+	}
+	return false
 }
 
 // GetExternalPlatformName returns the platform name for the external platform.

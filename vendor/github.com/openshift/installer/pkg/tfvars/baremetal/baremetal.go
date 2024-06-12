@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/tfvars/internal/cache"
+	"github.com/openshift/installer/pkg/rhcos/cache"
 	"github.com/openshift/installer/pkg/types/baremetal"
 )
 
@@ -38,7 +38,7 @@ type config struct {
 	InstanceInfos []map[string]interface{} `json:"instance_infos"`
 }
 
-type imageDownloadFunc func(baseURL string) (string, error)
+type imageDownloadFunc func(baseURL, applicationName string) (string, error)
 
 var (
 	imageDownloader imageDownloadFunc
@@ -66,7 +66,7 @@ func externalURLs(apiVIPs []string) (externalURLv4 string, externalURLv6 string)
 
 // TFVars generates bare metal specific Terraform variables.
 func TFVars(numControlPlaneReplicas int64, libvirtURI string, apiVIPs []string, imageCacheIP, bootstrapOSImage, externalBridge, externalMAC, provisioningBridge, provisioningMAC string, platformHosts []*baremetal.Host, hostFiles []*asset.File, image, ironicUsername, ironicPassword, ignition string) ([]byte, error) {
-	bootstrapOSImage, err := imageDownloader(bootstrapOSImage)
+	bootstrapOSImage, err := imageDownloader(bootstrapOSImage, cache.InstallerApplicationName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to use cached bootstrap libvirt image")
 	}
@@ -186,8 +186,7 @@ func TFVars(numControlPlaneReplicas int64, libvirtURI string, apiVIPs []string, 
 
 		// Properties
 		propertiesMap := map[string]interface{}{
-			"local_gb":     profile.LocalGB,
-			"cpu_arch":     profile.CPUArch,
+			"cpu_arch":     "x86_64",
 			"capabilities": bootMode,
 		}
 

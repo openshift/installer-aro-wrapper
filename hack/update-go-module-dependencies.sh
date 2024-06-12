@@ -72,7 +72,7 @@ for x in baremetal-operator baremetal-operator/apis baremetal-operator/pkg/hardw
   go mod edit -replace github.com/metal3-io/$x="$(go list -mod=mod -m github.com/openshift/$x@$RELEASE | sed -e 's/ /@/')"
 done
 
-go mod edit -replace github.com/openshift/installer="$(go list -mod=mod -m github.com/openshift/installer-aro@$RELEASE-azure | sed -e 's/ /@/')"
+go mod edit -replace github.com/openshift/installer="$(go list -mod=mod -m github.com/slintes/installer-aro@aro-hack-4.15 | sed -e 's/ /@/')"
 
 go get ./...
 

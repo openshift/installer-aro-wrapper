@@ -81,6 +81,9 @@ func (i *InfraEnv) Generate(dependencies asset.Parents) error {
 		if installConfig.Config.Proxy != nil {
 			infraEnv.Spec.Proxy = getProxy(installConfig)
 		}
+		if atb := installConfig.Config.AdditionalTrustBundle; atb != "" {
+			infraEnv.Spec.AdditionalTrustBundle = atb
+		}
 
 		if agentConfig.Config != nil {
 			infraEnv.Spec.AdditionalNTPSources = agentConfig.Config.AdditionalNTPSources
@@ -142,9 +145,9 @@ func (i *InfraEnv) finish() error {
 		return errors.New("missing configuration or manifest file")
 	}
 
-	// Throw an error if CpuArchitecture isn't x86_64, aarch64, or ""
+	// Throw an error if CpuArchitecture isn't x86_64, aarch64, ppc64le, s390x, or ""
 	switch i.Config.Spec.CpuArchitecture {
-	case arch.RpmArch(types.ArchitectureAMD64), arch.RpmArch(types.ArchitectureARM64), "":
+	case arch.RpmArch(types.ArchitectureAMD64), arch.RpmArch(types.ArchitectureARM64), arch.RpmArch(types.ArchitecturePPC64LE), arch.RpmArch(types.ArchitectureS390X), "":
 	default:
 		return errors.Errorf("Config.Spec.CpuArchitecture %s is not supported ", i.Config.Spec.CpuArchitecture)
 	}
