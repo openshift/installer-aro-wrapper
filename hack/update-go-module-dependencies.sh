@@ -25,7 +25,7 @@
 # we also must take care of replacing modules such as sigs.k8s.io/cluster-api-provider-azure
 # with github.com/openshift/cluster-api-provider-azure (just an example, there are more).
 
-RELEASE=release-4.14
+RELEASE=release-4.15
 GO_VERSION=1.20
 
 for x in vendor/github.com/openshift/*; do
@@ -46,6 +46,12 @@ for x in vendor/github.com/openshift/*; do
 			go mod edit -replace github.com/openshift/cloud-credential-operator=github.com/openshift/cloud-credential-operator@v0.0.0-20200316201045-d10080b52c9e
 			;;
 
+		# MCO is pinned to an old version of MCO, and newer versions don' contain MCO's API anymore, it moved to openshift/api.
+		# In order to prevent dependency issues we need to pin to the same version.
+		vendor/github.com/openshift/machine-config-operator)
+			go mod edit -replace github.com/openshift/machine-config-operator=github.com/openshift/machine-config-operator@v0.0.1-0.20201009041932-4fe8559913b8
+			;;
+
 		# This repo doesn't follow release-x.y branching strategy
 		# We skip it and let go mod resolve it
 		vendor/github.com/openshift/custom-resource-status)
@@ -57,6 +63,7 @@ for x in vendor/github.com/openshift/*; do
 	esac
 done
 
+go mod edit -replace sigs.k8s.io/cluster-api="$(go list -mod=mod -m github.com/openshift/cluster-api@$RELEASE | sed -e 's/ /@/')"
 for x in aws/v2 azure openstack; do
 	go mod edit -replace sigs.k8s.io/cluster-api-provider-$x="$(go list -mod=mod -m github.com/openshift/cluster-api-provider-$x@$RELEASE | sed -e 's/ /@/')"
 done
