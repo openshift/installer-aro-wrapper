@@ -262,6 +262,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
 						configv1.ClusterVersionCapabilityBuild,
+						configv1.ClusterVersionCapabilityCloudCredential,
 						configv1.ClusterVersionCapabilityConsole,
 						configv1.ClusterVersionCapabilityCSISnapshot,
 						configv1.ClusterVersionCapabilityDeploymentConfig,
@@ -271,6 +272,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						configv1.ClusterVersionCapabilityMarketplace,
 						configv1.ClusterVersionCapabilityNodeTuning,
 						configv1.ClusterVersionCapabilityOpenShiftSamples,
+						configv1.ClusterVersionCapabilityOperatorLifecycleManager,
 						configv1.ClusterVersionCapabilityStorage,
 					},
 				},
