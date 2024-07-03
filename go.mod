@@ -56,8 +56,15 @@ require (
 	github.com/IBM/keyprotect-go-client v0.12.2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
+	github.com/containers/image/v5 v5.29.3 // indirect
+	github.com/containers/storage v1.51.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/moby/sys/mountinfo v0.7.1 // indirect
+	github.com/opencontainers/runc v1.1.10 // indirect
+	github.com/opencontainers/runtime-spec v1.1.0 // indirect
+	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/thedevsaddam/retry v0.0.0-20200324223450-9769a859cc6d // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
