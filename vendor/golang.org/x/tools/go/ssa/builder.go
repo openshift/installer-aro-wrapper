@@ -79,17 +79,18 @@ import (
 	"go/token"
 	"go/types"
 	"os"
+	"runtime"
 	"sync"
 
+	"golang.org/x/tools/internal/aliases"
 	"golang.org/x/tools/internal/typeparams"
+	"golang.org/x/tools/internal/versions"
 )
 
-type opaqueType struct {
-	types.Type
-	name string
-}
+type opaqueType struct{ name string }
 
-func (t *opaqueType) String() string { return t.name }
+func (t *opaqueType) String() string         { return t.name }
+func (t *opaqueType) Underlying() types.Type { return t }
 
 var (
 	varOk    = newVar("ok", tBool)
@@ -102,7 +103,7 @@ var (
 	tInvalid    = types.Typ[types.Invalid]
 	tString     = types.Typ[types.String]
 	tUntypedNil = types.Typ[types.UntypedNil]
-	tRangeIter  = &opaqueType{nil, "iter"} // the type of all "range" iterators
+	tRangeIter  = &opaqueType{"iter"} // the type of all "range" iterators
 	tEface      = types.NewInterfaceType(nil, nil).Complete()
 
 	// SSA Value constants.
@@ -327,7 +328,7 @@ func (b *builder) builtin(fn *Function, obj *types.Builtin, args []ast.Expr, typ
 		}
 
 	case "new":
-		return emitNew(fn, mustDeref(typ), pos, "new")
+		return emitNew(fn, typeparams.MustDeref(typ), pos, "new")
 
 	case "len", "cap":
 		// Special case: len or cap of an array or *array is
@@ -335,7 +336,7 @@ func (b *builder) builtin(fn *Function, obj *types.Builtin, args []ast.Expr, typ
 		// We must still evaluate the value, though.  (If it
 		// was side-effect free, the whole call would have
 		// been constant-folded.)
-		t, _ := deref(fn.typeOf(args[0]))
+		t := typeparams.Deref(fn.typeOf(args[0]))
 		if at, ok := typeparams.CoreType(t).(*types.Array); ok {
 			b.expr(fn, args[0]) // for effects only
 			return intConst(at.Len())
@@ -391,7 +392,7 @@ func (b *builder) addr(fn *Function, e ast.Expr, escaping bool) lvalue {
 		return &address{addr: v, pos: e.Pos(), expr: e}
 
 	case *ast.CompositeLit:
-		typ, _ := deref(fn.typeOf(e))
+		typ := typeparams.Deref(fn.typeOf(e))
 		var v *Alloc
 		if escaping {
 			v = emitNew(fn, typ, e.Lbrace, "complit")
@@ -418,7 +419,7 @@ func (b *builder) addr(fn *Function, e ast.Expr, escaping bool) lvalue {
 		wantAddr := true
 		v := b.receiver(fn, e.X, wantAddr, escaping, sel)
 		index := sel.index[len(sel.index)-1]
-		fld := fieldOf(mustDeref(v.Type()), index) // v is an addr.
+		fld := fieldOf(typeparams.MustDeref(v.Type()), index) // v is an addr.
 
 		// Due to the two phases of resolving AssignStmt, a panic from x.f = p()
 		// when x is nil is required to come after the side-effects of
@@ -467,7 +468,7 @@ func (b *builder) addr(fn *Function, e ast.Expr, escaping bool) lvalue {
 			v.setType(et)
 			return fn.emit(v)
 		}
-		return &lazyAddress{addr: emit, t: mustDeref(et), pos: e.Lbrack, expr: e}
+		return &lazyAddress{addr: emit, t: typeparams.MustDeref(et), pos: e.Lbrack, expr: e}
 
 	case *ast.StarExpr:
 		return &address{addr: b.expr(fn, e.X), pos: e.Star, expr: e}
@@ -512,17 +513,15 @@ func (b *builder) assign(fn *Function, loc lvalue, e ast.Expr, isZero bool, sb *
 		// A CompositeLit never evaluates to a pointer,
 		// so if the type of the location is a pointer,
 		// an &-operation is implied.
-		if _, ok := loc.(blank); !ok { // avoid calling blank.typ()
-			if _, ok := deref(loc.typ()); ok {
-				ptr := b.addr(fn, e, true).address(fn)
-				// copy address
-				if sb != nil {
-					sb.store(loc, ptr)
-				} else {
-					loc.store(fn, ptr)
-				}
-				return
+		if !is[blank](loc) && isPointerCore(loc.typ()) { // avoid calling blank.typ()
+			ptr := b.addr(fn, e, true).address(fn)
+			// copy address
+			if sb != nil {
+				sb.store(loc, ptr)
+			} else {
+				loc.store(fn, ptr)
 			}
+			return
 		}
 
 		if _, ok := loc.(*address); ok {
@@ -794,14 +793,14 @@ func (b *builder) expr0(fn *Function, e ast.Expr, tv types.TypeAndValue) Value {
 			// The result is a "bound".
 			obj := sel.obj.(*types.Func)
 			rt := fn.typ(recvType(obj))
-			_, wantAddr := deref(rt)
+			wantAddr := isPointer(rt)
 			escaping := true
 			v := b.receiver(fn, e.X, wantAddr, escaping, sel)
 
 			if types.IsInterface(rt) {
 				// If v may be an interface type I (after instantiating),
 				// we must emit a check that v is non-nil.
-				if recv, ok := sel.recv.(*typeparams.TypeParam); ok {
+				if recv, ok := aliases.Unalias(sel.recv).(*types.TypeParam); ok {
 					// Emit a nil check if any possible instantiation of the
 					// type parameter is an interface type.
 					if typeSetOf(recv).Len() > 0 {
@@ -847,7 +846,7 @@ func (b *builder) expr0(fn *Function, e ast.Expr, tv types.TypeAndValue) Value {
 
 		panic("unexpected expression-relative selector")
 
-	case *typeparams.IndexListExpr:
+	case *ast.IndexListExpr:
 		// f[X, Y] must be a generic function
 		if !instance(fn.info, e.X) {
 			panic("unexpected expression-could not match index list to instantiation")
@@ -922,7 +921,7 @@ func (b *builder) stmtList(fn *Function, list []ast.Stmt) {
 // escaping is defined as per builder.addr().
 func (b *builder) receiver(fn *Function, e ast.Expr, wantAddr, escaping bool, sel *selection) Value {
 	var v Value
-	if _, eptr := deref(fn.typeOf(e)); wantAddr && !sel.indirect && !eptr {
+	if wantAddr && !sel.indirect && !isPointerCore(fn.typeOf(e)) {
 		v = b.addr(fn, e, escaping).address(fn)
 	} else {
 		v = b.expr(fn, e)
@@ -931,7 +930,10 @@ func (b *builder) receiver(fn *Function, e ast.Expr, wantAddr, escaping bool, se
 	last := len(sel.index) - 1
 	// The position of implicit selection is the position of the inducing receiver expression.
 	v = emitImplicitSelections(fn, v, sel.index[:last], e.Pos())
-	if _, vptr := deref(v.Type()); !wantAddr && vptr {
+	if types.IsInterface(v.Type()) {
+		// When v is an interface, sel.Kind()==MethodValue and v.f is invoked.
+		// So v is not loaded, even if v has a pointer core type.
+	} else if !wantAddr && isPointerCore(v.Type()) {
 		v = emitLoad(fn, v)
 	}
 	return v
@@ -950,7 +952,7 @@ func (b *builder) setCallFunc(fn *Function, e *ast.CallExpr, c *CallCommon) {
 			obj := sel.obj.(*types.Func)
 			recv := recvType(obj)
 
-			_, wantAddr := deref(recv)
+			wantAddr := isPointer(recv)
 			escaping := true
 			v := b.receiver(fn, selector.X, wantAddr, escaping, sel)
 			if types.IsInterface(recv) {
@@ -1211,12 +1213,12 @@ func (b *builder) arrayLen(fn *Function, elts []ast.Expr) int64 {
 // literal has type *T behaves like &T{}.
 // In that case, addr must hold a T, not a *T.
 func (b *builder) compLit(fn *Function, addr Value, e *ast.CompositeLit, isZero bool, sb *storebuf) {
-	typ, _ := deref(fn.typeOf(e)) // type with name [may be type param]
+	typ := typeparams.Deref(fn.typeOf(e)) // retain the named/alias/param type, if any
 	switch t := typeparams.CoreType(typ).(type) {
 	case *types.Struct:
 		if !isZero && len(e.Elts) != t.NumFields() {
 			// memclear
-			zt, _ := deref(addr.Type())
+			zt := typeparams.MustDeref(addr.Type())
 			sb.store(&address{addr, e.Lbrace, nil}, zeroConst(zt))
 			isZero = true
 		}
@@ -1259,7 +1261,7 @@ func (b *builder) compLit(fn *Function, addr Value, e *ast.CompositeLit, isZero 
 
 			if !isZero && int64(len(e.Elts)) != at.Len() {
 				// memclear
-				zt, _ := deref(array.Type())
+				zt := typeparams.MustDeref(array.Type())
 				sb.store(&address{array, e.Lbrace, nil}, zeroConst(zt))
 			}
 		}
@@ -1315,7 +1317,7 @@ func (b *builder) compLit(fn *Function, addr Value, e *ast.CompositeLit, isZero 
 			//	map[*struct{}]bool{&struct{}{}: true}
 			wantAddr := false
 			if _, ok := unparen(e.Key).(*ast.CompositeLit); ok {
-				_, wantAddr = deref(t.Key())
+				wantAddr = isPointerCore(t.Key())
 			}
 
 			var key Value
@@ -1744,9 +1746,7 @@ func (b *builder) forStmt(fn *Function, s *ast.ForStmt, label *lblock) {
 	// Use forStmtGo122 instead if it applies.
 	if s.Init != nil {
 		if assign, ok := s.Init.(*ast.AssignStmt); ok && assign.Tok == token.DEFINE {
-			major, minor := parseGoVersion(fn.goversion)
-			afterGo122 := major >= 1 && minor >= 22
-			if afterGo122 {
+			if versions.AtLeast(fn.goversion, versions.Go1_22) {
 				b.forStmtGo122(fn, s, label)
 				return
 			}
@@ -1830,6 +1830,7 @@ func (b *builder) forStmtGo122(fn *Function, s *ast.ForStmt, label *lblock) {
 	// done:
 
 	init := s.Init.(*ast.AssignStmt)
+	startingBlocks := len(fn.Blocks)
 
 	pre := fn.currentBlock               // current block before starting
 	loop := fn.newBasicBlock("for.loop") // target of back-edge
@@ -1837,15 +1838,19 @@ func (b *builder) forStmtGo122(fn *Function, s *ast.ForStmt, label *lblock) {
 	post := fn.newBasicBlock("for.post") // target of 'continue'
 	done := fn.newBasicBlock("for.done") // target of 'break'
 
-	// For each of the n loop variables, we create three SSA values,
-	// outer[i], phi[i], and next[i] in pre, loop, and post.
+	// For each of the n loop variables, we create five SSA values,
+	// outer, phi, next, load, and store in pre, loop, and post.
 	// There is no limit on n.
-	lhss := init.Lhs
-	vars := make([]*types.Var, len(lhss))
-	outers := make([]Value, len(vars))
-	phis := make([]Value, len(vars))
-	nexts := make([]Value, len(vars))
-	for i, lhs := range lhss {
+	type loopVar struct {
+		obj   *types.Var
+		outer *Alloc
+		phi   *Phi
+		load  *UnOp
+		next  *Alloc
+		store *Store
+	}
+	vars := make([]loopVar, len(init.Lhs))
+	for i, lhs := range init.Lhs {
 		v := identVar(fn, lhs.(*ast.Ident))
 		typ := fn.typ(v.Type())
 
@@ -1859,31 +1864,24 @@ func (b *builder) forStmtGo122(fn *Function, s *ast.ForStmt, label *lblock) {
 		fn.emit(phi)
 
 		fn.currentBlock = post
-		// If next is is local, it reuses the address and zeroes the old value.
-		// Load before the Alloc.
+		// If next is local, it reuses the address and zeroes the old value so
+		// load before allocating next.
 		load := emitLoad(fn, phi)
 		next := emitLocal(fn, typ, v.Pos(), v.Name())
-		emitStore(fn, next, load, token.NoPos)
+		store := emitStore(fn, next, load, token.NoPos)
 
 		phi.Edges = []Value{outer, next} // pre edge is emitted before post edge.
 
-		vars[i] = v
-		outers[i] = outer
-		phis[i] = phi
-		nexts[i] = next
-	}
-
-	varsCurrentlyReferTo := func(vals []Value) {
-		for i, v := range vars {
-			fn.vars[v] = vals[i]
-		}
+		vars[i] = loopVar{v, outer, phi, load, next, store}
 	}
 
 	// ...init... under fn.objects[v] = i_outer
 	fn.currentBlock = pre
-	varsCurrentlyReferTo(outers)
+	for _, v := range vars {
+		fn.vars[v.obj] = v.outer
+	}
 	const isDef = false // assign to already-allocated outers
-	b.assignStmt(fn, lhss, init.Rhs, isDef)
+	b.assignStmt(fn, init.Lhs, init.Rhs, isDef)
 	if label != nil {
 		label._break = done
 		label._continue = post
@@ -1892,7 +1890,9 @@ func (b *builder) forStmtGo122(fn *Function, s *ast.ForStmt, label *lblock) {
 
 	// ...cond... under fn.objects[v] = i
 	fn.currentBlock = loop
-	varsCurrentlyReferTo(phis)
+	for _, v := range vars {
+		fn.vars[v.obj] = v.phi
+	}
 	if s.Cond != nil {
 		b.cond(fn, s.Cond, body, done)
 	} else {
@@ -1911,7 +1911,9 @@ func (b *builder) forStmtGo122(fn *Function, s *ast.ForStmt, label *lblock) {
 	emitJump(fn, post)
 
 	// ...post... under fn.objects[v] = i_next
-	varsCurrentlyReferTo(nexts)
+	for _, v := range vars {
+		fn.vars[v.obj] = v.next
+	}
 	fn.currentBlock = post
 	if s.Post != nil {
 		b.stmt(fn, s.Post)
@@ -1919,9 +1921,53 @@ func (b *builder) forStmtGo122(fn *Function, s *ast.ForStmt, label *lblock) {
 	emitJump(fn, loop) // back-edge
 	fn.currentBlock = done
 
-	// TODO(taking): Optimizations for when local variables can be fused.
-	// Principled approach is: hoist i_next, fuse i_outer and i_next, eliminate redundant phi, and ssa-lifting.
-	// Unclear if we want to do any of this in general or only for range/for-loops with new lifetimes.
+	// For each loop variable that does not escape,
+	// (the common case), fuse its next cells into its
+	// (local) outer cell as they have disjoint live ranges.
+	//
+	// It is sufficient to test whether i_next escapes,
+	// because its Heap flag will be marked true if either
+	// the cond or post expression causes i to escape
+	// (because escape distributes over phi).
+	var nlocals int
+	for _, v := range vars {
+		if !v.next.Heap {
+			nlocals++
+		}
+	}
+	if nlocals > 0 {
+		replace := make(map[Value]Value, 2*nlocals)
+		dead := make(map[Instruction]bool, 4*nlocals)
+		for _, v := range vars {
+			if !v.next.Heap {
+				replace[v.next] = v.outer
+				replace[v.phi] = v.outer
+				dead[v.phi], dead[v.next], dead[v.load], dead[v.store] = true, true, true, true
+			}
+		}
+
+		// Replace all uses of i_next and phi with i_outer.
+		// Referrers have not been built for fn yet so only update Instruction operands.
+		// We need only look within the blocks added by the loop.
+		var operands []*Value // recycle storage
+		for _, b := range fn.Blocks[startingBlocks:] {
+			for _, instr := range b.Instrs {
+				operands = instr.Operands(operands[:0])
+				for _, ptr := range operands {
+					k := *ptr
+					if v := replace[k]; v != nil {
+						*ptr = v
+					}
+				}
+			}
+		}
+
+		// Remove instructions for phi, load, and store.
+		// lift() will remove the unused i_next *Alloc.
+		isDead := func(i Instruction) bool { return dead[i] }
+		loop.Instrs = removeInstrsIf(loop.Instrs, isDead)
+		post.Instrs = removeInstrsIf(post.Instrs, isDead)
+	}
 }
 
 // rangeIndexed emits to fn the header for an integer-indexed loop
@@ -1944,7 +1990,7 @@ func (b *builder) rangeIndexed(fn *Function, x Value, tv types.Type, pos token.P
 
 	// Determine number of iterations.
 	var length Value
-	dt, _ := deref(x.Type())
+	dt := typeparams.Deref(x.Type())
 	if arr, ok := typeparams.CoreType(dt).(*types.Array); ok {
 		// For array or *array, the number of iterations is
 		// known statically thanks to the type.  We avoid a
@@ -2195,9 +2241,7 @@ func (b *builder) rangeStmt(fn *Function, s *ast.RangeStmt, label *lblock) {
 		}
 	}
 
-	major, minor := parseGoVersion(fn.goversion)
-	afterGo122 := major >= 1 && minor >= 22
-
+	afterGo122 := versions.AtLeast(fn.goversion, versions.Go1_22)
 	if s.Tok == token.DEFINE && !afterGo122 {
 		// pre-go1.22: If iteration variables are defined (:=), this
 		// occurs once outside the loop.
@@ -2229,6 +2273,21 @@ func (b *builder) rangeStmt(fn *Function, s *ast.RangeStmt, label *lblock) {
 		default:
 			panic("Cannot range over basic type: " + rt.String())
 		}
+
+	case *types.Signature:
+		// Temporary hack to avoid crashes
+		// until Tim's principled fix (CL 555075) lands:
+		// compile range-over-func to a panic.
+		//
+		// This will cause statements in the loop body to be
+		// unreachable, and thus the call graph may be
+		// incomplete.
+		fn.emit(&Panic{
+			X:   NewConst(constant.MakeString("go1.23 range-over-func is not yet supported"), tString),
+			pos: s.For,
+		})
+		fn.currentBlock = fn.newBasicBlock("unreachable")
+		return
 
 	default:
 		panic("Cannot range over: " + rt.String())
@@ -2293,6 +2352,12 @@ start:
 		}
 
 	case *ast.LabeledStmt:
+		if s.Label.Name == "_" {
+			// Blank labels can't be the target of a goto, break,
+			// or continue statement, so we don't need a new block.
+			_s = s.Stmt
+			goto start
+		}
 		label = fn.labelledBlock(s.Label)
 		emitJump(fn, label._goto)
 		fn.currentBlock = label._goto
@@ -2571,14 +2636,19 @@ func (prog *Program) Build() {
 			p.Build()
 		} else {
 			wg.Add(1)
+			cpuLimit <- struct{}{} // acquire a token
 			go func(p *Package) {
 				p.Build()
 				wg.Done()
+				<-cpuLimit // release a token
 			}(p)
 		}
 	}
 	wg.Wait()
 }
+
+// cpuLimit is a counting semaphore to limit CPU parallelism.
+var cpuLimit = make(chan struct{}, runtime.GOMAXPROCS(0))
 
 // Build builds SSA code for all functions and vars in package p.
 //
