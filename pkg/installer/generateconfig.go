@@ -28,6 +28,7 @@ import (
 
 	"github.com/openshift/ARO-Installer/pkg/api"
 	"github.com/openshift/ARO-Installer/pkg/util/computeskus"
+	"github.com/openshift/ARO-Installer/pkg/util/iswimi"
 	"github.com/openshift/ARO-Installer/pkg/util/pullsecret"
 	"github.com/openshift/ARO-Installer/pkg/util/rhcos"
 	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
@@ -291,7 +292,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
-	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
+	if iswimi.IsWimi(m.oc.Properties) {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
 	}
 
