@@ -234,7 +234,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	a.Config.Storage.Files = append(a.Config.Storage.Files, dnsmasqIgnConfig.Storage.Files...)
 	a.Config.Systemd.Units = append(a.Config.Systemd.Units, dnsmasqIgnConfig.Systemd.Units...)
 
-	etchostsIgnConfig, err := aroign.EtcHostsIgnition(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
+	etchostsIgnConfig, err := aroign.EtcHostsIgnitionConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,6 @@ import (
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/pkg/errors"
 
-	"github.com/openshift/installer/pkg/aro/aroign"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -44,13 +43,6 @@ func (a *Worker) Generate(dependencies asset.Parents) error {
 	dependencies.Get(installConfig, rootCA, aroDNSConfig)
 
 	a.Config = pointerIgnitionConfig(installConfig.Config, aroDNSConfig, rootCA.Cert(), "worker")
-
-	etchostsIgnConfig, err := aroign.EtcHostsIgnition(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
-	if err != nil {
-		return err
-	}
-
-	a.Config.Storage.Files = append(a.Config.Storage.Files, etchostsIgnConfig.Storage.Files...)
 
 	data, err := ignition.Marshal(a.Config)
 	if err != nil {
