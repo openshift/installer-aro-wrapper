@@ -14,8 +14,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var etcHostsTemplate = template.Must(template.New("etchosts").Parse(`{{ .APIIntIP }}	api.{{ .ClusterDomain }} api-int.{{ .ClusterDomain }}
-{{ $.GatewayPrivateEndpointIP }}	{{- range $GatewayDomain := .GatewayDomains }}{{ $GatewayDomain }} {{- end }}`))
+var etcHostsTemplate = template.Must(template.New("etchosts").Parse(`127.0.0.1	localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1	localhost localhost.localdomain localhost6 localhost6.localdomain6
+{{ .APIIntIP }}	api.{{ .ClusterDomain }} api-int.{{ .ClusterDomain }}
+{{ $.GatewayPrivateEndpointIP }}	{{ range $GatewayDomain := .GatewayDomains }}{{ $GatewayDomain }} {{ end }}
+`))
 
 type etcHostsTemplateData struct {
 	ClusterDomain            string
@@ -54,14 +57,14 @@ func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomain
 			Files: []ign3types.File{
 				{
 					Node: ign3types.Node{
-						Path: "/etc/hosts",
+						Path:      "/etc/hosts",
+						Overwrite: to.BoolPtr(true),
 					},
 					FileEmbedded1: ign3types.FileEmbedded1{
-						Append: []ign3types.Resource{
-							{
-								Source: to.StringPtr(dataurl.EncodeBytes(data)),
-							},
+						Contents: ign3types.Resource{
+							Source: to.StringPtr(dataurl.EncodeBytes(data)),
 						},
+						Mode: to.IntPtr(0644),
 					},
 				},
 			},
