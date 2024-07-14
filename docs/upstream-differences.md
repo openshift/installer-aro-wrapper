@@ -95,10 +95,16 @@ To bring new OCP release branch into ARO installer fork:
     git checkout release-X.Y-1-azure
     git log
     ```
-5. For every commit you need to cherry-pick (in-order), do:
+5. For saving time by skipping some unneeded build and test steps, do:
+   ```sh
+   export SKIP_TERRAFORM=y
+   unset OPENSHIFT_INSTALL_CLUSTER_API
+   ```
+6. For every commit you need to cherry-pick (in-order), do:
     ```sh
     # WARNING: when you reach the commit for `commit data/assets_vfsdata.go`, look ahead
     git cherry-pick abc123 # may require manually fixing a merge
+    # if you had merge conflicts in go.sum or vendor, run ./hack/verify-vendor.sh
     ./hack/build.sh   # fix any failures
     ./hack/go-test.sh # fix any failures
     # if you had to manually merge, you can now `git cherry-pick --continue`
@@ -129,7 +135,7 @@ In the far or near future after you have [initially patched the installer](#upda
 ```sh
 git fetch upstream -a
 git checkout release-X.Y-azure
-git pull upstream/release-X.Y --rebase=interactive
+git pull upstream release-X.Y --rebase=interactive
 ```
 
 When you get to the editor mode to set up your rebase, you should do a few things:
