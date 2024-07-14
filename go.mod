@@ -52,6 +52,7 @@ require (
 	cloud.google.com/go/iam v1.1.7 // indirect
 	cloud.google.com/go/storage v1.40.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5 v5.2.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v4 v4.3.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork v1.0.0 // indirect
 	github.com/IBM/keyprotect-go-client v0.12.2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -612,7 +613,7 @@ replace (
 	k8s.io/klog/v2 => k8s.io/klog/v2 v2.70.1
 	k8s.io/kube-state-metrics => k8s.io/kube-state-metrics v1.9.7
 	mvdan.cc/unparam => mvdan.cc/unparam v0.0.0-20211002133954-f839ab2b2b11
-	sigs.k8s.io/cluster-api => github.com/openshift/cluster-api v0.0.0-20240513060301-2053e13cb0fd
+	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.5.3
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20221004090546-15ff2acd6c2f
 	sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/openshift/cluster-api-provider-aws/v2 v2.0.0-20240606085646-4efe12cbfebb
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20240702014946-44832d2da097

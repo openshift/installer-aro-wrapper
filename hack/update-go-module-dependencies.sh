@@ -76,10 +76,10 @@ for x in vendor/k8s.io/*; do
   esac
 done
 
-go mod edit -replace sigs.k8s.io/cluster-api="$(go list -mod=mod -m github.com/openshift/cluster-api@$RELEASE | sed -e 's/ /@/')"
-for x in aws/v2 azure openstack; do
-	go mod edit -replace sigs.k8s.io/cluster-api-provider-$x="$(go list -mod=mod -m github.com/openshift/cluster-api-provider-$x@$RELEASE | sed -e 's/ /@/')"
-done
+# From installer(-aro), they don't use forks anymore!
+go mod edit -replace sigs.k8s.io/cluster-api=sigs.k8s.io/cluster-api@v1.5.3
+go mod edit -replace sigs.k8s.io/cluster-api-provider-aws/v2=sigs.k8s.io/cluster-api-provider-aws/v2@v2.0.0-20231024062453-0bf78b04b305
+go mod edit -replace sigs.k8s.io/cluster-api-provider-azure=sigs.k8s.io/cluster-api-provider-azure@v1.11.1-0.20231026140308-a3f4914170d9
 
 for x in baremetal-operator baremetal-operator/apis baremetal-operator/pkg/hardwareutils cluster-api-provider-baremetal cluster-api-provider-metal3 cluster-api-provider-metal3/api; do
   go mod edit -replace github.com/metal3-io/$x="$(go list -mod=mod -m github.com/openshift/$x@$RELEASE | sed -e 's/ /@/')"

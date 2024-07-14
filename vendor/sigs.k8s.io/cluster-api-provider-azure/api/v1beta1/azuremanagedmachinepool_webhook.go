@@ -23,9 +23,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v4"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -35,6 +38,7 @@ import (
 	"sigs.k8s.io/cluster-api-provider-azure/util/maps"
 	webhookutils "sigs.k8s.io/cluster-api-provider-azure/util/webhook"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	capifeature "sigs.k8s.io/cluster-api/feature"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,6 +81,10 @@ func (mw *azureManagedMachinePoolWebhook) Default(ctx context.Context, obj runti
 
 	if m.Spec.OSType == nil {
 		m.Spec.OSType = ptr.To(DefaultOSType)
+	}
+
+	if ptr.Deref(m.Spec.ScaleSetPriority, "") == string(armcontainerservice.ScaleSetPrioritySpot) && m.Spec.SpotMaxPrice == nil {
+		m.Spec.SpotMaxPrice = ptr.To(resource.MustParse("-1"))
 	}
 
 	return nil
@@ -316,7 +324,8 @@ func (m *AzureManagedMachinePool) validateLastSystemNodePool(cli client.Client) 
 		return nil
 	}
 
-	if ownerCluster.Spec.Paused {
+	// checking if the Cluster is going to be deleted for clusterctl move operation
+	if _, found := ownerCluster.Annotations[clusterctlv1.DeleteForMoveAnnotation]; found {
 		return nil
 	}
 
@@ -363,14 +372,59 @@ func (m *AzureManagedMachinePool) validateOSType() error {
 }
 
 func (m *AzureManagedMachinePool) validateName() error {
-	if m.Spec.OSType != nil && *m.Spec.OSType == WindowsOS &&
-		m.Spec.Name != nil && len(*m.Spec.Name) > 6 {
-		return field.Invalid(
-			field.NewPath("Spec", "Name"),
-			m.Spec.Name,
-			"Windows agent pool name can not be longer than 6 characters.")
+	var name *string
+	var fieldNameMessage string
+	if m.Spec.Name == nil || *m.Spec.Name == "" {
+		name = &m.Name
+		fieldNameMessage = "when spec.name is empty, metadata.name"
+	} else {
+		name = m.Spec.Name
+		fieldNameMessage = "spec.name"
 	}
 
+	if err := validateNameLength(m.Spec.OSType, name, fieldNameMessage); err != nil {
+		return err
+	}
+	return validateNamePattern(name, fieldNameMessage)
+}
+
+func validateNameLength(osType *string, name *string, fieldNameMessage string) error {
+	if osType != nil && *osType == WindowsOS &&
+		name != nil && len(*name) > 6 {
+		return field.Invalid(
+			field.NewPath("Spec", "Name"),
+			name,
+			fmt.Sprintf("For OSType Windows, %s can not be longer than 6 characters.", fieldNameMessage))
+	} else if (osType == nil || *osType == LinuxOS) &&
+		(name != nil && len(*name) > 12) {
+		return field.Invalid(
+			field.NewPath("Spec", "Name"),
+			osType,
+			fmt.Sprintf("For OSType Linux, %s can not be longer than 12 characters.", fieldNameMessage))
+	}
+	return nil
+}
+
+func validateNamePattern(name *string, fieldNameMessage string) error {
+	if name == nil || *name == "" {
+		return nil
+	}
+
+	if !unicode.IsLower(rune((*name)[0])) {
+		return field.Invalid(
+			field.NewPath("Spec", "Name"),
+			name,
+			fmt.Sprintf("%s must begin with a lowercase letter.", fieldNameMessage))
+	}
+
+	for _, char := range *name {
+		if !(unicode.IsLower(char) || unicode.IsNumber(char)) {
+			return field.Invalid(
+				field.NewPath("Spec", "Name"),
+				name,
+				fmt.Sprintf("%s may only contain lowercase alphanumeric characters.", fieldNameMessage))
+		}
+	}
 	return nil
 }
 
