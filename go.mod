@@ -363,7 +363,7 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/api v0.170.0 // indirect
@@ -582,7 +582,7 @@ replace (
 	github.com/metal3-io/cluster-api-provider-metal3 => github.com/openshift/cluster-api-provider-metal3 v0.0.0-20231025134231-298f47e3f7e4
 	github.com/metal3-io/cluster-api-provider-metal3/api => github.com/openshift/cluster-api-provider-metal3/api v0.0.0-20231025134231-298f47e3f7e4
 	github.com/mholt/certmagic => github.com/caddyserver/certmagic v0.15.0
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20240610140310-62c02ae51e47
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20240704111439-6eb7973a3a45
 	github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20240607130013-60d5e86b6b7b
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20240109161853-2425b4b6d3b3
 	github.com/openshift/cloud-credential-operator => github.com/openshift/cloud-credential-operator v0.0.0-20240422222427-55199c9b5870
@@ -592,7 +592,7 @@ replace (
 	github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd
 	github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 	github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-	github.com/openshift/installer => github.com/openshift/installer-aro v0.9.0-master.0.20240625232813-f4a9f6b0b313
+	github.com/openshift/installer => github.com/openshift/installer-aro v0.9.0-master.0.20240710083059-59c58059c482
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d
@@ -615,7 +615,7 @@ replace (
 	sigs.k8s.io/cluster-api => github.com/openshift/cluster-api v0.0.0-20240513060301-2053e13cb0fd
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20221004090546-15ff2acd6c2f
 	sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/openshift/cluster-api-provider-aws/v2 v2.0.0-20240606085646-4efe12cbfebb
-	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20240621013647-81b4d0345c75
+	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20240702014946-44832d2da097
 	sigs.k8s.io/cluster-api-provider-ibmcloud => github.com/openshift/cluster-api-provider-ibmcloud v0.0.0-20221102085410-c1304c80d736
 	sigs.k8s.io/cluster-api-provider-openstack => github.com/openshift/cluster-api-provider-openstack v0.8.0-beta.0.0.20240410100241-232472ea527a
 	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.11.2
