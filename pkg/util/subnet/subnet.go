@@ -14,9 +14,9 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/apparentlymart/go-cidr/cidr"
 
-	"github.com/openshift/ARO-Installer/pkg/api"
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/network"
+	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/network"
 )
 
 type Subnet struct {

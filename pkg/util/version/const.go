@@ -4,7 +4,7 @@ package version
 // Licensed under the Apache License 2.0.
 
 import (
-	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/api"
 )
 
 const InstallArchitectureVersion = api.ArchitectureVersionV2

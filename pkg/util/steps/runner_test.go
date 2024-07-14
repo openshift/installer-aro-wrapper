@@ -14,7 +14,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"github.com/sirupsen/logrus"
 
-	testlog "github.com/openshift/ARO-Installer/test/util/log"
+	testlog "github.com/openshift/installer-aro-wrapper/test/util/log"
 )
 
 func successfulFunc(context.Context) error { return nil }
@@ -48,15 +48,15 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 			},
@@ -72,15 +72,15 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.failingFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.failingFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal(`step [Action github.com/openshift/ARO-Installer/pkg/util/steps.failingFunc] encountered error: oh no!`),
+					"msg":   gomega.Equal(`step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.failingFunc] encountered error: oh no!`),
 					"level": gomega.Equal(logrus.ErrorLevel),
 				},
 			},
@@ -97,15 +97,15 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.alwaysTrueCondition, timeout 50ms]"),
+					"msg":   gomega.Equal("running step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.alwaysTrueCondition, timeout 50ms]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 			},
@@ -121,19 +121,19 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.alwaysFalseCondition, timeout 50ms]"),
+					"msg":   gomega.Equal("running step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.alwaysFalseCondition, timeout 50ms]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.alwaysFalseCondition, timeout 50ms] failed but has configured 'fail=false'. Continuing. Error: context deadline exceeded"),
+					"msg":   gomega.Equal("step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.alwaysFalseCondition, timeout 50ms] failed but has configured 'fail=false'. Continuing. Error: context deadline exceeded"),
 					"level": gomega.Equal(logrus.WarnLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 			},
@@ -154,15 +154,15 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.timingOutCondition, timeout 50ms]"),
+					"msg":   gomega.Equal("running step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.timingOutCondition, timeout 50ms]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.timingOutCondition, timeout 50ms] encountered error: context deadline exceeded"),
+					"msg":   gomega.Equal("step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.timingOutCondition, timeout 50ms] encountered error: context deadline exceeded"),
 					"level": gomega.Equal(logrus.ErrorLevel),
 				},
 			},
@@ -184,15 +184,15 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.internalTimeoutCondition, timeout 50ms]"),
+					"msg":   gomega.Equal("running step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.internalTimeoutCondition, timeout 50ms]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.internalTimeoutCondition, timeout 50ms] encountered error: condition encountered internal timeout: context deadline exceeded"),
+					"msg":   gomega.Equal("step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.internalTimeoutCondition, timeout 50ms] encountered error: condition encountered internal timeout: context deadline exceeded"),
 					"level": gomega.Equal(logrus.ErrorLevel),
 				},
 			},
@@ -209,15 +209,15 @@ func TestStepRunner(t *testing.T) {
 			},
 			wantEntries: []map[string]types.GomegaMatcher{
 				{
-					"msg":   gomega.Equal("running step [Action github.com/openshift/ARO-Installer/pkg/util/steps.successfulFunc]"),
+					"msg":   gomega.Equal("running step [Action github.com/openshift/installer-aro-wrapper/pkg/util/steps.successfulFunc]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("running step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.alwaysFalseCondition, timeout 50ms]"),
+					"msg":   gomega.Equal("running step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.alwaysFalseCondition, timeout 50ms]"),
 					"level": gomega.Equal(logrus.InfoLevel),
 				},
 				{
-					"msg":   gomega.Equal("step [Condition github.com/openshift/ARO-Installer/pkg/util/steps.alwaysFalseCondition, timeout 50ms] encountered error: context deadline exceeded"),
+					"msg":   gomega.Equal("step [Condition github.com/openshift/installer-aro-wrapper/pkg/util/steps.alwaysFalseCondition, timeout 50ms] encountered error: context deadline exceeded"),
 					"level": gomega.Equal(logrus.ErrorLevel),
 				},
 			},

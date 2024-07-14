@@ -10,7 +10,7 @@ import (
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest"
 
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
 
 // VirtualMachineScaleSetVMsClient is a minimal interface for azure VirtualMachineScaleSetVMsClient

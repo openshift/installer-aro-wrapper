@@ -17,8 +17,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/sirupsen/logrus"
 
-	"github.com/openshift/ARO-Installer/pkg/util/instancemetadata"
-	"github.com/openshift/ARO-Installer/pkg/util/recover"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/instancemetadata"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/recover"
 )
 
 type metadata struct {

@@ -13,7 +13,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 
-	mock_features "github.com/openshift/ARO-Installer/pkg/util/mocks/azureclient/mgmt/features"
+	mock_features "github.com/openshift/installer-aro-wrapper/pkg/util/mocks/azureclient/mgmt/features"
 )
 
 const deploymentName = "test"

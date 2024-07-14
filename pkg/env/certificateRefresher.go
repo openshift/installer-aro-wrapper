@@ -12,7 +12,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/openshift/ARO-Installer/pkg/util/keyvault"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/keyvault"
 )
 
 type CertificateRefresher interface {

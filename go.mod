@@ -1,4 +1,4 @@
-module github.com/openshift/ARO-Installer
+module github.com/openshift/installer-aro-wrapper
 
 go 1.20
 

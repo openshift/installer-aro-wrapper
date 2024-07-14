@@ -6,8 +6,8 @@ package installer
 import (
 	"context"
 
-	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
-	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
+	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 )
 
 func (m *manager) persistGraph(ctx context.Context, g graph.Graph) error {

@@ -12,8 +12,8 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 
-	"github.com/openshift/ARO-Installer/pkg/util/arm"
-	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/arm"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 )
 
 func (m *manager) deployResourceTemplate(ctx context.Context) error {

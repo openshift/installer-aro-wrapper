@@ -23,13 +23,13 @@ func isStandardLibrary(path string) bool {
 }
 
 func validateUnderscoreImport(path string) error {
-	if regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/api/(admin|v[^/]+)$`).MatchString(path) {
+	if regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/api/(admin|v[^/]+)$`).MatchString(path) {
 		return nil
 	}
 
 	switch path {
 	case "net/http/pprof",
-		"github.com/openshift/ARO-Installer/pkg/util/scheme",
+		"github.com/openshift/installer-aro-wrapper/pkg/util/scheme",
 		"embed":
 		return nil
 	}
@@ -91,37 +91,37 @@ func isOkFromRegex(name, importedAs string) (bool, []string) {
 // acceptableNamesRegex returns a list of acceptable names for an import; empty
 // string = no import override; nil list = don't care
 func acceptableNamesRegex(path string) []string {
-	m := regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/api/(v[^/]*[0-9])$`).FindStringSubmatch(path)
+	m := regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/api/(v[^/]*[0-9])$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{m[1]}
 	}
 
-	m = regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/client/services/redhatopenshift/mgmt/([^/]+)/redhatopenshift$`).FindStringSubmatch(path)
+	m = regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/client/services/redhatopenshift/mgmt/([^/]+)/redhatopenshift$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{"mgmtredhatopenshift" + strings.ReplaceAll(m[1], "-", "")}
 	}
 
-	m = regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/(dbtoken|deploy|gateway|mirror|monitor|operator|portal)$`).FindStringSubmatch(path)
+	m = regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/(dbtoken|deploy|gateway|mirror|monitor|operator|portal)$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{"", "pkg" + m[1]}
 	}
 
-	m = regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/redhatopenshift/([^/]+)/redhatopenshift$`).FindStringSubmatch(path)
+	m = regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/redhatopenshift/([^/]+)/redhatopenshift$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{"redhatopenshift" + strings.ReplaceAll(m[1], "-", "")}
 	}
 
-	m = regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/util/(log|net|pem|tls)$`).FindStringSubmatch(path)
+	m = regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/util/(log|net|pem|tls)$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{"util" + m[1]}
 	}
 
-	m = regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/util/mocks/(?:.+/)?([^/]+)$`).FindStringSubmatch(path)
+	m = regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/util/mocks/(?:.+/)?([^/]+)$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{"mock_" + m[1]}
 	}
 
-	m = regexp.MustCompile(`^github\.com/openshift/ARO-Installer/pkg/operator/mocks/(?:.+/)?([^/]+)$`).FindStringSubmatch(path)
+	m = regexp.MustCompile(`^github\.com/openshift/installer-aro-wrapper/pkg/operator/mocks/(?:.+/)?([^/]+)$`).FindStringSubmatch(path)
 	if m != nil {
 		return []string{"mock_" + m[1]}
 	}
