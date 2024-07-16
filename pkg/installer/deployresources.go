@@ -80,7 +80,7 @@ func zones(installConfig *installconfig.InstallConfig) (zones *[]string, err err
 	} else if zoneCount <= 2 {
 		zones = &installConfig.Config.ControlPlane.Platform.Azure.Zones
 	} else {
-		zones = &[]string{"[copyIndex(1)]"}
+		zones = &[]string{"[string(copyIndex(1))]"}
 	}
 
 	return
