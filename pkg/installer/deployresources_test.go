@@ -45,7 +45,7 @@ func TestZones(t *testing.T) {
 		{
 			name:       "3 zones, 3 replicas",
 			zones:      []string{"1", "2", "3"},
-			wantMaster: &[]string{"[copyIndex(1)]"},
+			wantMaster: &[]string{"[string(copyIndex(1))]"},
 		},
 		{
 			name:    "4 zones, 3 replicas",
