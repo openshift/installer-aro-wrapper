@@ -47,10 +47,11 @@ for x in vendor/github.com/openshift/*; do
 			go mod edit -replace github.com/openshift/cloud-credential-operator=github.com/openshift/cloud-credential-operator@v0.0.0-20240422222427-55199c9b5870
 			;;
 
-		# MCO is pinned to an old version of MCO, and newer versions don' contain MCO's API anymore, it moved to openshift/api.
-		# In order to prevent dependency issues we need to pin to the same version.
+		# We can't use MCO 4.15 yet because it doesn't contain MCO's API anymore, it moved to openshift/api.
+		# Upstream installer still uses that API from MCO repo though
+		# Pin to release 4.14
 		vendor/github.com/openshift/machine-config-operator)
-			go mod edit -replace github.com/openshift/machine-config-operator=github.com/openshift/machine-config-operator@v0.0.1-0.20201009041932-4fe8559913b8
+			go mod edit -replace github.com/openshift/machine-config-operator=github.com/openshift/machine-config-operator@release-4.14
 			;;
 
 		# This repo doesn't follow release-x.y branching strategy
