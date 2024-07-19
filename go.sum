@@ -1626,12 +1626,12 @@ github.com/openshift/custom-resource-status v1.1.2 h1:C3DL44LEbvlbItfd8mT5jWrqPf
 github.com/openshift/custom-resource-status v1.1.2/go.mod h1:DB/Mf2oTeiAmVVX1gN+NEqweonAPY0TKUwADizj8+ZA=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8 h1:7e4sMDIstjEKW6SmPv8VhusDaYinDBrspd1M7ybIHC8=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
-github.com/openshift/installer-aro v0.9.0-master.0.20240625232813-f4a9f6b0b313 h1:6OvozZydmDJ4eiZxZqPzb8uLjxq7BtMH0JXg0bovoqk=
-github.com/openshift/installer-aro v0.9.0-master.0.20240625232813-f4a9f6b0b313/go.mod h1:Q3+OPKBEvTOVuAusxUlLr6h6+39GIXgjgQN4fZ3fov8=
+github.com/openshift/installer-aro v0.9.0-master.0.20240705142628-6986a1596809 h1:1AJyIdcxTCHI34XirpDYEDV61dyeWSSyNRbGT3IB/74=
+github.com/openshift/installer-aro v0.9.0-master.0.20240705142628-6986a1596809/go.mod h1:Q3+OPKBEvTOVuAusxUlLr6h6+39GIXgjgQN4fZ3fov8=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20230627135745-c28b2232ab1c h1:M6Dz5vloFwB0irrha8h7CEVugrPAK1nqrsVNXcvqoYU=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20230627135745-c28b2232ab1c/go.mod h1:/vPV5egjVdqN446z3WSgE0i79H6Gj+Xx85zG/k/Vl7Y=
-github.com/openshift/machine-config-operator v0.0.1-0.20240702202103-442bca4ab0d6 h1:94RlQ8HyX+BVjqt6ShkKemHWP6RGvu93HHxxmqU4W2k=
-github.com/openshift/machine-config-operator v0.0.1-0.20240702202103-442bca4ab0d6/go.mod h1:RVXxGeaeKYcdekIFMn640nvX1jxl/B8orgVssAneCsA=
+github.com/openshift/machine-config-operator v0.0.1-0.20240705011043-cee84af27d7c h1:LsdU63qZcXCpnIedISFARz3xMt1mEWhCE5lSpB7R35U=
+github.com/openshift/machine-config-operator v0.0.1-0.20240705011043-cee84af27d7c/go.mod h1:RVXxGeaeKYcdekIFMn640nvX1jxl/B8orgVssAneCsA=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b h1:FfH+VrHHk6Lxt9HdVS0PXzSXFyS2NbZKXv33FYPol0A=
 github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b/go.mod h1:AC62GU6hc0BrNm+9RK9VSiwa/EUe1bkIeFORAMcHvJU=
