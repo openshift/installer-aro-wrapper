@@ -588,11 +588,11 @@ replace (
 	github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20230929162348-34dfccba84a2
 	github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 	github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-	github.com/openshift/installer => github.com/openshift/installer-aro v0.9.0-master.0.20240625232813-f4a9f6b0b313
+	github.com/openshift/installer => github.com/openshift/installer-aro v0.9.0-master.0.20240705142628-6986a1596809
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20230627135745-c28b2232ab1c
-	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20240702202103-442bca4ab0d6
+	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20240705011043-cee84af27d7c
 	github.com/oras-project/oras-go => oras.land/oras-go v0.4.0
 	github.com/ovirt/go-ovirt => github.com/ovirt/go-ovirt v0.0.0-20210112072624-e4d3b104de71
 	github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20210421143221-52df5ef7a3be
