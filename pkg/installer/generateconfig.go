@@ -28,11 +28,11 @@ import (
 
 	"github.com/openshift/ARO-Installer/pkg/api"
 	"github.com/openshift/ARO-Installer/pkg/util/computeskus"
-	"github.com/openshift/ARO-Installer/pkg/util/iswimi"
 	"github.com/openshift/ARO-Installer/pkg/util/pullsecret"
 	"github.com/openshift/ARO-Installer/pkg/util/rhcos"
 	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
 	"github.com/openshift/ARO-Installer/pkg/util/subnet"
+	utilwimi "github.com/openshift/ARO-Installer/pkg/util/wimi"
 )
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
@@ -292,7 +292,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
-	if iswimi.IsWimi(m.oc.Properties) {
+	if utilwimi.IsWimi(m.oc) {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
 	}
 
