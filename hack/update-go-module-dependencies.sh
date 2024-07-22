@@ -70,9 +70,11 @@ for x in vendor/k8s.io/*; do
     # skip, it's replaced by openshift
     vendor/k8s.io/cloud-provider-vsphere)
       ;;
+    # skip, they don't follow k8s versioning schema
+    vendor/k8s.io/gengo|vendor/k8s.io/klog|vendor/k8s.io/kube-openapi|vendor/k8s.io/utils)
+      ;;
     *)
-      # ignore errors, they are from components which aren't tagged following the v0.x.y schema
-      go mod edit -replace "${x##vendor/}"="$(go list -mod=mod -m ${x##vendor/}@$K8S_RELEASE | sed -e 's/ /@/')" || true
+      go mod edit -replace "${x##vendor/}"="$(go list -mod=mod -m ${x##vendor/}@$K8S_RELEASE | sed -e 's/ /@/')"
       ;;
   esac
 done
