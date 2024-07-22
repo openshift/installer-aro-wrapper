@@ -22,8 +22,8 @@
 #
 # Note that github.com/openshift org also contains forks of K8s upstream repos and we
 # use these forks (indirectly in most cases). This means that
-# we also must take care of replacing modules such as sigs.k8s.io/cluster-api-provider-azure
-# with github.com/openshift/cluster-api-provider-azure (just an example, there are more).
+# we also must take care of replacing modules such as  github.com/metal3-io/baremetal-operator
+# with github.com/openshift/baremetal-operator (just an example, there are more).
 
 RELEASE=release-4.15
 K8S_RELEASE=v0.28.3
