@@ -14,39 +14,140 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var etcHostsTemplate = template.Must(template.New("etchosts").Parse(`127.0.0.1	localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1	localhost localhost.localdomain localhost6 localhost6.localdomain6
-{{ .APIIntIP }}	api.{{ .ClusterDomain }} api-int.{{ .ClusterDomain }}
-{{ $.GatewayPrivateEndpointIP }}	{{ range $GatewayDomain := .GatewayDomains }}{{ $GatewayDomain }} {{ end }}
-`))
+const (
+	configFileName = "aro.conf"
+	tempFileName   = "aro.tmp"
+	unitFileName   = "aro-etchosts-resolver.service"
+	scriptFileName = "aro-etchosts-resolver.sh"
+	scriptMarker   = "openshift-aro-etchosts-resolver"
+)
 
-type etcHostsTemplateData struct {
+type etcHostsAROConfTemplateData struct {
 	ClusterDomain            string
 	APIIntIP                 string
 	GatewayDomains           []string
 	GatewayPrivateEndpointIP string
 }
 
-func GenerateEtcHostsAdditionalDomains(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) ([]byte, error) {
+type etcHostsAROScriptTemplateData struct {
+	ConfigFileName string
+	TempFileName   string
+	UnitFileName   string
+	ScriptFileName string
+	ScriptMarker   string
+}
+
+var aroConfTemplate = template.Must(template.New("etchosts").Parse(`{{ .APIIntIP }}	api.{{ .ClusterDomain }} api-int.{{ .ClusterDomain }}
+{{ $.GatewayPrivateEndpointIP }}	{{ range $GatewayDomain := .GatewayDomains }}{{ $GatewayDomain }} {{ end }}
+`))
+
+var aroScriptTemplate = template.Must(template.New("etchostscript").Parse(`#!/bin/bash
+set -uo pipefail
+
+trap 'jobs -p | xargs kill || true; wait; exit 0' TERM
+
+OPENSHIFT_MARKER="{{ .ScriptMarker }}"
+HOSTS_FILE="/etc/hosts"
+CONFIG_FILE="/etc/hosts.d/{{ .ConfigFileName }}"
+TEMP_FILE="/etc/hosts.d/{{ .TempFileName }}"
+
+# Make a temporary file with the old hosts file's data.
+if ! cp -f "${HOSTS_FILE}" "${TEMP_FILE}"; then
+  echo "Failed to preserve hosts file. Exiting."
+  exit 1
+fi
+
+if ! sed --silent "/# ${OPENSHIFT_MARKER}/d; w ${TEMP_FILE}" "${HOSTS_FILE}"; then
+  # Only continue rebuilding the hosts entries if its original content is preserved
+  sleep 60 & wait
+  continue
+fi
+
+while IFS= read -r line; do
+    echo "${line} # ${OPENSHIFT_MARKER}" >> "${TEMP_FILE}"
+done < "${CONFIG_FILE}"
+
+# Replace /etc/hosts with our modified version if needed
+cmp "${TEMP_FILE}" "${HOSTS_FILE}" || cp -f "${TEMP_FILE}" "${HOSTS_FILE}"
+# TEMP_FILE is not removed to avoid file create/delete and attributes copy churn
+`))
+
+var aroUnitTemplate = template.Must(template.New("etchostservice").Parse(`[Unit]
+Description=One shot service that appends static domains to etchosts
+Before=network-online.target
+
+[Service]
+# ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
+ExecStart=/bin/bash /usr/local/bin/{{ .ScriptFileName }}
+
+[Install]
+WantedBy=multi-user.target
+`))
+
+func GenerateEtcHostsAROConf(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) ([]byte, error) {
 	buf := &bytes.Buffer{}
-	templateData := etcHostsTemplateData{
+	templateData := etcHostsAROConfTemplateData{
 		ClusterDomain:            clusterDomain,
 		APIIntIP:                 apiIntIP,
 		GatewayDomains:           gatewayDomains,
 		GatewayPrivateEndpointIP: gatewayPrivateEndpointIP,
 	}
 
-	if err := etcHostsTemplate.Execute(buf, templateData); err != nil {
-		return nil, errors.Wrap(err, "failed to execute etc hosts template")
+	if err := aroConfTemplate.Execute(buf, templateData); err != nil {
+		return nil, errors.Wrap(err, "failed to generate "+configFileName+" from template")
 	}
 
 	return buf.Bytes(), nil
 }
 
+func GenerateEtcHostsAROScript() ([]byte, error) {
+	buf := &bytes.Buffer{}
+	templateData := etcHostsAROScriptTemplateData{
+		ConfigFileName: configFileName,
+		TempFileName:   tempFileName,
+		UnitFileName:   unitFileName,
+		ScriptFileName: scriptFileName,
+		ScriptMarker:   scriptMarker,
+	}
+
+	if err := aroScriptTemplate.Execute(buf, templateData); err != nil {
+		return nil, errors.Wrap(err, "failed to generate "+scriptFileName+" from template")
+	}
+
+	return buf.Bytes(), nil
+}
+
+func GenerateEtcHostsAROUnit() (string, error) {
+	buf := &bytes.Buffer{}
+	templateData := etcHostsAROScriptTemplateData{
+		ConfigFileName: configFileName,
+		TempFileName:   tempFileName,
+		UnitFileName:   unitFileName,
+		ScriptFileName: scriptFileName,
+		ScriptMarker:   scriptMarker,
+	}
+
+	if err := aroUnitTemplate.Execute(buf, templateData); err != nil {
+		return "", errors.Wrap(err, "failed to generate "+unitFileName+" from template")
+	}
+
+	return buf.String(), nil
+}
+
 func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) (*ign3types.Config, error) {
-	data, err := GenerateEtcHostsAdditionalDomains(clusterDomain, apiIntIP, gatewayDomains, gatewayPrivateEndpointIP)
+	aroconf, err := GenerateEtcHostsAROConf(clusterDomain, apiIntIP, gatewayDomains, gatewayPrivateEndpointIP)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate addtional hosts for etc hosts")
+	}
+
+	aroscript, err := GenerateEtcHostsAROScript()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to generate template")
+	}
+
+	arounit, err := GenerateEtcHostsAROUnit()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to generate template")
 	}
 
 	ign := &ign3types.Config{
@@ -57,15 +158,42 @@ func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomain
 			Files: []ign3types.File{
 				{
 					Node: ign3types.Node{
-						Path:      "/etc/hosts",
+						Path:      "/etc/hosts.d/" + configFileName,
 						Overwrite: to.BoolPtr(true),
+						User: ign3types.NodeUser{
+							Name: to.StringPtr("root"),
+						},
 					},
 					FileEmbedded1: ign3types.FileEmbedded1{
 						Contents: ign3types.Resource{
-							Source: to.StringPtr(dataurl.EncodeBytes(data)),
+							Source: to.StringPtr(dataurl.EncodeBytes(aroconf)),
 						},
 						Mode: to.IntPtr(0644),
 					},
+				},
+				{
+					Node: ign3types.Node{
+						Overwrite: to.BoolPtr(true),
+						Path:      "/usr/local/bin/" + scriptFileName,
+						User: ign3types.NodeUser{
+							Name: to.StringPtr("root"),
+						},
+					},
+					FileEmbedded1: ign3types.FileEmbedded1{
+						Contents: ign3types.Resource{
+							Source: to.StringPtr(dataurl.EncodeBytes(aroscript)),
+						},
+						Mode: to.IntPtr(0744),
+					},
+				},
+			},
+		},
+		Systemd: ign3types.Systemd{
+			Units: []ign3types.Unit{
+				{
+					Contents: &arounit,
+					Enabled:  to.BoolPtr(true),
+					Name:     unitFileName,
 				},
 			},
 		},
@@ -79,9 +207,6 @@ func EtcHostsMachineConfig(clusterDomain string, apiIntIP string, gatewayDomains
 	if err != nil {
 		return nil, err
 	}
-
-	// marshalled, err := json.Marshal(ignConfig)
-	// fmt.Printf("marshalled: %s\n", marshalled)
 
 	rawExt, err := ignition.ConvertToRawExtension(*ignConfig)
 	if err != nil {
