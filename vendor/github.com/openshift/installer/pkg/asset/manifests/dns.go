@@ -136,7 +136,8 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 		}
 
 		if !installConfig.Config.Azure.IsARO() {
-			if installConfig.Config.Publish == types.ExternalPublishingStrategy {
+			if installConfig.Config.Publish == types.ExternalPublishingStrategy ||
+				(installConfig.Config.Publish == types.MixedPublishingStrategy && installConfig.Config.OperatorPublishingStrategy.Ingress != "Internal") {
 				//currently, this guesses the azure resource IDs from known parameter.
 				config.Spec.PublicZone = &configv1.DNSZone{
 					ID: dnsConfig.GetDNSZoneID(installConfig.Config.Azure.BaseDomainResourceGroupName, installConfig.Config.BaseDomain),
@@ -149,6 +150,13 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 			}
 		}
 	case gcptypes.Name:
+		// We donot want to configure cloud DNS when `UserProvisionedDNS` is enabled.
+		// So, do not set PrivateZone and PublicZone fields in the DNS manifest.
+		if installConfig.Config.GCP.UserProvisionedDNS == gcptypes.UserProvisionedDNSEnabled {
+			config.Spec.PublicZone = &configv1.DNSZone{ID: ""}
+			config.Spec.PrivateZone = &configv1.DNSZone{ID: ""}
+			break
+		}
 		client, err := icgcp.NewClient(context.Background())
 		if err != nil {
 			return err
@@ -179,7 +187,7 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 		config.Spec.PrivateZone = &configv1.DNSZone{ID: privateZoneID}
 
 	case ibmcloudtypes.Name:
-		client, err := icibmcloud.NewClient()
+		client, err := icibmcloud.NewClient(installConfig.Config.Platform.IBMCloud.ServiceEndpoints)
 		if err != nil {
 			return errors.Wrap(err, "failed to get IBM Cloud client")
 		}

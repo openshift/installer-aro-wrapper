@@ -13,8 +13,8 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/sirupsen/logrus"
 
-	"github.com/openshift/ARO-Installer/pkg/util/encryption"
-	"github.com/openshift/ARO-Installer/pkg/util/storage"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/encryption"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/storage"
 )
 
 type Manager interface {

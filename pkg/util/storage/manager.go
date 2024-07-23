@@ -13,8 +13,8 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
 
-	"github.com/openshift/ARO-Installer/pkg/env"
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/storage"
+	"github.com/openshift/installer-aro-wrapper/pkg/env"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/storage"
 )
 
 type Manager interface {

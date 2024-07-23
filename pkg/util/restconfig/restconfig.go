@@ -12,8 +12,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/openshift/ARO-Installer/pkg/api"
-	"github.com/openshift/ARO-Installer/pkg/proxy"
+	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
 )
 
 // RestConfig returns the Kubernetes *rest.Config for a kubeconfig

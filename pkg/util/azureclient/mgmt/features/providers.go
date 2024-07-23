@@ -7,7 +7,7 @@ import (
 	mgmtfeatures "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features"
 	"github.com/Azure/go-autorest/autorest"
 
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
 
 // ProvidersClient is a minimal interface for azure ProvidersClient

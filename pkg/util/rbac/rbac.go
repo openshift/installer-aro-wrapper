@@ -7,8 +7,8 @@ import (
 	mgmtauthorization "github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2018-09-01-preview/authorization"
 	"github.com/Azure/go-autorest/autorest/to"
 
-	"github.com/openshift/ARO-Installer/pkg/util/arm"
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/arm"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
 
 const (

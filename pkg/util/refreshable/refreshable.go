@@ -6,7 +6,7 @@ package refreshable
 import (
 	"github.com/Azure/go-autorest/autorest"
 
-	"github.com/openshift/ARO-Installer/pkg/env"
+	"github.com/openshift/installer-aro-wrapper/pkg/env"
 )
 
 type Authorizer interface {

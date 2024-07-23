@@ -20,8 +20,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient/keyvault"
-	utilpem "github.com/openshift/ARO-Installer/pkg/util/pem"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/keyvault"
+	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
 )
 
 type Eku string

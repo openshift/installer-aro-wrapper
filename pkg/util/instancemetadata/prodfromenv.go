@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
 
 type prodFromEnv struct {

@@ -26,12 +26,12 @@ import (
 	"golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/openshift/ARO-Installer/pkg/api"
-	"github.com/openshift/ARO-Installer/pkg/util/computeskus"
-	"github.com/openshift/ARO-Installer/pkg/util/pullsecret"
-	"github.com/openshift/ARO-Installer/pkg/util/rhcos"
-	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
-	"github.com/openshift/ARO-Installer/pkg/util/subnet"
+	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/pullsecret"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/rhcos"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
@@ -262,6 +262,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
 						configv1.ClusterVersionCapabilityBuild,
+						configv1.ClusterVersionCapabilityCloudCredential,
 						configv1.ClusterVersionCapabilityConsole,
 						configv1.ClusterVersionCapabilityCSISnapshot,
 						configv1.ClusterVersionCapabilityDeploymentConfig,
@@ -271,6 +272,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						configv1.ClusterVersionCapabilityMarketplace,
 						configv1.ClusterVersionCapabilityNodeTuning,
 						configv1.ClusterVersionCapabilityOpenShiftSamples,
+						configv1.ClusterVersionCapabilityOperatorLifecycleManager,
 						configv1.ClusterVersionCapabilityStorage,
 					},
 				},

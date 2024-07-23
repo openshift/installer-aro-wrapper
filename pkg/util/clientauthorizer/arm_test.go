@@ -18,8 +18,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/golang/mock/gomock"
 
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
-	mock_instancemetadata "github.com/openshift/ARO-Installer/pkg/util/mocks/instancemetadata"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
+	mock_instancemetadata "github.com/openshift/installer-aro-wrapper/pkg/util/mocks/instancemetadata"
 )
 
 func TestARMRefreshOnce(t *testing.T) {

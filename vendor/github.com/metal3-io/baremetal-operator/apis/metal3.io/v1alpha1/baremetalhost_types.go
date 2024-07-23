@@ -363,9 +363,11 @@ type BareMetalHostSpec struct {
 	// BIOS configuration for bare metal server
 	Firmware *FirmwareConfig `json:"firmware,omitempty"`
 
-	// What is the name of the hardware profile for this host? It
-	// should only be necessary to set this when inspection cannot
-	// automatically determine the profile.
+	// What is the name of the hardware profile for this host?
+	// Hardware profiles are deprecated and should not be used.
+	// Use the separate fields Architecture and RootDeviceHints instead.
+	// Set to "empty" to prepare for the future version of the API
+	// without hardware profiles.
 	HardwareProfile string `json:"hardwareProfile,omitempty"`
 
 	// Provide guidance about how to choose the device for the image
@@ -546,9 +548,15 @@ type CPU struct {
 
 // Storage describes one storage device (disk, SSD, etc.) on the host.
 type Storage struct {
-	// The Linux device name of the disk, e.g. "/dev/sda". Note that this
-	// may not be stable across reboots.
+	// A Linux device name of the disk, e.g.
+	// "/dev/disk/by-path/pci-0000:01:00.0-scsi-0:2:0:0". This will be a name
+	// that is stable across reboots if one is available.
 	Name string `json:"name,omitempty"`
+
+	// A list of alternate Linux device names of the disk, e.g. "/dev/sda".
+	// Note that this list is not exhaustive, and names may not be stable
+	// across reboots.
+	AlternateNames []string `json:"alternateNames,omitempty"`
 
 	// Whether this disk represents rotational storage.
 	// This field is not recommended for usage, please

@@ -15,10 +15,10 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	"github.com/sirupsen/logrus"
 
-	"github.com/openshift/ARO-Installer/pkg/env"
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient/mgmt/storage"
-	"github.com/openshift/ARO-Installer/pkg/util/rhcos"
-	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
+	"github.com/openshift/installer-aro-wrapper/pkg/env"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/storage"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/rhcos"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 )
 
 func run(ctx context.Context, log *logrus.Entry) error {

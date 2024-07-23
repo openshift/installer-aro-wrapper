@@ -33,8 +33,7 @@ type authConfig struct {
 	ResourceManagerEndpoint string `json:"resourceManagerEndpoint,omitempty" yaml:"resourceManagerEndpoint,omitempty"`
 }
 
-// config is the cloud provider config as defined in
-// https://github.com/openshift/cloud-provider-azure/blob/b27e994249cc4cc319a741bbb3777e2df355582f/pkg/provider/azure.go
+// config is the cloud provider config as defined in https://raw.githubusercontent.com/openshift/cloud-provider-azure/75ed9a21c1f0e2acfb5b27da395fdb02c918d56f/pkg/provider/azure.go
 type config struct {
 	authConfig
 
@@ -193,11 +192,16 @@ type config struct {
 	// MultipleStandardLoadBalancerConfigurations stores the properties regarding multiple standard load balancers.
 	// It will be ignored if LoadBalancerBackendPoolConfigurationType is nodeIPConfiguration.
 	// If the length is not 0, it is assumed the multiple standard load balancers mode is on. In this case,
-	// there must be one configuration named “<clustername>” or an error will be reported.
+	// there must be one configuration named "<clustername>" or an error will be reported.
 	MultipleStandardLoadBalancerConfigurations []MultipleStandardLoadBalancerConfiguration `json:"multipleStandardLoadBalancerConfigurations,omitempty" yaml:"multipleStandardLoadBalancerConfigurations,omitempty"`
 
 	// DisableAPICallCache disables the cache for Azure API calls. It is for ARG support and not all resources will be disabled.
 	DisableAPICallCache bool `json:"disableAPICallCache,omitempty" yaml:"disableAPICallCache,omitempty"`
+
+	// RouteUpdateIntervalInSeconds is the interval for updating routes. Default is 30 seconds.
+	RouteUpdateIntervalInSeconds int `json:"routeUpdateIntervalInSeconds,omitempty" yaml:"routeUpdateIntervalInSeconds,omitempty"`
+	// LoadBalancerBackendPoolUpdateIntervalInSeconds is the interval for updating load balancer backend pool of local services. Default is 30 seconds.
+	LoadBalancerBackendPoolUpdateIntervalInSeconds int `json:"loadBalancerBackendPoolUpdateIntervalInSeconds,omitempty" yaml:"loadBalancerBackendPoolUpdateIntervalInSeconds,omitempty"`
 }
 
 // MultipleStandardLoadBalancerConfiguration stores the properties regarding multiple standard load balancers.
@@ -206,7 +210,7 @@ type MultipleStandardLoadBalancerConfiguration struct {
 	// created if needed, and the name will be `<name>-internal`. The internal lb
 	// shares the same configurations as the external one. The internal lbs
 	// are not needed to be included in `MultipleStandardLoadBalancerConfigurations`.
-	// There must be a name of “<clustername>” in the load balancer configuration list.
+	// There must be a name of "<clustername>" in the load balancer configuration list.
 	Name string `json:"name" yaml:"name"`
 
 	MultipleStandardLoadBalancerConfigurationSpec

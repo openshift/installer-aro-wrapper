@@ -2,18 +2,18 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	azsku "github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/compute/mgmt/compute"
-	aznetwork "github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/network/mgmt/network"
 	azres "github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
 	azsubs "github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/subscriptions"
+	aznetwork "github.com/Azure/azure-sdk-for-go/profiles/2020-09-01/network/mgmt/network"
 	azenc "github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	azmarketplace "github.com/Azure/azure-sdk-for-go/profiles/latest/marketplaceordering/mgmt/marketplaceordering"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockgen -source=./client.go -destination=mock/azureclient_generated.go -package=mock
@@ -65,7 +65,7 @@ func (c *Client) GetVirtualNetwork(ctx context.Context, resourceGroupName, virtu
 
 	vnet, err := vnetClient.Get(ctx, resourceGroupName, virtualNetwork, "")
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get virtual network %s", virtualNetwork)
+		return nil, fmt.Errorf("failed to get virtual network %s: %w", virtualNetwork, err)
 	}
 
 	return &vnet, nil
@@ -83,7 +83,7 @@ func (c *Client) getSubnet(ctx context.Context, resourceGroupName, virtualNetwor
 
 	subnet, err := subnetsClient.Get(ctx, resourceGroupName, virtualNetwork, subNetwork, "")
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get subnet %s", subNetwork)
+		return nil, fmt.Errorf("failed to get subnet %s: %w", subNetwork, err)
 	}
 
 	return &subnet, nil
@@ -131,7 +131,7 @@ func (c *Client) ListLocations(ctx context.Context) (*[]azsubs.Location, error) 
 
 	locations, err := subsClient.ListLocations(ctx, c.ssn.Credentials.SubscriptionID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list locations")
+		return nil, fmt.Errorf("failed to list locations: %w", err)
 	}
 
 	return locations.Value, nil
@@ -156,7 +156,7 @@ func (c *Client) GetResourcesProvider(ctx context.Context, resourceProviderNames
 
 	provider, err := providersClient.Get(ctx, resourceProviderNamespace, "")
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get resource provider %s", resourceProviderNamespace)
+		return nil, fmt.Errorf("failed to get resource provider %s: %w", resourceProviderNamespace, err)
 	}
 
 	return &provider, nil
@@ -173,14 +173,23 @@ func (c *Client) getProvidersClient(ctx context.Context) (azres.ProvidersClient,
 func (c *Client) GetDiskSkus(ctx context.Context, region string) ([]azsku.ResourceSku, error) {
 	client := azsku.NewResourceSkusClientWithBaseURI(c.ssn.Environment.ResourceManagerEndpoint, c.ssn.Credentials.SubscriptionID)
 	client.Authorizer = c.ssn.Authorizer
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+
+	// See https://issues.redhat.com/browse/OCPBUGS-29469 before changing this timeout
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	var sku []azsku.ResourceSku
 
-	for skuPage, err := client.List(ctx); skuPage.NotDone(); err = skuPage.NextWithContext(ctx) {
+	// This has to be initialized outside the `for` because we need access to
+	// `err`. If initialized in the loop and the API call fails right away,
+	// `page.NotDone()` will return `false` and we'll never check for the error
+	skuPage, err := client.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SKUs: %w", err)
+	}
+	for ; skuPage.NotDone(); err = skuPage.NextWithContext(ctx) {
 		if err != nil {
-			return nil, errors.Wrap(err, "error fetching SKU pages")
+			return nil, fmt.Errorf("error fetching SKU pages: %w", err)
 		}
 		for _, page := range skuPage.Values() {
 			for _, diskRegion := range to.StringSlice(page.Locations) {
@@ -195,7 +204,7 @@ func (c *Client) GetDiskSkus(ctx context.Context, region string) ([]azsku.Resour
 		return sku, nil
 	}
 
-	return nil, errors.Errorf("no disks for specified subscription in region %s", region)
+	return nil, fmt.Errorf("no disks for specified subscription in region %s", region)
 }
 
 // GetGroup returns resource group for the groupName.
@@ -207,7 +216,7 @@ func (c *Client) GetGroup(ctx context.Context, groupName string) (*azres.Group, 
 
 	res, err := client.Get(ctx, groupName)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get resource group")
+		return nil, fmt.Errorf("failed to get resource group: %w", err)
 	}
 	return &res, nil
 }
@@ -220,9 +229,13 @@ func (c *Client) ListResourceIDsByGroup(ctx context.Context, groupName string) (
 	defer cancel()
 
 	var res []string
-	for resPage, err := client.ListByResourceGroup(ctx, groupName, "", "", nil); resPage.NotDone(); err = resPage.NextWithContext(ctx) {
+	resPage, err := client.ListByResourceGroup(ctx, groupName, "", "", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list resources: %w", err)
+	}
+	for ; resPage.NotDone(); err = resPage.NextWithContext(ctx) {
 		if err != nil {
-			return nil, errors.Wrap(err, "error fetching resource pages")
+			return nil, fmt.Errorf("error fetching resource pages: %w", err)
 		}
 		for _, page := range resPage.Values() {
 			res = append(res, to.String(page.ID))
@@ -235,12 +248,21 @@ func (c *Client) ListResourceIDsByGroup(ctx context.Context, groupName string) (
 func (c *Client) GetVirtualMachineSku(ctx context.Context, name, region string) (*azsku.ResourceSku, error) {
 	client := azsku.NewResourceSkusClientWithBaseURI(c.ssn.Environment.ResourceManagerEndpoint, c.ssn.Credentials.SubscriptionID)
 	client.Authorizer = c.ssn.Authorizer
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+
+	// See https://issues.redhat.com/browse/OCPBUGS-29469 before chaging this timeout
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
-	for page, err := client.List(ctx); page.NotDone(); err = page.NextWithContext(ctx) {
+	// This has to be initialized outside the `for` because we need access to
+	// `err`. If initialized in the loop and the API call fails right away,
+	// `page.NotDone()` will return `false` and we'll never check for the error
+	page, err := client.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SKUs: %w", err)
+	}
+	for ; page.NotDone(); err = page.NextWithContext(ctx) {
 		if err != nil {
-			return nil, errors.Wrap(err, "error fetching SKU pages")
+			return nil, fmt.Errorf("error fetching SKU pages: %w", err)
 		}
 		for _, sku := range page.Values() {
 			// Filter out resources that are not virtualMachines
@@ -259,6 +281,7 @@ func (c *Client) GetVirtualMachineSku(ctx context.Context, name, region string) 
 			}
 		}
 	}
+
 	return nil, nil
 }
 
@@ -271,7 +294,7 @@ func (c *Client) GetDiskEncryptionSet(ctx context.Context, subscriptionID, group
 
 	diskEncryptionSet, err := client.Get(ctx, groupName, diskEncryptionSetName)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get disk encryption set")
+		return nil, fmt.Errorf("failed to get disk encryption set: %w", err)
 	}
 
 	return &diskEncryptionSet, nil
@@ -281,7 +304,7 @@ func (c *Client) GetDiskEncryptionSet(ctx context.Context, subscriptionID, group
 func (c *Client) GetVirtualMachineFamily(ctx context.Context, name, region string) (string, error) {
 	typeMeta, err := c.GetVirtualMachineSku(ctx, name, region)
 	if err != nil {
-		return "", fmt.Errorf("error connecting to Azure client: %v", err)
+		return "", fmt.Errorf("error connecting to Azure client: %w", err)
 	}
 	if typeMeta == nil {
 		return "", fmt.Errorf("not found in region %s", region)
@@ -298,7 +321,7 @@ func (c *Client) GetVirtualMachineFamily(ctx context.Context, name, region strin
 func (c *Client) GetVMCapabilities(ctx context.Context, instanceType, region string) (map[string]string, error) {
 	typeMeta, err := c.GetVirtualMachineSku(ctx, instanceType, region)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to Azure client: %v", err)
+		return nil, fmt.Errorf("error connecting to Azure client: %w", err)
 	}
 	if typeMeta == nil {
 		return nil, fmt.Errorf("not found in region %s", region)
@@ -330,7 +353,10 @@ func (c *Client) GetMarketplaceImage(ctx context.Context, region, publisher, off
 	defer cancel()
 
 	image, err := client.Get(ctx, region, publisher, offer, sku, version)
-	return image, errors.Wrap(err, "could not get marketplace image")
+	if err != nil {
+		return image, fmt.Errorf("could not get marketplace image: %w", err)
+	}
+	return image, nil
 }
 
 // AreMarketplaceImageTermsAccepted tests whether the terms have been accepted for the specified marketplace VM image.
@@ -372,7 +398,11 @@ func (c *Client) GetLocationInfo(ctx context.Context, region string, instanceTyp
 
 	// Only supported filter atm is `location`
 	filter := fmt.Sprintf("location eq '%s'", region)
-	for res, err := client.List(ctx, filter, "false"); res.NotDone(); err = res.NextWithContext(ctx) {
+	res, err := client.List(ctx, filter, "false")
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SKUs: %w", err)
+	}
+	for ; res.NotDone(); err = res.NextWithContext(ctx) {
 		if err != nil {
 			return nil, err
 		}

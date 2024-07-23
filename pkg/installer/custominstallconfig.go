@@ -12,9 +12,9 @@ import (
 	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 
-	"github.com/openshift/ARO-Installer/pkg/api"
-	"github.com/openshift/ARO-Installer/pkg/bootstraplogging"
-	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
+	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
+	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 )
 
 // applyInstallConfigCustomisations modifies the InstallConfig and creates

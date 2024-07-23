@@ -10,7 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	utiltls "github.com/openshift/ARO-Installer/pkg/util/tls"
+	utiltls "github.com/openshift/installer-aro-wrapper/pkg/util/tls"
 )
 
 func TestSubjectNameAndIssuer(t *testing.T) {

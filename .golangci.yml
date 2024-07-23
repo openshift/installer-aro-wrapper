@@ -11,6 +11,9 @@ issues:
   - linters:
     - staticcheck
     text: "SA1019: codec.BasicHandle is deprecated"
+  - linters:
+      - staticcheck
+    text: "SA1019: \"github.com/Azure/azure-sdk-for-go"
   # This is set to false to disregard the default EXC0011 exclusion
   # which shadows all the ST* checks. Refer https://github.com/golangci/golangci-lint/issues/2281
   exclude-use-default: false

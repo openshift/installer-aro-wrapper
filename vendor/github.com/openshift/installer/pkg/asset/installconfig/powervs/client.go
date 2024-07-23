@@ -2,24 +2,25 @@ package powervs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/IBM-Cloud/bluemix-go/crn"
 	"github.com/IBM-Cloud/power-go-client/power/client/datacenters"
-	"github.com/IBM-Cloud/power-go-client/power/client/workspaces"
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/IBM/networking-go-sdk/dnsrecordsv1"
 	"github.com/IBM/networking-go-sdk/dnssvcsv1"
 	"github.com/IBM/networking-go-sdk/dnszonesv1"
 	"github.com/IBM/networking-go-sdk/resourcerecordsv1"
+	"github.com/IBM/networking-go-sdk/transitgatewayapisv1"
 	"github.com/IBM/networking-go-sdk/zonesv1"
 	"github.com/IBM/platform-services-go-sdk/iamidentityv1"
 	"github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	"github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
 	"github.com/IBM/vpc-go-sdk/vpcv1"
-	"github.com/pkg/errors"
 
 	"github.com/openshift/installer/pkg/types"
 )
@@ -41,19 +42,21 @@ type API interface {
 	GetVPCs(ctx context.Context, region string) ([]vpcv1.VPC, error)
 	ListResourceGroups(ctx context.Context) (*resourcemanagerv2.ResourceGroupList, error)
 	ListServiceInstances(ctx context.Context) ([]string, error)
-	ServiceInstanceIDToCRN(ctx context.Context, id string) (string, error)
-	GetDatacenterCapabilities(ctx context.Context, zone string) (map[string]bool, error)
-	GetWorkspaceCapabilities(ctx context.Context, svcInsID string) (map[string]bool, error)
+	ServiceInstanceGUIDToName(ctx context.Context, id string) (string, error)
+	GetDatacenterCapabilities(ctx context.Context, region string) (map[string]bool, error)
+	GetAttachedTransitGateway(ctx context.Context, svcInsID string) (string, error)
+	GetTGConnectionVPC(ctx context.Context, gatewayID string, vpcSubnetID string) (string, error)
 }
 
 // Client makes calls to the PowerVS API.
 type Client struct {
-	APIKey         string
-	BXCli          *BxClient
-	managementAPI  *resourcemanagerv2.ResourceManagerV2
-	controllerAPI  *resourcecontrollerv2.ResourceControllerV2
-	vpcAPI         *vpcv1.VpcV1
-	dnsServicesAPI *dnssvcsv1.DnsSvcsV1
+	APIKey            string
+	BXCli             *BxClient
+	managementAPI     *resourcemanagerv2.ResourceManagerV2
+	controllerAPI     *resourcecontrollerv2.ResourceControllerV2
+	vpcAPI            *vpcv1.VpcV1
+	dnsServicesAPI    *dnssvcsv1.DnsSvcsV1
+	transitGatewayAPI *transitgatewayapisv1.TransitGatewayApisV1
 }
 
 // cisServiceID is the Cloud Internet Services' catalog service ID.
@@ -101,7 +104,7 @@ func NewClient() (*Client, error) {
 	}
 
 	if err := client.loadSDKServices(); err != nil {
-		return nil, errors.Wrap(err, "failed to load IBM SDK services")
+		return nil, fmt.Errorf("failed to load IBM SDK services: %w", err)
 	}
 
 	if bxCli.PowerVSResourceGroup == "Default" {
@@ -111,7 +114,7 @@ func NewClient() (*Client, error) {
 
 		resourceGroups, err := client.ListResourceGroups(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "client.ListResourceGroups failed")
+			return nil, fmt.Errorf("client.ListResourceGroups failed: %w", err)
 		}
 		if resourceGroups == nil {
 			return nil, errors.New("client.ListResourceGroups returns nil")
@@ -140,6 +143,7 @@ func (c *Client) loadSDKServices() error {
 		c.loadResourceControllerAPI,
 		c.loadVPCV1API,
 		c.loadDNSServicesAPI,
+		c.loadTransitGatewayAPI,
 	}
 
 	// Call all the load functions.
@@ -176,7 +180,7 @@ func (c *Client) GetDNSRecordsByName(ctx context.Context, crnstr string, zoneID 
 			Name: core.StringPtr(recordName),
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "could not retrieve DNS records")
+			return nil, fmt.Errorf("could not retrieve DNS records: %w", err)
 		}
 		for _, record := range records.Result {
 			dnsRecords = append(dnsRecords, DNSRecordResponse{Name: *record.Name, Type: *record.Type})
@@ -192,7 +196,7 @@ func (c *Client) GetDNSRecordsByName(ctx context.Context, crnstr string, zoneID 
 
 		dnsCRN, err := crn.Parse(crnstr)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to parse DNSInstanceCRN")
+			return nil, fmt.Errorf("failed to parse DNSInstanceCRN: %w", err)
 		}
 
 		// Get DNS records by name
@@ -206,7 +210,7 @@ func (c *Client) GetDNSRecordsByName(ctx context.Context, crnstr string, zoneID 
 			}
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, "could not retrieve DNS records")
+			return nil, fmt.Errorf("could not retrieve DNS records: %w", err)
 		}
 	}
 
@@ -264,7 +268,7 @@ func (c *Client) GetDNSZones(ctx context.Context, publish types.PublishingStrate
 
 	listResourceInstancesResponse, _, err := c.controllerAPI.ListResourceInstances(options)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cis instance")
+		return nil, fmt.Errorf("failed to get cis instance: %w", err)
 	}
 
 	var allZones []DNSZoneResponse
@@ -280,7 +284,7 @@ func (c *Client) GetDNSZones(ctx context.Context, publish types.PublishingStrate
 				Crn:           instance.CRN,
 			})
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to list DNS zones")
+				return nil, fmt.Errorf("failed to list DNS zones: %w", err)
 			}
 
 			options := zonesService.NewListZonesOptions()
@@ -307,7 +311,7 @@ func (c *Client) GetDNSZones(ctx context.Context, publish types.PublishingStrate
 				Authenticator: authenticator,
 			})
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to list DNS zones")
+				return nil, fmt.Errorf("failed to list DNS zones: %w", err)
 			}
 
 			options := dnsZonesService.NewListDnszonesOptions(*instance.GUID)
@@ -360,13 +364,13 @@ func (c *Client) GetVPCByName(ctx context.Context, vpcName string) (*vpcv1.VPC, 
 	listRegionsOptions := c.vpcAPI.NewListRegionsOptions()
 	listRegionsResponse, _, err := c.vpcAPI.ListRegionsWithContext(ctx, listRegionsOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list vpc regions")
+		return nil, fmt.Errorf("failed to list vpc regions: %w", err)
 	}
 
 	for _, region := range listRegionsResponse.Regions {
 		err := c.vpcAPI.SetServiceURL(fmt.Sprintf("%s/v1", *region.Endpoint))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to set vpc api service url")
+			return nil, fmt.Errorf("failed to set vpc api service url: %w", err)
 		}
 
 		vpcs, detailedResponse, err := c.vpcAPI.ListVpcsWithContext(ctx, c.vpcAPI.NewListVpcsOptions())
@@ -393,12 +397,12 @@ func (c *Client) GetPublicGatewayByVPC(ctx context.Context, vpcName string) (*vp
 
 	vpc, err := c.GetVPCByName(ctx, vpcName)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get VPC")
+		return nil, fmt.Errorf("failed to get VPC: %w", err)
 	}
 
 	vpcCRN, err := crn.Parse(*vpc.CRN)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse VPC CRN")
+		return nil, fmt.Errorf("failed to parse VPC CRN: %w", err)
 	}
 
 	err = c.SetVPCServiceURLForRegion(ctx, vpcCRN.Region)
@@ -506,6 +510,22 @@ func (c *Client) loadDNSServicesAPI() error {
 	return nil
 }
 
+func (c *Client) loadTransitGatewayAPI() error {
+	authenticator := &core.IamAuthenticator{
+		ApiKey: c.APIKey,
+	}
+	versionDate := "2023-07-04"
+	tgSvc, err := transitgatewayapisv1.NewTransitGatewayApisV1(&transitgatewayapisv1.TransitGatewayApisV1Options{
+		Authenticator: authenticator,
+		Version:       &versionDate,
+	})
+	if err != nil {
+		return err
+	}
+	c.transitGatewayAPI = tgSvc
+	return nil
+}
+
 // SetVPCServiceURLForRegion will set the VPC Service URL to a specific IBM Cloud Region, in order to access Region scoped resources
 func (c *Client) SetVPCServiceURLForRegion(ctx context.Context, region string) error {
 	regionOptions := c.vpcAPI.NewGetRegionOptions(region)
@@ -561,7 +581,7 @@ func (c *Client) GetVPCs(ctx context.Context, region string) ([]vpcv1.VPC, error
 
 	err := c.SetVPCServiceURLForRegion(ctx, region)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to set vpc api service url")
+		return nil, fmt.Errorf("failed to set vpc api service url: %w", err)
 	}
 
 	vpcs, _, err := c.vpcAPI.ListVpcs(c.vpcAPI.NewListVpcsOptions())
@@ -575,6 +595,7 @@ func (c *Client) GetVPCs(ctx context.Context, region string) ([]vpcv1.VPC, error
 // ListResourceGroups returns a list of resource groups.
 func (c *Client) ListResourceGroups(ctx context.Context) (*resourcemanagerv2.ResourceGroupList, error) {
 	listResourceGroupsOptions := c.managementAPI.NewListResourceGroupsOptions()
+	listResourceGroupsOptions.AccountID = &c.BXCli.User.Account
 
 	resourceGroups, _, err := c.managementAPI.ListResourceGroups(listResourceGroupsOptions)
 	if err != nil {
@@ -604,9 +625,10 @@ func (c *Client) ListServiceInstances(ctx context.Context) ([]string, error) {
 
 	// If the user passes in a human readable group id, then we need to convert it to a UUID
 	listGroupOptions := c.managementAPI.NewListResourceGroupsOptions()
+	listGroupOptions.AccountID = &c.BXCli.User.Account
 	groups, _, err := c.managementAPI.ListResourceGroupsWithContext(ctx, listGroupOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to list resource groups")
+		return nil, fmt.Errorf("failed to list resource groups: %w", err)
 	}
 	for _, group := range groups.Resources {
 		if *group.Name == groupID {
@@ -623,7 +645,7 @@ func (c *Client) ListServiceInstances(ctx context.Context) ([]string, error) {
 	for moreData {
 		resources, _, err = c.controllerAPI.ListResourceInstancesWithContext(ctx, options)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to list resource instances")
+			return nil, fmt.Errorf("failed to list resource instances: %w", err)
 		}
 
 		for _, resource := range resources.Resources {
@@ -637,11 +659,12 @@ func (c *Client) ListServiceInstances(ctx context.Context) ([]string, error) {
 
 			resourceInstance, response, err = c.controllerAPI.GetResourceInstance(getResourceOptions)
 			if err != nil {
-				return nil, errors.Wrap(err, "Failed to get instance")
+				return nil, fmt.Errorf("failed to get instance: %w", err)
 			}
 			if response != nil && response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusInternalServerError {
 				continue
 			}
+
 			if resourceInstance.Type != nil && (*resourceInstance.Type == "service_instance" || *resourceInstance.Type == "composite_instance") {
 				serviceInstances = append(serviceInstances, fmt.Sprintf("%s %s", *resource.Name, *resource.GUID))
 			}
@@ -650,7 +673,7 @@ func (c *Client) ListServiceInstances(ctx context.Context) ([]string, error) {
 		// Based on: https://cloud.ibm.com/apidocs/resource-controller/resource-controller?code=go#list-resource-instances
 		nextURL, err = core.GetQueryParam(resources.NextURL, "start")
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to GetQueryParam on start")
+			return nil, fmt.Errorf("failed to GetQueryParam on start: %w", err)
 		}
 		if nextURL == nil {
 			options.SetStart("")
@@ -664,8 +687,8 @@ func (c *Client) ListServiceInstances(ctx context.Context) ([]string, error) {
 	return serviceInstances, nil
 }
 
-// ServiceInstanceIDToCRN returns the CRN of the matching service instance GUID which was passed in.
-func (c *Client) ServiceInstanceIDToCRN(ctx context.Context, id string) (string, error) {
+// ServiceInstanceGUIDToName returns the name of the matching service instance GUID which was passed in.
+func (c *Client) ServiceInstanceGUIDToName(ctx context.Context, id string) (string, error) {
 	var (
 		options   *resourcecontrollerv2.ListResourceInstancesOptions
 		resources *resourcecontrollerv2.ResourceInstancesList
@@ -678,6 +701,7 @@ func (c *Client) ServiceInstanceIDToCRN(ctx context.Context, id string) (string,
 
 	// If the user passes in a human readable group id, then we need to convert it to a UUID
 	listGroupOptions := c.managementAPI.NewListResourceGroupsOptions()
+	listGroupOptions.AccountID = &c.BXCli.User.Account
 	groups, _, err := c.managementAPI.ListResourceGroupsWithContext(ctx, listGroupOptions)
 	if err != nil {
 		return "", fmt.Errorf("failed to list resource groups: %w", err)
@@ -719,10 +743,10 @@ func (c *Client) ServiceInstanceIDToCRN(ctx context.Context, id string) (string,
 
 			if resourceInstance.Type != nil && (*resourceInstance.Type == "service_instance" || *resourceInstance.Type == "composite_instance") {
 				if resourceInstance.GUID != nil && *resourceInstance.GUID == id {
-					if resourceInstance.CRN == nil {
+					if resourceInstance.Name == nil {
 						return "", nil
 					}
-					return *resourceInstance.CRN, nil
+					return *resourceInstance.Name, nil
 				}
 			}
 		}
@@ -745,7 +769,7 @@ func (c *Client) ServiceInstanceIDToCRN(ctx context.Context, id string) (string,
 }
 
 // GetDatacenterCapabilities retrieves the capabilities of the specified datacenter.
-func (c *Client) GetDatacenterCapabilities(ctx context.Context, zone string) (map[string]bool, error) {
+func (c *Client) GetDatacenterCapabilities(ctx context.Context, region string) (map[string]bool, error) {
 	var err error
 	if c.BXCli.PISession == nil {
 		err = c.BXCli.NewPISession()
@@ -753,7 +777,7 @@ func (c *Client) GetDatacenterCapabilities(ctx context.Context, zone string) (ma
 			return nil, fmt.Errorf("failed to initialize PISession in GetDatacenterCapabilities: %w", err)
 		}
 	}
-	params := datacenters.NewV1DatacentersGetParamsWithContext(ctx).WithDatacenterRegion(zone)
+	params := datacenters.NewV1DatacentersGetParamsWithContext(ctx).WithDatacenterRegion(region)
 	getOk, err := c.BXCli.PISession.Power.Datacenters.V1DatacentersGet(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datacenter capabilities: %w", err)
@@ -761,12 +785,110 @@ func (c *Client) GetDatacenterCapabilities(ctx context.Context, zone string) (ma
 	return getOk.Payload.Capabilities, nil
 }
 
-// GetWorkspaceCapabilities retrieves the capabilities of the specified workspace.
-func (c *Client) GetWorkspaceCapabilities(ctx context.Context, svcInsID string) (map[string]bool, error) {
-	params := workspaces.NewV1WorkspacesGetParamsWithContext(ctx).WithWorkspaceID(svcInsID)
-	getOk, err := c.BXCli.PISession.Power.Workspaces.V1WorkspacesGet(params, c.BXCli.PISession.AuthInfo(svcInsID))
+// GetAttachedTransitGateway finds an existing Transit Gateway attached to the provided PowerVS cloud instance.
+func (c *Client) GetAttachedTransitGateway(ctx context.Context, svcInsID string) (string, error) {
+	var (
+		gateways []transitgatewayapisv1.TransitGateway
+		gateway  transitgatewayapisv1.TransitGateway
+		err      error
+		conns    []transitgatewayapisv1.TransitConnection
+		conn     transitgatewayapisv1.TransitConnection
+	)
+	gateways, err = c.getTransitGateways(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get workspace capabilities: %w", err)
+		return "", err
 	}
-	return getOk.Payload.Capabilities, nil
+	for _, gateway = range gateways {
+		conns, err = c.getTransitConnections(ctx, *gateway.ID)
+		if err != nil {
+			return "", err
+		}
+		for _, conn = range conns {
+			if *conn.NetworkType == "power_virtual_server" && strings.Contains(*conn.NetworkID, svcInsID) {
+				return *conn.TransitGateway.ID, nil
+			}
+		}
+	}
+	return "", nil
+}
+
+// GetTGConnectionVPC checks if the VPC subnet is attached to the provided Transit Gateway.
+func (c *Client) GetTGConnectionVPC(ctx context.Context, gatewayID string, vpcSubnetID string) (string, error) {
+	conns, err := c.getTransitConnections(ctx, gatewayID)
+	if err != nil {
+		return "", err
+	}
+	for _, conn := range conns {
+		if *conn.NetworkType == "vpc" && strings.Contains(*conn.NetworkID, vpcSubnetID) {
+			return *conn.ID, nil
+		}
+	}
+	return "", nil
+}
+
+func (c *Client) getTransitGateways(ctx context.Context) ([]transitgatewayapisv1.TransitGateway, error) {
+	var (
+		listTransitGatewaysOptions *transitgatewayapisv1.ListTransitGatewaysOptions
+		gatewayCollection          *transitgatewayapisv1.TransitGatewayCollection
+		response                   *core.DetailedResponse
+		err                        error
+		perPage                    int64 = 32
+		moreData                         = true
+	)
+
+	listTransitGatewaysOptions = c.transitGatewayAPI.NewListTransitGatewaysOptions()
+	listTransitGatewaysOptions.Limit = &perPage
+
+	result := []transitgatewayapisv1.TransitGateway{}
+
+	for moreData {
+		// https://github.com/IBM/networking-go-sdk/blob/master/transitgatewayapisv1/transit_gateway_apis_v1.go#L184
+		gatewayCollection, response, err = c.transitGatewayAPI.ListTransitGatewaysWithContext(ctx, listTransitGatewaysOptions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list transit gateways: %w and the respose is: %s", err, response)
+		}
+
+		result = append(result, gatewayCollection.TransitGateways...)
+
+		if gatewayCollection.Next != nil {
+			listTransitGatewaysOptions.SetStart(*gatewayCollection.Next.Start)
+		}
+
+		moreData = gatewayCollection.Next != nil
+	}
+
+	return result, nil
+}
+
+func (c *Client) getTransitConnections(ctx context.Context, tgID string) ([]transitgatewayapisv1.TransitConnection, error) {
+	var (
+		listConnectionsOptions *transitgatewayapisv1.ListConnectionsOptions
+		connectionCollection   *transitgatewayapisv1.TransitConnectionCollection
+		response               *core.DetailedResponse
+		err                    error
+		perPage                int64 = 32
+		moreData                     = true
+	)
+
+	listConnectionsOptions = c.transitGatewayAPI.NewListConnectionsOptions()
+	listConnectionsOptions.Limit = &perPage
+
+	result := []transitgatewayapisv1.TransitConnection{}
+
+	for moreData {
+		connectionCollection, response, err = c.transitGatewayAPI.ListConnectionsWithContext(ctx, listConnectionsOptions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list transit gateways: %w and the respose is: %s", err, response)
+		}
+
+		result = append(result, connectionCollection.Connections...)
+
+		if connectionCollection.Next != nil {
+			listConnectionsOptions.SetStart(*connectionCollection.Next.Start)
+		}
+
+		moreData = connectionCollection.Next != nil
+	}
+
+	return result, nil
 }

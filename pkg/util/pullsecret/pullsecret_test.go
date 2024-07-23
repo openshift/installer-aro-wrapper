@@ -10,7 +10,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/openshift/ARO-Installer/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/api"
 )
 
 func TestSetRegistryProfiles(t *testing.T) {

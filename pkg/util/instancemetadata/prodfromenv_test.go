@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/openshift/ARO-Installer/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
 
 func TestProdEnvPopulateInstanceMetadata(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/pkg/errors"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/types"
 )
 
@@ -26,6 +27,8 @@ type Metadata struct {
 	computeSubnets      map[string]Subnet
 	controlPlaneSubnets map[string]Subnet
 	dnsInstance         *DNSInstance
+	publishStrategy     types.PublishingStrategy
+	serviceEndpoints    []configv1.IBMCloudServiceEndpoint
 
 	mutex       sync.Mutex
 	clientMutex sync.Mutex
@@ -39,12 +42,14 @@ type DNSInstance struct {
 }
 
 // NewMetadata initializes a new Metadata object.
-func NewMetadata(baseDomain string, region string, controlPlaneSubnets []string, computeSubnets []string) *Metadata {
+func NewMetadata(config *types.InstallConfig) *Metadata {
 	return &Metadata{
-		BaseDomain:              baseDomain,
-		ComputeSubnetNames:      computeSubnets,
-		ControlPlaneSubnetNames: controlPlaneSubnets,
-		Region:                  region,
+		BaseDomain:              config.BaseDomain,
+		ComputeSubnetNames:      config.Platform.IBMCloud.ComputeSubnets,
+		ControlPlaneSubnetNames: config.Platform.IBMCloud.ControlPlaneSubnets,
+		publishStrategy:         config.Publish,
+		Region:                  config.Platform.IBMCloud.Region,
+		serviceEndpoints:        config.Platform.IBMCloud.ServiceEndpoints,
 	}
 }
 
@@ -76,7 +81,8 @@ func (m *Metadata) CISInstanceCRN(ctx context.Context) (string, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if m.cisInstanceCRN == "" {
+	// Only attempt to find the CIS instance if using ExternalPublishingStrategy and we have not collected it already
+	if m.publishStrategy == types.ExternalPublishingStrategy && m.cisInstanceCRN == "" {
 		client, err := m.Client()
 		if err != nil {
 			return "", err
@@ -108,8 +114,9 @@ func (m *Metadata) DNSInstance(ctx context.Context) (*DNSInstance, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	// Prevent multiple attempts to retrieve (set) the dnsInstance if it hasn't been set (multiple threads reach mutex concurrently)
-	if m.dnsInstance == nil {
+	// Only attempt to find the DNS Services instance if using InternalPublishingStrategy and also
+	// prevent multiple attempts to retrieve (set) the dnsInstance if it hasn't been set (multiple threads reach mutex concurrently)
+	if m.publishStrategy == types.InternalPublishingStrategy && m.dnsInstance == nil {
 		client, err := m.Client()
 		if err != nil {
 			return nil, err
@@ -222,7 +229,7 @@ func (m *Metadata) Client() (API, error) {
 	m.clientMutex.Lock()
 	defer m.clientMutex.Unlock()
 
-	client, err := NewClient()
+	client, err := NewClient(m.serviceEndpoints)
 	if err != nil {
 		return nil, err
 	}
@@ -235,6 +242,9 @@ func (m *Metadata) Client() (API, error) {
 }
 
 // NewIamAuthenticator returns a new IamAuthenticator for using IBM Cloud services.
-func NewIamAuthenticator(apiKey string) (*core.IamAuthenticator, error) {
+func NewIamAuthenticator(apiKey string, iamServiceEndpointOverride string) (*core.IamAuthenticator, error) {
+	if iamServiceEndpointOverride != "" {
+		return core.NewIamAuthenticatorBuilder().SetApiKey(apiKey).SetURL(iamServiceEndpointOverride).Build()
+	}
 	return core.NewIamAuthenticatorBuilder().SetApiKey(apiKey).Build()
 }

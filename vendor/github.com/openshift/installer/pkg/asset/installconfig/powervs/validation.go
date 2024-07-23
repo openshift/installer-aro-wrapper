@@ -64,14 +64,6 @@ func ValidatePERAvailability(client API, ic *types.InstallConfig) error {
 		return fmt.Errorf("%s is not available at: %s", per, ic.PowerVS.Zone)
 	}
 
-	capabilities, err = client.GetWorkspaceCapabilities(context.TODO(), ic.PowerVS.ServiceInstanceID)
-	if err != nil {
-		return err
-	}
-	if !capabilities[per] {
-		return fmt.Errorf("%s is not available in workspace: %s", per, ic.PowerVS.ServiceInstanceID)
-	}
-
 	return nil
 }
 
@@ -263,7 +255,30 @@ func ValidateResourceGroup(client API, ic *types.InstallConfig) error {
 	return nil
 }
 
-// ValidateServiceInstance validates the service instance in our install config.
+// ValidateSystemTypeForRegion checks if the specified sysType is available in the target region.
+func ValidateSystemTypeForRegion(client API, ic *types.InstallConfig) error {
+	if ic.ControlPlane == nil || ic.ControlPlane.Platform.PowerVS == nil || ic.ControlPlane.Platform.PowerVS.SysType == "" {
+		return nil
+	}
+	availableOnes, err := powervstypes.AvailableSysTypes(ic.PowerVS.Region)
+	if err != nil {
+		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Region)
+	}
+	requested := ic.ControlPlane.Platform.PowerVS.SysType
+	found := false
+	for i := range availableOnes {
+		if requested == availableOnes[i] {
+			found = true
+			break
+		}
+	}
+	if found {
+		return nil
+	}
+	return fmt.Errorf("%s is not available in: %s", requested, ic.PowerVS.Region)
+}
+
+// ValidateServiceInstance validates the optional service instance GUID in our install config.
 func ValidateServiceInstance(client API, ic *types.InstallConfig) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
 	defer cancel()
@@ -273,20 +288,20 @@ func ValidateServiceInstance(client API, ic *types.InstallConfig) error {
 		return err
 	}
 
-	switch ic.PowerVS.ServiceInstanceID {
+	switch ic.PowerVS.ServiceInstanceGUID {
 	case "":
-		return errors.New("platform:powervs:serviceinstance is empty")
+		return nil
 	default:
 		found := false
 		for _, serviceInstance := range serviceInstances {
 			guid := strings.SplitN(serviceInstance, " ", 2)[1]
-			if guid == ic.PowerVS.ServiceInstanceID {
+			if guid == ic.PowerVS.ServiceInstanceGUID {
 				found = true
 				break
 			}
 		}
 		if !found {
-			return errors.New("platform:powervs:serviceinstance has an invalid guid")
+			return errors.New("platform:powervs:serviceInstanceGUID has an invalid guid")
 		}
 	}
 

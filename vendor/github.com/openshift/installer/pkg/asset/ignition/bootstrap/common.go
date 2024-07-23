@@ -93,6 +93,8 @@ type bootstrapTemplateData struct {
 	APIServerURL          string
 	APIIntServerURL       string
 	FeatureSet            configv1.FeatureSet
+	Invoker               string
+	ClusterDomain         string
 	LoggingConfig         *bootstraplogging.Config
 }
 
@@ -188,7 +190,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/common/units", templateData, commonEnabledServices); err != nil {
 		return err
 	}
-	if !templateData.IsOKD {
+	if !(templateData.IsOKD && templateData.Invoker == "agent-installer") {
 		if err := AddSystemdUnits(a.Config, "bootstrap/systemd/rhcos/units", templateData, rhcosEnabledServices); err != nil {
 			return err
 		}
@@ -335,6 +337,9 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 
 	apiURL := fmt.Sprintf("api.%s", installConfig.Config.ClusterDomain())
 	apiIntURL := fmt.Sprintf("api-int.%s", installConfig.Config.ClusterDomain())
+
+	openshiftInstallInvoker := os.Getenv("OPENSHIFT_INSTALL_INVOKER")
+
 	return &bootstrapTemplateData{
 		AdditionalTrustBundle: installConfig.Config.AdditionalTrustBundle,
 		FIPS:                  installConfig.Config.FIPS,
@@ -358,6 +363,8 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		APIServerURL:          apiURL,
 		APIIntServerURL:       apiIntURL,
 		FeatureSet:            installConfig.Config.FeatureSet,
+		Invoker:               openshiftInstallInvoker,
+		ClusterDomain:         installConfig.Config.ClusterDomain(),
 	}
 }
 
@@ -414,6 +421,10 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	} else if filename == "motd" || filename == "containers.conf" {
 		mode = 0644
 		appendToFile = true
+	} else if filename == "registries.conf" {
+		// Having the mode be private breaks rpm-ostree, xref
+		// https://github.com/openshift/installer/pull/6789
+		mode = 0644
 	} else {
 		mode = 0600
 	}

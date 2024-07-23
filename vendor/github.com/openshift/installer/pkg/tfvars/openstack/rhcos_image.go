@@ -11,10 +11,9 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/imagedata"
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/imageimport"
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/images"
-	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/sirupsen/logrus"
 
-	"github.com/openshift/installer/pkg/tfvars/internal/cache"
+	"github.com/openshift/installer/pkg/rhcos/cache"
 	openstackdefaults "github.com/openshift/installer/pkg/types/openstack/defaults"
 )
 
@@ -31,7 +30,7 @@ func uploadBaseImage(cloud string, baseImage, imageName string, infraID string, 
 	// location. Otherwise will take local file path from the URL.
 	switch url.Scheme {
 	case "http", "https":
-		localFilePath, err = cache.DownloadImageFile(baseImage)
+		localFilePath, err = cache.DownloadImageFile(baseImage, cache.InstallerApplicationName)
 		if err != nil {
 			return err
 		}
@@ -49,7 +48,7 @@ func uploadBaseImage(cloud string, baseImage, imageName string, infraID string, 
 	}
 	defer f.Close()
 
-	conn, err := clientconfig.NewServiceClient("image", openstackdefaults.DefaultClientOpts(cloud))
+	conn, err := openstackdefaults.NewServiceClient("image", openstackdefaults.DefaultClientOpts(cloud))
 	if err != nil {
 		return err
 	}
@@ -145,7 +144,7 @@ func isImageImportSupported(cloud string) (bool, error) {
 	// https://docs.openstack.org/api-ref/image/v2/?expanded=#image-service-info-discovery
 	logrus.Debugln("Checking if the image import mechanism is supported")
 
-	conn, err := clientconfig.NewServiceClient("image", openstackdefaults.DefaultClientOpts(cloud))
+	conn, err := openstackdefaults.NewServiceClient("image", openstackdefaults.DefaultClientOpts(cloud))
 	if err != nil {
 		return false, err
 	}
