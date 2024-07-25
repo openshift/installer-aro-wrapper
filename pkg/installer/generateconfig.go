@@ -282,9 +282,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
+<<<<<<< HEAD
 	var credentials *icazure.Credentials
 
 	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
+=======
+	if m.oc.IsWorkloadIdentity() {
+>>>>>>> 14483434 (function to check if a cluster is workload identity or service principal)
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
 
 		credentials, err = m.newInstallConfigClientCertificateCredential(m.sub.Properties.TenantID, r.SubscriptionID)
