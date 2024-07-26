@@ -283,7 +283,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
-	if m.oc.IsWorkloadIdentity() {
+	if m.oc.UsesWorkloadIdentity() {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
 	} else {
 		installConfig.Azure = icazure.NewMetadataWithCredentials(
