@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/openshift/installer/pkg/asset/ignition/machine"
+	"github.com/openshift/installer-aro-wrapper/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/arm"
@@ -26,7 +26,7 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 	}
 
 	var installConfig *installconfig.InstallConfig
-	var machineMaster *machine.Master
+	var machineMaster *ignition.Master
 	err = pg.Get(&installConfig, &machineMaster)
 	if err != nil {
 		return err
