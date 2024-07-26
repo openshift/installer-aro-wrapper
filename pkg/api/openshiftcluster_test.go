@@ -53,7 +53,7 @@ func TestIsTerminal(t *testing.T) {
 	}
 }
 
-func TestIsWorkloadIdentity(t *testing.T) {
+func TestUsesWorkloadIdentity(t *testing.T) {
 	tests := []*struct {
 		name string
 		oc   OpenShiftCluster
@@ -103,7 +103,7 @@ func TestIsWorkloadIdentity(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := test.oc.IsWorkloadIdentity()
+			got := test.oc.UsesWorkloadIdentity()
 			if got != test.want {
 				t.Error(fmt.Errorf("got != want: %v != %v", got, test.want))
 			}
