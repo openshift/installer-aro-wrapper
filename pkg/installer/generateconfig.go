@@ -293,7 +293,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
-	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
+	if m.oc.UsesWorkloadIdentity() {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
 	}
 
