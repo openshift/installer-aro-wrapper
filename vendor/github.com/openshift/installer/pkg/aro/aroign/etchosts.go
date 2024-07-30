@@ -84,7 +84,7 @@ ExecStart=/bin/bash /usr/local/bin/{{ .ScriptFileName }}
 WantedBy=multi-user.target
 `))
 
-func GenerateEtcHostsAROConf(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) (*bytes.Buffer, error) {
+func GenerateEtcHostsAROConf(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	templateData := etcHostsAROConfTemplateData{
 		ClusterDomain:            clusterDomain,
@@ -97,10 +97,10 @@ func GenerateEtcHostsAROConf(clusterDomain string, apiIntIP string, gatewayDomai
 		return nil, errors.Wrap(err, "failed to generate "+configFileName+" from template")
 	}
 
-	return buf, nil
+	return buf.Bytes(), nil
 }
 
-func GenerateEtcHostsAROScript() (*bytes.Buffer, error) {
+func GenerateEtcHostsAROScript() ([]byte, error) {
 	buf := &bytes.Buffer{}
 	templateData := etcHostsAROScriptTemplateData{
 		ConfigFileName: configFileName,
@@ -114,10 +114,10 @@ func GenerateEtcHostsAROScript() (*bytes.Buffer, error) {
 		return nil, errors.Wrap(err, "failed to generate "+scriptFileName+" from template")
 	}
 
-	return buf, nil
+	return buf.Bytes(), nil
 }
 
-func GenerateEtcHostsAROUnit() (*bytes.Buffer, error) {
+func GenerateEtcHostsAROUnit() (string, error) {
 	buf := &bytes.Buffer{}
 	templateData := etcHostsAROScriptTemplateData{
 		ConfigFileName: configFileName,
@@ -128,10 +128,10 @@ func GenerateEtcHostsAROUnit() (*bytes.Buffer, error) {
 	}
 
 	if err := aroUnitTemplate.Execute(buf, templateData); err != nil {
-		return nil, errors.Wrap(err, "failed to generate "+unitFileName+" from template")
+		return "", errors.Wrap(err, "failed to generate "+unitFileName+" from template")
 	}
 
-	return buf, nil
+	return buf.String(), nil
 }
 
 func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) (*ign3types.Config, error) {
@@ -166,7 +166,7 @@ func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomain
 					},
 					FileEmbedded1: ign3types.FileEmbedded1{
 						Contents: ign3types.Resource{
-							Source: to.StringPtr(dataurl.EncodeBytes(aroconf.Bytes())),
+							Source: to.StringPtr(dataurl.EncodeBytes(aroconf)),
 						},
 						Mode: to.IntPtr(0644),
 					},
@@ -181,7 +181,7 @@ func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomain
 					},
 					FileEmbedded1: ign3types.FileEmbedded1{
 						Contents: ign3types.Resource{
-							Source: to.StringPtr(dataurl.EncodeBytes(aroscript.Bytes())),
+							Source: to.StringPtr(dataurl.EncodeBytes(aroscript)),
 						},
 						Mode: to.IntPtr(0744),
 					},
@@ -191,7 +191,7 @@ func EtcHostsIgnitionConfig(clusterDomain string, apiIntIP string, gatewayDomain
 		Systemd: ign3types.Systemd{
 			Units: []ign3types.Unit{
 				{
-					Contents: to.StringPtr(arounit.String()),
+					Contents: &arounit,
 					Enabled:  to.BoolPtr(true),
 					Name:     unitFileName,
 				},

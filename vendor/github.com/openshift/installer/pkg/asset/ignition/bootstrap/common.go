@@ -240,6 +240,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	}
 
 	a.Config.Storage.Files = append(a.Config.Storage.Files, etchostsIgnConfig.Storage.Files...)
+	a.Config.Systemd.Units = append(a.Config.Systemd.Units, etchostsIgnConfig.Systemd.Units...)
 
 	return nil
 }
