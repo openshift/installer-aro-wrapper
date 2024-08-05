@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: router-default
+  namespace: openshift-ingress
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "{{ if .AROIngressInternal }}true{{ end }}"
+  labels:
+    app: router
+    ingresscontroller.operator.openshift.io/owning-ingresscontroller: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerIP: "{{ .AROIngressIP }}"
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  type: LoadBalancer
