@@ -1380,7 +1380,7 @@ github.com/openshift/installer/pkg/version
 ## explicit; go 1.19
 github.com/openshift/machine-api-provider-ibmcloud/pkg/apis
 github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1
-# github.com/openshift/machine-config-operator v3.11.0+incompatible => github.com/openshift/machine-config-operator v0.0.1-0.20240710022557-ea6671e27ec6
+# github.com/openshift/machine-config-operator v0.0.0 => github.com/openshift/machine-config-operator v0.0.1-0.20240710022557-ea6671e27ec6
 ## explicit; go 1.20
 github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1
 # github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b
