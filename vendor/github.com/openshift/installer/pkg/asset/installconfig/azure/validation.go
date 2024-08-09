@@ -43,6 +43,9 @@ func Validate(client API, ic *types.InstallConfig) error {
 
 	allErrs = append(allErrs, validateNetworks(client, ic.Azure, ic.Networking.MachineNetwork, field.NewPath("platform").Child("azure"))...)
 	allErrs = append(allErrs, validateRegion(client, field.NewPath("platform").Child("azure").Child("region"), ic.Azure)...)
+	if ic.Azure.CloudName == aztypes.StackCloud {
+		allErrs = append(allErrs, validateAzureStackDiskType(client, ic)...)
+	}
 	allErrs = append(allErrs, validateInstanceTypes(client, ic)...)
 	if ic.Azure.CloudName == aztypes.StackCloud && ic.Azure.ClusterOSImage != "" {
 		StorageEndpointSuffix, err := client.GetStorageEndpointSuffix(context.TODO())
@@ -374,14 +377,18 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 	// The assumption here is that since cp and compute arches cannot differ today, it's ok to not check the
 	// default instance as long as it is used in any one place.
 	if !useDefaultInstanceType && defaultInstanceType != "" {
+		architecture := types.Architecture(types.ArchitectureAMD64)
 		if ic.ControlPlane != nil {
-			fieldPath := field.NewPath("platform", "azure", "defaultMachinePlatform")
-			capabilities, err := client.GetVMCapabilities(context.TODO(), defaultInstanceType, ic.Azure.Region)
-			if err != nil {
-				return append(allErrs, field.Invalid(fieldPath.Child("type"), defaultInstanceType, err.Error()))
-			}
-			allErrs = append(allErrs, validateVMArchitecture(fieldPath.Child("type"), defaultInstanceType, ic.ControlPlane.Architecture, capabilities)...)
+			architecture = ic.ControlPlane.Architecture
 		}
+		minReq := computeReq
+		if ic.ControlPlane == nil || ic.ControlPlane.Platform.Azure == nil {
+			minReq = controlPlaneReq
+		}
+		fieldPath := field.NewPath("platform", "azure", "defaultMachinePlatform")
+		ultraSSDEnabled := strings.EqualFold(defaultUltraSSDCapability, "Enabled")
+		allErrs = append(allErrs, ValidateInstanceType(client, fieldPath,
+			ic.Azure.Region, defaultInstanceType, defaultDiskType, minReq, ultraSSDEnabled, defaultVMNetworkingType, defaultZones, architecture)...)
 	}
 	return allErrs
 }
@@ -650,5 +657,41 @@ func validateMarketplaceImage(client API, installConfig *types.InstallConfig) fi
 				fmt.Sprintf("could not determine if the license terms for the marketplace image have been accepted: %v", err)))
 		}
 	}
+	return allErrs
+}
+
+func validateAzureStackDiskType(_ API, installConfig *types.InstallConfig) field.ErrorList {
+	var allErrs field.ErrorList
+
+	supportedTypes := sets.NewString("Premium_LRS", "Standard_LRS")
+	errMsg := fmt.Sprintf("disk format not supported. Must be one of %v", supportedTypes.List())
+
+	defaultDiskType := aztypes.DefaultDiskType
+	if installConfig.Azure.DefaultMachinePlatform != nil &&
+		installConfig.Azure.DefaultMachinePlatform.DiskType != "" {
+		defaultDiskType = installConfig.Azure.DefaultMachinePlatform.DiskType
+	}
+
+	diskType := defaultDiskType
+	if installConfig.ControlPlane != nil &&
+		installConfig.ControlPlane.Platform.Azure != nil &&
+		installConfig.ControlPlane.Platform.Azure.DiskType != "" {
+		diskType = installConfig.ControlPlane.Platform.Azure.DiskType
+	}
+	if !supportedTypes.Has(diskType) {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("controlPlane", "platform", "azure", "OSDisk", "diskType"), diskType, errMsg))
+	}
+
+	for idx, compute := range installConfig.Compute {
+		fieldPath := field.NewPath("compute").Index(idx)
+		diskType := defaultDiskType
+		if compute.Platform.Azure != nil && compute.Platform.Azure.DiskType != "" {
+			diskType = compute.Platform.Azure.DiskType
+		}
+		if !supportedTypes.Has(diskType) {
+			allErrs = append(allErrs, field.Invalid(fieldPath.Child("platform", "azure", "OSDisk", "diskType"), diskType, errMsg))
+		}
+	}
+
 	return allErrs
 }

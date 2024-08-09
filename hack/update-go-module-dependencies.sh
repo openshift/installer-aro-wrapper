@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 # Background: https://groups.google.com/forum/#!topic/golang-nuts/51-D_YFC78k
 #
@@ -26,6 +26,7 @@
 # with github.com/openshift/cluster-api-provider-azure (just an example, there are more).
 
 for x in vendor/github.com/openshift/*; do
+  echo "adjusting for $x"
 	case $x in
 		# Review the list of special cases on each release.
 
@@ -36,13 +37,21 @@ for x in vendor/github.com/openshift/*; do
 		# Replace the installer with our own fork below in this script.
 		vendor/github.com/openshift/installer)
 			;;
-
+    
+    vendor/github.com/openshift/assisted-service)
+      ;;
+    vendor/github.com/openshift/cluster-api)
+      ;;
 		# Inconsistent imports: some of our dependencies import it as github.com/metal3-io/cluster-api-provider-baremetal
 		# but in some places directly from the openshift fork.
 		# Replace github.com/metal3-io/cluster-api-provider-baremetal with an openshift fork in go.mod
 		vendor/github.com/openshift/cluster-api-provider-baremetal)
 			;;
 
+		vendor/github.com/openshift/cluster-api-provider-ibmcloud)
+			;;
+		vendor/github.com/openshift/cluster-api-provider-libvirt)
+			;;
 		# It is only used indirectly and intermediate dependencies pin to different incompatible commits.
 		# We force a specific commit here to make all dependencies happy.
 		vendor/github.com/openshift/cloud-credential-operator)
@@ -60,12 +69,22 @@ for x in vendor/github.com/openshift/*; do
 	esac
 done
 
-for x in aws azure openstack; do
+echo "Doing apiproviders"
+for x in aws azure openstack ibmcloud libvirt; do
 	go mod edit -replace sigs.k8s.io/cluster-api-provider-$x=$(go list -mod=mod -m github.com/openshift/cluster-api-provider-$x@release-4.12 | sed -e 's/ /@/')
 done
 
-go mod edit -replace github.com/openshift/installer=$(go list -mod=mod -m github.com/jewzaam/installer-aro@release-4.12-azure | sed -e 's/ /@/')
+echo "Doing clusterapi"
+go mod edit -replace sigs.k8s.io/cluster-api=$(go list -mod=mod -m github.com/openshift/cluster-api@release-4.12 | sed -e 's/ /@/')
 
+echo "Doing installer"
+go mod edit -replace github.com/openshift/installer=$(go list -mod=mod -m github.com/openshift/installer-aro@release-4.12-azure | sed -e 's/ /@/')
+
+echo "Doing assisted service"
+go mod edit -replace github.com/openshift/assisted-service/api=$(go list -mod=mod -m github.com/openshift/assisted-service/api@release-4.12 | sed -e 's/ /@/')
+go mod edit -replace github.com/openshift/assisted-service/models=$(go list -mod=mod -m github.com/openshift/assisted-service/models@release-4.12 | sed -e 's/ /@/')
+
+echo "updating rest"
 go get -u ./...
 
 go mod tidy -compat=1.19

@@ -32,6 +32,15 @@ const (
 	// PermissionDeleteSharedInstanceRole is a set of permissions required when the installer destroys resources from a
 	// cluster with user-supplied IAM roles for instances.
 	PermissionDeleteSharedInstanceRole PermissionGroup = "delete-shared-instance-role"
+
+	// PermissionCreateHostedZone is a set of permissions required when the installer creates a route53 hosted zone.
+	PermissionCreateHostedZone PermissionGroup = "create-hosted-zone"
+
+	// PermissionDeleteHostedZone is a set of permissions required when the installer destroys a route53 hosted zone.
+	PermissionDeleteHostedZone PermissionGroup = "delete-hosted-zone"
+
+	// PermissionKMSEncryptionKeys is an additional set of permissions required when the installer uses user provided kms encryption keys.
+	PermissionKMSEncryptionKeys PermissionGroup = "kms-encryption-keys"
 )
 
 var permissions = map[PermissionGroup][]string{
@@ -131,8 +140,6 @@ var permissions = map[PermissionGroup][]string{
 		// Route53 related perms
 		"route53:ChangeResourceRecordSets",
 		"route53:ChangeTagsForResource",
-		"route53:CreateHostedZone",
-		"route53:DeleteHostedZone",
 		"route53:GetChange",
 		"route53:GetHostedZone",
 		"route53:ListHostedZones",
@@ -232,6 +239,22 @@ var permissions = map[PermissionGroup][]string{
 	// Permissions required for deleting a cluster with shared instance roles
 	PermissionDeleteSharedInstanceRole: {
 		"iam:UntagRole",
+	},
+	PermissionCreateHostedZone: {
+		"route53:CreateHostedZone",
+	},
+	PermissionDeleteHostedZone: {
+		"route53:DeleteHostedZone",
+	},
+	PermissionKMSEncryptionKeys: {
+		"kms:Decrypt",
+		"kms:Encrypt",
+		"kms:GenerateDataKey",
+		"kms:GenerateDataKeyWithoutPlainText",
+		"kms:DescribeKey",
+		"kms:RevokeGrant",
+		"kms:CreateGrant",
+		"kms:ListGrants",
 	},
 }
 
