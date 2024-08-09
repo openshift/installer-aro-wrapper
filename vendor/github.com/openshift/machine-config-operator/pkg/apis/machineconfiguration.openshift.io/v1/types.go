@@ -89,10 +89,12 @@ type ControllerConfigSpec struct {
 	Proxy *configv1.ProxyStatus `json:"proxy"`
 
 	// infra holds the infrastructure details
+	// +kubebuilder:validation:EmbeddedResource
 	// +nullable
 	Infra *configv1.Infrastructure `json:"infra"`
 
 	// dns holds the cluster dns details
+	// +kubebuilder:validation:EmbeddedResource
 	// +nullable
 	DNS *configv1.DNS `json:"dns"`
 
@@ -482,11 +484,11 @@ type ContainerRuntimeConfiguration struct {
 	// logSizeMax specifies the Maximum size allowed for the container log file.
 	// Negative numbers indicate that no size limit is imposed.
 	// If it is positive, it must be >= 8192 to match/exceed conmon's read buffer.
-	LogSizeMax resource.Quantity `json:"logSizeMax,omitempty"`
+	LogSizeMax *resource.Quantity `json:"logSizeMax,omitempty"`
 
 	// overlaySize specifies the maximum size of a container image.
 	// This flag can be used to set quota on the size of container images.
-	OverlaySize resource.Quantity `json:"overlaySize,omitempty"`
+	OverlaySize *resource.Quantity `json:"overlaySize,omitempty"`
 
 	// defaultRuntime is the name of the OCI runtime to be used as the default.
 	DefaultRuntime ContainerRuntimeDefaultRuntime `json:"defaultRuntime,omitempty"`

@@ -18,6 +18,11 @@ type MachinePool struct {
 	// +optional
 	OSDisk `json:"osDisk"`
 
+	// OSImage defines a custom image for instance.
+	//
+	// +optional
+	OSImage *OSImage `json:"osImage,omitempty"`
+
 	// Tags defines a set of network tags which will be added to instances in the machineset
 	//
 	// +optional
@@ -43,6 +48,13 @@ type MachinePool struct {
 	// +kubebuilder:validation:Enum=Enabled;Disabled
 	// +optional
 	ConfidentialCompute string `json:"confidentialCompute,omitempty"`
+
+	// ServiceAccount is the email of a gcp service account to be used for shared
+	// vpn installations. The provided service account will be attached to control-plane nodes
+	// in order to provide the permissions required by the cloud provider in the host project.
+	//
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 }
 
 // OSDisk defines the disk for machines on GCP.
@@ -63,6 +75,19 @@ type OSDisk struct {
 	//
 	// +optional
 	EncryptionKey *EncryptionKeyReference `json:"encryptionKey,omitempty"`
+}
+
+// OSImage defines the image to use for the OS.
+type OSImage struct {
+	// Name defines the name of the image.
+	//
+	// +required
+	Name string `json:"name"`
+
+	// Project defines the name of the project containing the image.
+	//
+	// +required
+	Project string `json:"project"`
 }
 
 // Set sets the values from `required` to `a`.
@@ -91,6 +116,10 @@ func (a *MachinePool) Set(required *MachinePool) {
 		a.OSDisk.DiskType = required.OSDisk.DiskType
 	}
 
+	if required.OSImage != nil {
+		a.OSImage = required.OSImage
+	}
+
 	if required.EncryptionKey != nil {
 		if a.EncryptionKey == nil {
 			a.EncryptionKey = &EncryptionKeyReference{}
@@ -107,6 +136,10 @@ func (a *MachinePool) Set(required *MachinePool) {
 
 	if required.ConfidentialCompute != "" {
 		a.ConfidentialCompute = required.ConfidentialCompute
+	}
+
+	if required.ServiceAccount != "" {
+		a.ServiceAccount = required.ServiceAccount
 	}
 }
 
