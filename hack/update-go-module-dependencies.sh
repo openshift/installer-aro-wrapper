@@ -79,7 +79,7 @@ for x in aws azure openstack; do
 	esac
 done
 
-go mod edit -replace github.com/openshift/installer=$(go list -mod=mod -m github.com/jewzaam/installer-aro@release-4.13-azure | sed -e 's/ /@/')
+go mod edit -replace github.com/openshift/installer=$(go list -mod=mod -m github.com/openshift/installer-aro@release-4.13-azure | sed -e 's/ /@/')
 
 go get ./...
 
