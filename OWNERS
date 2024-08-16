@@ -1,5 +1,6 @@
 reviewers:
 - bennerv
+- bitoku
 - cadenmarchese
 - cblecker
 - ellis-johnson
@@ -14,6 +15,7 @@ reviewers:
 - ulrichschlueter
 approvers:
 - bennerv
+- bitoku
 - cadenmarchese
 - cblecker
 - ellis-johnson
