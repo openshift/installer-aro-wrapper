@@ -27,6 +27,7 @@ import (
 	openstackapi "sigs.k8s.io/cluster-api-provider-openstack/pkg/apis"
 	openstackprovider "sigs.k8s.io/cluster-api-provider-openstack/pkg/apis/openstackproviderconfig/v1alpha1"
 
+	"github.com/openshift/installer/pkg/aro/aroign"
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
@@ -268,6 +269,13 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			return errors.Wrap(err, "failed to create ignition for ARO DNS for worker machines")
 		}
 		machineConfigs = append(machineConfigs, ignARODNS)
+
+		ignAROEtcHosts, err := aroign.EtcHostsMachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, "worker")
+		if err != nil {
+			return errors.Wrap(err, "failed to create ignition for ARO etc hosts for worker machines")
+		}
+		machineConfigs = append(machineConfigs, ignAROEtcHosts)
+
 		switch ic.Platform.Name() {
 		case alibabacloudtypes.Name:
 			client, err := installConfig.AlibabaCloud.Client()
