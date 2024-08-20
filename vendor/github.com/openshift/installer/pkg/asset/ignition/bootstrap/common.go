@@ -26,6 +26,7 @@ import (
 	utilsnet "k8s.io/utils/net"
 
 	"github.com/openshift/installer/data"
+	"github.com/openshift/installer/pkg/aro/aroign"
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/bootstraplogging"
@@ -225,6 +226,14 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 
 	a.Config.Storage.Files = append(a.Config.Storage.Files, dnsmasqIgnConfig.Storage.Files...)
 	a.Config.Systemd.Units = append(a.Config.Systemd.Units, dnsmasqIgnConfig.Systemd.Units...)
+
+	etchostsIgnConfig, err := aroign.EtcHostsIgnitionConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
+	if err != nil {
+		return err
+	}
+
+	a.Config.Storage.Files = append(a.Config.Storage.Files, etchostsIgnConfig.Storage.Files...)
+	a.Config.Systemd.Units = append(a.Config.Systemd.Units, etchostsIgnConfig.Systemd.Units...)
 
 	return nil
 }
