@@ -53,8 +53,17 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
 	}
 
+	aroManifests := &AROManifests{}
+	fileFetcher := &aroFileFetcher{directory: "/"}
+	if found, err := aroManifests.Load(fileFetcher); err != nil {
+		m.log.Errorf("Error loading ARO manifests: %v", err)
+		return nil, err
+	} else {
+		m.log.Infof("Found ARO manifests: %v, %d", found, len(aroManifests.FileList))
+	}
+
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig)
+	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, aroManifests)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
