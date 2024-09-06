@@ -10,11 +10,11 @@ import (
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	mgmtnetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-08-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/asset/ignition"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/arm"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
@@ -176,7 +176,7 @@ func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig)
 	}
 }
 
-func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, zones *[]string, machineMaster *machine.Master) *arm.Resource {
+func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, zones *[]string, machineMaster *ignition.Master) *arm.Resource {
 	vm := &mgmtcompute.VirtualMachine{
 		VirtualMachineProperties: &mgmtcompute.VirtualMachineProperties{
 			HardwareProfile: &mgmtcompute.HardwareProfile{

@@ -1,0 +1,16 @@
+apiVersion: imageregistry.operator.openshift.io/v1
+kind: Config
+metadata:
+  finalizers:
+  - imageregistry.operator.openshift.io/finalizer
+  name: cluster
+spec:
+  httpSecret: "{{ .AROImageRegistryHTTPSecret }}"
+  managementState: Managed
+  replicas: 2
+  storage:
+    azure:
+      accountName: "{{ .AROImageRegistryAccountName }}"
+      container: "{{ .AROImageRegistryContainerName }}"
+      cloudName: "{{ .AROCloudName }}"
+    managementState: Unmanaged

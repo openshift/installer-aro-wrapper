@@ -4,6 +4,7 @@ package graph
 // Licensed under the Apache License 2.0.
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/openshift/installer/pkg/asset"
@@ -28,6 +29,7 @@ func (g Graph) Resolve(a asset.Asset) error {
 	if g.Get(a) != nil {
 		return nil
 	}
+	fmt.Println(a.Name())
 
 	for _, dep := range a.Dependencies() {
 		err := g.Resolve(dep)
