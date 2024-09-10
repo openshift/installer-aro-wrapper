@@ -1,21 +1,31 @@
 package installer
 
+// Copyright (c) Microsoft Corporation.
+// Licensed under the Apache License 2.0.
+
 import (
 	"os"
 	"path/filepath"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/pkg/errors"
+
+	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 )
 
 const (
 	aroManifestDir = "manifests"
+	rootPath       = "/opt/openshift"
 )
 
+// Custom ARO asset to add custom manifests to install graph in installer-wrapper similar to installer's manifests.Manifests
 type AROManifests struct {
 	FileList []*asset.File
 }
 
+// ARO File Fetcher to read manifests
 type aroFileFetcher struct {
 	directory string
 }
@@ -58,6 +68,22 @@ func (am *AROManifests) Load(f asset.FileFetcher) (found bool, err error) {
 	return len(am.FileList) > 0, nil
 }
 
+// Append ARO manifest files to the generated graph's bootstrap asset
+func (am *AROManifests) AppendFilesToBootstrap(g graph.Graph) error {
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	for _, file := range am.Files() {
+		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)
+		bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, manifest)
+	}
+
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return err
+	}
+	bootstrap.File.Data = data
+	return nil
+}
+
 func (f *aroFileFetcher) FetchByName(name string) (*asset.File, error) {
 	data, err := os.ReadFile(filepath.Join(f.directory, name))
 	if err != nil {
@@ -78,14 +104,8 @@ func (f *aroFileFetcher) FetchByPattern(pattern string) (files []*asset.File, er
 		if err != nil {
 			return nil, err
 		}
-
-		filename, err := filepath.Rel(f.directory, path)
-		if err != nil {
-			return nil, err
-		}
-
 		files = append(files, &asset.File{
-			Filename: filename,
+			Filename: path,
 			Data:     data,
 		})
 	}
