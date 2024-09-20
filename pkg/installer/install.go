@@ -53,7 +53,7 @@ func (m *manager) Install(ctx context.Context) error {
 	s := []steps.Step{
 		steps.AuthorizationRetryingAction(m.fpAuthorizer, m.deployResourceTemplate),
 		steps.Action(m.initializeKubernetesClients),
-		steps.Condition(m.bootstrapConfigMapReady, 30*time.Minute, true),
+		steps.Condition(m.bootstrapConfigMapReady, 60*time.Minute, true),
 	}
 
 	err := steps.Run(ctx, m.log, 10*time.Second, s)
