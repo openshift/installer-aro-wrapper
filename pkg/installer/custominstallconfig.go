@@ -6,11 +6,14 @@ package installer
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"path/filepath"
 
+	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
+	"github.com/openshift/installer/pkg/asset/tls"
 
 	"github.com/openshift/ARO-Installer/pkg/api"
 	"github.com/openshift/ARO-Installer/pkg/bootstraplogging"
@@ -53,8 +56,31 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
 	}
 
+	block := []byte(*m.oc.Properties.ClusterProfile.BoundServiceAccountSigningKey)
+	rsaKey, err := tls.PemToPrivateKey(block)
+	if err != nil {
+		return nil, err
+	}
+	pubData, err := tls.PublicKeyToPem(&rsaKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	boundSASigningKey := &tls.BoundSASigningKey{
+		FileList: []*asset.File{
+			{
+				Filename: filepath.Join("tls", "bound-service-account-signing-key.key"),
+				Data:     block,
+			},
+			{
+				Filename: filepath.Join("tls", "bound-service-account-signing-key.pub"),
+				Data:     pubData,
+			},
+		},
+	}
+
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig)
+	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, boundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {

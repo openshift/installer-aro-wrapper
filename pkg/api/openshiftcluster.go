@@ -203,11 +203,12 @@ const (
 type ClusterProfile struct {
 	MissingFields
 
-	PullSecret           SecureString         `json:"pullSecret,omitempty"`
-	Domain               string               `json:"domain,omitempty"`
-	Version              string               `json:"version,omitempty"`
-	ResourceGroupID      string               `json:"resourceGroupId,omitempty"`
-	FipsValidatedModules FipsValidatedModules `json:"fipsValidatedModules,omitempty"`
+	PullSecret                    SecureString         `json:"pullSecret,omitempty"`
+	Domain                        string               `json:"domain,omitempty"`
+	Version                       string               `json:"version,omitempty"`
+	ResourceGroupID               string               `json:"resourceGroupId,omitempty"`
+	FipsValidatedModules          FipsValidatedModules `json:"fipsValidatedModules,omitempty"`
+	BoundServiceAccountSigningKey *SecureString        `json:"boundServiceAccountSigningKey,omitempty"`
 }
 
 // FeatureProfile represents a feature profile.
