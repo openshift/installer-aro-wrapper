@@ -25,7 +25,8 @@ type runConf struct {
 	MaxConcurrency    int
 	Version           string
 	ClustersPerRegion int
-	NoDelete          bool
+	Delete            bool
+	Create            bool
 }
 
 func makeConfig() *runConf {
@@ -34,11 +35,22 @@ func makeConfig() *runConf {
 		log.Fatalf("Could not get workdir: %v", err)
 	}
 
+	flag.Usage = func() {
+		w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
+		fmt.Fprintf(w, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Fprintf(w, "Examples: \n")
+		fmt.Fprintf(w, "  - Create 6 clusters in the regions uksouth and australiawest with version 4.15.23 with 3 cluster creations simultaneuosly. No cleanup after cluster creation.:\n\n")
+		fmt.Fprintf(w, "\tgo run run.go -regions='uksouth,australiawest' -version='4.15.23' -create='true' -delete='false' -num=6 -concurrency='3'\n\n")
+		fmt.Fprintf(w, "  - Delete the 6 clusters in the regions uksouth and australiawest created by the previous run:\n\n")
+		fmt.Fprintf(w, "\tgo run run.go -regions='uksouth,australiawest' -version='4.15.23' -create='false' -delete='true' -num=6 -concurrency='3'\n\n")
+	}
 	regionsInput := flag.String("regions", "", "comman separated list of regions in which to run the tests")
-	clusterNum := flag.Int("num", 6, "number of clusters created per region")
+	clusterNum := flag.Int("num", 6, "number of clusters created/deleted per region")
 	version := flag.String("version", "", "version to test")
-	maxConcurrency := flag.Int("concurrency", 0, "Maximum number of parallel cluster creations. <= 0 means unlimited parallelity")
-	noDelete := flag.Bool("nodelete", false, "Set if created clusters should not be deleted after running")
+	maxConcurrency := flag.Int("concurrency", 0, "Maximum number of parallel cluster creations/deletions. <= 0 means unlimited parallelity")
+	delete := flag.Bool("delete", false, "Weather or not clusters should be deleted.")
+	create := flag.Bool("create", true, "weather or not clusters should be created.")
 	flag.Parse()
 
 	if *regionsInput == "" {
@@ -59,7 +71,8 @@ func makeConfig() *runConf {
 		MaxConcurrency:    *maxConcurrency,
 		Version:           *version,
 		ClustersPerRegion: *clusterNum,
-		NoDelete:          *noDelete,
+		Delete:            *delete,
+		Create:            *create,
 	}
 }
 
@@ -76,14 +89,18 @@ func main() {
 
 	for _, loc := range conf.Locations {
 		for i := 0; i < conf.ClustersPerRegion; i++ {
-			createRunner := NewRunner(conf.CreateScriptPath, loc, conf.Version, i)
-			deleteRunner := NewRunner(conf.DeleteScriptPath, loc, conf.Version, i)
-			clusterCreateRunners = append(clusterCreateRunners, createRunner)
-			clusterDeleteRunners = append(clusterDeleteRunners, deleteRunner)
+			if conf.Create {
+				createRunner := NewRunner(conf.CreateScriptPath, loc, conf.Version, i)
+				clusterCreateRunners = append(clusterCreateRunners, createRunner)
+			}
+			if conf.Delete {
+				deleteRunner := NewRunner(conf.DeleteScriptPath, loc, conf.Version, i)
+				clusterDeleteRunners = append(clusterDeleteRunners, deleteRunner)
+			}
 		}
 	}
 
-	log.Printf("Waiting for %d cluster create calls to finish.", len(clusterCreateRunners))
+	log.Printf("Creating %d clusters...", len(clusterCreateRunners))
 	ExecuteRunners(clusterCreateRunners, conf.MaxConcurrency)
 
 	erroredRunners := []*CmdRunner{}
@@ -105,12 +122,7 @@ func main() {
 		log.Printf("\t- %s-%d", runner.Location, runner.Num)
 	}
 
-	if conf.NoDelete {
-		log.Println("Not deleting clusters. Remember to do so manually.")
-		return
-	}
-
-	log.Println("deleting created clusters")
+	log.Printf("deleting %d clusters", len(clusterDeleteRunners))
 	ExecuteRunners(clusterDeleteRunners, conf.MaxConcurrency)
 }
 
