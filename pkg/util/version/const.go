@@ -74,13 +74,13 @@ func FluentbitImage(acrDomain string) string {
 // MdmImage contains the location of the MDM container image
 // https://eng.ms/docs/products/geneva/collect/references/linuxcontainers
 func MdmImage(acrDomain string) string {
-	return acrDomain + "/distroless/genevamdm:2.2024.517.533-b73893-20240522t0954@sha256:939df9d7b6660874697f8ebed1fe56504f86d92f99801a9dc6fd98e9176d3f75"
+	return acrDomain + "/distroless/genevamdm:2.2024.626.1539-d1a6e7-20240715t0935@sha256:372fbc981bbfdf2b9a9d0ffdca2c51ed389b291a3bcff0401e9afb0c01605823"
 }
 
 // MdsdImage contains the location of the MDSD container image
 // https://eng.ms/docs/products/geneva/collect/references/linuxcontainers
 func MdsdImage(acrDomain string) string {
-	return acrDomain + "/distroless/genevamdsd:mariner_20240524.1@sha256:45cf475719db71ee2f287d759fb388310eca3a5d3b5f50cedd7aedce3dae083f"
+	return acrDomain + "/distroless/genevamdsd:mariner_20240711.1@sha256:86d73d9df70aca71c54bbfbdf6402a2cc1ddd9cbbebf3d6a0319de5950b10382"
 }
 
 // MUOImage contains the location of the Managed Upgrade Operator container image
