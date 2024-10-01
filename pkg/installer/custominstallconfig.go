@@ -55,9 +55,10 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
 	}
 
+	fileFetcher := &aroFileFetcher{directory: m.assetsDir}
+
 	aroManifests := &AROManifests{}
-	manifestsFileFetcher := &aroFileFetcher{directory: "/"}
-	aroManifestsExist, err := aroManifests.Load(manifestsFileFetcher)
+	aroManifestsExist, err := aroManifests.Load(fileFetcher)
 	if err != nil {
 		err = fmt.Errorf("error loading ARO manifests: %w", err)
 		m.log.Error(err)
@@ -65,8 +66,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	boundSaSigningKey := &tls.BoundSASigningKey{}
-	boundSaSigningKeyFileFetcher := &aroFileFetcher{directory: "."}
-	boundSaSigningKeyExists, err := boundSaSigningKey.Load(boundSaSigningKeyFileFetcher)
+	boundSaSigningKeyExists, err := boundSaSigningKey.Load(fileFetcher)
 	if err != nil {
 		err = fmt.Errorf("error loading boundSASigningKey: %w", err)
 		m.log.Error(err)
