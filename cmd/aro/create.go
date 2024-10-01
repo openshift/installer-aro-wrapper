@@ -41,7 +41,7 @@ var (
 			Run: func(cmd *cobra.Command, args []string) {
 				ctx := context.Background()
 				log := logrus.NewEntry(logrus.StandardLogger())
-				i, err := _makeInstaller(ctx, log)
+				i, err := _makeInstaller(ctx, log, rootOpts.dir)
 				if err != nil {
 					logrus.Error(err)
 					logrus.Exit(1)
@@ -104,7 +104,7 @@ var (
 			Run: func(cmd *cobra.Command, args []string) {
 				ctx := context.Background()
 				log := logrus.NewEntry(logrus.StandardLogger())
-				i, err := _makeInstaller(ctx, log)
+				i, err := _makeInstaller(ctx, log, rootOpts.dir)
 				if err != nil {
 					logrus.Error(err)
 					logrus.Exit(1)
@@ -139,7 +139,7 @@ func newCreateCmd() *cobra.Command {
 	return cmd
 }
 
-func _makeInstaller(ctx context.Context, log *logrus.Entry) (installer.Interface, error) {
+func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (installer.Interface, error) {
 	_env, err := env.NewEnv(ctx, log)
 	if err != nil {
 		return nil, err
@@ -189,5 +189,5 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry) (installer.Interface
 	graph := graph.NewManager(log, aead, storage)
 
 	// Generate the installer manifests
-	return installer.NewInstaller(log, _env, os.Getenv("ARO_UUID"), &oc, &sub, fpAuthorizer, deployments, graph), nil
+	return installer.NewInstaller(log, _env, assetsDir, os.Getenv("ARO_UUID"), &oc, &sub, fpAuthorizer, deployments, graph), nil
 }
