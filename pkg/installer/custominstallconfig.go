@@ -6,11 +6,13 @@ package installer
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
+	"github.com/openshift/installer/pkg/asset/tls"
 
 	"github.com/openshift/ARO-Installer/pkg/api"
 	"github.com/openshift/ARO-Installer/pkg/bootstraplogging"
@@ -54,15 +56,29 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	aroManifests := &AROManifests{}
-	fileFetcher := &aroFileFetcher{directory: "/"}
-	aroManifestsExist, err := aroManifests.Load(fileFetcher)
+	manifestsFileFetcher := &aroFileFetcher{directory: "/"}
+	aroManifestsExist, err := aroManifests.Load(manifestsFileFetcher)
 	if err != nil {
-		m.log.Errorf("Error loading ARO manifests: %v", err)
+		err = fmt.Errorf("error loading ARO manifests: %w", err)
+		m.log.Error(err)
+		return nil, err
+	}
+
+	boundSaSigningKey := &tls.BoundSASigningKey{}
+	boundSaSigningKeyFileFetcher := &aroFileFetcher{directory: "."}
+	boundSaSigningKeyExists, err := boundSaSigningKey.Load(boundSaSigningKeyFileFetcher)
+	if err != nil {
+		err = fmt.Errorf("error loading boundSASigningKey: %w", err)
+		m.log.Error(err)
 		return nil, err
 	}
 
 	g := graph.Graph{}
 	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig)
+
+	if boundSaSigningKeyExists {
+		g.Set(boundSaSigningKey)
+	}
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
