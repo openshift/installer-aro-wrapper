@@ -111,3 +111,5 @@ allowedImportNames:
     - hivefake
   github.com/openshift/hive/apis/hive/v1:
     - hivev1
+  github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage:
+    - storagesdk

@@ -6,6 +6,7 @@ package armstorage
 import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 )
 
