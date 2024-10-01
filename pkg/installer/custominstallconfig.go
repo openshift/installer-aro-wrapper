@@ -66,7 +66,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	boundSaSigningKey := &tls.BoundSASigningKey{}
-	boundSaSigningKeyExists, err := boundSaSigningKey.Load(fileFetcher)
+	_, err = boundSaSigningKey.Load(fileFetcher)
 	if err != nil {
 		err = fmt.Errorf("error loading boundSASigningKey: %w", err)
 		m.log.Error(err)
@@ -74,11 +74,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig)
-
-	if boundSaSigningKeyExists {
-		g.Set(boundSaSigningKey)
-	}
+	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, boundSaSigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
