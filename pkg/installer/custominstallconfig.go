@@ -7,7 +7,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"path/filepath"
 
+	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
@@ -93,16 +97,31 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	// Add ARO Manifests to bootstrap Files
 	if aroManifestsExist {
-		if err = aroManifests.AppendFilesToBootstrap(g); err != nil {
+		if err = appendFilesToBootstrap(aroManifests, g); err != nil {
 			return nil, err
 		}
 	}
 	// Add ARO boundSASigningKey to bootstrap Files
 	if boundSaSigningKeyExists {
-		if err = boundSaSigningKey.AppendFilesToBootstrap(g); err != nil {
+		if err = appendFilesToBootstrap(boundSaSigningKey, g); err != nil {
 			return nil, err
 		}
 	}
 
 	return g, nil
+}
+
+func appendFilesToBootstrap(a asset.WritableAsset, g graph.Graph) error {
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	for _, file := range a.Files() {
+		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)
+		bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, manifest)
+	}
+
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return err
+	}
+	bootstrap.File.Data = data
+	return nil
 }
