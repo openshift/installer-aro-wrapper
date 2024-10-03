@@ -12,7 +12,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/pkg/errors"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
 )
 
 const (
