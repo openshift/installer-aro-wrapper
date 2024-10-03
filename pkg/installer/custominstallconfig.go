@@ -12,7 +12,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
-	"github.com/openshift/installer/pkg/asset/tls"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
@@ -65,8 +64,8 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 
-	boundSaSigningKey := &tls.BoundSASigningKey{}
-	_, err = boundSaSigningKey.Load(fileFetcher)
+	boundSaSigningKey := &AROBoundSASigningKey{}
+	boundSaSigningKeyExists, err := boundSaSigningKey.Load(fileFetcher)
 	if err != nil {
 		err = fmt.Errorf("error loading boundSASigningKey: %w", err)
 		m.log.Error(err)
@@ -95,6 +94,12 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	// Add ARO Manifests to bootstrap Files
 	if aroManifestsExist {
 		if err = aroManifests.AppendFilesToBootstrap(g); err != nil {
+			return nil, err
+		}
+	}
+	// Add ARO boundSASigningKey to bootstrap Files
+	if boundSaSigningKeyExists {
+		if err = boundSaSigningKey.AppendFilesToBootstrap(g); err != nil {
 			return nil, err
 		}
 	}
