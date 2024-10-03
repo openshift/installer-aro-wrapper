@@ -275,16 +275,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					},
 				},
 			}},
-		Azure: icazure.NewMetadataWithCredentials(
-			azuretypes.CloudEnvironment(m.env.Environment().Name),
-			m.env.Environment().ResourceManagerEndpoint,
-			&icazure.Credentials{
-				TenantID:       m.sub.Properties.TenantID,
-				ClientID:       m.oc.Properties.ServicePrincipalProfile.ClientID,
-				ClientSecret:   string(m.oc.Properties.ServicePrincipalProfile.ClientSecret),
-				SubscriptionID: r.SubscriptionID,
-			},
-		),
 	}
 
 	if m.oc.Properties.IngressProfiles[0].Visibility == api.VisibilityPrivate {
@@ -293,6 +283,17 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
+	} else {
+		installConfig.Azure = icazure.NewMetadataWithCredentials(
+			azuretypes.CloudEnvironment(m.env.Environment().Name),
+			m.env.Environment().ResourceManagerEndpoint,
+			&icazure.Credentials{
+				TenantID:       m.sub.Properties.TenantID,
+				ClientID:       m.oc.Properties.ServicePrincipalProfile.ClientID,
+				ClientSecret:   string(m.oc.Properties.ServicePrincipalProfile.ClientSecret),
+				SubscriptionID: r.SubscriptionID,
+			},
+		)
 	}
 
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")

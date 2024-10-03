@@ -53,6 +53,14 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
 	}
 
+	aroManifests := &AROManifests{}
+	fileFetcher := &aroFileFetcher{directory: "/"}
+	aroManifestsExist, err := aroManifests.Load(fileFetcher)
+	if err != nil {
+		m.log.Errorf("Error loading ARO manifests: %v", err)
+		return nil, err
+	}
+
 	g := graph.Graph{}
 	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig)
 
@@ -68,6 +76,13 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	if m.oc.Properties.NetworkProfile.MTUSize == api.MTU3900 {
 		m.log.Printf("applying feature flag %s", api.FeatureFlagMTU3900)
 		if err = m.overrideEthernetMTU(g); err != nil {
+			return nil, err
+		}
+	}
+
+	// Add ARO Manifests to bootstrap Files
+	if aroManifestsExist {
+		if err = aroManifests.AppendFilesToBootstrap(g); err != nil {
 			return nil, err
 		}
 	}
