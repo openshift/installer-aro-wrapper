@@ -17,8 +17,9 @@ import (
 )
 
 type manager struct {
-	log *logrus.Entry
-	env env.Interface
+	log       *logrus.Entry
+	env       env.Interface
+	assetsDir string
 
 	// clusterUUID is the UUID of the OpenShiftClusterDocument that contained
 	// this OpenShiftCluster. It should be used where a unique ID for this
@@ -40,10 +41,11 @@ type Interface interface {
 	Manifests(ctx context.Context) (graph.Graph, error)
 }
 
-func NewInstaller(log *logrus.Entry, _env env.Interface, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
+func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
 	return &manager{
 		log:          log,
 		env:          _env,
+		assetsDir:    assetsDir,
 		clusterUUID:  clusterUUID,
 		oc:           oc,
 		sub:          subscription,
