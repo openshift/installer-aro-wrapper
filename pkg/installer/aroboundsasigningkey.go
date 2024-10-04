@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	aroBoundSASigningKeyDir = "boundsasigningkey"
+	aroBoundSASigningKeyDir       = "boundsasigningkey"
+	installerBoundSASigningKeyDir = "tls"
 )
 
 // AROBoundSASigningKey is a custom fork of tls.BoundSASigningKey, to read the
@@ -64,6 +65,9 @@ func (sk *AROBoundSASigningKey) Load(f asset.FileFetcher) (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "failed to extract public key from the key")
 	}
-	sk.FileList = []*asset.File{keyFile, {Filename: filepath.Join(aroBoundSASigningKeyDir, "bound-service-account-signing-key.pub"), Data: pubData}}
+	sk.FileList = []*asset.File{
+		{Filename: filepath.Join(installerBoundSASigningKeyDir, "bound-service-account-signing-key.key"), Data: keyFile.Data},
+		{Filename: filepath.Join(installerBoundSASigningKeyDir, "bound-service-account-signing-key.pub"), Data: pubData},
+	}
 	return true, nil
 }
