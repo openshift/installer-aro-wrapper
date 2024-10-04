@@ -58,7 +58,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
 	}
 
-	fileFetcher := &aroFileFetcher{directory: m.assetsDir}
+	fileFetcher := &aroFileFetcher{directory: "/"}
 
 	aroManifests := &AROManifests{}
 	aroManifestsExist, err := aroManifests.Load(fileFetcher)
@@ -69,7 +69,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	boundSaSigningKey := &AROBoundSASigningKey{}
-	boundSaSigningKeyExists, err := boundSaSigningKey.Load(fileFetcher)
+	_, err = boundSaSigningKey.Load(fileFetcher)
 	if err != nil {
 		err = fmt.Errorf("error loading boundSASigningKey: %w", err)
 		m.log.Error(err)
@@ -77,7 +77,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, boundSaSigningKey)
+	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
@@ -98,12 +98,6 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	// Add ARO Manifests to bootstrap Files
 	if aroManifestsExist {
 		if err = appendFilesToBootstrap(aroManifests, g); err != nil {
-			return nil, err
-		}
-	}
-	// Add ARO boundSASigningKey to bootstrap Files
-	if boundSaSigningKeyExists {
-		if err = appendFilesToBootstrap(boundSaSigningKey, g); err != nil {
 			return nil, err
 		}
 	}
