@@ -58,7 +58,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
 	}
 
-	fileFetcher := &aroFileFetcher{directory: m.assetsDir}
+	fileFetcher := &aroFileFetcher{directory: "/"}
 
 	aroManifests := &AROManifests{}
 	aroManifestsExist, err := aroManifests.Load(fileFetcher)
