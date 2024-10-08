@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path/filepath"
+	"reflect"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
@@ -81,6 +82,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
+		m.log.Printf("resolving asset %s", reflect.TypeOf(a).String())
 		err = g.Resolve(a)
 		if err != nil {
 			return nil, err
@@ -97,10 +99,13 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	// Add ARO Manifests to bootstrap Files
 	if aroManifestsExist {
+		m.log.Print("Appending ARO manifests to bootstrap")
 		if err = appendFilesToBootstrap(aroManifests, g); err != nil {
 			return nil, err
 		}
 	}
+
+	m.log.Print("graph resolution complete")
 
 	return g, nil
 }

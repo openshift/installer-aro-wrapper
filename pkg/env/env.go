@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest"
+	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/ARO-Installer/pkg/proxy"
@@ -80,6 +81,7 @@ type Interface interface {
 	FeatureIsSet(Feature) bool
 	FPAuthorizer(string, ...string) (autorest.Authorizer, error)
 	FPNewClientCertificateCredential(string) (*azidentity.ClientCertificateCredential, error)
+	FPNewInstallConfigClientCertificateCredential(string, string) (*icazure.Credentials, error)
 	FPClientID() string
 	Listen() (net.Listener, error)
 	GatewayDomains() []string
