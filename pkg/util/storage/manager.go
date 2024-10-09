@@ -12,29 +12,29 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
-	storagesdk "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armstorage"
+	storagesdk "github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armstorage"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/azblob"
 )
 
 type Manager interface {
-	BlobService(ctx context.Context, resourceGroup, account string, p storagesdk.Permissions, r storagesdk.SignedResourceTypes) (azblob.BlobsClient, error)
+	BlobService(ctx context.Context, resourceGroup, account string, p armstorage.Permissions, r armstorage.SignedResourceTypes) (azblob.BlobsClient, error)
 }
 
 type manager struct {
 	env                  env.Core
-	storageAccounts      armstorage.AccountsClient
+	storageAccounts      storagesdk.AccountsClient
 	credential           azcore.TokenCredential
 	usesWorkloadIdentity bool
 }
 
 func NewManager(env env.Core, subscriptionID string, credential azcore.TokenCredential, usesWorkloadIdentity bool) (m Manager, err error) {
-	var accountsClient armstorage.AccountsClient
+	var accountsClient storagesdk.AccountsClient
 	if !usesWorkloadIdentity {
-		accountsClient, err = armstorage.NewAccountsClient(env.Environment(), subscriptionID, credential)
+		accountsClient, err = storagesdk.NewAccountsClient(env.Environment(), subscriptionID, credential)
 		if err != nil {
 			return nil, err
 		}
@@ -71,20 +71,20 @@ func getCorrectErrWhenTooManyRequests(err error) error {
 	return cloudError
 }
 
-func (m *manager) BlobService(ctx context.Context, resourceGroup, account string, p storagesdk.Permissions, r storagesdk.SignedResourceTypes) (blobClient azblob.BlobsClient, err error) {
+func (m *manager) BlobService(ctx context.Context, resourceGroup, account string, p armstorage.Permissions, r armstorage.SignedResourceTypes) (blobClient azblob.BlobsClient, err error) {
 	serviceURL := fmt.Sprintf("https://%s.blob.%s", account, m.env.Environment().StorageEndpointSuffix)
 	if m.usesWorkloadIdentity {
-		blobClient, err = azblob.NewBlobsClient(ctx, m.env.Environment(), serviceURL, m.credential)
+		blobClient, err = azblob.NewBlobsClientUsingEntra(ctx, m.env.Environment(), serviceURL, m.credential)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		t := time.Now().UTC().Truncate(time.Second)
-		res, err := m.storageAccounts.ListAccountSAS(ctx, resourceGroup, account, storagesdk.AccountSasParameters{
-			Services:               to.Ptr(storagesdk.ServicesB),
+		res, err := m.storageAccounts.ListAccountSAS(ctx, resourceGroup, account, armstorage.AccountSasParameters{
+			Services:               to.Ptr(armstorage.ServicesB),
 			ResourceTypes:          to.Ptr(r),
 			Permissions:            to.Ptr(p),
-			Protocols:              to.Ptr(storagesdk.HTTPProtocolHTTPS),
+			Protocols:              to.Ptr(armstorage.HTTPProtocolHTTPS),
 			SharedAccessStartTime:  &t,
 			SharedAccessExpiryTime: to.Ptr(t.Add(24 * time.Hour)),
 		}, nil)
