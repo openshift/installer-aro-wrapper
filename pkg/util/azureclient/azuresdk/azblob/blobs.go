@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
@@ -20,6 +21,7 @@ type BlobsClient interface {
 	DeleteBlob(ctx context.Context, containerName string, blobName string, o *azblob.DeleteBlobOptions) (azblob.DeleteBlobResponse, error)
 	BlobExists(ctx context.Context, container string, blobPath string) (bool, error)
 	DeleteContainer(ctx context.Context, container string) error
+	ServiceClient() *service.Client
 }
 
 type blobsClient struct {

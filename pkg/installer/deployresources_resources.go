@@ -98,11 +98,16 @@ func (m *manager) networkMasterNICs(installConfig *installconfig.InstallConfig) 
 }
 
 func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig) *arm.Resource {
-	var customData string
-	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
-		customData = `[base64(concat('{"ignition":{"version":"3.2.0","proxy":{"httpsProxy":"http://` + m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP + `"},"config":{"replace":{"source":"https://cluster` + m.oc.Properties.StorageSuffix + `.blob.` + m.env.Environment().StorageEndpointSuffix + `/ignition/bootstrap.ign?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', 'cluster` + m.oc.Properties.StorageSuffix + `'), '2019-04-01', parameters('sas')).accountSasToken, '"}}}}'))]`
+	var customData, sasURL string
+	if m.oc.UsesWorkloadIdentity() {
+		sasURL = `"replace":{"source":"parameters('sas')"`
 	} else {
-		customData = `[base64(concat('{"ignition":{"version":"3.2.0","config":{"replace":{"source":"https://cluster` + m.oc.Properties.StorageSuffix + `.blob.` + m.env.Environment().StorageEndpointSuffix + `/ignition/bootstrap.ign?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', 'cluster` + m.oc.Properties.StorageSuffix + `'), '2019-04-01', parameters('sas')).accountSasToken, '"}}}}'))]`
+		sasURL = `"replace":{"source":"https://cluster` + m.oc.Properties.StorageSuffix + `.blob.` + m.env.Environment().StorageEndpointSuffix + `/ignition/bootstrap.ign?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', 'cluster` + m.oc.Properties.StorageSuffix + `'), '2019-04-01', parameters('sas')).accountSasToken, '"`
+	}
+	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
+		customData = `[base64(concat('{"ignition":{"version":"3.2.0","proxy":{"httpsProxy":"http://` + m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP + `"},"config":{` + sasURL + `}}}}'))]`
+	} else {
+		customData = `[base64(concat('{"ignition":{"version":"3.2.0","config":{` + sasURL + `}}}}'))]`
 	}
 
 	vm := &mgmtcompute.VirtualMachine{
