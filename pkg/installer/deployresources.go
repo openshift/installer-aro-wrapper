@@ -52,8 +52,19 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 			m.computeMasterVMs(installConfig, zones, machineMaster),
 		},
 	}
-	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, map[string]interface{}{
-		"sas": map[string]interface{}{
+
+	params := map[string]interface{}{}
+
+	if m.oc.UsesWorkloadIdentity() {
+		sasURL, err := m.graph.GetUserDelegatedSASIgnitionBlobURL(ctx, resourceGroup, account, `https://cluster`+m.oc.Properties.StorageSuffix+`.blob.`+m.env.Environment().StorageEndpointSuffix+`/ignition/bootstrap.ign`, m.oc.UsesWorkloadIdentity())
+		if err != nil {
+			return err
+		}
+		params["sas"] = map[string]interface{}{
+			"value": sasURL,
+		}
+	} else {
+		params["sas"] = map[string]interface{}{
 			"value": map[string]interface{}{
 				"signedStart":         m.oc.Properties.Install.Now.Format(time.RFC3339),
 				"signedExpiry":        m.oc.Properties.Install.Now.Add(24 * time.Hour).Format(time.RFC3339),
@@ -62,8 +73,10 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 				"signedServices":      "b",
 				"signedProtocol":      "https",
 			},
-		},
-	})
+		}
+	}
+
+	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, params)
 }
 
 // zones configures how master nodes are distributed across availability zones. In regions where the number of zones matches
