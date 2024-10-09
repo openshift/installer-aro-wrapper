@@ -45,8 +45,8 @@ func NewBlobsClientUsingSAS(ctx context.Context, sasURL string, environment *azu
 	}, nil
 }
 
-// NewBlobsClientUsingSAS creates a new BlobsClient without using SAS(Only Managed Identity Clusters)
-func NewBlobsClient(ctx context.Context, environment *azureclient.AROEnvironment, serviceURL string, credential azcore.TokenCredential) (*blobsClient, error) {
+// NewBlobsClientUsingEntra creates a new BlobsClient Microsoft Entra credentials
+func NewBlobsClientUsingEntra(ctx context.Context, environment *azureclient.AROEnvironment, serviceURL string, credential azcore.TokenCredential) (*blobsClient, error) {
 	options := &azblob.ClientOptions{
 		ClientOptions: azcore.ClientOptions{
 			Cloud: environment.Cloud,

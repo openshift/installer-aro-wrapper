@@ -16,6 +16,13 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/storage"
 )
 
+const (
+	graphContainer    = "aro"
+	graphBlob         = "graph"
+	ignitionContainer = "ignition"
+	ignitionBlob      = "bootstrap.ign"
+)
+
 type Manager interface {
 	Exists(ctx context.Context, resourceGroup, account string) (bool, error)
 	Save(ctx context.Context, resourceGroup, account string, g Graph) error
@@ -46,7 +53,7 @@ func (m *manager) Exists(ctx context.Context, resourceGroup, account string) (bo
 		return false, err
 	}
 
-	return blobService.BlobExists(ctx, "aro", "graph")
+	return blobService.BlobExists(ctx, graphContainer, graphBlob)
 }
 
 // Load() should not be implemented: use LoadPersisted
@@ -61,7 +68,7 @@ func (m *manager) Save(ctx context.Context, resourceGroup, account string, g Gra
 
 	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 
-	_, err = blobService.UploadBuffer(ctx, "ignition", "bootstrap.ign", bootstrap.File.Data, nil)
+	_, err = blobService.UploadBuffer(ctx, ignitionContainer, ignitionBlob, bootstrap.File.Data, nil)
 	if err != nil {
 		return err
 	}
@@ -75,7 +82,7 @@ func (m *manager) Save(ctx context.Context, resourceGroup, account string, g Gra
 	if err != nil {
 		return err
 	}
-	_, err = blobService.UploadBuffer(ctx, "aro", "graph", b, nil)
+	_, err = blobService.UploadBuffer(ctx, graphContainer, graphBlob, b, nil)
 	return err
 }
 
@@ -87,7 +94,7 @@ func (m *manager) LoadPersisted(ctx context.Context, resourceGroup, account stri
 		return nil, err
 	}
 
-	rc, err := blobService.DownloadStream(ctx, "aro", "graph", nil)
+	rc, err := blobService.DownloadStream(ctx, graphContainer, graphBlob, nil)
 	if err != nil {
 		return nil, err
 	}
