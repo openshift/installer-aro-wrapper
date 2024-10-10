@@ -2,6 +2,7 @@ package machines
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,6 +27,7 @@ import (
 	ovirtproviderapi "github.com/openshift/cluster-api-provider-ovirt/pkg/apis"
 	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 
+	"github.com/openshift/installer/pkg/aro/aroign"
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
@@ -590,6 +592,15 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		return errors.Wrap(err, "failed to create ignition for ARO DNS for master machines")
 	}
 	machineConfigs = append(machineConfigs, ignARODNS)
+
+	ignAROEtcHosts, err := aroign.EtcHostsMachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, "master")
+	if err != nil {
+		return errors.Wrap(err, "failed to create ignition for ARO etc hosts for master machines")
+	}
+
+	marshalled, _ := json.Marshal(ignAROEtcHosts)
+	fmt.Printf("ignAROEtcHosts: %s\n", marshalled)
+	machineConfigs = append(machineConfigs, ignAROEtcHosts)
 
 	m.MachineConfigFiles, err = machineconfig.Manifests(machineConfigs, "master", directory)
 	if err != nil {
