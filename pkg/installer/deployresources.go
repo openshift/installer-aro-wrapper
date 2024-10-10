@@ -37,33 +37,20 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 		return err
 	}
 
-	t := &arm.Template{
-		Schema:         "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-		ContentVersion: "1.0.0.0",
-		Parameters: map[string]*arm.TemplateParameter{
-			"sas": {
-				Type: "object",
-			},
-		},
-		Resources: []*arm.Resource{
-			m.networkBootstrapNIC(installConfig),
-			m.networkMasterNICs(installConfig),
-			m.computeBootstrapVM(installConfig),
-			m.computeMasterVMs(installConfig, zones, machineMaster),
-		},
-	}
-
 	params := map[string]interface{}{}
+	var paramType string
 
 	if m.oc.UsesWorkloadIdentity() {
+		paramType = "secureString"
 		sasURL, err := m.graph.GetUserDelegatedSASIgnitionBlobURL(ctx, resourceGroup, account, `https://cluster`+m.oc.Properties.StorageSuffix+`.blob.`+m.env.Environment().StorageEndpointSuffix+`/ignition/bootstrap.ign`, m.oc.UsesWorkloadIdentity())
 		if err != nil {
 			return err
 		}
-		params["sas"] = map[string]interface{}{
+		params["sas"] = map[string]string{
 			"value": sasURL,
 		}
 	} else {
+		paramType = "object"
 		params["sas"] = map[string]interface{}{
 			"value": map[string]interface{}{
 				"signedStart":         m.oc.Properties.Install.Now.Format(time.RFC3339),
@@ -74,6 +61,22 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 				"signedProtocol":      "https",
 			},
 		}
+	}
+
+	t := &arm.Template{
+		Schema:         "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+		ContentVersion: "1.0.0.0",
+		Parameters: map[string]*arm.TemplateParameter{
+			"sas": {
+				Type: paramType,
+			},
+		},
+		Resources: []*arm.Resource{
+			m.networkBootstrapNIC(installConfig),
+			m.networkMasterNICs(installConfig),
+			m.computeBootstrapVM(installConfig),
+			m.computeMasterVMs(installConfig, zones, machineMaster),
+		},
 	}
 
 	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, params)
