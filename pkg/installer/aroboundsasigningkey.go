@@ -8,9 +8,13 @@ import (
 	"path/filepath"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
 )
 
 const (
@@ -18,8 +22,10 @@ const (
 	installerBoundSASigningKeyDir = "tls"
 )
 
-// AROBoundSASigningKey is a custom wrapper of tls.BoundSASigningKey, to read the
-// filepath expected in the ARO Installer wrapper's context
+// AROBoundSASigningKey contains a user provided key and public parts for the
+// service account signing key used by kube-apiserver.
+// This asset does not generate any new content and only loads these files from disk
+// when provided by the user.
 type AROBoundSASigningKey struct {
 	tls.BoundSASigningKey
 }
@@ -56,4 +62,20 @@ func (sk *AROBoundSASigningKey) Load(f asset.FileFetcher) (bool, error) {
 		{Filename: filepath.Join(installerBoundSASigningKeyDir, "bound-service-account-signing-key.pub"), Data: pubData},
 	}
 	return true, nil
+}
+
+// Append ARO boundSASigningKey files to the generated graph's bootstrap asset
+func (sk *AROBoundSASigningKey) AppendFilesToBootstrap(g graph.Graph) error {
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	for _, file := range sk.Files() {
+		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)
+		bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, manifest)
+	}
+
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return err
+	}
+	bootstrap.File.Data = data
+	return nil
 }

@@ -4,11 +4,16 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/pkg/errors"
+
+	"github.com/openshift/ARO-Installer/pkg/cluster/graph"
 )
 
 const (
@@ -62,6 +67,24 @@ func (am *AROManifests) Load(f asset.FileFetcher) (found bool, err error) {
 	asset.SortFiles(am.FileList)
 
 	return len(am.FileList) > 0, nil
+}
+
+// Append ARO manifest files to the generated graph's bootstrap asset
+func (am *AROManifests) AppendFilesToBootstrap(g graph.Graph) error {
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	for _, file := range am.Files() {
+		path := filepath.Join(rootPath, file.Filename)
+		fmt.Printf("File: %s, Joined Path: %s", file.Filename, path)
+		manifest := ignition.FileFromBytes(path, "root", 0644, file.Data)
+		bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, manifest)
+	}
+
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return err
+	}
+	bootstrap.File.Data = data
+	return nil
 }
 
 func (f *aroFileFetcher) FetchByName(name string) (*asset.File, error) {

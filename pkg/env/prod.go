@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"net/url"
@@ -19,6 +20,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/jongio/azidext/go/azidext"
+	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/ARO-Installer/pkg/proxy"
@@ -357,4 +359,51 @@ func (p *prod) VMSku(vmSize string) (*mgmtcompute.ResourceSku, error) {
 		return nil, fmt.Errorf("sku information not found for vm size %q", vmSize)
 	}
 	return vmsku, nil
+}
+
+func (p *prod) FPNewInstallConfigClientCertificateCredential(tenantID, subscriptionID string) (*icazure.Credentials, error) {
+	fpPrivateKey, fpCertificates := p.fpCertificateRefresher.GetCertificates()
+
+	clientCertificateFile, err := os.CreateTemp("/tmp", "fpClientCertificate-*.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	defer clientCertificateFile.Close()
+
+	for _, cer := range fpCertificates {
+		pemType := "UNKNOWN"
+		var rawBytes []byte
+
+		switch t := any(cer).(type) {
+		case *x509.Certificate:
+			pemType = "CERTIFICATE"
+			rawBytes = t.Raw
+		case *x509.CertificateRequest:
+			pemType = "CERTIFICATE REQUEST"
+			rawBytes = t.Raw
+		case *rsa.PrivateKey:
+			pemType = "RSA PRIVATE KEY"
+			rawBytes = x509.MarshalPKCS1PrivateKey(t)
+		case *rsa.PublicKey:
+			pemType = "RSA PUBLIC KEY"
+			rawBytes, err = x509.MarshalPKIXPublicKey(t)
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unable to identify %v", t)
+		}
+
+		pem.Encode(clientCertificateFile, &pem.Block{Type: pemType, Bytes: rawBytes})
+	}
+
+	pem.Encode(clientCertificateFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(fpPrivateKey)})
+
+	return &icazure.Credentials{
+		TenantID:              tenantID,
+		SubscriptionID:        subscriptionID,
+		ClientID:              p.FPClientID(),
+		ClientCertificatePath: clientCertificateFile.Name(),
+	}, nil
 }

@@ -283,6 +283,17 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
+
+		credentials, err := m.env.FPNewInstallConfigClientCertificateCredential(m.sub.Properties.TenantID, r.SubscriptionID)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		installConfig.Azure = icazure.NewMetadataWithCredentials(
+			azuretypes.CloudEnvironment(m.env.Environment().Name),
+			m.env.Environment().ResourceManagerEndpoint,
+			credentials,
+		)
 	} else {
 		installConfig.Azure = icazure.NewMetadataWithCredentials(
 			azuretypes.CloudEnvironment(m.env.Environment().Name),
@@ -305,9 +316,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		PullSpec: releaseImageOverride,
 	}
 
-	err = validation.ValidateInstallConfig(installConfig.Config, false).ToAggregate()
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
+	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
+		m.log.Warn("Skipping installconfig validation for MIWI cluster")
+	} else {
+		err = validation.ValidateInstallConfig(installConfig.Config, false).ToAggregate()
+		if err != nil {
+			return nil, nil, errors.WithStack(err)
+		}
 	}
 
 	return installConfig, image, err
