@@ -1015,11 +1015,11 @@ github.com/matttproud/golang_protobuf_extensions/v2/pbutil
 # github.com/mbilski/exhaustivestruct v1.2.0
 ## explicit; go 1.15
 github.com/mbilski/exhaustivestruct/pkg/analyzer
-# github.com/metal3-io/baremetal-operator/apis v0.4.0 => github.com/openshift/baremetal-operator/apis v0.0.0-20240609225927-887153049f16
+# github.com/metal3-io/baremetal-operator/apis v0.4.0 => github.com/openshift/baremetal-operator/apis v0.0.0-20240904155956-68e882497c1f
 ## explicit; go 1.19
 github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1
 github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1/profile
-# github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.4.0 => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20240609225927-887153049f16
+# github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.4.0 => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20240904155956-68e882497c1f
 ## explicit; go 1.19
 github.com/metal3-io/baremetal-operator/pkg/hardwareutils/bmc
 # github.com/mgechev/revive v1.3.2
@@ -1128,7 +1128,7 @@ github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runtime-spec v1.2.0
 ## explicit
 github.com/opencontainers/runtime-spec/specs-go
-# github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible => github.com/openshift/api v0.0.0-20240304080513-3e8192a10b13
+# github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible => github.com/openshift/api v0.0.0-20240906151052-5d963dce87aa
 ## explicit; go 1.20
 github.com/openshift/api/config/v1
 github.com/openshift/api/config/v1alpha1
@@ -1200,7 +1200,7 @@ github.com/openshift/hive/apis/hive/v1/openstack
 github.com/openshift/hive/apis/hive/v1/ovirt
 github.com/openshift/hive/apis/hive/v1/vsphere
 github.com/openshift/hive/apis/scheme
-# github.com/openshift/installer v0.16.1 => github.com/openshift/installer-aro v0.0.0-20240814190731-5b69a63f03a5
+# github.com/openshift/installer v0.16.1 => github.com/openshift/installer-aro v0.0.0-20241011173100-42773608799f
 ## explicit; go 1.20
 github.com/openshift/installer/data
 github.com/openshift/installer/pkg/aro/aroign
@@ -1349,7 +1349,7 @@ github.com/openshift/installer/pkg/version
 ## explicit; go 1.19
 github.com/openshift/machine-api-provider-ibmcloud/pkg/apis
 github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1
-# github.com/openshift/machine-config-operator v3.11.0+incompatible => github.com/openshift/machine-config-operator v0.0.1-0.20240705011043-cee84af27d7c
+# github.com/openshift/machine-config-operator v3.11.0+incompatible => github.com/openshift/machine-config-operator v0.0.1-0.20240927143910-dc45d313d876
 ## explicit; go 1.20
 github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1
 # github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b
@@ -2449,14 +2449,14 @@ sigs.k8s.io/yaml/goyaml.v2
 # github.com/influxdata/flux => github.com/influxdata/flux v0.132.0
 # github.com/knq/sysutil => github.com/chromedp/sysutil v1.0.0
 # github.com/kshvakov/clickhouse => github.com/ClickHouse/clickhouse-go v1.4.9
-# github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20240609225927-887153049f16
-# github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20240609225927-887153049f16
-# github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20240609225927-887153049f16
+# github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20240904155956-68e882497c1f
+# github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20240904155956-68e882497c1f
+# github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20240904155956-68e882497c1f
 # github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20240404101519-fb20cdac93ab
 # github.com/metal3-io/cluster-api-provider-metal3 => github.com/openshift/cluster-api-provider-metal3 v0.0.0-20230629190752-6a0f73bb9043
 # github.com/metal3-io/cluster-api-provider-metal3/api => github.com/openshift/cluster-api-provider-metal3/api v0.0.0-20230629190752-6a0f73bb9043
 # github.com/mholt/certmagic => github.com/caddyserver/certmagic v0.15.0
-# github.com/openshift/api => github.com/openshift/api v0.0.0-20240304080513-3e8192a10b13
+# github.com/openshift/api => github.com/openshift/api v0.0.0-20240906151052-5d963dce87aa
 # github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20240607130013-60d5e86b6b7b
 # github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20230807132528-be5346fb33cb
 # github.com/openshift/cloud-credential-operator => github.com/openshift/cloud-credential-operator v0.0.0-20200316201045-d10080b52c9e
@@ -2466,11 +2466,11 @@ sigs.k8s.io/yaml/goyaml.v2
 # github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20230929162348-34dfccba84a2
 # github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 # github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-# github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20240814190731-5b69a63f03a5
+# github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20241011173100-42773608799f
 # github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 # github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 # github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20230627135745-c28b2232ab1c
-# github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20240705011043-cee84af27d7c
+# github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20240927143910-dc45d313d876
 # github.com/oras-project/oras-go => oras.land/oras-go v0.4.0
 # github.com/ovirt/go-ovirt => github.com/ovirt/go-ovirt v0.0.0-20210112072624-e4d3b104de71
 # github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20210421143221-52df5ef7a3be
@@ -2488,7 +2488,7 @@ sigs.k8s.io/yaml/goyaml.v2
 # sigs.k8s.io/cluster-api => github.com/openshift/cluster-api v0.0.0-20220303094157-f9c215c4f298
 # sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20221004090546-15ff2acd6c2f
 # sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/openshift/cluster-api-provider-aws/v2 v2.0.0-20240606085646-4efe12cbfebb
-# sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20240621013647-81b4d0345c75
+# sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20240808111202-8c2203f9d13e
 # sigs.k8s.io/cluster-api-provider-ibmcloud => github.com/openshift/cluster-api-provider-ibmcloud v0.0.0-20221102085410-c1304c80d736
 # sigs.k8s.io/cluster-api-provider-openstack => github.com/openshift/cluster-api-provider-openstack v0.0.0-20230503161017-b9a504cea2c0
 # sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.11.2
