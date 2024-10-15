@@ -316,8 +316,12 @@ func (p *prod) FPAuthorizer(tenantID string, scopes ...string) (autorest.Authori
 	return azidext.NewTokenCredentialAdapter(tokenCredential, scopes), nil
 }
 
+func (p *prod) FPCertificates() (*rsa.PrivateKey, []*x509.Certificate) {
+	return p.fpCertificateRefresher.GetCertificates()
+}
+
 func (p *prod) FPNewClientCertificateCredential(tenantID string) (*azidentity.ClientCertificateCredential, error) {
-	fpPrivateKey, fpCertificates := p.fpCertificateRefresher.GetCertificates()
+	fpPrivateKey, fpCertificates := p.FPCertificates()
 	options := p.Environment().ClientCertificateCredentialOptions()
 	credential, err := azidentity.NewClientCertificateCredential(tenantID, p.fpClientID, fpCertificates, fpPrivateKey, options)
 	if err != nil {
