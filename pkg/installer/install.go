@@ -49,6 +49,43 @@ func (m *manager) Manifests(ctx context.Context) (graph.Graph, error) {
 	return g, err
 }
 
+func (m *manager) Ignition(ctx context.Context) (graph.Graph, error) {
+	var (
+		installConfig *installconfig.InstallConfig
+		image         *releaseimage.Image
+		g             graph.Graph
+	)
+
+	s := []steps.Step{
+		steps.Action(func(ctx context.Context) error {
+			var err error
+			installConfig, image, err = m.generateInstallConfig(ctx)
+			return err
+		}),
+
+		steps.Action(func(ctx context.Context) error {
+			var err error
+			// Applies ARO-specific customisations to the InstallConfig
+			g, err = m.applyInstallConfigCustomisations(installConfig, image)
+			return err
+		}),
+
+		steps.Action(func(ctx context.Context) error {
+			var err error
+			// Applies ARO-specific customisations to the InstallConfig
+			g, err = m.applyIgnitionConfigCustomisations(g)
+			return err
+		}),
+
+		steps.Action(func(ctx context.Context) error {
+			return m.persistGraph(ctx, g)
+		}),
+	}
+
+	err := steps.Run(ctx, m.log, 10*time.Second, s)
+	return g, err
+}
+
 func (m *manager) Install(ctx context.Context) error {
 	s := []steps.Step{
 		steps.AuthorizationRetryingAction(m.fpAuthorizer, m.deployResourceTemplate),

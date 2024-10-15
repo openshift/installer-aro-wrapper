@@ -94,6 +94,58 @@ var (
 			Short: "Generates the Ignition Config asset",
 			// FIXME: add longer descriptions for our commands with examples for better UX.
 			// Long:  "",
+			Run: func(cmd *cobra.Command, args []string) {
+				ctx := context.Background()
+				log := logrus.NewEntry(logrus.StandardLogger())
+				i, err := _makeInstaller(ctx, log, rootOpts.dir)
+				if err != nil {
+					logrus.Error(err)
+					logrus.Exit(1)
+				}
+				g, err := i.Manifests(ctx)
+				if err != nil {
+					logrus.Error(err)
+					logrus.Exit(1)
+				}
+
+				g, err = i.Ignition(ctx)
+				if err != nil {
+					logrus.Error(err)
+					logrus.Exit(1)
+				}
+
+				runner := func(directory string, manifests []asset.WritableAsset) error {
+					for _, m := range manifests {
+						err = g.Resolve(m)
+						if err != nil {
+							err = errors.Wrapf(err, "failed to fetch %s", m.Name())
+						}
+
+						a := g.Get(m).(asset.WritableAsset)
+						if err2 := asset.PersistToFile(a, directory); err2 != nil {
+							err2 = errors.Wrapf(err2, "failed to write asset (%s) to disk", a.Name())
+							if err != nil {
+								logrus.Error(err2)
+								return err
+							}
+							return err2
+						}
+					}
+					return nil
+				}
+
+				err = runner(rootOpts.dir, targetassets.Manifests)
+				if err != nil {
+					logrus.Error(err)
+					logrus.Exit(1)
+				}
+
+				err = runner(rootOpts.dir, targetassets.IgnitionConfigs)
+				if err != nil {
+					logrus.Error(err)
+					logrus.Exit(1)
+				}
+			},
 		},
 	}
 	clusterTarget = target{

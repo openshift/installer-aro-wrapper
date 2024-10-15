@@ -39,6 +39,7 @@ type manager struct {
 type Interface interface {
 	Install(ctx context.Context) error
 	Manifests(ctx context.Context) (graph.Graph, error)
+	Ignition(ctx context.Context) (graph.Graph, error)
 }
 
 func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
