@@ -5,7 +5,6 @@ package bootstraplogging
 
 import (
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
@@ -15,7 +14,7 @@ import (
 
 // GetConfig prepares a bootstraplogging.Config object based on
 // the environment
-func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
+func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*Config, error) {
 	r, err := azure.ParseResourceID(oc.ID)
 	if err != nil {
 		return nil, err
@@ -33,7 +32,7 @@ func GetConfig(env env.Interface, oc *api.OpenShiftCluster) (*bootstraplogging.C
 		return nil, err
 	}
 
-	return &bootstraplogging.Config{
+	return &Config{
 		Certificate:       string(gcsCertBytes),
 		Key:               string(gcsKeyBytes),
 		Namespace:         env.ClusterGenevaLoggingNamespace(),
