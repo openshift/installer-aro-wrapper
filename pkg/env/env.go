@@ -79,6 +79,7 @@ type Interface interface {
 	Domain() string
 	FeatureIsSet(Feature) bool
 	FPAuthorizer(string, ...string) (autorest.Authorizer, error)
+	FPCertificates() (*rsa.PrivateKey, []*x509.Certificate)
 	FPNewClientCertificateCredential(string) (*azidentity.ClientCertificateCredential, error)
 	FPClientID() string
 	Listen() (net.Listener, error)

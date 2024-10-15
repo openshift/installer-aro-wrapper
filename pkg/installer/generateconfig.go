@@ -28,6 +28,7 @@ import (
 
 	"github.com/openshift/ARO-Installer/pkg/api"
 	"github.com/openshift/ARO-Installer/pkg/util/computeskus"
+	utilpem "github.com/openshift/ARO-Installer/pkg/util/pem"
 	"github.com/openshift/ARO-Installer/pkg/util/pullsecret"
 	"github.com/openshift/ARO-Installer/pkg/util/rhcos"
 	"github.com/openshift/ARO-Installer/pkg/util/stringutils"
@@ -281,20 +282,29 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
+	var credentials *icazure.Credentials
+
 	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
+
+		credentials, err = m.newInstallConfigClientCertificateCredential(m.sub.Properties.TenantID, r.SubscriptionID)
+		if err != nil {
+			return nil, nil, err
+		}
 	} else {
-		installConfig.Azure = icazure.NewMetadataWithCredentials(
-			azuretypes.CloudEnvironment(m.env.Environment().Name),
-			m.env.Environment().ResourceManagerEndpoint,
-			&icazure.Credentials{
-				TenantID:       m.sub.Properties.TenantID,
-				ClientID:       m.oc.Properties.ServicePrincipalProfile.ClientID,
-				ClientSecret:   string(m.oc.Properties.ServicePrincipalProfile.ClientSecret),
-				SubscriptionID: r.SubscriptionID,
-			},
-		)
+		credentials = &icazure.Credentials{
+			TenantID:       m.sub.Properties.TenantID,
+			SubscriptionID: r.SubscriptionID,
+			ClientID:       m.oc.Properties.ServicePrincipalProfile.ClientID,
+			ClientSecret:   string(m.oc.Properties.ServicePrincipalProfile.ClientSecret),
+		}
 	}
+
+	installConfig.Azure = icazure.NewMetadataWithCredentials(
+		azuretypes.CloudEnvironment(m.env.Environment().Name),
+		m.env.Environment().ResourceManagerEndpoint,
+		credentials,
+	)
 
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
 	if releaseImageOverride == "" {
@@ -322,4 +332,29 @@ func determineVMNetworkingType(vmSku *mgmtcompute.ResourceSku) string {
 		vmNetworkingType = azuretypes.VMNetworkingTypeBasic
 	}
 	return string(vmNetworkingType)
+}
+
+func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscriptionId string) (*icazure.Credentials, error) {
+	fpPrivateKey, fpCertificates := m.env.FPCertificates()
+
+	clientCertificateFile, err := os.CreateTemp("/tmp", "fpClientCertificate-*.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	defer clientCertificateFile.Close()
+
+	if err = utilpem.Encode(clientCertificateFile, fpCertificates...); err != nil {
+		return nil, err
+	}
+	if err = utilpem.Encode(clientCertificateFile, fpPrivateKey); err != nil {
+		return nil, err
+	}
+
+	return &icazure.Credentials{
+		TenantID:              tenantId,
+		SubscriptionID:        subscriptionId,
+		ClientID:              m.env.FPClientID(),
+		ClientCertificatePath: clientCertificateFile.Name(),
+	}, nil
 }
