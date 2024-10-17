@@ -1068,7 +1068,7 @@ github.com/opencontainers/go-digest
 ## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/opencontainers/runc v1.1.10
+# github.com/opencontainers/runc v1.1.10 => github.com/opencontainers/runc v1.1.12
 ## explicit; go 1.17
 github.com/opencontainers/runc/libcontainer/user
 # github.com/opencontainers/runtime-spec v1.1.0
@@ -2359,6 +2359,7 @@ sigs.k8s.io/yaml
 # github.com/go-openapi/spec => github.com/go-openapi/spec v0.20.4
 # github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 # github.com/mrnold/go-libnbd => github.com/mrnold/go-libnbd v1.4.1-cdi
+# github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 # github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v1.21.0
 # github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 # github.com/satori/uuid => github.com/satori/uuid v1.2.1-0.20181028125025-b2ce2384e17b
