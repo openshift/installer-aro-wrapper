@@ -183,7 +183,7 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (i
 		return nil, err
 	}
 
-	storage, err := storage.NewManager(_env, r.SubscriptionID, fpCredClusterTenant, oc.UsesWorkloadIdentity())
+	storage, err := storage.NewManager(r.SubscriptionID, _env.Environment().StorageEndpointSuffix, fpCredClusterTenant, oc.UsesWorkloadIdentity(), _env.Environment().ArmClientOptions())
 	if err != nil {
 		return nil, err
 	}

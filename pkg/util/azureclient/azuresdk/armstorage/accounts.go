@@ -9,8 +9,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
-
-	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )
 
 // AccountsClient is a minimal interface for Azure AccountsClient
@@ -26,13 +24,8 @@ type accountsClient struct {
 var _ AccountsClient = &accountsClient{}
 
 // NewAccountsClient creates a new AccountsClient
-func NewAccountsClient(environment *azureclient.AROEnvironment, subscriptionID string, credential azcore.TokenCredential) (AccountsClient, error) {
-	options := arm.ClientOptions{
-		ClientOptions: azcore.ClientOptions{
-			Cloud: environment.Cloud,
-		},
-	}
-	client, err := armstorage.NewAccountsClient(subscriptionID, credential, &options)
+func NewAccountsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (AccountsClient, error) {
+	client, err := armstorage.NewAccountsClient(subscriptionID, credential, options)
 	if err != nil {
 		return nil, err
 	}
