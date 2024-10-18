@@ -102,7 +102,7 @@ func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig)
 	if m.oc.UsesWorkloadIdentity() {
 		sasURL = `',parameters('sas'),'`
 	} else {
-		sasURL = `"https://cluster` + m.oc.Properties.StorageSuffix + `.blob.` + m.env.Environment().StorageEndpointSuffix + `/ignition/bootstrap.ign?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', 'cluster` + m.oc.Properties.StorageSuffix + `'), '2019-04-01', parameters('sas')).accountSasToken, '`
+		sasURL = `https://cluster` + m.oc.Properties.StorageSuffix + `.blob.` + m.env.Environment().StorageEndpointSuffix + `/ignition/bootstrap.ign?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', 'cluster` + m.oc.Properties.StorageSuffix + `'), '2019-04-01', parameters('sas')).accountSasToken, '`
 	}
 	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
 		customData = `[base64(concat('{"ignition":{"version":"3.2.0","proxy":{"httpsProxy":"http://` + m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP + `"},"config":{"replace":{"source":"` + sasURL + `"}}}}'))]`
