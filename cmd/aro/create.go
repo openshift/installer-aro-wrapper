@@ -173,12 +173,20 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (i
 		return nil, err
 	}
 
+	fpCredClusterTenant, err := _env.FPNewClientCertificateCredential(sub.Properties.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
 	r, err := azure.ParseResourceID(oc.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	storage := storage.NewManager(_env, r.SubscriptionID, fpAuthorizer)
+	storage, err := storage.NewManager(r.SubscriptionID, _env.Environment().StorageEndpointSuffix, fpCredClusterTenant, oc.UsesWorkloadIdentity(), _env.Environment().ArmClientOptions())
+	if err != nil {
+		return nil, err
+	}
 	deployments := features.NewDeploymentsClient(_env.Environment(), r.SubscriptionID, fpAuthorizer)
 
 	aead, err := encryption.NewMulti(ctx, _env.ServiceKeyvault(), env.EncryptionSecretV2Name, env.EncryptionSecretName)
