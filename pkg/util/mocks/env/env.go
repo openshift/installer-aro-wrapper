@@ -432,6 +432,21 @@ func (mr *MockInterfaceMockRecorder) FPAuthorizer(arg0 interface{}, arg1 ...inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FPAuthorizer", reflect.TypeOf((*MockInterface)(nil).FPAuthorizer), varargs...)
 }
 
+// FPCertificates mocks base method.
+func (m *MockInterface) FPCertificates() (*rsa.PrivateKey, []*x509.Certificate) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FPCertificates")
+	ret0, _ := ret[0].(*rsa.PrivateKey)
+	ret1, _ := ret[1].([]*x509.Certificate)
+	return ret0, ret1
+}
+
+// FPCertificates indicates an expected call of FPCertificates.
+func (mr *MockInterfaceMockRecorder) FPCertificates() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FPCertificates", reflect.TypeOf((*MockInterface)(nil).FPCertificates))
+}
+
 // FPClientID mocks base method.
 func (m *MockInterface) FPClientID() string {
 	m.ctrl.T.Helper()
