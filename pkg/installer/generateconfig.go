@@ -284,7 +284,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	var credentials *icazure.Credentials
 
-	if m.oc.Properties.PlatformWorkloadIdentityProfile != nil && m.oc.Properties.ServicePrincipalProfile == nil {
+	if m.oc.UsesWorkloadIdentity() {
 		installConfig.Config.CredentialsMode = types.ManualCredentialsMode
 
 		credentials, err = m.newInstallConfigClientCertificateCredential(m.sub.Properties.TenantID, r.SubscriptionID)
