@@ -11,15 +11,10 @@ import (
 	"errors"
 )
 
-const (
-	DefaultConcurrency = 5
-)
-
 // BatchTransferOptions identifies options used by doBatchTransfer.
 type BatchTransferOptions struct {
 	TransferSize  int64
 	ChunkSize     int64
-	NumChunks     uint64
 	Concurrency   uint16
 	Operation     func(ctx context.Context, offset int64, chunkSize int64) error
 	OperationName string
@@ -33,12 +28,13 @@ func DoBatchTransfer(ctx context.Context, o *BatchTransferOptions) error {
 	}
 
 	if o.Concurrency == 0 {
-		o.Concurrency = DefaultConcurrency // default concurrency
+		o.Concurrency = 5 // default concurrency
 	}
 
 	// Prepare and do parallel operations.
+	numChunks := uint16(((o.TransferSize - 1) / o.ChunkSize) + 1)
 	operationChannel := make(chan func() error, o.Concurrency) // Create the channel that release 'concurrency' goroutines concurrently
-	operationResponseChannel := make(chan error, o.NumChunks)  // Holds each response
+	operationResponseChannel := make(chan error, numChunks)    // Holds each response
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -54,10 +50,10 @@ func DoBatchTransfer(ctx context.Context, o *BatchTransferOptions) error {
 	}
 
 	// Add each chunk's operation to the channel.
-	for chunkNum := uint64(0); chunkNum < o.NumChunks; chunkNum++ {
+	for chunkNum := uint16(0); chunkNum < numChunks; chunkNum++ {
 		curChunkSize := o.ChunkSize
 
-		if chunkNum == o.NumChunks-1 { // Last chunk
+		if chunkNum == numChunks-1 { // Last chunk
 			curChunkSize = o.TransferSize - (int64(chunkNum) * o.ChunkSize) // Remove size of all transferred chunks from total
 		}
 		offset := int64(chunkNum) * o.ChunkSize
@@ -69,7 +65,7 @@ func DoBatchTransfer(ctx context.Context, o *BatchTransferOptions) error {
 
 	// Wait for the operations to complete.
 	var firstErr error = nil
-	for chunkNum := uint64(0); chunkNum < o.NumChunks; chunkNum++ {
+	for chunkNum := uint16(0); chunkNum < numChunks; chunkNum++ {
 		responseError := <-operationResponseChannel
 		// record the first error (the original error which should cause the other chunks to fail with canceled context)
 		if responseError != nil && firstErr == nil {
