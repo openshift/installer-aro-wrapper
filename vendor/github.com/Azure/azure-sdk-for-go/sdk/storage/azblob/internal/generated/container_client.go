@@ -6,25 +6,12 @@
 
 package generated
 
-import (
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-)
+import "github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 
 func (client *ContainerClient) Endpoint() string {
 	return client.endpoint
 }
 
-func (client *ContainerClient) InternalClient() *azcore.Client {
-	return client.internal
-}
-
-// NewContainerClient creates a new instance of ContainerClient with the specified values.
-//   - endpoint - The URL of the service account, container, or blob that is the target of the desired operation.
-//   - pl - the pipeline used for sending requests and handling responses.
-func NewContainerClient(endpoint string, azClient *azcore.Client) *ContainerClient {
-	client := &ContainerClient{
-		internal: azClient,
-		endpoint: endpoint,
-	}
-	return client
+func (client *ContainerClient) Pipeline() runtime.Pipeline {
+	return client.pl
 }

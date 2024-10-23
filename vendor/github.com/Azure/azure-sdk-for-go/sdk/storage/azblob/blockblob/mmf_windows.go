@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-package shared
+package blockblob
 
 import (
 	"fmt"
@@ -14,11 +14,11 @@ import (
 	"unsafe"
 )
 
-// Mmb is a memory mapped buffer
-type Mmb []byte
+// mmb is a memory mapped buffer
+type mmb []byte
 
-// NewMMB creates a new memory mapped buffer with the specified size
-func NewMMB(size int64) (Mmb, error) {
+// newMMB creates a new memory mapped buffer with the specified size
+func newMMB(size int64) (mmb, error) {
 	const InvalidHandleValue = ^uintptr(0) // -1
 
 	prot, access := uint32(syscall.PAGE_READWRITE), uint32(syscall.FILE_MAP_WRITE)
@@ -26,16 +26,14 @@ func NewMMB(size int64) (Mmb, error) {
 	if err != nil {
 		return nil, os.NewSyscallError("CreateFileMapping", err)
 	}
-	defer func() {
-		_ = syscall.CloseHandle(hMMF)
-	}()
+	defer syscall.CloseHandle(hMMF)
 
 	addr, err := syscall.MapViewOfFile(hMMF, access, 0, 0, uintptr(size))
 	if err != nil {
 		return nil, os.NewSyscallError("MapViewOfFile", err)
 	}
 
-	m := Mmb{}
+	m := mmb{}
 	h := (*reflect.SliceHeader)(unsafe.Pointer(&m))
 	h.Data = addr
 	h.Len = int(size)
@@ -43,10 +41,10 @@ func NewMMB(size int64) (Mmb, error) {
 	return m, nil
 }
 
-// Delete cleans up the memory mapped buffer
-func (m *Mmb) Delete() {
+// delete cleans up the memory mapped buffer
+func (m *mmb) delete() {
 	addr := uintptr(unsafe.Pointer(&(([]byte)(*m)[0])))
-	*m = Mmb{}
+	*m = mmb{}
 	err := syscall.UnmapViewOfFile(addr)
 	if err != nil {
 		// if we get here, there is likely memory corruption.
