@@ -69,7 +69,6 @@ const (
 	CopyIDMismatch                                    Code = "CopyIdMismatch"
 	EmptyMetadataKey                                  Code = "EmptyMetadataKey"
 	FeatureVersionMismatch                            Code = "FeatureVersionMismatch"
-	ImmutabilityPolicyDeleteOnLockedPolicy            Code = "ImmutabilityPolicyDeleteOnLockedPolicy"
 	IncrementalCopyBlobMismatch                       Code = "IncrementalCopyBlobMismatch"
 	IncrementalCopyOfEralierVersionSnapshotNotAllowed Code = "IncrementalCopyOfEralierVersionSnapshotNotAllowed"
 	IncrementalCopySourceMustBeSnapshot               Code = "IncrementalCopySourceMustBeSnapshot"
@@ -123,7 +122,6 @@ const (
 	NoAuthenticationInformation                       Code = "NoAuthenticationInformation"
 	NoPendingCopyOperation                            Code = "NoPendingCopyOperation"
 	OperationNotAllowedOnIncrementalCopyBlob          Code = "OperationNotAllowedOnIncrementalCopyBlob"
-	OperationNotAllowedOnRootBlob                     Code = "OperationNotAllowedOnRootBlob"
 	OperationTimedOut                                 Code = "OperationTimedOut"
 	OutOfRangeInput                                   Code = "OutOfRangeInput"
 	OutOfRangeQueryParameterValue                     Code = "OutOfRangeQueryParameterValue"
@@ -155,5 +153,4 @@ const (
 var (
 	// MissingSharedKeyCredential - Error is returned when SAS URL is being created without SharedKeyCredential.
 	MissingSharedKeyCredential = errors.New("SAS can only be signed with a SharedKeyCredential")
-	UnsupportedChecksum        = errors.New("for multi-part uploads, user generated checksums cannot be validated")
 )

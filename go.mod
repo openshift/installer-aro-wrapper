@@ -1,16 +1,14 @@
 module github.com/openshift/installer-aro-wrapper
 
-go 1.21
-
-toolchain go1.21.12
+go 1.20
 
 require (
 	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
 	github.com/Azure/azure-sdk-for-go v63.1.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.12.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.5.0
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.3.2
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0
 	github.com/Azure/go-autorest/autorest v0.11.29
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.13
 	github.com/Azure/go-autorest/autorest/to v0.4.0
@@ -21,7 +19,6 @@ require (
 	github.com/coreos/ignition/v2 v2.16.2
 	github.com/coreos/stream-metadata-go v0.4.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
-	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-test/deep v1.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -31,7 +28,7 @@ require (
 	github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234
 	github.com/jongio/azidext/go/azidext v0.5.0
 	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/onsi/gomega v1.33.0
+	github.com/onsi/gomega v1.30.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/client-go v0.0.1
 	github.com/openshift/installer v0.16.1
@@ -40,21 +37,17 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/crypto v0.26.0
+	golang.org/x/crypto v0.24.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
 	gotest.tools/gotestsum v1.6.4
-	k8s.io/api v0.30.3
-	k8s.io/apimachinery v0.30.3
+	k8s.io/api v0.28.4
+	k8s.io/apimachinery v0.28.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.28.3
 	sigs.k8s.io/controller-tools v0.10.0
 )
 
-require (
-	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
-	github.com/google/pprof v0.0.0-20230323073829-e72429f035bd // indirect
-	github.com/nxadm/tail v1.4.11 // indirect
-)
+require github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
@@ -118,10 +111,10 @@ require (
 	github.com/chavacava/garif v0.0.0-20230227094218-b8c73b2037b8 // indirect
 	github.com/cjlapao/common-go v0.0.39 // indirect
 	github.com/clarketm/json v1.17.1 // indirect
-	github.com/containers/image/v5 v5.30.1 // indirect
+	github.com/containers/image/v5 v5.29.3 // indirect
 	github.com/containers/storage v1.53.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
-	github.com/coreos/go-systemd/v22 v22.5.1-0.20231103132048-7d375ecc2b09 // indirect
+	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/coreos/vcontext v0.0.0-20231102161604-685dc7299dc5 // indirect
 	github.com/curioswitch/go-reassign v0.2.0 // indirect
 	github.com/daixiang0/gci v0.10.1 // indirect
@@ -143,7 +136,7 @@ require (
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-critic/go-critic v0.8.1 // indirect
-	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
@@ -158,7 +151,7 @@ require (
 	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.22.0 // indirect
+	github.com/go-playground/validator/v10 v10.16.0 // indirect
 	github.com/go-toolsmith/astcast v1.1.0 // indirect
 	github.com/go-toolsmith/astcopy v1.1.0 // indirect
 	github.com/go-toolsmith/astequal v1.1.0 // indirect
@@ -230,7 +223,7 @@ require (
 	github.com/kyoh86/exportloopref v0.1.11 // indirect
 	github.com/ldez/gomoddirectives v0.2.3 // indirect
 	github.com/ldez/tagliatelle v0.5.0 // indirect
-	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/leonklingele/grouper v1.1.1 // indirect
 	github.com/libvirt/libvirt-go v7.4.0+incompatible // indirect
 	github.com/lufeee/execinquery v1.2.1 // indirect
@@ -242,6 +235,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mbilski/exhaustivestruct v1.2.0 // indirect
 	github.com/metal3-io/baremetal-operator/apis v0.4.0 // indirect
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.4.0 // indirect
@@ -276,25 +270,25 @@ require (
 	github.com/openshift/cluster-api-provider-baremetal v0.0.0-20231103125354-2adf4799b2b9 // indirect
 	github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20230308152226-83c0473d4429 // indirect
 	github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20220323121149-e3f2850dd519 // indirect
-	github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 // indirect
-	github.com/openshift/hive/apis v0.0.0-20240812130639-bdf9d08a060a // indirect
+	github.com/openshift/custom-resource-status v1.1.2 // indirect
+	github.com/openshift/hive/apis v0.0.0-20231114185751-51a8b107360f // indirect
 	github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
 	github.com/ovirt/go-ovirt v0.0.0-20220427092237-114c47f2835c // indirect
 	github.com/pascaldekloe/name v0.0.0-20180628100202-0fd16699aae1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polyfloyd/go-errorlint v1.4.2 // indirect
-	github.com/prometheus/client_golang v1.19.0 // indirect
-	github.com/prometheus/client_model v0.6.0 // indirect
-	github.com/prometheus/common v0.48.0 // indirect
+	github.com/prometheus/client_golang v1.17.0 // indirect
+	github.com/prometheus/client_model v0.5.0 // indirect
+	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.3.19 // indirect
 	github.com/quasilyte/gogrep v0.5.0 // indirect
 	github.com/quasilyte/regex/syntax v0.0.0-20210819130434-b3f0c404a727 // indirect
 	github.com/quasilyte/stdinfo v0.0.0-20220114132959-f7386bf02567 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/ryancurrah/gomodguard v1.3.0 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.4.0 // indirect
 	github.com/sanposhiho/wastedassign/v2 v2.0.7 // indirect
@@ -317,7 +311,7 @@ require (
 	github.com/stbenjam/no-sprintf-host-port v0.1.1 // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.46 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/stretchr/testify v1.9.0
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/t-yuki/gocover-cobertura v0.0.0-20180217150009-aaee18c8195c // indirect
@@ -353,12 +347,12 @@ require (
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
-	golang.org/x/term v0.23.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/api v0.170.0 // indirect
@@ -381,9 +375,9 @@ require (
 	k8s.io/component-base v0.28.3 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.130.1 // indirect
+	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231113174909-778a5567bc1e // indirect
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	mvdan.cc/gofumpt v0.5.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
@@ -394,7 +388,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
+	sigs.k8s.io/yaml v1.4.0
 )
 
 exclude (
@@ -415,9 +409,9 @@ exclude (
 	github.com/Azure/azure-sdk-for-go v67.3.0+incompatible
 	github.com/Azure/azure-sdk-for-go v67.4.0+incompatible
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
-	github.com/containerd/containerd v1.2.7
 	// exclude github.com/containerd/containerd < 1.6.1, 1.5.10, 1.14.12 https://nvd.nist.gov/vuln/detail/CVE-2022-23648
 	github.com/containerd/containerd v1.2.10
+	github.com/containerd/containerd v1.2.7
 	github.com/containerd/containerd v1.3.0
 	github.com/containerd/containerd v1.3.2
 	github.com/containerd/containerd v1.4.1
@@ -456,8 +450,8 @@ exclude (
 	github.com/golang/protobuf v1.3.1
 	// exclude github.com/hashicorp/vault < v1.5.1: https://nvd.nist.gov/vuln/detail/CVE-2020-16251
 	github.com/hashicorp/vault v0.10.4
-	github.com/hashicorp/vault v0.11.0-beta1
 	github.com/hashicorp/vault v0.11.0
+	github.com/hashicorp/vault v0.11.0-beta1
 	github.com/hashicorp/vault v0.11.1
 	github.com/hashicorp/vault v0.11.2
 	github.com/hashicorp/vault v0.11.3
@@ -466,25 +460,25 @@ exclude (
 	github.com/hashicorp/vault v0.11.6
 	github.com/hashicorp/vault v0.11.7
 	github.com/hashicorp/vault v0.11.8
+	github.com/hashicorp/vault v1.0.0
 	github.com/hashicorp/vault v1.0.0-beta1
 	github.com/hashicorp/vault v1.0.0-beta2
 	github.com/hashicorp/vault v1.0.0-rc1
-	github.com/hashicorp/vault v1.0.0
 	github.com/hashicorp/vault v1.0.1
 	github.com/hashicorp/vault v1.0.2
 	github.com/hashicorp/vault v1.0.3
+	github.com/hashicorp/vault v1.1.0
 	github.com/hashicorp/vault v1.1.0-beta1
 	github.com/hashicorp/vault v1.1.0-beta2
-	github.com/hashicorp/vault v1.1.0
 	github.com/hashicorp/vault v1.1.1
 	github.com/hashicorp/vault v1.1.2
 	github.com/hashicorp/vault v1.1.3
 	github.com/hashicorp/vault v1.1.4
 	github.com/hashicorp/vault v1.1.5
+	github.com/hashicorp/vault v1.2.0
 	github.com/hashicorp/vault v1.2.0-beta1
 	github.com/hashicorp/vault v1.2.0-beta2
 	github.com/hashicorp/vault v1.2.0-rc1
-	github.com/hashicorp/vault v1.2.0
 	github.com/hashicorp/vault v1.2.1
 	github.com/hashicorp/vault v1.2.2
 	github.com/hashicorp/vault v1.2.3
@@ -497,18 +491,18 @@ exclude (
 	github.com/hashicorp/vault v1.3.5
 	github.com/hashicorp/vault v1.3.6
 	github.com/hashicorp/vault v1.3.7
+	github.com/hashicorp/vault v1.4.0
 	github.com/hashicorp/vault v1.4.0-beta1
 	github.com/hashicorp/vault v1.4.0-beta2
 	github.com/hashicorp/vault v1.4.0-beta3
 	github.com/hashicorp/vault v1.4.0-rc1
-	github.com/hashicorp/vault v1.4.0
 	github.com/hashicorp/vault v1.4.1
 	github.com/hashicorp/vault v1.4.2
 	github.com/hashicorp/vault v1.4.3
+	github.com/hashicorp/vault v1.5.0
 	github.com/hashicorp/vault v1.5.0-beta1
 	github.com/hashicorp/vault v1.5.0-beta2
 	github.com/hashicorp/vault v1.5.0-rc1
-	github.com/hashicorp/vault v1.5.0
 	// force use of github.com/envoyproxy/protoc-gen-validate
 	github.com/lyft/protoc-gen-validate v0.0.13
 	// busted install path
@@ -584,7 +578,7 @@ replace (
 	github.com/metal3-io/cluster-api-provider-metal3/api => github.com/openshift/cluster-api-provider-metal3/api v0.0.0-20231025134231-298f47e3f7e4
 	github.com/mholt/certmagic => github.com/caddyserver/certmagic v0.15.0
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20240729140855-0a58f8c30a8c
-	github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20240917121626-ed4651a56f40
+	github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20241011223353-213c57977cc8
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20240109161853-2425b4b6d3b3
 	github.com/openshift/cloud-credential-operator => github.com/openshift/cloud-credential-operator v0.0.0-20240422222427-55199c9b5870
 	github.com/openshift/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20240326141158-73a72cc82122
@@ -593,7 +587,7 @@ replace (
 	github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd
 	github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 	github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-	github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20240816144947-2366bd9ea22b
+	github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20241011152036-ca0bf4e06c48
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d

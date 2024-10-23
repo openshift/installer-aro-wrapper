@@ -13,13 +13,14 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/internal/base"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/internal/shared"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 )
 
 // ClientOptions contains the optional parameters when creating a Client.
-type ClientOptions base.ClientOptions
+type ClientOptions struct {
+	azcore.ClientOptions
+}
 
 // Client represents a URL to an Azure Storage blob; the blob may be a block blob, append blob, or page blob.
 type Client struct {
@@ -31,7 +32,11 @@ type Client struct {
 //   - cred - an Azure AD credential, typically obtained via the azidentity module
 //   - options - client options; pass nil to accept the default values
 func NewClient(serviceURL string, cred azcore.TokenCredential, options *ClientOptions) (*Client, error) {
-	svcClient, err := service.NewClient(serviceURL, cred, (*service.ClientOptions)(options))
+	var clientOptions *service.ClientOptions
+	if options != nil {
+		clientOptions = &service.ClientOptions{ClientOptions: options.ClientOptions}
+	}
+	svcClient, err := service.NewClient(serviceURL, cred, clientOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +51,11 @@ func NewClient(serviceURL string, cred azcore.TokenCredential, options *ClientOp
 //   - serviceURL - the URL of the storage account e.g. https://<account>.blob.core.windows.net/?<sas token>
 //   - options - client options; pass nil to accept the default values
 func NewClientWithNoCredential(serviceURL string, options *ClientOptions) (*Client, error) {
-	svcClient, err := service.NewClientWithNoCredential(serviceURL, (*service.ClientOptions)(options))
+	var clientOptions *service.ClientOptions
+	if options != nil {
+		clientOptions = &service.ClientOptions{ClientOptions: options.ClientOptions}
+	}
+	svcClient, err := service.NewClientWithNoCredential(serviceURL, clientOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +84,15 @@ func NewClientWithSharedKeyCredential(serviceURL string, cred *SharedKeyCredenti
 //   - connectionString - a connection string for the desired storage account
 //   - options - client options; pass nil to accept the default values
 func NewClientFromConnectionString(connectionString string, options *ClientOptions) (*Client, error) {
-	svcClient, err := service.NewClientFromConnectionString(connectionString, (*service.ClientOptions)(options))
+	if options == nil {
+		options = &ClientOptions{}
+	}
+	containerClient, err := service.NewClientFromConnectionString(connectionString, (*service.ClientOptions)(options))
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		svc: svcClient,
+		svc: containerClient,
 	}, nil
 }
 
