@@ -491,6 +491,7 @@ replace (
 	// Replace old GoGo Protobuf versions https://nvd.nist.gov/vuln/detail/CVE-2021-3121
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/mrnold/go-libnbd => github.com/mrnold/go-libnbd v1.4.1-cdi // v1.10.0 uses an invalid module path
+        github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 	github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v1.21.0 // earlier versions refer to dead packages
 	// https://www.whitesourcesoftware.com/vulnerability-database/WS-2018-0594
 	github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
