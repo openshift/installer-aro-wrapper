@@ -6,9 +6,14 @@ package graph
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/sirupsen/logrus"
 
@@ -27,6 +32,7 @@ type Manager interface {
 	Exists(ctx context.Context, resourceGroup, account string) (bool, error)
 	Save(ctx context.Context, resourceGroup, account string, g Graph) error
 	LoadPersisted(ctx context.Context, resourceGroup, account string) (PersistedGraph, error)
+	GetUserDelegatedSASIgnitionBlobURL(ctx context.Context, resourceGroup, account, blobURL string, usesWorkloadIdentity bool) (string, error)
 }
 
 type manager struct {
@@ -121,3 +127,43 @@ func (m *manager) LoadPersisted(ctx context.Context, resourceGroup, account stri
 
 // SavePersistedGraph could be implemented and used with care if needed, but
 // currently we don't need it (and it's better that way)
+
+// GetUserDelegatedSASIgnitionBlobURL is used for MIWI clusters so that Ignition blob can be accessed by bootstrap VM without Storage Account Shared Access Keys
+func (m *manager) GetUserDelegatedSASIgnitionBlobURL(ctx context.Context, resourceGroup, account, blobURL string, usesWorkloadIdentity bool) (string, error) {
+	if !usesWorkloadIdentity {
+		return "", fmt.Errorf("getUserDelegatedSASIgnitionBlobURL called for a Cluster Service Principal cluster")
+	}
+	urlParts, err := sas.ParseURL(blobURL)
+	if err != nil {
+		return "", err
+	}
+	currentTime := time.Now().UTC().Add(-10 * time.Second)
+	expiryTime := time.Now().UTC().Add(time.Hour)
+	perms := sas.BlobPermissions{Read: true}
+	signatureValues := sas.BlobSignatureValues{
+		Protocol:      sas.ProtocolHTTPS,
+		StartTime:     currentTime,
+		ExpiryTime:    expiryTime,
+		Permissions:   perms.String(),
+		ContainerName: ignitionContainer,
+		BlobName:      ignitionBlob,
+	}
+
+	info := service.KeyInfo{
+		Start:  to.Ptr(currentTime.UTC().Format(sas.TimeFormat)),
+		Expiry: to.Ptr(expiryTime.UTC().Format(sas.TimeFormat)),
+	}
+	client, err := m.storage.BlobService(ctx, resourceGroup, account, armstorage.Permissions(""), armstorage.SignedResourceTypes(""))
+	if err != nil {
+		return "", err
+	}
+	udc, err := client.ServiceClient().GetUserDelegationCredential(ctx, info, nil)
+	if err != nil {
+		return "", err
+	}
+	urlParts.SAS, err = signatureValues.SignWithUserDelegation(udc)
+	if err != nil {
+		return "", err
+	}
+	return urlParts.String(), nil
+}
