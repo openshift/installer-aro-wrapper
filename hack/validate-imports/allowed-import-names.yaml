@@ -111,3 +111,5 @@ allowedImportNames:
     - hivefake
   github.com/openshift/hive/apis/hive/v1:
     - hivev1
+  github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armstorage:
+    - storagesdk
