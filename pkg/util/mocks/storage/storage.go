@@ -8,9 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	storage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
-	storage0 "github.com/Azure/azure-sdk-for-go/storage"
+	armstorage "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 	gomock "github.com/golang/mock/gomock"
+
+	azblob "github.com/openshift/ARO-Installer/pkg/util/azureclient/azuresdk/azblob"
 )
 
 // MockManager is a mock of Manager interface.
@@ -37,10 +38,10 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // BlobService mocks base method.
-func (m *MockManager) BlobService(arg0 context.Context, arg1, arg2 string, arg3 storage.Permissions, arg4 storage.SignedResourceTypes) (*storage0.BlobStorageClient, error) {
+func (m *MockManager) BlobService(arg0 context.Context, arg1, arg2 string, arg3 armstorage.Permissions, arg4 armstorage.SignedResourceTypes) (azblob.BlobsClient, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BlobService", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].(*storage0.BlobStorageClient)
+	ret0, _ := ret[0].(azblob.BlobsClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

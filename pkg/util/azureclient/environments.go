@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -93,6 +94,16 @@ func (e *AROEnvironment) EnvironmentCredentialOptions() *azidentity.EnvironmentC
 
 func (e *AROEnvironment) ManagedIdentityCredentialOptions() *azidentity.ManagedIdentityCredentialOptions {
 	return &azidentity.ManagedIdentityCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Cloud: e.Cloud,
+		},
+	}
+}
+
+// ArmClientOptions returns an arm.ClientOptions to be passed in when instantiating
+// Azure SDK for Go clients.
+func (e *AROEnvironment) ArmClientOptions() *arm.ClientOptions {
+	return &arm.ClientOptions{
 		ClientOptions: azcore.ClientOptions{
 			Cloud: e.Cloud,
 		},
