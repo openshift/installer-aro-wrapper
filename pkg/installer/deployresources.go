@@ -37,12 +37,38 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 		return err
 	}
 
+	params := map[string]interface{}{}
+	var paramType string
+
+	if m.oc.UsesWorkloadIdentity() {
+		paramType = "secureString"
+		sasURL, err := m.graph.GetUserDelegatedSASIgnitionBlobURL(ctx, resourceGroup, account, `https://cluster`+m.oc.Properties.StorageSuffix+`.blob.`+m.env.Environment().StorageEndpointSuffix+`/ignition/bootstrap.ign`, m.oc.UsesWorkloadIdentity())
+		if err != nil {
+			return err
+		}
+		params["sas"] = map[string]string{
+			"value": sasURL,
+		}
+	} else {
+		paramType = "object"
+		params["sas"] = map[string]interface{}{
+			"value": map[string]interface{}{
+				"signedStart":         m.oc.Properties.Install.Now.Format(time.RFC3339),
+				"signedExpiry":        m.oc.Properties.Install.Now.Add(24 * time.Hour).Format(time.RFC3339),
+				"signedPermission":    "rl",
+				"signedResourceTypes": "o",
+				"signedServices":      "b",
+				"signedProtocol":      "https",
+			},
+		}
+	}
+
 	t := &arm.Template{
 		Schema:         "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 		ContentVersion: "1.0.0.0",
 		Parameters: map[string]*arm.TemplateParameter{
 			"sas": {
-				Type: "object",
+				Type: paramType,
 			},
 		},
 		Resources: []*arm.Resource{
@@ -52,18 +78,8 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 			m.computeMasterVMs(installConfig, zones, machineMaster),
 		},
 	}
-	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, map[string]interface{}{
-		"sas": map[string]interface{}{
-			"value": map[string]interface{}{
-				"signedStart":         m.oc.Properties.Install.Now.Format(time.RFC3339),
-				"signedExpiry":        m.oc.Properties.Install.Now.Add(24 * time.Hour).Format(time.RFC3339),
-				"signedPermission":    "rl",
-				"signedResourceTypes": "o",
-				"signedServices":      "b",
-				"signedProtocol":      "https",
-			},
-		},
-	})
+
+	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, params)
 }
 
 // zones configures how master nodes are distributed across availability zones. In regions where the number of zones matches
