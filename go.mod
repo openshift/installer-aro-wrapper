@@ -7,9 +7,10 @@ require (
 	github.com/Azure/azure-sdk-for-go v63.1.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.12.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0
 	github.com/Azure/go-autorest/autorest v0.11.29
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.13
-	github.com/Azure/go-autorest/autorest/date v0.3.0
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/alvaroloes/enumer v1.1.2
 	github.com/apparentlymart/go-cidr v1.1.0
@@ -18,7 +19,6 @@ require (
 	github.com/coreos/ignition/v2 v2.16.2
 	github.com/coreos/stream-metadata-go v0.4.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
-	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-test/deep v1.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -48,6 +48,7 @@ require (
 )
 
 require (
+	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/containers/image/v5 v5.29.3 // indirect
 	github.com/containers/storage v1.53.0 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
@@ -304,7 +305,7 @@ require (
 	github.com/stbenjam/no-sprintf-host-port v0.1.1 // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.46 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/stretchr/testify v1.9.0
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/t-yuki/gocover-cobertura v0.0.0-20180217150009-aaee18c8195c // indirect
 	github.com/tdakkota/asciicheck v0.2.0 // indirect
@@ -371,7 +372,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
+	sigs.k8s.io/yaml v1.4.0
 )
 
 exclude (
@@ -579,7 +580,7 @@ replace (
 	github.com/metal3-io/cluster-api-provider-metal3/api => github.com/openshift/cluster-api-provider-metal3/api v0.0.0-20230629190752-6a0f73bb9043
 	github.com/mholt/certmagic => github.com/caddyserver/certmagic v0.15.0
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20240906151052-5d963dce87aa
-	github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20240607130013-60d5e86b6b7b
+	github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20241015171940-cb552dbc5475
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20230807132528-be5346fb33cb
 	github.com/openshift/cloud-credential-operator => github.com/openshift/cloud-credential-operator v0.0.0-20200316201045-d10080b52c9e
 	github.com/openshift/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20240404101519-fb20cdac93ab
