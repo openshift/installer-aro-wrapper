@@ -16,12 +16,12 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/aro"
 	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 )
@@ -50,16 +50,19 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 
-	imageRegistryConfig := &bootkube.AROImageRegistryConfig{
+	imageRegistryConfig := &aro.AROImageRegistryConfig{
 		AccountName:   m.oc.Properties.ImageRegistryStorageAccountName,
 		ContainerName: "image-registry",
 		HTTPSecret:    hex.EncodeToString(httpSecret),
 	}
 
-	dnsConfig := &bootkube.ARODNSConfig{
+	dnsConfig := &aro.ARODNSConfig{
 		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
+
+	ingressConfig := &aro.AROIngressService{}
+	workerRegistry := &aro.AROWorkerRegistries{}
 
 	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
 		dnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
@@ -85,7 +88,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey, ingressConfig, workerRegistry)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
