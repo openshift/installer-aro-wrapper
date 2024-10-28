@@ -237,8 +237,8 @@ type ServicePrincipalProfile struct {
 type PlatformWorkloadIdentityProfile struct {
 	MissingFields
 
-	UpgradeableTo              *UpgradeableTo             `json:"upgradeableTo,omitempty" mutable:"true"`
-	PlatformWorkloadIdentities []PlatformWorkloadIdentity `json:"platformWorkloadIdentities,omitempty" mutable:"true"`
+	UpgradeableTo              *UpgradeableTo                      `json:"upgradeableTo,omitempty" mutable:"true"`
+	PlatformWorkloadIdentities map[string]PlatformWorkloadIdentity `json:"platformWorkloadIdentities,omitempty" mutable:"true"`
 }
 
 // UpgradeableTo stores a single OpenShift version a workload identity cluster can be upgraded to
