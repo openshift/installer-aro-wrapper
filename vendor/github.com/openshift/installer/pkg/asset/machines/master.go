@@ -2,7 +2,6 @@ package machines
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -598,8 +597,6 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		return errors.Wrap(err, "failed to create ignition for ARO etc hosts for master machines")
 	}
 
-	marshalled, _ := json.Marshal(ignAROEtcHosts)
-	fmt.Printf("ignAROEtcHosts: %s\n", marshalled)
 	machineConfigs = append(machineConfigs, ignAROEtcHosts)
 
 	m.MachineConfigFiles, err = machineconfig.Manifests(machineConfigs, "master", directory)

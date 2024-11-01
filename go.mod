@@ -111,7 +111,7 @@ require (
 	github.com/chavacava/garif v0.0.0-20230227094218-b8c73b2037b8 // indirect
 	github.com/cjlapao/common-go v0.0.39 // indirect
 	github.com/clarketm/json v1.17.1 // indirect
-	github.com/containers/image/v5 v5.29.3 // indirect
+	github.com/containers/image/v5 v5.29.3
 	github.com/containers/storage v1.53.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
