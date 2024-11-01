@@ -100,3 +100,13 @@ func (m *manager) initializeKubernetesClients(ctx context.Context) error {
 	m.kubernetescli, err = kubernetes.NewForConfig(r)
 	return err
 }
+
+// GenerateInstallConfig makes generateInstallConfig public for go test.
+func (m *manager) GenerateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
+	return m.generateInstallConfig(ctx)
+}
+
+// ApplyInstallConfigCustomisations makes applyInstallConfigCustomisations public for go test.
+func (m *manager) ApplyInstallConfigCustomisations(installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
+	return m.applyInstallConfigCustomisations(installConfig, image)
+}
