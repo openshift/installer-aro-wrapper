@@ -150,8 +150,7 @@ func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig)
 			},
 			DiagnosticsProfile: &mgmtcompute.DiagnosticsProfile{
 				BootDiagnostics: &mgmtcompute.BootDiagnostics{
-					Enabled:    to.BoolPtr(true),
-					StorageURI: to.StringPtr("https://cluster" + m.oc.Properties.StorageSuffix + ".blob." + m.env.Environment().StorageEndpointSuffix + "/"),
+					Enabled: to.BoolPtr(true),
 				},
 			},
 		},
@@ -222,8 +221,7 @@ func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, z
 			},
 			DiagnosticsProfile: &mgmtcompute.DiagnosticsProfile{
 				BootDiagnostics: &mgmtcompute.BootDiagnostics{
-					Enabled:    to.BoolPtr(true),
-					StorageURI: to.StringPtr("https://cluster" + m.oc.Properties.StorageSuffix + ".blob." + m.env.Environment().StorageEndpointSuffix + "/"),
+					Enabled: to.BoolPtr(true),
 				},
 			},
 		},
