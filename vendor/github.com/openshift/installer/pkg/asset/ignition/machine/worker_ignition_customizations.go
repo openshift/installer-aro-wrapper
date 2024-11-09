@@ -1,18 +1,18 @@
 package machine
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
-	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
 
 var (
@@ -34,19 +34,17 @@ func (a *WorkerIgnitionCustomizations) Dependencies() []asset.Asset {
 		&installconfig.InstallConfig{},
 		&tls.RootCA{},
 		&Worker{},
-		&bootkube.ARODNSConfig{},
 	}
 }
 
 // Generate queries for input from the user.
-func (a *WorkerIgnitionCustomizations) Generate(dependencies asset.Parents) error {
+func (a *WorkerIgnitionCustomizations) Generate(_ context.Context, dependencies asset.Parents) error {
 	installConfig := &installconfig.InstallConfig{}
 	rootCA := &tls.RootCA{}
 	worker := &Worker{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(installConfig, rootCA, worker, aroDNSConfig)
+	dependencies.Get(installConfig, rootCA, worker)
 
-	defaultPointerIgnition := pointerIgnitionConfig(installConfig.Config, aroDNSConfig, rootCA.Cert(), "worker")
+	defaultPointerIgnition := pointerIgnitionConfig(installConfig.Config, rootCA.Cert(), "worker")
 	savedPointerIgnition := worker.Config
 
 	// Create a machineconfig if the ignition has been modified

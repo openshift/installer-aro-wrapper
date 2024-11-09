@@ -13,11 +13,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 )
@@ -45,6 +47,7 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 		return errors.New(field.Required(field.NewPath("platform", "aws"), "AWS validation requires an AWS platform configuration").Error())
 	}
 	allErrs = append(allErrs, validateAMI(ctx, config)...)
+	allErrs = append(allErrs, validatePublicIpv4Pool(ctx, meta, field.NewPath("platform", "aws", "publicIpv4PoolId"), config)...)
 	allErrs = append(allErrs, validatePlatform(ctx, meta, field.NewPath("platform", "aws"), config.Platform.AWS, config.Networking, config.Publish)...)
 
 	if config.ControlPlane != nil {
@@ -94,6 +97,11 @@ func validatePlatform(ctx context.Context, meta *Metadata, fldPath *field.Path, 
 }
 
 func validateAMI(ctx context.Context, config *types.InstallConfig) field.ErrorList {
+	// accept AMI from the rhcos stream metadata
+	if rhcos.AMIRegions(config.ControlPlane.Architecture).Has(config.Platform.AWS.Region) {
+		return nil
+	}
+
 	// accept AMI specified at the platform level
 	if config.Platform.AWS.AMIID != "" {
 		return nil
@@ -133,6 +141,47 @@ func validateAMI(ctx context.Context, config *types.InstallConfig) field.ErrorLi
 
 	// fail validation since we do not have an AMI to use
 	return field.ErrorList{field.Required(field.NewPath("platform", "aws", "amiID"), "AMI must be provided")}
+}
+
+func validatePublicIpv4Pool(ctx context.Context, meta *Metadata, fldPath *field.Path, config *types.InstallConfig) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if config.Platform.AWS.PublicIpv4Pool == "" {
+		return nil
+	}
+	poolID := config.Platform.AWS.PublicIpv4Pool
+	if config.Publish != types.ExternalPublishingStrategy {
+		return append(allErrs, field.Invalid(fldPath, poolID, fmt.Errorf("publish strategy %s can't be used with custom Public IPv4 Pools", config.Publish).Error()))
+	}
+
+	// Pool validations
+	// Resources claiming Public IPv4 from Pool in regular 'External' installations:
+	// 1* for Bootsrtap
+	// N*Zones for NAT Gateways
+	// N*Zones for API LB
+	// N*Zones for Ingress LB
+	allzones, err := meta.AvailabilityZones(ctx)
+	if err != nil {
+		return append(allErrs, field.InternalError(fldPath, err))
+	}
+	totalPublicIPRequired := int64(1 + (len(allzones) * 3))
+
+	sess, err := meta.Session(ctx)
+	if err != nil {
+		return append(allErrs, field.Invalid(fldPath, nil, fmt.Sprintf("unable to start a session: %s", err.Error())))
+	}
+	publicIpv4Pool, err := DescribePublicIpv4Pool(ctx, sess, config.Platform.AWS.Region, poolID)
+	if err != nil {
+		return append(allErrs, field.Invalid(fldPath, poolID, err.Error()))
+	}
+
+	got := aws.Int64Value(publicIpv4Pool.TotalAvailableAddressCount)
+	if got < totalPublicIPRequired {
+		err = fmt.Errorf("required a minimum of %d Public IPv4 IPs available in the pool %s, got %d", totalPublicIPRequired, poolID, got)
+		return append(allErrs, field.InternalError(fldPath, err))
+	}
+
+	return nil
 }
 
 func validateSubnets(ctx context.Context, meta *Metadata, fldPath *field.Path, subnets []string, networking *types.Networking, publish types.PublishingStrategy) field.ErrorList {
@@ -293,6 +342,15 @@ func validateMachinePool(ctx context.Context, meta *Metadata, fldPath *field.Pat
 
 	if len(pool.AdditionalSecurityGroupIDs) > 0 {
 		allErrs = append(allErrs, validateSecurityGroupIDs(ctx, meta, fldPath.Child("additionalSecurityGroupIDs"), platform, pool)...)
+	}
+
+	if len(pool.IAMProfile) > 0 {
+		if len(pool.IAMRole) > 0 {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("iamRole"), "cannot be used with iamProfile"))
+		}
+		if err := validateInstanceProfile(ctx, meta, fldPath.Child("iamProfile"), pool); err != nil {
+			allErrs = append(allErrs, err)
+		}
 	}
 
 	return allErrs
@@ -559,4 +617,24 @@ func isHostedZoneAssociatedWithVPC(hostedZone *route53.GetHostedZoneOutput, vpcI
 		}
 	}
 	return false
+}
+
+func validateInstanceProfile(ctx context.Context, meta *Metadata, fldPath *field.Path, pool *awstypes.MachinePool) *field.Error {
+	session, err := meta.Session(ctx)
+	if err != nil {
+		return field.InternalError(fldPath, fmt.Errorf("unable to start a session: %w", err))
+	}
+	client := iam.New(session)
+	res, err := client.GetInstanceProfileWithContext(ctx, &iam.GetInstanceProfileInput{
+		InstanceProfileName: aws.String(pool.IAMProfile),
+	})
+	if err != nil {
+		msg := fmt.Errorf("unable to retrieve instance profile: %w", err).Error()
+		return field.Invalid(fldPath, pool.IAMProfile, msg)
+	}
+	if len(res.InstanceProfile.Roles) == 0 || res.InstanceProfile.Roles[0] == nil {
+		return field.Invalid(fldPath, pool.IAMProfile, "no role attached to instance profile")
+	}
+
+	return nil
 }

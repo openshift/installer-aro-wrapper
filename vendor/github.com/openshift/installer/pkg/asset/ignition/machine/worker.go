@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
 )
 
@@ -31,18 +31,16 @@ func (a *Worker) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&installconfig.InstallConfig{},
 		&tls.RootCA{},
-		&bootkube.ARODNSConfig{},
 	}
 }
 
 // Generate generates the ignition config for the Worker asset.
-func (a *Worker) Generate(dependencies asset.Parents) error {
+func (a *Worker) Generate(_ context.Context, dependencies asset.Parents) error {
 	installConfig := &installconfig.InstallConfig{}
 	rootCA := &tls.RootCA{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(installConfig, rootCA, aroDNSConfig)
+	dependencies.Get(installConfig, rootCA)
 
-	a.Config = pointerIgnitionConfig(installConfig.Config, aroDNSConfig, rootCA.Cert(), "worker")
+	a.Config = pointerIgnitionConfig(installConfig.Config, rootCA.Cert(), "worker")
 
 	data, err := ignition.Marshal(a.Config)
 	if err != nil {

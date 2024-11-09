@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -21,7 +22,9 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
 	"github.com/openshift/installer/pkg/asset/agent/agentconfig"
+	"github.com/openshift/installer/pkg/asset/agent/joiner"
 	"github.com/openshift/installer/pkg/asset/agent/manifests/staticnetworkconfig"
+	"github.com/openshift/installer/pkg/asset/agent/workflow"
 	"github.com/openshift/installer/pkg/types"
 	agenttype "github.com/openshift/installer/pkg/types/agent"
 )
@@ -63,28 +66,48 @@ func (*NMStateConfig) Name() string {
 // the asset.
 func (*NMStateConfig) Dependencies() []asset.Asset {
 	return []asset.Asset{
+		&workflow.AgentWorkflow{},
+		&joiner.ClusterInfo{},
 		&agentconfig.AgentHosts{},
 		&agent.OptionalInstallConfig{},
 	}
 }
 
 // Generate generates the NMStateConfig manifest.
-func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
-
+func (n *NMStateConfig) Generate(_ context.Context, dependencies asset.Parents) error {
+	agentWorkflow := &workflow.AgentWorkflow{}
+	clusterInfo := &joiner.ClusterInfo{}
 	agentHosts := &agentconfig.AgentHosts{}
 	installConfig := &agent.OptionalInstallConfig{}
-	dependencies.Get(agentHosts, installConfig)
+	dependencies.Get(agentHosts, installConfig, agentWorkflow, clusterInfo)
 
 	staticNetworkConfig := []*models.HostStaticNetworkConfig{}
 	nmStateConfigs := []*aiv1beta1.NMStateConfig{}
 	var data string
 	var isNetworkConfigAvailable bool
+	var clusterName, clusterNamespace string
 
 	if len(agentHosts.Hosts) == 0 {
 		return nil
 	}
-	if err := validateHostCount(installConfig.Config, agentHosts); err != nil {
-		return err
+
+	switch agentWorkflow.Workflow {
+	case workflow.AgentWorkflowTypeInstall:
+		if err := validateHostCount(installConfig.Config, agentHosts); err != nil {
+			return err
+		}
+		clusterName = installConfig.ClusterName()
+		clusterNamespace = installConfig.ClusterNamespace()
+
+	case workflow.AgentWorkflowTypeAddNodes:
+		if err := validateHostHostnameAndIPs(agentHosts, clusterInfo.Nodes); err != nil {
+			return err
+		}
+		clusterName = clusterInfo.ClusterName
+		clusterNamespace = clusterInfo.Namespace
+
+	default:
+		return fmt.Errorf("AgentWorkflowType value not supported: %s", agentWorkflow.Workflow)
 	}
 
 	for i, host := range agentHosts.Hosts {
@@ -94,12 +117,12 @@ func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
 			nmStateConfig := aiv1beta1.NMStateConfig{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "NMStateConfig",
-					APIVersion: "agent-install.openshift.io/v1beta1",
+					APIVersion: aiv1beta1.GroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(getNMStateConfigName(installConfig)+"-%d", i),
-					Namespace: getObjectMetaNamespace(installConfig),
-					Labels:    getNMStateConfigLabels(installConfig),
+					Name:      fmt.Sprintf("%s-%d", clusterName, i),
+					Namespace: clusterNamespace,
+					Labels:    getNMStateConfigLabels(clusterName),
 				},
 				Spec: aiv1beta1.NMStateConfigSpec{
 					NetConfig: aiv1beta1.NetConfig{
@@ -416,4 +439,49 @@ func validateHostCount(installConfig *types.InstallConfig, agentHosts *agentconf
 	}
 
 	return nil
+}
+
+func validateHostHostnameAndIPs(agentHosts *agentconfig.AgentHosts, nodes *corev1.NodeList) error {
+	for _, host := range agentHosts.Hosts {
+		hostIPs, err := getAllHostIPs(host.NetworkConfig)
+		if err != nil {
+			return err
+		}
+
+		for _, node := range nodes.Items {
+			for _, addr := range node.Status.Addresses {
+				if _, found := hostIPs[addr.Address]; found {
+					return fmt.Errorf("address conflict found. The configured address %s is already used by the cluster node %s", addr.Address, node.GetName())
+				}
+				if host.Hostname != "" && host.Hostname == addr.Address {
+					return fmt.Errorf("hostname conflict found. The configured hostname %s is already used in the cluster", addr.Address)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func getAllHostIPs(config aiv1beta1.NetConfig) (map[string]struct{}, error) {
+	var nmStateConfig nmStateConfig
+	hostIPs := make(map[string]struct{})
+
+	err := yaml.Unmarshal(config.Raw, &nmStateConfig)
+	if err != nil {
+		return hostIPs, fmt.Errorf("error unmarshalling NMStateConfig: %w", err)
+	}
+
+	for _, intf := range nmStateConfig.Interfaces {
+		for _, addr4 := range intf.IPV4.Address {
+			if addr4.IP != "" {
+				hostIPs[addr4.IP] = struct{}{}
+			}
+		}
+		for _, addr6 := range intf.IPV6.Address {
+			if addr6.IP != "" {
+				hostIPs[addr6.IP] = struct{}{}
+			}
+		}
+	}
+	return hostIPs, nil
 }

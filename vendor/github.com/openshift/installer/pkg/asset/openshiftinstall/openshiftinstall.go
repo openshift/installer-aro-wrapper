@@ -1,6 +1,7 @@
 package openshiftinstall
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
@@ -36,7 +37,7 @@ func (*Config) Dependencies() []asset.Asset {
 }
 
 // Generate generates the openshift-install ConfigMap.
-func (i *Config) Generate(dependencies asset.Parents) error {
+func (i *Config) Generate(_ context.Context, dependencies asset.Parents) error {
 	cm, err := CreateInstallConfigMap("openshift-install-manifests")
 	if err != nil {
 		return err
@@ -74,7 +75,12 @@ func (i *Config) Load(f asset.FileFetcher) (bool, error) {
 // OPENSHIFT_INSTALL_INVOKER environment variable and the given name for the
 // ConfigMap. This returns an error if marshalling to YAML fails.
 func CreateInstallConfigMap(name string) (string, error) {
-	invoker := "ARO"
+	var invoker string
+	if env := os.Getenv("OPENSHIFT_INSTALL_INVOKER"); env != "" {
+		invoker = env
+	} else {
+		invoker = "user"
+	}
 
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{

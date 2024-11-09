@@ -25,10 +25,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/data"
-	"github.com/openshift/installer/pkg/aro/aroign"
-	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/baremetal"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/vsphere"
@@ -39,7 +36,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/rhcos"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
@@ -60,8 +56,6 @@ var (
 		"coredns.service",
 		"ironic.service",
 		"master-bmh-update.service",
-		"fluentbit.service",
-		"mdsd.service",
 	}
 
 	rhcosEnabledServices = []string{
@@ -96,7 +90,6 @@ type bootstrapTemplateData struct {
 	FeatureSet            configv1.FeatureSet
 	Invoker               string
 	ClusterDomain         string
-	LoggingConfig         *bootstraplogging.Config
 }
 
 // platformTemplateData is the data to use to replace values in bootstrap
@@ -118,7 +111,6 @@ func (a *Common) Dependencies() []asset.Asset {
 		&baremetal.IronicCreds{},
 		&CVOIgnore{},
 		&installconfig.InstallConfig{},
-		&bootstraplogging.Config{},
 		&kubeconfig.AdminInternalClient{},
 		&kubeconfig.Kubelet{},
 		&kubeconfig.LoopbackClient{},
@@ -168,7 +160,6 @@ func (a *Common) Dependencies() []asset.Asset {
 		&tls.ServiceAccountKeyPair{},
 		&releaseimage.Image{},
 		new(rhcos.Image),
-		&bootkube.ARODNSConfig{},
 	}
 }
 
@@ -176,8 +167,7 @@ func (a *Common) Dependencies() []asset.Asset {
 func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootstrapTemplateData) error {
 	installConfig := &installconfig.InstallConfig{}
 	bootstrapSSHKeyPair := &tls.BootstrapSSHKeyPair{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(installConfig, bootstrapSSHKeyPair, aroDNSConfig)
+	dependencies.Get(installConfig, bootstrapSSHKeyPair)
 
 	a.Config = &igntypes.Config{
 		Ignition: igntypes.Ignition{
@@ -191,7 +181,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/common/units", templateData, commonEnabledServices); err != nil {
 		return err
 	}
-	if !(templateData.IsOKD && templateData.Invoker == "agent-installer") {
+	if !templateData.IsOKD {
 		if err := AddSystemdUnits(a.Config, "bootstrap/systemd/rhcos/units", templateData, rhcosEnabledServices); err != nil {
 			return err
 		}
@@ -228,22 +218,6 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 		}},
 	)
 
-	dnsmasqIgnConfig, err := dnsmasq.Ignition3Config(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, true)
-	if err != nil {
-		return err
-	}
-
-	a.Config.Storage.Files = append(a.Config.Storage.Files, dnsmasqIgnConfig.Storage.Files...)
-	a.Config.Systemd.Units = append(a.Config.Systemd.Units, dnsmasqIgnConfig.Systemd.Units...)
-
-	etchostsIgnConfig, err := aroign.EtcHostsIgnitionConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP)
-	if err != nil {
-		return err
-	}
-
-	a.Config.Storage.Files = append(a.Config.Storage.Files, etchostsIgnConfig.Storage.Files...)
-	a.Config.Systemd.Units = append(a.Config.Systemd.Units, etchostsIgnConfig.Systemd.Units...)
-
 	return nil
 }
 
@@ -270,13 +244,12 @@ func (a *Common) Files() []*asset.File {
 // getTemplateData returns the data to use to execute bootstrap templates.
 func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bool) *bootstrapTemplateData {
 	installConfig := &installconfig.InstallConfig{}
-	loggingConfig := &bootstraplogging.Config{}
 	proxy := &manifests.Proxy{}
 	releaseImage := &releaseimage.Image{}
 	rhcosImage := new(rhcos.Image)
 	bootstrapSSHKeyPair := &tls.BootstrapSSHKeyPair{}
 	ironicCreds := &baremetal.IronicCreds{}
-	dependencies.Get(installConfig, proxy, releaseImage, rhcosImage, bootstrapSSHKeyPair, ironicCreds, loggingConfig)
+	dependencies.Get(installConfig, proxy, releaseImage, rhcosImage, bootstrapSSHKeyPair, ironicCreds)
 
 	etcdEndpoints := make([]string, *installConfig.Config.ControlPlane.Replicas)
 
@@ -310,7 +283,13 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 
 	switch installConfig.Config.Platform.Name() {
 	case baremetaltypes.Name:
-		platformData.BareMetal = baremetal.GetTemplateData(installConfig.Config.Platform.BareMetal, installConfig.Config.MachineNetwork, ironicCreds.Username, ironicCreds.Password)
+		platformData.BareMetal = baremetal.GetTemplateData(
+			installConfig.Config.Platform.BareMetal,
+			installConfig.Config.MachineNetwork,
+			*installConfig.Config.ControlPlane.Replicas,
+			ironicCreds.Username,
+			ironicCreds.Password,
+		)
 	case vspheretypes.Name:
 		platformData.VSphere = vsphere.GetTemplateData(installConfig.Config.Platform.VSphere)
 	}
@@ -321,15 +300,15 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		bootstrapNodeIP = ""
 	}
 
-	platformFirstAPIVIP := firstAPIVIP(&installConfig.Config.Platform)
-	APIIntVIPonIPv6 := utilsnet.IsIPv6String(platformFirstAPIVIP)
-
-	networkStack := 0
-	for _, snet := range installConfig.Config.ServiceNetwork {
-		if snet.IP.To4() != nil {
-			networkStack |= 1
+	var hasIPv4, hasIPv6, ipv6Primary bool
+	for i, snet := range installConfig.Config.ServiceNetwork {
+		if utilsnet.IsIPv4(snet.IP) {
+			hasIPv4 = true
 		} else {
-			networkStack |= 2
+			hasIPv6 = true
+			if i == 0 {
+				ipv6Primary = true
+			}
 		}
 	}
 
@@ -358,13 +337,12 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		EtcdCluster:           strings.Join(etcdEndpoints, ","),
 		Proxy:                 &proxy.Config.Status,
 		Registries:            registries,
-		BootImage:             string(*rhcosImage),
+		BootImage:             rhcosImage.ControlPlane,
 		PlatformData:          platformData,
-		LoggingConfig:         loggingConfig,
 		ClusterProfile:        clusterProfile,
 		BootstrapInPlace:      bootstrapInPlaceConfig,
-		UseIPv6ForNodeIP:      APIIntVIPonIPv6,
-		UseDualForNodeIP:      networkStack == 3,
+		UseIPv6ForNodeIP:      ipv6Primary,
+		UseDualForNodeIP:      hasIPv4 && hasIPv6,
 		IsFCOS:                installConfig.Config.IsFCOS(),
 		IsSCOS:                installConfig.Config.IsSCOS(),
 		IsOKD:                 installConfig.Config.IsOKD(),
@@ -724,35 +702,4 @@ func warnIfCertificatesExpired(config *igntypes.Config) {
 	if expiredCerts > 0 {
 		logrus.Warnf("Bootstrap Ignition-Config: %d certificates expired. Installation attempts with the created Ignition-Configs will possibly fail.", expiredCerts)
 	}
-}
-
-// APIVIPs returns the string representations of the platform's API VIPs
-// It returns nil if the platform does not configure VIPs
-func apiVIPs(p *types.Platform) []string {
-	switch {
-	case p == nil:
-		return nil
-	case p.BareMetal != nil:
-		return p.BareMetal.APIVIPs
-	case p.OpenStack != nil:
-		return p.OpenStack.APIVIPs
-	case p.VSphere != nil:
-		return p.VSphere.APIVIPs
-	case p.Ovirt != nil:
-		return p.Ovirt.APIVIPs
-	case p.Nutanix != nil:
-		return p.Nutanix.APIVIPs
-	default:
-		return nil
-	}
-}
-
-// firstAPIVIP returns the first VIP of the API server (e.g. in case of
-// dual-stack)
-func firstAPIVIP(p *types.Platform) string {
-	for _, vip := range apiVIPs(p) {
-		return vip
-	}
-
-	return ""
 }
