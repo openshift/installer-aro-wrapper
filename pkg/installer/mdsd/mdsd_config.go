@@ -4,9 +4,9 @@ package mdsd
 // Licensed under the Apache License 2.0.
 
 import (
-	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 
+	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
 	mdsdfiles "github.com/openshift/installer-aro-wrapper/pkg/data/mdsd"
 )

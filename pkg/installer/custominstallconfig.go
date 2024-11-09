@@ -115,7 +115,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	g.Set(installConfig, image, clusterID, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targetAssets {
