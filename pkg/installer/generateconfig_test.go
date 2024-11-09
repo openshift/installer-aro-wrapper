@@ -229,7 +229,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	log.Info("Rendering Manifests")
 	for _, m := range targetassets.Manifests {
 		log.Infof("-> %v", reflect.TypeOf(m))
-		err = g.Resolve(m)
+		err = g.Resolve(ctx, m)
 		if err != nil {
 			t.Fatalf("failed to resolve asset: %v", err)
 		}
@@ -244,7 +244,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	log.Info("Rendering Ignition Configs")
 	for _, m := range targetassets.IgnitionConfigs {
 		log.Infof("-> %v", reflect.TypeOf(m))
-		err = g.Resolve(m)
+		err = g.Resolve(ctx, m)
 		if err != nil {
 			t.Fatalf("failed to resolve asset: %v", err)
 		}

@@ -4,6 +4,7 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -92,7 +93,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
-		err = g.Resolve(a)
+		err = g.Resolve(context.TODO(), a)
 		if err != nil {
 			return nil, err
 		}
