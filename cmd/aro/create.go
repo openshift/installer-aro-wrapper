@@ -47,7 +47,7 @@ var (
 
 				runner := func(directory string, manifests []asset.WritableAsset) error {
 					for _, m := range manifests {
-						err = g.Resolve(m)
+						err = g.Resolve(ctx, m)
 						if err != nil {
 							err = errors.Wrapf(err, "failed to fetch %s", m.Name())
 						}
