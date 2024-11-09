@@ -6,12 +6,11 @@ package installer
 import (
 	"context"
 
-	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
-	bootstraplogconfig "github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
+	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/features"
@@ -61,7 +60,7 @@ func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clust
 		fpAuthorizer:              fpAuthorizer,
 		deployments:               deployments,
 		graph:                     g,
-		getBootstrapLoggingConfig: bootstraplogconfig.GetConfig,
+		getBootstrapLoggingConfig: bootstraplogging.GetConfig,
 		getGatewayDomains:         gatewayDomains,
 	}
 }
