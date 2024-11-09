@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -43,6 +44,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	if err != nil {
 		return nil, err
 	}
+	fmt.Fprintf(os.Stderr, "XXX: bootstrapLoggingConfig=%v\n", bootstrapLoggingConfig)
 
 	httpSecret := make([]byte, 64)
 	_, err = rand.Read(httpSecret)
@@ -85,7 +87,8 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	//g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	g.Set(installConfig, image, clusterID, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
