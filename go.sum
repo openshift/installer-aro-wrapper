@@ -2527,8 +2527,6 @@ github.com/openshift/machine-api-provider-gcp v0.0.1-0.20231014045125-6096cc86f3
 github.com/openshift/machine-api-provider-gcp v0.0.1-0.20231014045125-6096cc86f3ba/go.mod h1:G1BYMrC49dMOkCEjG+LPoe0rRXFRv8o/jqLuN4fgfGM=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d h1:ELypg5zkw9jXCbp2jZ6iwYWTCtSqZVrxcKBQqwIgd2Y=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d/go.mod h1:cF2vIryKLoYmkUAFsvFHTlChMAtMEuRDVYMiH+uFe3E=
-github.com/openshift/machine-config-operator v0.0.1-0.20240927143910-dc45d313d876 h1:r7+Ss0BB0AZjKenpKUsyUWF3QoElG8ujIuTUhqyub+A=
-github.com/openshift/machine-config-operator v0.0.1-0.20240927143910-dc45d313d876/go.mod h1:RVXxGeaeKYcdekIFMn640nvX1jxl/B8orgVssAneCsA=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b h1:FfH+VrHHk6Lxt9HdVS0PXzSXFyS2NbZKXv33FYPol0A=
 github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b/go.mod h1:AC62GU6hc0BrNm+9RK9VSiwa/EUe1bkIeFORAMcHvJU=
