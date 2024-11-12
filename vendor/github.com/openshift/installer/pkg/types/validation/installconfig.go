@@ -31,7 +31,6 @@ import (
 	azurevalidation "github.com/openshift/installer/pkg/types/azure/validation"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	baremetalvalidation "github.com/openshift/installer/pkg/types/baremetal/validation"
-	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/featuregates"
 	"github.com/openshift/installer/pkg/types/gcp"
 	gcpvalidation "github.com/openshift/installer/pkg/types/gcp/validation"
@@ -228,21 +227,23 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 			}
 		}
 
-		if !enabledCaps.Has(configv1.ClusterVersionCapabilityCloudControllerManager) {
-			if c.None == nil && c.BareMetal == nil && c.External == nil {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
-					"disabling CloudControllerManager is only supported on the Baremetal, None, or External platform with cloudControllerManager value none"))
+		/* XXX
+			if !enabledCaps.Has(configv1.ClusterVersionCapabilityCloudControllerManager) {
+				if c.None == nil && c.BareMetal == nil && c.External == nil {
+					allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
+						"disabling CloudControllerManager is only supported on the Baremetal, None, or External platform with cloudControllerManager value none"))
+				}
+				if c.External != nil && c.External.CloudControllerManager == external.CloudControllerManagerTypeExternal {
+					allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
+						"disabling CloudControllerManager on External platform supported only with cloudControllerManager value none"))
+				}
 			}
-			if c.External != nil && c.External.CloudControllerManager == external.CloudControllerManagerTypeExternal {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
-					"disabling CloudControllerManager on External platform supported only with cloudControllerManager value none"))
-			}
-		}
 
-		if !enabledCaps.Has(configv1.ClusterVersionCapabilityIngress) {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
-				"the Ingress capability is required"))
-		}
+			if !enabledCaps.Has(configv1.ClusterVersionCapabilityIngress) {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
+					"the Ingress capability is required"))
+			}
+		XXX */
 	}
 
 	allErrs = append(allErrs, ValidateFeatureSet(c)...)
