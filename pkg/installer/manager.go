@@ -38,11 +38,16 @@ type manager struct {
 	kubernetescli kubernetes.Interface
 
 	getBootstrapLoggingConfig func(env.Interface, *api.OpenShiftCluster) (*bootstraplogging.Config, error)
+	getGatewayDomains         func(env.Interface, *api.OpenShiftCluster) []string
 }
 
 type Interface interface {
 	Install(ctx context.Context) error
 	Manifests(ctx context.Context) (graph.Graph, error)
+}
+
+func gatewayDomains(env env.Interface, oc *api.OpenShiftCluster) []string {
+	return append(env.GatewayDomains(), oc.Properties.ImageRegistryStorageAccountName+".blob."+env.Environment().StorageEndpointSuffix)
 }
 
 func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
@@ -57,5 +62,6 @@ func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clust
 		deployments:               deployments,
 		graph:                     g,
 		getBootstrapLoggingConfig: bootstraplogconfig.GetConfig,
+		getGatewayDomains:         gatewayDomains,
 	}
 }
