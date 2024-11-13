@@ -4,7 +4,7 @@ import (
 	"io"
 	"path"
 
-	"github.com/openshift/installer/data"
+	"github.com/openshift/installer-aro-wrapper/data"
 )
 
 const (

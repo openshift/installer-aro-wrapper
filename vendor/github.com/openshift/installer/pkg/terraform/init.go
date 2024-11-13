@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/openshift/installer/data"
+	"github.com/openshift/installer-aro-wrapper/data"
 	prov "github.com/openshift/installer/pkg/terraform/providers"
 )
 

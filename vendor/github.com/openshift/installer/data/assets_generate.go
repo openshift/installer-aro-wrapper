@@ -8,7 +8,7 @@ import (
 
 	"github.com/shurcooL/vfsgen"
 
-	"github.com/openshift/installer/data"
+	"github.com/openshift/installer-aro-wrapper/data"
 )
 
 func main() {

@@ -14,7 +14,7 @@ import (
 	"github.com/coreos/stream-metadata-go/stream"
 	"github.com/pkg/errors"
 
-	"github.com/openshift/installer/data"
+	"github.com/openshift/installer-aro-wrapper/data"
 )
 
 // FetchRawCoreOSStream returns the raw stream metadata for the

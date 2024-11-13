@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
+	"github.com/openshift/installer-aro-wrapper/data"
 	"github.com/openshift/installer/cmd/openshift-install/command"
-	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/asset/cluster/metadata"
 	azic "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	gcpic "github.com/openshift/installer/pkg/asset/installconfig/gcp"
