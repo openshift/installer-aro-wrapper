@@ -1,4 +1,6 @@
 allowedImportNames:
+  github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging:
+    - bootstraplogconfig
   github.com/openshift/installer-aro-wrapper/pkg/frontend/middleware:
     - ""
     - frontendmiddleware

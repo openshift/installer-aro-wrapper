@@ -6,10 +6,12 @@ package installer
 import (
 	"context"
 
+	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	bootstraplogconfig "github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/features"
@@ -34,6 +36,8 @@ type manager struct {
 	graph graph.Manager
 
 	kubernetescli kubernetes.Interface
+
+	getBootstrapLoggingConfig func(env.Interface, *api.OpenShiftCluster) (*bootstraplogging.Config, error)
 }
 
 type Interface interface {
@@ -43,14 +47,15 @@ type Interface interface {
 
 func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
 	return &manager{
-		log:          log,
-		env:          _env,
-		assetsDir:    assetsDir,
-		clusterUUID:  clusterUUID,
-		oc:           oc,
-		sub:          subscription,
-		fpAuthorizer: fpAuthorizer,
-		deployments:  deployments,
-		graph:        g,
+		log:                       log,
+		env:                       _env,
+		assetsDir:                 assetsDir,
+		clusterUUID:               clusterUUID,
+		oc:                        oc,
+		sub:                       subscription,
+		fpAuthorizer:              fpAuthorizer,
+		deployments:               deployments,
+		graph:                     g,
+		getBootstrapLoggingConfig: bootstraplogconfig.GetConfig,
 	}
 }
