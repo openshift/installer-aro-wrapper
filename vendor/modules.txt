@@ -1278,6 +1278,7 @@ github.com/openshift/installer/pkg/asset/installconfig
 github.com/openshift/installer/pkg/asset/installconfig/alibabacloud
 github.com/openshift/installer/pkg/asset/installconfig/aws
 github.com/openshift/installer/pkg/asset/installconfig/azure
+github.com/openshift/installer/pkg/asset/installconfig/azure/mock
 github.com/openshift/installer/pkg/asset/installconfig/baremetal
 github.com/openshift/installer/pkg/asset/installconfig/gcp
 github.com/openshift/installer/pkg/asset/installconfig/ibmcloud
