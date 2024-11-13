@@ -1,0 +1,28 @@
+[Unit]
+Description=Kubernetes Kubelet
+Wants=rpc-statd.service crio.service release-image.service
+{{if .IsOKD -}}
+Wants=release-image-pivot.service
+{{end -}}
+After=crio.service release-image.service
+{{if .IsOKD -}}
+After=release-image-pivot.service
+{{end -}}
+
+[Service]
+Type=notify
+NotifyAccess=all
+ExecStartPre=/bin/mkdir --parents /etc/kubernetes/manifests
+ExecStartPre=/bin/mkdir --parents /etc/kubernetes/kubelet-plugins/volume/exec
+ExecStartPre=/usr/local/bin/kubelet-pause-image.sh
+Environment=KUBELET_RUNTIME_REQUEST_TIMEOUT=10m
+EnvironmentFile=-/etc/kubernetes/kubelet-env
+EnvironmentFile=-/etc/kubernetes/kubelet-pause-image-override
+
+ExecStart=/usr/local/bin/kubelet.sh
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
