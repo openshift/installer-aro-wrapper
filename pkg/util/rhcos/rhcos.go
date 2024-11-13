@@ -6,6 +6,7 @@ package rhcos
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 
 	coreosarch "github.com/coreos/stream-metadata-go/arch"
@@ -23,17 +24,21 @@ func Image(ctx context.Context) (*azuretypes.OSImage, error) {
 		return nil, err
 	}
 
+	fmt.Fprintf(os.Stderr, "XXX: osImage=%s\n", osImage)
 	m := rxRHCOS.FindStringSubmatch(osImage)
 	if m == nil {
 		return nil, fmt.Errorf("couldn't match osImage %q", osImage)
 	}
 
+	// XXX: hard coding for now
 	return &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_" + m[2], // "aro_4x"
-		Version:   m[1],          // "4x.yy.2020zzzz"
-		Plan:      azuretypes.ImageNoPurchasePlan,
+		//SKU:       "aro_" + m[2], // "aro_4x"
+		SKU: "aro_414",
+		//Version:   m[1],          // "4x.yy.2020zzzz"
+		Version: "414.92.20240213",
+		Plan:    azuretypes.ImageNoPurchasePlan,
 	}, nil
 }
 

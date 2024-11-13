@@ -51,6 +51,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 
+	fmt.Fprintf(os.Stderr, "XXX: m.oc.Properties.ImageRegistryStorageAccountName=%s\n", m.oc.Properties.ImageRegistryStorageAccountName)
 	/*
 		imageRegistryConfig := &AROImageRegistryConfig{
 			AccountName:   m.oc.Properties.ImageRegistryStorageAccountName,
