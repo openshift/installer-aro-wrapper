@@ -4,6 +4,8 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
@@ -21,11 +23,34 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 )
+
+var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
+	"/etc/sysconfig/fluentbit",
+
+	"/etc/mdsd.d/mdsd.env",
+	"/etc/mdsd.d/secret/mdsdcert.pem",
+	"/etc/sysconfig/mdsd",
+
+	"/etc/dnsmasq.conf",
+	"/usr/local/bin/aro-dnsmasq-pre.sh",
+	"/etc/NetworkManager/dispatcher.d/99-dnsmasq-restart",
+
+	"/etc/hosts.d/aro.conf",
+	"/usr/local/bin/aro-etchosts-resolver.sh",
+
+	"/opt/openshift/manifests/aro-imageregistry.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-dns.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-etc-hosts-gateway-domains.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-dns.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-etc-hosts-gateway-domains.yaml"}
+
+var expectedBootstrapSystemdFileList = []string{"fluentbit.service", "mdsd.service", "aro-etchosts-resolver.service"}
 
 func fakeBootstrapLoggingConfig(_ env.Interface, _ *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
 	return &bootstraplogging.Config{
@@ -247,6 +272,8 @@ func mockClientCalls(client *mock.MockAPI) {
 			ID:       to.StringPtr("test-resource-group"),
 			Location: to.StringPtr("centralus"),
 		}, nil)
+	client.EXPECT().ListResourceIDsByGroup(gomock.Any(), "test-resource-group").
+		Return([]string{}, nil)
 	client.EXPECT().GetHyperVGenerationVersion(gomock.Any(), "Standard_D2s_v3", "centralus", "").
 		Return("V2", nil)
 }
@@ -270,4 +297,55 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	bootstrapIgnition := string(bootstrapAsset.Files()[0].Data)
 
 	t.Log(bootstrapIgnition)
+}
+
+func TestApplyIgnitionConfigCustomisations(t *testing.T) {
+	m := fakeManager()
+	inInstallConfig := makeInstallConfig()
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockClient := azuremock.NewMockAPI(mockCtrl)
+	inInstallConfig.Azure.UseMockClient(mockClient)
+	mockClientCalls(mockClient)
+
+	graph, err := m.applyInstallConfigCustomisations(inInstallConfig, makeImage())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graph, err = m.applyIgnitionConfigCustomisations(graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bootstrapAsset := graph.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	var temp map[string]any
+	err = json.Unmarshal(bootstrapAsset.Files()[0].Data, &temp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	verifyIgnitionFiles(t, temp, expectedBootstrapStorageFileList, expectedBootstrapSystemdFileList, bootstrapAsset.Files()[0].Filename)
+}
+
+func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
+	files := (temp["storage"].(map[string]any))["files"].([]any)
+	systemd := (temp["systemd"].(map[string]any))["units"].([]any)
+	storageFileList := map[string]bool{}
+	for _, file := range files {
+		storageFileList[file.(map[string]any)["path"].(string)] = true
+	}
+	systemdFileList := map[string]bool{}
+	for _, file := range systemd {
+		systemdFileList[file.(map[string]any)["name"].(string)] = true
+	}
+
+	for _, file := range storageFiles {
+		assert.True(t, systemdFileList[file], fmt.Sprintf("file %v missing in storage file list in ignition file %s", file, fileName))
+	}
+
+	for _, file := range systemdFiles {
+		assert.True(t, storageFileList[file], fmt.Sprintf("file %v missing from systemd file list in ignition file %s", file, fileName))
+	}
 }
