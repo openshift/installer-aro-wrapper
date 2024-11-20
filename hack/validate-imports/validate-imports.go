@@ -190,10 +190,12 @@ func validateImports(path string, fset *token.FileSet, f *ast.File) []error {
 		}
 	}
 
+	isUnitTest := strings.HasSuffix(path, "_test.go")
+
 	errs := make([]error, 0)
 	validator := initValidator()
 	for _, imp := range f.Imports {
-		if err := validator.validateImport(imp); err != nil {
+		if err := validator.validateImport(imp, isUnitTest); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -201,7 +203,7 @@ func validateImports(path string, fset *token.FileSet, f *ast.File) []error {
 	return errs
 }
 
-func (validator importValidator) validateImport(imp *ast.ImportSpec) error {
+func (validator importValidator) validateImport(imp *ast.ImportSpec, isUnitTest bool) error {
 	packageName := strings.Trim(imp.Path.Value, `"`)
 
 	if imp.Name != nil && imp.Name.Name == "." {
@@ -224,7 +226,7 @@ func (validator importValidator) validateImport(imp *ast.ImportSpec) error {
 		return fmt.Errorf("%s is imported; use github.com/gofrs/uuid", packageName)
 	}
 
-	if strings.HasPrefix(packageName, "github.com/Azure/azure-sdk-for-go/profiles") {
+	if !isUnitTest && strings.HasPrefix(packageName, "github.com/Azure/azure-sdk-for-go/profiles") {
 		return fmt.Errorf("%s is imported; use github.com/Azure/azure-sdk-for-go/services/*", packageName)
 	}
 
