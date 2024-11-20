@@ -1590,8 +1590,8 @@ github.com/openshift/custom-resource-status v1.1.2 h1:C3DL44LEbvlbItfd8mT5jWrqPf
 github.com/openshift/custom-resource-status v1.1.2/go.mod h1:DB/Mf2oTeiAmVVX1gN+NEqweonAPY0TKUwADizj8+ZA=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8 h1:7e4sMDIstjEKW6SmPv8VhusDaYinDBrspd1M7ybIHC8=
 github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
-github.com/openshift/installer-aro v0.0.0-20241011152036-ca0bf4e06c48 h1:6vaOcANUs/0mDP3EXagk7pe7UTjpKpC/QnVdTu0qU3M=
-github.com/openshift/installer-aro v0.0.0-20241011152036-ca0bf4e06c48/go.mod h1:WkT+1OR9SpEbNcvqS0gtp5jfXWb51ijSHYaOGHqAKns=
+github.com/openshift/installer-aro v0.0.0-20241120043515-a9e0b5ff20c9 h1:5Eb7ibc30n6E3mYWCPYPriq5wam2sLiEdaXe6ILaaMM=
+github.com/openshift/installer-aro v0.0.0-20241120043515-a9e0b5ff20c9/go.mod h1:WkT+1OR9SpEbNcvqS0gtp5jfXWb51ijSHYaOGHqAKns=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d h1:ELypg5zkw9jXCbp2jZ6iwYWTCtSqZVrxcKBQqwIgd2Y=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d/go.mod h1:cF2vIryKLoYmkUAFsvFHTlChMAtMEuRDVYMiH+uFe3E=
 github.com/openshift/machine-config-operator v0.0.1-0.20240927143910-dc45d313d876 h1:r7+Ss0BB0AZjKenpKUsyUWF3QoElG8ujIuTUhqyub+A=
