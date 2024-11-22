@@ -9,11 +9,14 @@ import (
 	"strings"
 	"time"
 
+	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/google/uuid"
 	"github.com/kdomanski/iso9660"
 	"github.com/nutanix-cloud-native/prism-go-client/utils"
 	nutanixclientv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 	"github.com/pkg/errors"
+	"github.com/vincent-petithory/dataurl"
+	"k8s.io/utils/ptr"
 
 	machinev1 "github.com/openshift/api/machine/v1"
 )
@@ -187,8 +190,13 @@ func getTaskStatus(clientV3 nutanixclientv3.Service, taskUUID string) (string, e
 }
 
 // RHCOSImageName is the unique image name for a given cluster.
-func RHCOSImageName(infraID string) string {
-	return fmt.Sprintf("%s-rhcos", infraID)
+func RHCOSImageName(p *Platform, infraID string) string {
+	imgName := p.PreloadedOSImageName
+	if imgName == "" {
+		imgName = fmt.Sprintf("%s-rhcos", infraID)
+	}
+
+	return imgName
 }
 
 // CategoryKey returns the cluster specific category key name.
@@ -286,4 +294,37 @@ func FindImageUUIDByName(ctx context.Context, ntnxclient *nutanixclientv3.Client
 	}
 
 	return res.Entities[0].Metadata.UUID, nil
+}
+
+// InsertHostnameIgnition inserts the file "/etc/hostname" with the given hostname to the provided Ignition config data.
+func InsertHostnameIgnition(ignData []byte, hostname string) ([]byte, error) {
+	ignConfig := &igntypes.Config{}
+	if err := json.Unmarshal(ignData, &ignConfig); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal Ignition config: %w", err)
+	}
+
+	hostnameFile := igntypes.File{
+		Node: igntypes.Node{
+			Path:      "/etc/hostname",
+			Overwrite: ptr.To(true),
+		},
+		FileEmbedded1: igntypes.FileEmbedded1{
+			Mode: ptr.To(420),
+			Contents: igntypes.Resource{
+				Source: ptr.To(dataurl.EncodeBytes([]byte(hostname))),
+			},
+		},
+	}
+
+	if ignConfig.Storage.Files == nil {
+		ignConfig.Storage.Files = make([]igntypes.File, 0)
+	}
+	ignConfig.Storage.Files = append(ignConfig.Storage.Files, hostnameFile)
+
+	ign, err := json.Marshal(ignConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal ignition data: %w", err)
+	}
+
+	return ign, nil
 }

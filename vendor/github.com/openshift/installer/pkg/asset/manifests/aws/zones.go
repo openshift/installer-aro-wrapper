@@ -13,6 +13,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	utilscidr "github.com/openshift/installer/pkg/asset/manifests/capiutils/cidr"
 	"github.com/openshift/installer/pkg/types"
+	awstypes "github.com/openshift/installer/pkg/types/aws"
 )
 
 // subnetsInput handles subnets information gathered from metadata.
@@ -161,13 +162,19 @@ func setSubnetsBYOVPC(in *zonesInput) error {
 	in.Cluster.Spec.NetworkSpec.VPC = capa.VPCSpec{
 		ID: in.Subnets.vpc,
 	}
-	for _, subnet := range in.Subnets.privateSubnets {
-		in.Cluster.Spec.NetworkSpec.Subnets = append(in.Cluster.Spec.NetworkSpec.Subnets, capa.SubnetSpec{
-			ID:               subnet.ID,
-			CidrBlock:        subnet.CIDR,
-			AvailabilityZone: subnet.Zone.Name,
-			IsPublic:         subnet.Public,
-		})
+
+	// Skip adding private subnets if this is a public-only subnets install.
+	// We need to skip because the Installer is tricked into thinking the public subnets are also private and we would
+	// end up adding public subnets twice to the cluster manifest, causing a duplicate error.
+	if !awstypes.IsPublicOnlySubnetsEnabled() {
+		for _, subnet := range in.Subnets.privateSubnets {
+			in.Cluster.Spec.NetworkSpec.Subnets = append(in.Cluster.Spec.NetworkSpec.Subnets, capa.SubnetSpec{
+				ID:               subnet.ID,
+				CidrBlock:        subnet.CIDR,
+				AvailabilityZone: subnet.Zone.Name,
+				IsPublic:         subnet.Public,
+			})
+		}
 	}
 
 	for _, subnet := range in.Subnets.publicSubnets {

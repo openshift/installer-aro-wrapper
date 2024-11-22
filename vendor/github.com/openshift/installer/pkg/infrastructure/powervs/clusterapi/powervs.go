@@ -163,6 +163,19 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 	if err != nil {
 		return fmt.Errorf("failed to add ping security group rule: %w", err)
 	}
+
+	if in.InstallConfig.Config.Publish == types.InternalPublishingStrategy &&
+		(len(in.InstallConfig.Config.ImageDigestSources) > 0 || len(in.InstallConfig.Config.DeprecatedImageContentSources) > 0) {
+		vpcID := *powerVSCluster.Status.VPC.ID
+		logrus.Debugf("InfraReady: Ensuring necessary VPE gateways are in place in VPC %v", vpcID)
+		groupID := *powerVSCluster.Status.ResourceGroup.ID
+		subnetID := *powerVSCluster.Status.VPCSubnet[*powerVSCluster.Spec.VPCSubnets[1].Name].ID
+		err = in.InstallConfig.PowerVS.CreateVirtualPrivateEndpointGateways(ctx, in.InfraID, vpcRegion, vpcID, subnetID, groupID, in.InstallConfig.Config.PowerVS.ServiceEndpoints)
+		if err != nil {
+			return fmt.Errorf("failed to create VPE: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -207,11 +220,7 @@ func createLoadBalancerDNSRecords(ctx context.Context, in clusterapi.InfraReadyI
 
 func findMissingSecurityGroupRules(ctx context.Context, in clusterapi.InfraReadyInput, vpcID string) (sets.Set[int64], error) {
 	foundPorts := sets.Set[int64]{}
-	wantedPorts := sets.New[int64](22, 10258, 22623)
-
-	if in.InstallConfig.Config.Publish == types.InternalPublishingStrategy {
-		wantedPorts = wantedPorts.Insert(6443, 443, 5000)
-	}
+	wantedPorts := sets.New[int64](22, 443, 5000, 6443, 10258, 22623)
 
 	existingRules, err := in.InstallConfig.PowerVS.ListSecurityGroupRules(ctx, vpcID)
 	if err != nil {

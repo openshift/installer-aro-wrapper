@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -22,6 +23,7 @@ import (
 	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
+	"github.com/openshift/installer/pkg/types/dns"
 )
 
 type resourceRequirements struct {
@@ -50,6 +52,13 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 	allErrs = append(allErrs, validatePublicIpv4Pool(ctx, meta, field.NewPath("platform", "aws", "publicIpv4PoolId"), config)...)
 	allErrs = append(allErrs, validatePlatform(ctx, meta, field.NewPath("platform", "aws"), config.Platform.AWS, config.Networking, config.Publish)...)
 
+	if awstypes.IsPublicOnlySubnetsEnabled() {
+		logrus.Warnln("Public-only subnets install. Please be warned this is not supported")
+		if config.Publish == types.InternalPublishingStrategy {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("publish"), config.Publish, "cluster cannot be private with public subnets"))
+		}
+	}
+
 	if config.ControlPlane != nil {
 		arch := string(config.ControlPlane.Architecture)
 		pool := &awstypes.MachinePool{}
@@ -58,6 +67,7 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 		allErrs = append(allErrs, validateMachinePool(ctx, meta, field.NewPath("controlPlane", "platform", "aws"), config.Platform.AWS, pool, controlPlaneReq, "", arch)...)
 	}
 
+	var archSeen string
 	for idx, compute := range config.Compute {
 		fldPath := field.NewPath("compute").Index(idx)
 		if compute.Name == types.MachinePoolEdgeRoleName {
@@ -69,6 +79,17 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 		}
 
 		arch := string(compute.Architecture)
+		if arch == "" {
+			arch = string(config.ControlPlane.Architecture)
+		}
+		switch {
+		case archSeen == "":
+			archSeen = arch
+		case arch != archSeen:
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("architecture"), arch, "all compute machine pools must be of the same architecture"))
+		default:
+			// compute machine pools have the same arch so far
+		}
 		pool := &awstypes.MachinePool{}
 		pool.Set(config.AWS.DefaultMachinePlatform)
 		pool.Set(compute.Platform.AWS)
@@ -89,6 +110,8 @@ func validatePlatform(ctx context.Context, meta *Metadata, fldPath *field.Path, 
 
 	if len(platform.Subnets) > 0 {
 		allErrs = append(allErrs, validateSubnets(ctx, meta, fldPath.Child("subnets"), platform.Subnets, networking, publish)...)
+	} else if awstypes.IsPublicOnlySubnetsEnabled() {
+		allErrs = append(allErrs, field.Required(fldPath.Child("subnets"), "subnets must be specified for public-only subnets clusters"))
 	}
 	if platform.DefaultMachinePlatform != nil {
 		allErrs = append(allErrs, validateMachinePool(ctx, meta, fldPath.Child("defaultMachinePlatform"), platform, platform.DefaultMachinePlatform, controlPlaneReq, "", "")...)
@@ -204,11 +227,17 @@ func validateSubnets(ctx context.Context, meta *Metadata, fldPath *field.Path, s
 	if err != nil {
 		return append(allErrs, field.Invalid(fldPath, subnets, err.Error()))
 	}
+	if publish == types.InternalPublishingStrategy && len(publicSubnets) > 0 {
+		logrus.Warnf("Public subnets should not be provided when publish is set to %s", types.InternalPublishingStrategy)
+	}
 	publicSubnetsIdx := map[string]int{}
 	for idx, id := range subnets {
 		if _, ok := publicSubnets[id]; ok {
 			publicSubnetsIdx[id] = idx
 		}
+	}
+	if len(publicSubnets) == 0 && awstypes.IsPublicOnlySubnetsEnabled() {
+		allErrs = append(allErrs, field.Required(fldPath, "public subnets are required for a public-only subnets cluster"))
 	}
 
 	edgeSubnets, err := meta.EdgeSubnets(ctx)
@@ -545,6 +574,11 @@ var requiredServices = []string{
 // ValidateForProvisioning validates if the install config is valid for provisioning the cluster.
 func ValidateForProvisioning(client API, ic *types.InstallConfig, metadata *Metadata) error {
 	if ic.Publish == types.InternalPublishingStrategy && ic.AWS.HostedZone == "" {
+		return nil
+	}
+
+	if ic.AWS.UserProvisionedDNS == dns.UserProvisionedDNSEnabled {
+		logrus.Debug("User Provisioned DNS enabled, skipping zone validation")
 		return nil
 	}
 

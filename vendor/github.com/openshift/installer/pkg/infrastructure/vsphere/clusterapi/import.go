@@ -10,47 +10,72 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/govmomi/govc/importx"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/ovf"
+	"github.com/vmware/govmomi/ovf/importer"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/cluster-api-provider-vsphere/pkg/session"
 
 	"github.com/openshift/installer/pkg/types/vsphere"
 )
 
+func debugCorruptOva(cachedImage string, err error) error {
+	// Open the corrupt OVA file
+	f, ferr := os.Open(cachedImage)
+	if ferr != nil {
+		err = fmt.Errorf("%s, %w", err.Error(), ferr)
+	}
+	defer f.Close()
+
+	// Get a sha256 on the corrupt OVA file
+	// and the size of the file
+	h := sha256.New()
+	written, cerr := io.Copy(h, f)
+	if cerr != nil {
+		err = fmt.Errorf("%s, %w", err.Error(), cerr)
+	}
+
+	return fmt.Errorf("ova %s has a sha256 of %x and a size of %d bytes, failed to read the ovf descriptor %w", cachedImage, h.Sum(nil), written, err)
+}
+
+func checkOvaSecureBoot(ovfEnvelope *ovf.Envelope) bool {
+	if ovfEnvelope.VirtualSystem != nil {
+		for _, vh := range ovfEnvelope.VirtualSystem.VirtualHardware {
+			for _, c := range vh.Config {
+				if c.Key == "bootOptions.efiSecureBootEnabled" {
+					if c.Value == "true" {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
 func importRhcosOva(ctx context.Context, session *session.Session, folder *object.Folder, cachedImage, clusterID, tagID, diskProvisioningType string, failureDomain vsphere.FailureDomain) error {
 	name := fmt.Sprintf("%s-rhcos-%s-%s", clusterID, failureDomain.Region, failureDomain.Zone)
 	logrus.Infof("Importing OVA %v into failure domain %v.", name, failureDomain.Name)
-	archive := &importx.ArchiveFlag{Archive: &importx.TapeArchive{Path: cachedImage}}
 
-	ovfDescriptor, err := archive.ReadOvf("*.ovf")
+	archive := &importer.TapeArchive{Path: cachedImage}
+
+	ovfDescriptor, err := importer.ReadOvf("*.ovf", archive)
 	if err != nil {
-		// Open the corrupt OVA file
-		f, ferr := os.Open(cachedImage)
-		if ferr != nil {
-			err = fmt.Errorf("%s, %w", err.Error(), ferr)
-		}
-		defer f.Close()
-
-		// Get a sha256 on the corrupt OVA file
-		// and the size of the file
-		h := sha256.New()
-		written, cerr := io.Copy(h, f)
-		if cerr != nil {
-			err = fmt.Errorf("%s, %w", err.Error(), cerr)
-		}
-
-		return fmt.Errorf("ova %s has a sha256 of %x and a size of %d bytes, failed to read the ovf descriptor %w", cachedImage, h.Sum(nil), written, err)
+		return debugCorruptOva(cachedImage, err)
 	}
 
-	ovfEnvelope, err := archive.ReadEnvelope(ovfDescriptor)
+	ovfEnvelope, err := importer.ReadEnvelope(ovfDescriptor)
 	if err != nil {
 		return fmt.Errorf("failed to parse ovf: %w", err)
 	}
+
+	// The fcos ova enables secure boot by default, this causes
+	// scos to fail once
+	secureBoot := checkOvaSecureBoot(ovfEnvelope)
 
 	// The RHCOS OVA only has one network defined by default
 	// The OVF envelope defines this.  We need a 1:1 mapping
@@ -125,7 +150,7 @@ func importRhcosOva(ctx context.Context, session *session.Session, folder *objec
 		return errors.New(spec.Error[0].LocalizedMessage)
 	}
 
-	hostSystem, err := findAvailableHostSystems(ctx, session, clusterHostSystems)
+	hostSystem, err := findAvailableHostSystems(ctx, clusterHostSystems, networkRef, datastore)
 	if err != nil {
 		return fmt.Errorf("failed to find available host system: %w", err)
 	}
@@ -162,11 +187,24 @@ func importRhcosOva(ctx context.Context, session *session.Session, folder *objec
 	if vm == nil {
 		return fmt.Errorf("error VirtualMachine not found, managed object id: %s", info.Entity.Value)
 	}
+	if secureBoot {
+		bootOptions, err := vm.BootOptions(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get boot options: %w", err)
+		}
+		bootOptions.EfiSecureBootEnabled = ptr.To(false)
+
+		err = vm.SetBootOptions(ctx, bootOptions)
+		if err != nil {
+			return fmt.Errorf("failed to set boot options: %w", err)
+		}
+	}
 
 	err = vm.MarkAsTemplate(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to mark vm as template: %w", err)
 	}
+
 	err = attachTag(ctx, session, vm.Reference().Value, tagID)
 	if err != nil {
 		return fmt.Errorf("failed to attach tag: %w", err)
@@ -175,25 +213,59 @@ func importRhcosOva(ctx context.Context, session *session.Session, folder *objec
 	return nil
 }
 
-func findAvailableHostSystems(ctx context.Context, session *session.Session, clusterHostSystems []*object.HostSystem) (*object.HostSystem, error) {
+func findAvailableHostSystems(ctx context.Context, clusterHostSystems []*object.HostSystem, networkObjectRef object.NetworkReference, datastore *object.Datastore) (*object.HostSystem, error) {
 	var hostSystemManagedObject mo.HostSystem
 	for _, hostObj := range clusterHostSystems {
 		err := hostObj.Properties(ctx, hostObj.Reference(), []string{"config.product", "network", "datastore", "runtime"}, &hostSystemManagedObject)
 		if err != nil {
 			return nil, err
 		}
-		if hostSystemManagedObject.Runtime.InMaintenanceMode {
+
+		// if distributed port group the cast will fail
+		networkFound := isNetworkAvailable(networkObjectRef, hostSystemManagedObject.Network)
+		datastoreFound := isDatastoreAvailable(datastore, hostSystemManagedObject.Datastore)
+
+		// if the network or datastore is not found or the ESXi host is in maintenance mode continue the loop
+		if !networkFound || !datastoreFound || hostSystemManagedObject.Runtime.InMaintenanceMode {
 			continue
 		}
+
+		logrus.Debugf("using ESXi %s to import the OVA image", hostObj.Name())
 		return hostObj, nil
 	}
 	return nil, errors.New("all hosts unavailable")
 }
 
+func isDatastoreAvailable(datastore *object.Datastore, hostDatastoreManagedObjectRefs []types.ManagedObjectReference) bool {
+	for _, dsMoRef := range hostDatastoreManagedObjectRefs {
+		if dsMoRef.Value == datastore.Reference().Value {
+			return true
+		}
+	}
+	return false
+}
+
+func isNetworkAvailable(networkObjectRef object.NetworkReference, hostNetworkManagedObjectRefs []types.ManagedObjectReference) bool {
+	// If the object.NetworkReference is a standard portgroup make
+	// sure that it exists on esxi host that the OVA will be imported to.
+	if _, ok := networkObjectRef.(*object.Network); ok {
+		for _, n := range hostNetworkManagedObjectRefs {
+			if n.Value == networkObjectRef.Reference().Value {
+				return true
+			}
+		}
+	} else {
+		// networkObjectReference is not a standard port group
+		// and the other types are distributed so return true
+		return true
+	}
+	return false
+}
+
 // Used govc/importx/ovf.go as an example to implement
 // resourceVspherePrivateImportOvaCreate and upload functions
 // See: https://github.com/vmware/govmomi/blob/cc10a0758d5b4d4873388bcea417251d1ad03e42/govc/importx/ovf.go#L196-L324
-func upload(ctx context.Context, archive *importx.ArchiveFlag, lease *nfc.Lease, item nfc.FileItem) error {
+func upload(ctx context.Context, archive *importer.TapeArchive, lease *nfc.Lease, item nfc.FileItem) error {
 	file := item.Path
 
 	f, size, err := archive.Open(file)

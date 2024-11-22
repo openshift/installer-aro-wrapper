@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-openapi/swag"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -114,6 +113,8 @@ type agentClusterInstallInstallConfigOverrides struct {
 	Networking *types.Networking `json:"networking,omitempty"`
 	// Allow override of CPUPartitioning
 	CPUPartitioning types.CPUPartitioningMode `json:"cpuPartitioningMode,omitempty"`
+	// Allow override of AdditionalTrustBundlePolicy
+	AdditionalTrustBundlePolicy types.PolicyType `json:"additionalTrustBundlePolicy,omitempty"`
 }
 
 var _ asset.WritableAsset = (*AgentClusterInstall)(nil)
@@ -130,6 +131,7 @@ func (*AgentClusterInstall) Dependencies() []asset.Asset {
 		&workflow.AgentWorkflow{},
 		&agent.OptionalInstallConfig{},
 		&agentconfig.AgentHosts{},
+		&agentconfig.AgentConfig{},
 	}
 }
 
@@ -140,10 +142,15 @@ func (a *AgentClusterInstall) Generate(_ context.Context, dependencies asset.Par
 	agentWorkflow := &workflow.AgentWorkflow{}
 	installConfig := &agent.OptionalInstallConfig{}
 	agentHosts := &agentconfig.AgentHosts{}
-	dependencies.Get(agentWorkflow, agentHosts, installConfig)
+	agentConfig := &agentconfig.AgentConfig{}
+	dependencies.Get(agentWorkflow, agentHosts, installConfig, agentConfig)
 
 	// This manifest is not required for AddNodes workflow
 	if agentWorkflow.Workflow == workflow.AgentWorkflowTypeAddNodes {
+		// Add empty file to keep config ISO loader happy
+		a.File = &asset.File{
+			Filename: agentClusterInstallFilename,
+		}
 		return nil
 	}
 
@@ -210,11 +217,11 @@ func (a *AgentClusterInstall) Generate(_ context.Context, dependencies asset.Par
 				PlatformName: installConfig.Config.Platform.External.PlatformName,
 			}
 		}
-
-		if installConfig.Config.Platform.Name() == none.Name || installConfig.Config.Platform.Name() == external.Name {
-			logrus.Debugf("Setting UserManagedNetworking to true for %s platform", installConfig.Config.Platform.Name())
-			agentClusterInstall.Spec.Networking.UserManagedNetworking = swag.Bool(true)
+		if installConfig.Config.Platform.Name() == external.Name && installConfig.Config.Platform.External.PlatformName == agent.ExternalPlatformNameOci {
+			agentClusterInstall.Spec.ExternalPlatformSpec.CloudControllerManager = external.CloudControllerManagerTypeExternal
 		}
+
+		agentClusterInstall.Spec.Networking.UserManagedNetworking = agent.GetUserManagedNetworkingByPlatformType(agent.HivePlatformType(installConfig.Config.Platform))
 
 		icOverridden := false
 		icOverrides := agentClusterInstallInstallConfigOverrides{}
@@ -224,7 +231,12 @@ func (a *AgentClusterInstall) Generate(_ context.Context, dependencies asset.Par
 		}
 
 		if installConfig.Config.Proxy != nil {
-			agentClusterInstall.Spec.Proxy = (*hiveext.Proxy)(getProxy(installConfig.Config.Proxy))
+			rendezvousIP := ""
+			if agentConfig.Config != nil {
+				rendezvousIP = agentConfig.Config.RendezvousIP
+			}
+
+			agentClusterInstall.Spec.Proxy = (*hiveext.Proxy)(getProxy(installConfig.Config.Proxy, &installConfig.Config.Networking.MachineNetwork, rendezvousIP))
 		}
 
 		if installConfig.Config.Platform.BareMetal != nil {
@@ -322,6 +334,11 @@ func (a *AgentClusterInstall) Generate(_ context.Context, dependencies asset.Par
 			icOverrides.CPUPartitioning = installConfig.Config.CPUPartitioning
 		}
 
+		if installConfig.Config.AdditionalTrustBundlePolicy != "" && installConfig.Config.AdditionalTrustBundlePolicy != types.PolicyProxyOnly {
+			icOverridden = true
+			icOverrides.AdditionalTrustBundlePolicy = installConfig.Config.AdditionalTrustBundlePolicy
+		}
+
 		if icOverridden {
 			overrides, err := json.Marshal(icOverrides)
 			if err != nil {
@@ -382,11 +399,7 @@ func (a *AgentClusterInstall) Load(f asset.FileFetcher) (bool, error) {
 	// Set the default value for userManagedNetworking, as would be done by the
 	// mutating webhook in ZTP.
 	if agentClusterInstall.Spec.Networking.UserManagedNetworking == nil {
-		switch agentClusterInstall.Spec.PlatformType {
-		case hiveext.NonePlatformType, hiveext.ExternalPlatformType:
-			logrus.Debugf("Setting UserManagedNetworking to true for %s platform", agentClusterInstall.Spec.PlatformType)
-			agentClusterInstall.Spec.Networking.UserManagedNetworking = swag.Bool(true)
-		}
+		agentClusterInstall.Spec.Networking.UserManagedNetworking = agent.GetUserManagedNetworkingByPlatformType(agentClusterInstall.Spec.PlatformType)
 	}
 
 	a.Config = agentClusterInstall

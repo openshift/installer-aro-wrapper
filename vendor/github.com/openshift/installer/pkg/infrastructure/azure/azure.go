@@ -23,6 +23,7 @@ import (
 	"github.com/coreos/stream-metadata-go/arch"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	capz "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,23 +38,25 @@ import (
 )
 
 const (
-	retryTime  = 10 * time.Second
-	retryCount = 6
+	retryTime        = 10 * time.Second
+	retryCount       = 6
+	confidentialVMST = "ConfidentialVMSupported"
+	trustedLaunchST  = "TrustedLaunchsupported"
 )
 
 // Provider implements Azure CAPI installation.
 type Provider struct {
-	ResourceGroupName    string
-	StorageAccountName   string
-	StorageURL           string
-	StorageAccount       *armstorage.Account
-	StorageClientFactory *armstorage.ClientFactory
-	StorageAccountKeys   []armstorage.AccountKey
-	NetworkClientFactory *armnetwork.ClientFactory
-	lbBackendAddressPool *armnetwork.BackendAddressPool
-	CloudConfiguration   cloud.Configuration
-	TokenCredential      azcore.TokenCredential
-	Tags                 map[string]*string
+	ResourceGroupName     string
+	StorageAccountName    string
+	StorageURL            string
+	StorageAccount        *armstorage.Account
+	StorageClientFactory  *armstorage.ClientFactory
+	StorageAccountKeys    []armstorage.AccountKey
+	NetworkClientFactory  *armnetwork.ClientFactory
+	lbBackendAddressPools []*armnetwork.BackendAddressPool
+	CloudConfiguration    cloud.Configuration
+	TokenCredential       azcore.TokenCredential
+	Tags                  map[string]*string
 }
 
 var _ clusterapi.PreProvider = (*Provider)(nil)
@@ -233,7 +236,15 @@ func (p *Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionI
 
 	// Creating a dummy nsg for existing vnets installation to appease the ingress operator.
 	if in.InstallConfig.Config.Azure.VirtualNetwork != "" {
-		networkClientFactory, err := armnetwork.NewClientFactory(subscriptionID, tokenCredential, nil)
+		networkClientFactory, err := armnetwork.NewClientFactory(
+			subscriptionID,
+			tokenCredential,
+			&arm.ClientOptions{
+				ClientOptions: policy.ClientOptions{
+					Cloud: cloudConfiguration,
+				},
+			},
+		)
 		if err != nil {
 			return fmt.Errorf("failed to create azure network factory: %w", err)
 		}
@@ -281,7 +292,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	}
 
 	resourceGroupName := p.ResourceGroupName
-	storageAccountName := fmt.Sprintf("%ssa", strings.ReplaceAll(in.InfraID, "-", ""))
+	storageAccountName := getStorageAccountName(in.InfraID)
 	containerName := "vhd"
 	blobName := fmt.Sprintf("rhcos%s.vhd", randomString(5))
 
@@ -325,7 +336,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	}
 
 	tokenCredential := session.TokenCreds
-	storageURL := fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName)
+	storageURL := fmt.Sprintf("https://%s.blob.%s", storageAccountName, session.Environment.StorageEndpointSuffix)
 	blobURL := fmt.Sprintf("%s/%s/%s", storageURL, containerName, blobName)
 
 	// Create storage account
@@ -335,6 +346,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		StorageAccountName: storageAccountName,
 		CloudName:          platform.CloudName,
 		Region:             platform.Region,
+		AuthType:           session.AuthType,
 		Tags:               tags,
 		CustomerManagedKey: platform.CustomerManagedKey,
 		TokenCredential:    tokenCredential,
@@ -351,10 +363,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	logrus.Debugf("StorageAccount.ID=%s", *storageAccount.ID)
 
 	// Create blob storage container
-	publicAccess := armstorage.PublicAccessContainer
-	if platform.CustomerManagedKey != nil {
-		publicAccess = armstorage.PublicAccessNone
-	}
+	publicAccess := armstorage.PublicAccessNone
 	createBlobContainerOutput, err := CreateBlobContainer(ctx, &CreateBlobContainerInput{
 		SubscriptionID:       subscriptionID,
 		ResourceGroupName:    resourceGroupName,
@@ -418,7 +427,15 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 			OSState:              armcompute.OperatingSystemStateTypesGeneralized,
 			HyperVGeneration:     armcompute.HyperVGenerationV1,
 			ComputeClientFactory: computeClientFactory,
+			SecurityType:         "",
 		})
+		if err != nil {
+			return err
+		}
+		// If Control Plane Security Type is provided, then pass that along
+		// during Gen V2 Gallery Image creation. It will be added as a
+		// supported feature of the image.
+		securityType, err := getMachinePoolSecurityType(in)
 		if err != nil {
 			return err
 		}
@@ -439,6 +456,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 			OSState:              armcompute.OperatingSystemStateTypesGeneralized,
 			HyperVGeneration:     armcompute.HyperVGenerationV2,
 			ComputeClientFactory: computeClientFactory,
+			SecurityType:         securityType,
 		})
 		if err != nil {
 			return err
@@ -510,9 +528,9 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	}
 	logrus.Debugf("updated internal load balancer: %s", *intLoadBalancer.ID)
 
-	var lbBap *armnetwork.BackendAddressPool
+	var lbBaps []*armnetwork.BackendAddressPool
 	var extLBFQDN string
-	if in.InstallConfig.Config.Publish == types.ExternalPublishingStrategy {
+	if in.InstallConfig.Config.PublicAPI() {
 		publicIP, err := createPublicIP(ctx, &pipInput{
 			name:          fmt.Sprintf("%s-pip-v4", in.InfraID),
 			infraID:       in.InfraID,
@@ -543,7 +561,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		}
 
 		logrus.Debugf("updated external load balancer: %s", *loadBalancer.ID)
-		lbBap = loadBalancer.Properties.BackendAddressPools[0]
+		lbBaps = loadBalancer.Properties.BackendAddressPools
 		extLBFQDN = *publicIP.Properties.DNSSettings.Fqdn
 	}
 
@@ -555,7 +573,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	p.StorageAccountKeys = storageAccountKeys
 	p.StorageClientFactory = storageClientFactory
 	p.NetworkClientFactory = networkClientFactory
-	p.lbBackendAddressPool = lbBap
+	p.lbBackendAddressPools = lbBaps
 
 	if err := createDNSEntries(ctx, in, extLBFQDN, resourceGroupName); err != nil {
 		return fmt.Errorf("error creating DNS records: %w", err)
@@ -574,7 +592,7 @@ func (p *Provider) PostProvision(ctx context.Context, in clusterapi.PostProvisio
 	subscriptionID := ssn.Credentials.SubscriptionID
 	cloudConfiguration := ssn.CloudConfig
 
-	if in.InstallConfig.Config.Publish == types.ExternalPublishingStrategy {
+	if in.InstallConfig.Config.PublicAPI() {
 		vmClient, err := armcompute.NewVirtualMachinesClient(subscriptionID, ssn.TokenCreds,
 			&arm.ClientOptions{
 				ClientOptions: policy.ClientOptions{
@@ -592,12 +610,12 @@ func (p *Provider) PostProvision(ctx context.Context, in clusterapi.PostProvisio
 		}
 
 		vmInput := &vmInput{
-			infraID:       in.InfraID,
-			resourceGroup: p.ResourceGroupName,
-			vmClient:      vmClient,
-			nicClient:     p.NetworkClientFactory.NewInterfacesClient(),
-			ids:           vmIDs,
-			bap:           p.lbBackendAddressPool,
+			infraID:             in.InfraID,
+			resourceGroup:       p.ResourceGroupName,
+			vmClient:            vmClient,
+			nicClient:           p.NetworkClientFactory.NewInterfacesClient(),
+			ids:                 vmIDs,
+			backendAddressPools: p.lbBackendAddressPools,
 		}
 
 		if err = associateVMToBackendPool(ctx, *vmInput); err != nil {
@@ -763,6 +781,19 @@ func getControlPlaneIDs(cl client.Client, replicas *int64, infraID string) ([]st
 	return res, nil
 }
 
+// Storage account names can't be more than 24 characters.
+func getStorageAccountName(infraID string) string {
+	storageAccountNameMax := 24
+
+	storageAccountName := strings.ReplaceAll(infraID, "-", "")
+	if len(storageAccountName) > storageAccountNameMax-2 {
+		storageAccountName = storageAccountName[:storageAccountNameMax-2]
+	}
+	storageAccountName = fmt.Sprintf("%ssa", storageAccountName)
+
+	return storageAccountName
+}
+
 func randomString(length int) string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source) // nolint:gosec
@@ -778,7 +809,7 @@ func randomString(length int) string {
 
 // Ignition provisions the Azure container that holds the bootstrap ignition
 // file.
-func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]byte, error) {
+func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]*corev1.Secret, error) {
 	session, err := in.InstallConfig.Azure.Session()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
@@ -791,10 +822,7 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 	ignitionContainerName := "ignition"
 	blobName := "bootstrap.ign"
 	blobURL := fmt.Sprintf("%s/%s/%s", p.StorageURL, ignitionContainerName, blobName)
-	publicAccess := armstorage.PublicAccessContainer
-	if in.InstallConfig.Config.Azure.CustomerManagedKey != nil {
-		publicAccess = armstorage.PublicAccessNone
-	}
+	publicAccess := armstorage.PublicAccessNone
 	// Create ignition blob storage container
 	createBlobContainerOutput, err := CreateBlobContainer(ctx, &CreateBlobContainerInput{
 		ContainerName:        ignitionContainerName,
@@ -852,5 +880,44 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 		return nil, fmt.Errorf("failed to create ignition shim: %w", err)
 	}
 
-	return ignShim, nil
+	ignSecrets := []*corev1.Secret{
+		clusterapi.IgnitionSecret(ignShim, in.InfraID, "bootstrap"),
+		clusterapi.IgnitionSecret(in.MasterIgnData, in.InfraID, "master"),
+	}
+
+	return ignSecrets, nil
+}
+
+func getMachinePoolSecurityType(in clusterapi.InfraReadyInput) (string, error) {
+	var securityType aztypes.SecurityTypes
+	if in.InstallConfig.Config.ControlPlane != nil && in.InstallConfig.Config.ControlPlane.Platform.Azure != nil {
+		pool := in.InstallConfig.Config.ControlPlane.Platform.Azure
+		if pool.Settings != nil {
+			securityType = pool.Settings.SecurityType
+		}
+	}
+	if securityType == "" && in.InstallConfig.Config.Compute != nil {
+		for _, compute := range in.InstallConfig.Config.Compute {
+			if compute.Platform.Azure != nil {
+				pool := compute.Platform.Azure
+				if pool.Settings != nil {
+					securityType = pool.Settings.SecurityType
+					break
+				}
+			}
+		}
+	}
+	if securityType == "" && in.InstallConfig.Config.Platform.Azure.DefaultMachinePlatform != nil {
+		pool := in.InstallConfig.Config.Platform.Azure.DefaultMachinePlatform
+		if pool.Settings != nil {
+			securityType = pool.Settings.SecurityType
+		}
+	}
+	switch securityType {
+	case aztypes.SecurityTypesTrustedLaunch:
+		return trustedLaunchST, nil
+	case aztypes.SecurityTypesConfidentialVM:
+		return confidentialVMST, nil
+	}
+	return "", nil
 }

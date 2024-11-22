@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
@@ -133,10 +132,12 @@ func (a *OptionalInstallConfig) validatePlatformsByName(installConfig *types.Ins
 	var allErrs field.ErrorList
 
 	if installConfig.Platform.Name() == external.Name {
-		if installConfig.Platform.External.PlatformName == string(models.PlatformTypeOci) &&
+		if installConfig.Platform.External.PlatformName == ExternalPlatformNameOci &&
 			installConfig.Platform.External.CloudControllerManager != external.CloudControllerManagerTypeExternal {
 			fieldPath := field.NewPath("Platform", "External", "CloudControllerManager")
-			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.External.CloudControllerManager, fmt.Sprintf("When using external %s platform, %s must be set to %s", string(models.PlatformTypeOci), fieldPath, external.CloudControllerManagerTypeExternal)))
+			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.External.CloudControllerManager,
+				fmt.Sprintf("When using external %s platform, %s must be set to %s",
+					ExternalPlatformNameOci, fieldPath, external.CloudControllerManagerTypeExternal)))
 		}
 	}
 
@@ -214,9 +215,9 @@ func (a *OptionalInstallConfig) validateControlPlaneConfiguration(installConfig 
 	var fieldPath *field.Path
 
 	if installConfig.ControlPlane != nil {
-		if *installConfig.ControlPlane.Replicas != 1 && *installConfig.ControlPlane.Replicas != 3 {
+		if *installConfig.ControlPlane.Replicas < 1 || *installConfig.ControlPlane.Replicas > 5 || *installConfig.ControlPlane.Replicas == 2 {
 			fieldPath = field.NewPath("ControlPlane", "Replicas")
-			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.ControlPlane.Replicas, fmt.Sprintf("ControlPlane.Replicas can only be set to 3 or 1. Found %v", *installConfig.ControlPlane.Replicas)))
+			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.ControlPlane.Replicas, fmt.Sprintf("ControlPlane.Replicas can only be set to 5, 4, 3, or 1. Found %v", *installConfig.ControlPlane.Replicas)))
 		}
 	}
 	return allErrs
@@ -356,12 +357,6 @@ func (a *OptionalInstallConfig) validateBMCConfig(installConfig *types.InstallCo
 }
 
 func warnUnusedConfig(installConfig *types.InstallConfig) {
-	// "Proxyonly" is the default set from generic install config code
-	if installConfig.AdditionalTrustBundlePolicy != "Proxyonly" {
-		fieldPath := field.NewPath("AdditionalTrustBundlePolicy")
-		logrus.Warnf(fmt.Sprintf("%s: %s is ignored", fieldPath, installConfig.AdditionalTrustBundlePolicy))
-	}
-
 	for i, compute := range installConfig.Compute {
 		if compute.Hyperthreading != "Enabled" {
 			fieldPath := field.NewPath(fmt.Sprintf("Compute[%d]", i), "Hyperthreading")

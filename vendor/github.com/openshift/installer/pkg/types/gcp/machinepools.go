@@ -1,11 +1,57 @@
 package gcp
 
+import "k8s.io/apimachinery/pkg/util/sets"
+
 // FeatureSwitch indicates whether the feature is enabled or disabled.
 type FeatureSwitch string
 
 // OnHostMaintenanceType indicates the setting for the OnHostMaintenance feature, but this is only
 // applicable when ConfidentialCompute is Enabled.
 type OnHostMaintenanceType string
+
+const (
+	// PDSSD is the constant string representation for persistent disk ssd disk types.
+	PDSSD = "pd-ssd"
+	// PDStandard is the constant string representation for persistent disk standard disk types.
+	PDStandard = "pd-standard"
+	// PDBalanced is the constant string representation for persistent disk balanced disk types.
+	PDBalanced = "pd-balanced"
+	// HyperDiskBalanced is the constant string representation for hyperdisk balanced disk types.
+	HyperDiskBalanced = "hyperdisk-balanced"
+)
+
+var (
+	// ControlPlaneSupportedDisks contains the supported disk types for control plane nodes.
+	ControlPlaneSupportedDisks = sets.New(HyperDiskBalanced, PDBalanced, PDSSD)
+
+	// ComputeSupportedDisks contains the supported disk types for control plane nodes.
+	ComputeSupportedDisks = sets.New(HyperDiskBalanced, PDBalanced, PDSSD, PDStandard)
+
+	// DefaultCustomInstanceType is the default instance type on the GCP server side. The default custom
+	// instance type can be changed on the client side with gcloud.
+	DefaultCustomInstanceType = "n1"
+
+	// InstanceTypeToDiskTypeMap contains a map where the key is the Instance Type, and the
+	// values are a list of disk types that are supported by the installer and correlate to the Instance Type.
+	InstanceTypeToDiskTypeMap = map[string][]string{
+		"a2":  {PDStandard, PDSSD, PDBalanced},
+		"a3":  {PDSSD, PDBalanced},
+		"c2":  {PDStandard, PDSSD, PDBalanced},
+		"c2d": {PDStandard, PDSSD, PDBalanced},
+		"c3":  {PDSSD, PDBalanced, HyperDiskBalanced},
+		"c3d": {PDSSD, PDBalanced, HyperDiskBalanced},
+		"c4":  {HyperDiskBalanced},
+		"c4a": {HyperDiskBalanced},
+		"e2":  {PDStandard, PDSSD, PDBalanced},
+		"m1":  {PDSSD, PDBalanced, HyperDiskBalanced},
+		"n1":  {PDStandard, PDSSD, PDBalanced},
+		"n2":  {PDStandard, PDSSD, PDBalanced},
+		"n2d": {PDStandard, PDSSD, PDBalanced},
+		"n4":  {HyperDiskBalanced},
+		"t2a": {PDStandard, PDSSD, PDBalanced},
+		"t2d": {PDStandard, PDSSD, PDBalanced},
+	}
+)
 
 const (
 	// EnabledFeature indicates that the feature is configured as enabled.
@@ -85,7 +131,7 @@ type MachinePool struct {
 // OSDisk defines the disk for machines on GCP.
 type OSDisk struct {
 	// DiskType defines the type of disk.
-	// For control plane nodes, the valid value is pd-ssd.
+	// For control plane nodes, the valid values are pd-balanced, pd-ssd, and hyperdisk-balanced.
 	// +optional
 	// +kubebuilder:validation:Enum=pd-balanced;pd-ssd;pd-standard;hyperdisk-balanced
 	DiskType string `json:"diskType"`

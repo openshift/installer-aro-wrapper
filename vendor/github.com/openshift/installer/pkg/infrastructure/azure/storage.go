@@ -23,6 +23,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
 	"github.com/sirupsen/logrus"
 
+	azic "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	aztypes "github.com/openshift/installer/pkg/types/azure"
 )
 
@@ -38,6 +39,7 @@ type CreateStorageAccountInput struct {
 	ResourceGroupName  string
 	StorageAccountName string
 	Region             string
+	AuthType           azic.AuthenticationType
 	Tags               map[string]*string
 	CustomerManagedKey *aztypes.CustomerManagedKey
 	CloudName          aztypes.CloudEnvironment
@@ -67,6 +69,11 @@ func CreateStorageAccount(ctx context.Context, in *CreateStorageAccountInput) (*
 		minimumTLSVersion = armstorage.MinimumTLSVersionTLS12
 	}
 
+	allowSharedKeyAccess := true
+	if in.AuthType == azic.ManagedIdentityAuth {
+		allowSharedKeyAccess = false
+	}
+
 	storageClientFactory, err := armstorage.NewClientFactory(
 		in.SubscriptionID,
 		in.TokenCredential,
@@ -90,8 +97,8 @@ func CreateStorageAccount(ctx context.Context, in *CreateStorageAccountInput) (*
 		Location: to.Ptr(in.Region),
 		SKU:      &sku,
 		Properties: &armstorage.AccountPropertiesCreateParameters{
-			AllowBlobPublicAccess: to.Ptr(true),
-			AllowSharedKeyAccess:  to.Ptr(true),
+			AllowBlobPublicAccess: to.Ptr(false),
+			AllowSharedKeyAccess:  to.Ptr(allowSharedKeyAccess),
 			IsLocalUserEnabled:    to.Ptr(true),
 			LargeFileSharesState:  to.Ptr(armstorage.LargeFileSharesStateEnabled),
 			PublicNetworkAccess:   to.Ptr(armstorage.PublicNetworkAccessEnabled),
@@ -134,6 +141,7 @@ func CreateStorageAccount(ctx context.Context, in *CreateStorageAccountInput) (*
 		accountCreateParameters.Identity = &identity
 		accountCreateParameters.SKU = &sku
 		accountCreateParameters.Properties.Encryption = encryption
+		accountCreateParameters.Properties.AllowBlobPublicAccess = to.Ptr(true)
 	}
 
 	logrus.Debugf("Creating storage account")

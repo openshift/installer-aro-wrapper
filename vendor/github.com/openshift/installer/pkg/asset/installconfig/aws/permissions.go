@@ -61,6 +61,18 @@ const (
 
 	// PermissionDeleteIgnitionObjects is a permission set required when `preserveBootstrapIgnition` is not set.
 	PermissionDeleteIgnitionObjects PermissionGroup = "delete-ignition-objects"
+
+	// PermissionValidateInstanceType is a permission set required when validating instance types.
+	PermissionValidateInstanceType PermissionGroup = "permission-validate-instance-type"
+
+	// PermissionDefaultZones is a permission set required when zones are not set in the install-config.
+	PermissionDefaultZones PermissionGroup = "permission-default-zones"
+
+	// PermissionMintCreds is a permission set required when minting credentials.
+	PermissionMintCreds PermissionGroup = "permission-mint-creds"
+
+	// PermissionPassthroughCreds is a permission set required when using passthrough credentials.
+	PermissionPassthroughCreds PermissionGroup = "permission-passthrough-creds"
 )
 
 var permissions = map[PermissionGroup][]string{
@@ -249,7 +261,7 @@ var permissions = map[PermissionGroup][]string{
 	},
 	// Permissions required for deleting a cluster with shared network resources
 	PermissionDeleteSharedNetworking: {
-		"tag:UnTagResources",
+		"tag:UntagResources",
 	},
 	// Permissions required for creating an instance role
 	PermissionCreateInstanceRole: {
@@ -272,6 +284,7 @@ var permissions = map[PermissionGroup][]string{
 	// Permissions required for deleting a cluster with shared instance profiles
 	PermissionDeleteSharedInstanceProfile: {
 		"iam:UntagInstanceProfile",
+		"tag:UntagResources",
 	},
 	PermissionCreateHostedZone: {
 		"route53:CreateHostedZone",
@@ -300,6 +313,89 @@ var permissions = map[PermissionGroup][]string{
 		"s3:DeleteBucket",
 		// Needed by capa which always deletes the ignition objects once the VMs are up.
 		"s3:DeleteObject",
+	},
+	PermissionValidateInstanceType: {
+		// Needed to validate instance availability in region
+		"ec2:DescribeInstanceTypes",
+	},
+	PermissionDefaultZones: {
+		// Needed to list the zones available in the region
+		"ec2:DescribeAvailabilityZones",
+		// Needed to filter zones by instance type
+		"ec2:DescribeInstanceTypeOfferings",
+	},
+	// From: https://github.com/openshift/cloud-credential-operator/blob/master/pkg/aws/utils.go
+	// TODO: export these in CCO so we don't have to duplicate them here.
+	PermissionMintCreds: {
+		"iam:CreateAccessKey",
+		"iam:CreateUser",
+		"iam:DeleteAccessKey",
+		"iam:DeleteUser",
+		"iam:DeleteUserPolicy",
+		"iam:GetUser",
+		"iam:GetUserPolicy",
+		"iam:ListAccessKeys",
+		"iam:PutUserPolicy",
+		"iam:TagUser",
+		"iam:SimulatePrincipalPolicy", // needed so we can verify the above list of course
+	},
+	PermissionPassthroughCreds: {
+		// so we can query whether we have the below list of creds
+		"iam:GetUser",
+		"iam:SimulatePrincipalPolicy",
+
+		// openshift-ingress
+		"elasticloadbalancing:DescribeLoadBalancers",
+		"route53:ListHostedZones",
+		"route53:ChangeResourceRecordSets",
+		"tag:GetResources",
+
+		// openshift-image-registry
+		"s3:CreateBucket",
+		"s3:DeleteBucket",
+		"s3:PutBucketTagging",
+		"s3:GetBucketTagging",
+		"s3:PutEncryptionConfiguration",
+		"s3:GetEncryptionConfiguration",
+		"s3:PutLifecycleConfiguration",
+		"s3:GetLifecycleConfiguration",
+		"s3:GetBucketLocation",
+		"s3:ListBucket",
+		"s3:GetObject",
+		"s3:PutObject",
+		"s3:DeleteObject",
+		"s3:ListBucketMultipartUploads",
+		"s3:AbortMultipartUpload",
+
+		// openshift-cluster-api
+		"ec2:DescribeImages",
+		"ec2:DescribeVpcs",
+		"ec2:DescribeSubnets",
+		"ec2:DescribeAvailabilityZones",
+		"ec2:DescribeSecurityGroups",
+		"ec2:RunInstances",
+		"ec2:DescribeInstances",
+		"ec2:TerminateInstances",
+		"elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+		"elasticloadbalancing:DescribeLoadBalancers",
+		"elasticloadbalancing:DescribeTargetGroups",
+		"elasticloadbalancing:RegisterTargets",
+		"ec2:DescribeVpcs",
+		"ec2:DescribeSubnets",
+		"ec2:DescribeAvailabilityZones",
+		"ec2:DescribeSecurityGroups",
+		"ec2:RunInstances",
+		"ec2:DescribeInstances",
+		"ec2:TerminateInstances",
+		"elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+		"elasticloadbalancing:DescribeLoadBalancers",
+		"elasticloadbalancing:DescribeTargetGroups",
+		"elasticloadbalancing:RegisterTargets",
+
+		// iam-ro
+		"iam:GetUser",
+		"iam:GetUserPolicy",
+		"iam:ListAccessKeys",
 	},
 }
 
@@ -407,6 +503,14 @@ func RequiredPermissionGroups(ic *types.InstallConfig) []PermissionGroup {
 		permissionGroups = append(permissionGroups, PermissionCreateInstanceProfile)
 	}
 
+	if includesInstanceType(ic) {
+		permissionGroups = append(permissionGroups, PermissionValidateInstanceType)
+	}
+
+	if !includesZones(ic) {
+		permissionGroups = append(permissionGroups, PermissionDefaultZones)
+	}
+
 	return permissionGroups
 }
 
@@ -414,14 +518,23 @@ func RequiredPermissionGroups(ic *types.InstallConfig) []PermissionGroup {
 func PermissionsList(required []PermissionGroup) ([]string, error) {
 	requiredPermissions := sets.New[string]()
 	for _, group := range required {
-		groupPerms, ok := permissions[group]
-		if !ok {
-			return nil, fmt.Errorf("unable to access permissions group %s", group)
+		groupPerms, err := Permissions(group)
+		if err != nil {
+			return nil, err
 		}
 		requiredPermissions.Insert(groupPerms...)
 	}
 
 	return sets.List(requiredPermissions), nil
+}
+
+// Permissions returns the list of permissions associated with `group`.
+func Permissions(group PermissionGroup) ([]string, error) {
+	groupPerms, ok := permissions[group]
+	if !ok {
+		return nil, fmt.Errorf("unable to access permissions group %s", group)
+	}
+	return groupPerms, nil
 }
 
 // includesExistingInstanceRole checks if at least one BYO instance role is included in the install-config.
@@ -535,4 +648,37 @@ func includesCreateInstanceProfile(installConfig *types.InstallConfig) bool {
 	mpool := aws.MachinePool{}
 	mpool.Set(installConfig.AWS.DefaultMachinePlatform)
 	return len(mpool.IAMProfile) == 0
+}
+
+// includesInstanceType checks if at least one instance type is specified in the install-config.
+func includesInstanceType(installConfig *types.InstallConfig) bool {
+	mpool := aws.MachinePool{}
+	mpool.Set(installConfig.AWS.DefaultMachinePlatform)
+
+	if mp := installConfig.ControlPlane; mp != nil {
+		mpool.Set(mp.Platform.AWS)
+	}
+
+	for _, compute := range installConfig.Compute {
+		mpool.Set(compute.Platform.AWS)
+	}
+
+	return len(mpool.InstanceType) > 0
+}
+
+// includesZones checks if zones are specified in the install-config. It also returns true if zones will be derived from
+// the specified subnets.
+func includesZones(installConfig *types.InstallConfig) bool {
+	mpool := aws.MachinePool{}
+	mpool.Set(installConfig.AWS.DefaultMachinePlatform)
+
+	if mp := installConfig.ControlPlane; mp != nil {
+		mpool.Set(mp.Platform.AWS)
+	}
+
+	for _, compute := range installConfig.Compute {
+		mpool.Set(compute.Platform.AWS)
+	}
+
+	return len(mpool.Zones) > 0 || len(installConfig.AWS.Subnets) > 0
 }

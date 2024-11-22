@@ -45,6 +45,15 @@ func GetWorkerRoles() []string {
 	return []string{
 		"roles/compute.viewer",
 		"roles/storage.admin",
+		"roles/artifactregistry.reader",
+	}
+}
+
+// GetSharedVPCRoles returns the pre-defined roles for a shared VPC installation.
+func GetSharedVPCRoles() []string {
+	return []string{
+		"roles/compute.networkAdmin",
+		"roles/compute.securityAdmin",
 	}
 }
 

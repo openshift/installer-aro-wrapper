@@ -39,12 +39,10 @@ func initializeFoldersAndTemplates(ctx context.Context, cachedImage string, fail
 	if err != nil {
 		return err
 	}
-	dcFolders, err := dc.Folders(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to get datacenter folder: %w", err)
-	}
 
-	folderPath := path.Join(dcFolders.VmFolder.InventoryPath, clusterID)
+	// Upstream govmomi bug, workaround
+	// https://github.com/vmware/govmomi/issues/3523
+	folderPath := path.Join(dc.InventoryPath, "vm", clusterID)
 
 	// we must set the Folder to the infraId somewhere, we will need to remove that.
 	// if we are overwriting folderPath it needs to have a slash (path)
@@ -88,13 +86,17 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 	 * one folder per datacenter
 	 * one template per region/zone aka failuredomain
 	 */
+
 	installConfig := in.InstallConfig
 	clusterID := &installconfig.ClusterID{InfraID: in.InfraID}
-	var tagID string
+	var tagID, cachedImage string
+	var err error
 
-	cachedImage, err := cache.DownloadImageFile(in.RhcosImage.ControlPlane, cache.InstallerApplicationName)
-	if err != nil {
-		return fmt.Errorf("failed to use cached vsphere image: %w", err)
+	if downloadImage(installConfig) {
+		cachedImage, err = cache.DownloadImageFile(in.RhcosImage.ControlPlane, cache.InstallerApplicationName)
+		if err != nil {
+			return fmt.Errorf("failed to use cached vsphere image: %w", err)
+		}
 	}
 
 	for _, vcenter := range installConfig.Config.VSphere.VCenters {
@@ -130,4 +132,15 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 	}
 
 	return nil
+}
+
+// downloadImage if any failure domains don't have a defined template, this function
+// returns true.
+func downloadImage(installConfig *installconfig.InstallConfig) bool {
+	for _, fd := range installConfig.Config.VSphere.FailureDomains {
+		if fd.Topology.Template == "" {
+			return true
+		}
+	}
+	return false
 }

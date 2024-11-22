@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	capg "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/infrastructure/clusterapi"
 	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/dns"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 )
 
@@ -67,6 +69,16 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 		if err = AddServiceAccountRoles(ctx, projectID, masterSA, GetMasterRoles()); err != nil {
 			return fmt.Errorf("failed to add master roles: %w", err)
 		}
+
+		// Add additional roles for shared VPC
+		if len(in.InstallConfig.Config.Platform.GCP.NetworkProjectID) > 0 {
+			projID := in.InstallConfig.Config.Platform.GCP.NetworkProjectID
+			// Add roles needed for creating firewalls
+			roles := GetSharedVPCRoles()
+			if err = AddServiceAccountRoles(ctx, projID, masterSA, roles); err != nil {
+				return fmt.Errorf("failed to add roles for shared VPC: %w", err)
+			}
+		}
 	}
 
 	createSA := false
@@ -96,7 +108,7 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 // populate the metadata field of the bootstrap instance as the data can be too large. Instead, the data is
 // added to a bucket. A signed url is generated to point to the bucket and the ignition data will be
 // updated to point to the url. This is also allows for bootstrap data to be edited after its initial creation.
-func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]byte, error) {
+func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]*corev1.Secret, error) {
 	// Create the bucket and presigned url. The url is generated using a known/expected name so that the
 	// url can be retrieved from the api by this name.
 	bucketName := gcp.GetBootstrapStorageName(in.InfraID)
@@ -110,20 +122,16 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 		return nil, fmt.Errorf("failed to create bucket %s: %w", bucketName, err)
 	}
 
-	editedIgnitionBytes, err := EditIgnition(ctx, in)
+	editedBootstrapIgn, editedMasterIgn, err := editIgnition(ctx, in)
 	if err != nil {
 		return nil, fmt.Errorf("failed to edit bootstrap ignition: %w", err)
 	}
 
-	ignitionBytes := in.BootstrapIgnData
-	if editedIgnitionBytes != nil {
-		ignitionBytes = editedIgnitionBytes
-	}
-
-	if err := gcp.FillBucket(ctx, bucketHandle, string(ignitionBytes)); err != nil {
+	if err := gcp.FillBucket(ctx, bucketHandle, string(editedBootstrapIgn)); err != nil {
 		return nil, fmt.Errorf("ignition failed to fill bucket: %w", err)
 	}
 
+	var ignShim string
 	for _, file := range in.TFVarsAsset.Files() {
 		if file.Filename == tfvars.TfPlatformVarsFileName {
 			var found bool
@@ -133,16 +141,19 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 				return nil, fmt.Errorf("failed to unmarshal %s to json: %w", tfvars.TfPlatformVarsFileName, err)
 			}
 
-			ignShim, found := tfvarsData["gcp_ignition_shim"].(string)
+			ignShim, found = tfvarsData["gcp_ignition_shim"].(string)
 			if !found {
 				return nil, fmt.Errorf("failed to find ignition shim")
 			}
-
-			return []byte(ignShim), nil
 		}
 	}
 
-	return nil, fmt.Errorf("failed to complete ignition process")
+	ignSecrets := []*corev1.Secret{
+		clusterapi.IgnitionSecret([]byte(ignShim), in.InfraID, "bootstrap"),
+		clusterapi.IgnitionSecret(editedMasterIgn, in.InfraID, "master"),
+	}
+
+	return ignSecrets, nil
 }
 
 // InfraReady is called once cluster.Status.InfrastructureReady
@@ -209,7 +220,7 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 		return fmt.Errorf("failed to add firewall rules: %w", err)
 	}
 
-	if in.InstallConfig.Config.GCP.UserProvisionedDNS != gcptypes.UserProvisionedDNSEnabled {
+	if in.InstallConfig.Config.GCP.UserProvisionedDNS != dns.UserProvisionedDNSEnabled {
 		// Get the network from the GCP Cluster. The network is used to create the private managed zone.
 		if gcpCluster.Status.Network.SelfLink == nil {
 			return fmt.Errorf("failed to get GCP network: %w", err)
@@ -244,9 +255,26 @@ func (p Provider) DestroyBootstrap(ctx context.Context, in clusterapi.BootstrapD
 	projectID := in.Metadata.GCP.ProjectID
 	if in.Metadata.GCP.NetworkProjectID != "" {
 		projectID = in.Metadata.GCP.NetworkProjectID
+
+		createFwRules, err := hasFirewallPermission(ctx, projectID)
+		if err != nil {
+			return fmt.Errorf("failed to remove bootstrap firewall rules: %w", err)
+		}
+		if !createFwRules {
+			return nil
+		}
 	}
 	if err := removeBootstrapFirewallRules(ctx, in.Metadata.InfraID, projectID); err != nil {
 		return fmt.Errorf("failed to remove bootstrap firewall rules: %w", err)
+	}
+
+	if in.Metadata.GCP.NetworkProjectID == "" {
+		// Remove the overly permissive firewall rules created by CAPG that are redundant with those created by installer
+		// These are not created in a shared VPC installation
+		logrus.Infof("Removing firewall rules created by cluster-api-provider-gcp")
+		if err := removeCAPGFirewallRules(ctx, in.Metadata.InfraID, in.Metadata.GCP.ProjectID); err != nil {
+			return fmt.Errorf("failed to remove firewall rules created by cluster-api-provider-gcp: %w", err)
+		}
 	}
 
 	return nil

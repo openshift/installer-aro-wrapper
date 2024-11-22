@@ -215,31 +215,42 @@ func deleteFirewallRule(ctx context.Context, name, projectID string) error {
 	return nil
 }
 
+func hasFirewallPermission(ctx context.Context, projectID string) (bool, error) {
+	client, err := gcpconfig.NewClient(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to create client during firewall permission check: %w", err)
+	}
+
+	permissions, err := client.GetProjectPermissions(ctx, projectID, []string{
+		gcpFirewallPermission,
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to find project permissions during firewall permission check: %w", err)
+	}
+
+	hasPermission := permissions.Has(gcpFirewallPermission)
+	if !hasPermission {
+		logrus.Warnf("failed to find permission %s, skipping firewall rule creation", gcpFirewallPermission)
+	}
+
+	return hasPermission, nil
+}
+
 // createFirewallRules creates the rules needed between the worker and master nodes.
 func createFirewallRules(ctx context.Context, in clusterapi.InfraReadyInput, network string) error {
-	if projID := in.InstallConfig.Config.GCP.NetworkProjectID; projID != "" {
-		client, err := gcpconfig.NewClient(context.Background())
-		if err != nil {
-			return fmt.Errorf("failed to create client during firewall rule creation: %w", err)
-		}
+	projectID := in.InstallConfig.Config.Platform.GCP.ProjectID
+	if in.InstallConfig.Config.GCP.NetworkProjectID != "" {
+		projectID = in.InstallConfig.Config.GCP.NetworkProjectID
 
-		permissions, err := client.GetProjectPermissions(ctx, projID, []string{
-			gcpFirewallPermission,
-		})
+		createFwRules, err := hasFirewallPermission(ctx, projectID)
 		if err != nil {
-			return fmt.Errorf("failed to find project permissions during firewall creation: %w", err)
+			return fmt.Errorf("failed to create cluster firewall rules: %w", err)
 		}
-
-		if !permissions.Has(gcpFirewallPermission) {
-			logrus.Warnf("failed to find permission %s, skipping firewall rule creation", gcpFirewallPermission)
+		if !createFwRules {
 			return nil
 		}
 	}
 
-	projectID := in.InstallConfig.Config.Platform.GCP.ProjectID
-	if in.InstallConfig.Config.Platform.GCP.NetworkProjectID != "" {
-		projectID = in.InstallConfig.Config.Platform.GCP.NetworkProjectID
-	}
 	workerTag := fmt.Sprintf("%s-worker", in.InfraID)
 	masterTag := fmt.Sprintf("%s-control-plane", in.InfraID)
 
@@ -284,11 +295,16 @@ func createFirewallRules(ctx context.Context, in clusterapi.InfraReadyInput, net
 		return err
 	}
 
+	machineCIDR := in.InstallConfig.Config.Networking.MachineNetwork[0].CIDR.String()
 	// api rules are needed to access the kube-apiserver on master nodes
 	firewallName = fmt.Sprintf("%s-api", in.InfraID)
 	srcTags = []string{}
 	targetTags = []string{masterTag}
 	srcRanges = []string{}
+	if !in.InstallConfig.Config.PublicAPI() {
+		// For Internal, limit the source to the machineCIDR
+		srcRanges = append(srcRanges, machineCIDR)
+	}
 	if err := addFirewallRule(ctx, firewallName, network, projectID, getAPIPorts(), srcTags, targetTags, srcRanges); err != nil {
 		return err
 	}
@@ -297,7 +313,6 @@ func createFirewallRules(ctx context.Context, in clusterapi.InfraReadyInput, net
 	firewallName = fmt.Sprintf("%s-internal-network", in.InfraID)
 	srcTags = []string{}
 	targetTags = []string{workerTag, masterTag}
-	machineCIDR := in.InstallConfig.Config.Networking.MachineNetwork[0].CIDR.String()
 	srcRanges = []string{machineCIDR}
 	err := addFirewallRule(ctx, firewallName, network, projectID, getInternalNetworkPorts(), srcTags, targetTags, srcRanges)
 
@@ -309,7 +324,16 @@ func createBootstrapFirewallRules(ctx context.Context, in clusterapi.InfraReadyI
 	projectID := in.InstallConfig.Config.Platform.GCP.ProjectID
 	if in.InstallConfig.Config.Platform.GCP.NetworkProjectID != "" {
 		projectID = in.InstallConfig.Config.Platform.GCP.NetworkProjectID
+
+		createFwRules, err := hasFirewallPermission(ctx, projectID)
+		if err != nil {
+			return fmt.Errorf("failed to create bootstrap firewall rules: %w", err)
+		}
+		if !createFwRules {
+			return nil
+		}
 	}
+
 	firewallName := fmt.Sprintf("%s-bootstrap-in-ssh", in.InfraID)
 	srcTags := []string{}
 	bootstrapTag := fmt.Sprintf("%s-control-plane", in.InfraID)
@@ -327,5 +351,16 @@ func createBootstrapFirewallRules(ctx context.Context, in clusterapi.InfraReadyI
 // removeBootstrapFirewallRules removes the rules created for the bootstrap node.
 func removeBootstrapFirewallRules(ctx context.Context, infraID, projectID string) error {
 	firewallName := fmt.Sprintf("%s-bootstrap-in-ssh", infraID)
+	return deleteFirewallRule(ctx, firewallName, projectID)
+}
+
+// removeCAPGFirewallRules removes the overly permissive firewall rules created by cluster-api-provider-gcp.
+func removeCAPGFirewallRules(ctx context.Context, infraID, projectID string) error {
+	firewallName := fmt.Sprintf("allow-%s-cluster", infraID)
+	if err := deleteFirewallRule(ctx, firewallName, projectID); err != nil {
+		return err
+	}
+
+	firewallName = fmt.Sprintf("allow-%s-healthchecks", infraID)
 	return deleteFirewallRule(ctx, firewallName, projectID)
 }

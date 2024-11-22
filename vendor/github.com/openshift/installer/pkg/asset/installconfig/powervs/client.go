@@ -54,6 +54,7 @@ type API interface {
 	GetVPCSubnets(ctx context.Context, vpcID string) ([]vpcv1.Subnet, error)
 
 	// TG
+	TransitGatewayID(ctx context.Context, name string) (string, error)
 	GetTGConnectionVPC(ctx context.Context, gatewayID string, vpcSubnetID string) (string, error)
 	GetAttachedTransitGateway(ctx context.Context, svcInsID string) (string, error)
 
@@ -84,6 +85,9 @@ type API interface {
 
 	// Load Balancer
 	AddIPToLoadBalancerPool(ctx context.Context, lbID string, poolName string, port int64, ip string) error
+
+	// Virtual Private Endpoint Gateway
+	CreateVirtualPrivateEndpointGateway(ctx context.Context, name string, vpcID string, subnetID string, rgID string, targetCRN string) (*vpcv1.EndpointGateway, error)
 }
 
 // Client makes calls to the PowerVS API.
@@ -1094,6 +1098,27 @@ func (c *Client) GetDatacenterCapabilities(ctx context.Context, region string) (
 	return getOk.Payload.Capabilities, nil
 }
 
+// TransitGatewayID checks to see if the name is an existing transit gateway name.
+func (c *Client) TransitGatewayID(ctx context.Context, name string) (string, error) {
+	var (
+		gateways []transitgatewayapisv1.TransitGateway
+		gateway  transitgatewayapisv1.TransitGateway
+		err      error
+	)
+
+	gateways, err = c.getTransitGateways(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, gateway = range gateways {
+		if *gateway.Name == name {
+			return *gateway.ID, nil
+		}
+	}
+
+	return "", nil
+}
+
 // GetAttachedTransitGateway finds an existing Transit Gateway attached to the provided PowerVS cloud instance.
 func (c *Client) GetAttachedTransitGateway(ctx context.Context, svcInsID string) (string, error) {
 	var (
@@ -1436,4 +1461,74 @@ func (c *Client) AddIPToLoadBalancerPool(ctx context.Context, lbID string, poolN
 
 			return true, nil
 		})
+}
+
+// CreateVirtualPrivateEndpointGateway creates a VPE gateway with given target resource type and CRN.
+func (c *Client) CreateVirtualPrivateEndpointGateway(ctx context.Context, name string, vpcID string, subnetID string, rgID string, targetCRN string) (*vpcv1.EndpointGateway, error) {
+	var (
+		resp   *core.DetailedResponse
+		err    error
+		ok     bool
+		egs    *vpcv1.EndpointGatewayCollection
+		egRef  *vpcv1.EndpointGatewayTarget
+		idIntf *vpcv1.VPCIdentityByID
+		target *vpcv1.EndpointGatewayTargetPrototypeEndpointGatewayTargetResourceTypeProviderCloudServicePrototype
+		rgIntf *vpcv1.ResourceGroupIdentityByID
+		ipIntf *vpcv1.EndpointGatewayReservedIPReservedIPIdentityByID
+	)
+
+	listOpts := c.vpcAPI.NewListEndpointGatewaysOptions()
+	listOpts.SetVPCID(vpcID)
+	egs, _, err = c.vpcAPI.ListEndpointGateways(listOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, eg := range egs.EndpointGateways {
+		egRef, ok = eg.Target.(*vpcv1.EndpointGatewayTarget)
+		if !ok {
+			return nil, fmt.Errorf("invalid target inside returned EndpointGateway: %v", eg.Target)
+		}
+		if *egRef.CRN == targetCRN {
+			return &eg, nil
+		}
+	}
+
+	target, err = c.vpcAPI.NewEndpointGatewayTargetPrototypeEndpointGatewayTargetResourceTypeProviderCloudServicePrototype(targetCRN, vpcv1.EndpointGatewayTargetPrototypeResourceTypeProviderCloudServiceConst)
+	if err != nil {
+		return nil, err
+	}
+	idIntf, err = c.vpcAPI.NewVPCIdentityByID(vpcID)
+	if err != nil {
+		return nil, err
+	}
+	createOpts := c.vpcAPI.NewCreateEndpointGatewayOptions(target, idIntf)
+	createOpts.SetName(name)
+	createOpts.SetAllowDnsResolutionBinding(true)
+	rgIntf, err = c.vpcAPI.NewResourceGroupIdentityByID(rgID)
+	if err != nil {
+		return nil, err
+	}
+	createOpts.SetResourceGroup(rgIntf)
+	ipName := fmt.Sprintf("%s-ip", name)
+	createIPOpts := c.vpcAPI.NewCreateSubnetReservedIPOptions(subnetID)
+	createIPOpts.SetName(ipName)
+	createIPOpts.SetSubnetID(subnetID)
+	reservedIP, _, err := c.vpcAPI.CreateSubnetReservedIPWithContext(ctx, createIPOpts)
+	if err != nil {
+		return nil, err
+	}
+	ipIntf, err = c.vpcAPI.NewEndpointGatewayReservedIPReservedIPIdentityByID(*reservedIP.ID)
+	if err != nil {
+		return nil, err
+	}
+	ips := []vpcv1.EndpointGatewayReservedIPIntf{ipIntf}
+	createOpts.SetIps(ips)
+
+	eg, resp, err := c.vpcAPI.CreateEndpointGatewayWithContext(ctx, createOpts)
+	if err != nil {
+		logrus.Debugf("CreateEndpointGatewayWithContext returned %v", resp)
+		return nil, err
+	}
+	return eg, nil
 }

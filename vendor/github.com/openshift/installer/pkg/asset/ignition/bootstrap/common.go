@@ -22,12 +22,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vincent-petithory/dataurl"
 	utilsnet "k8s.io/utils/net"
+	"k8s.io/utils/ptr"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/aws"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/baremetal"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/gcp"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/vsphere"
 	mcign "github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -38,7 +41,10 @@ import (
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
+	awstypes "github.com/openshift/installer/pkg/types/aws"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	gcptypes "github.com/openshift/installer/pkg/types/gcp"
+	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 )
 
@@ -95,8 +101,10 @@ type bootstrapTemplateData struct {
 // platformTemplateData is the data to use to replace values in bootstrap
 // template files that are specific to one platform.
 type platformTemplateData struct {
+	AWS       *aws.TemplateData
 	BareMetal *baremetal.TemplateData
 	VSphere   *vsphere.TemplateData
+	GCP       *gcp.TemplateData
 }
 
 // Common is an asset that generates the ignition config for bootstrap nodes.
@@ -111,6 +119,7 @@ func (a *Common) Dependencies() []asset.Asset {
 		&baremetal.IronicCreds{},
 		&CVOIgnore{},
 		&installconfig.InstallConfig{},
+		&installconfig.ClusterID{},
 		&kubeconfig.AdminInternalClient{},
 		&kubeconfig.Kubelet{},
 		&kubeconfig.LoopbackClient{},
@@ -158,6 +167,7 @@ func (a *Common) Dependencies() []asset.Asset {
 		&tls.MCSCertKey{},
 		&tls.RootCA{},
 		&tls.ServiceAccountKeyPair{},
+		&tls.IronicTLSCert{},
 		&releaseimage.Image{},
 		new(rhcos.Image),
 	}
@@ -167,7 +177,8 @@ func (a *Common) Dependencies() []asset.Asset {
 func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootstrapTemplateData) error {
 	installConfig := &installconfig.InstallConfig{}
 	bootstrapSSHKeyPair := &tls.BootstrapSSHKeyPair{}
-	dependencies.Get(installConfig, bootstrapSSHKeyPair)
+	clusterID := &installconfig.ClusterID{}
+	dependencies.Get(installConfig, bootstrapSSHKeyPair, clusterID)
 
 	a.Config = &igntypes.Config{
 		Ignition: igntypes.Ignition{
@@ -217,6 +228,24 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 			igntypes.SSHAuthorizedKey(string(bootstrapSSHKeyPair.Public())),
 		}},
 	)
+
+	if platform == nutanixtypes.Name {
+		// Inserts the file "/etc/hostname" with the bootstrap machine name to the bootstrap ignition data
+		hostname := fmt.Sprintf("%s-bootstrap", clusterID.InfraID)
+		hostnameFile := igntypes.File{
+			Node: igntypes.Node{
+				Path:      "/etc/hostname",
+				Overwrite: ptr.To(true),
+			},
+			FileEmbedded1: igntypes.FileEmbedded1{
+				Mode: ptr.To(420),
+				Contents: igntypes.Resource{
+					Source: ptr.To(dataurl.EncodeBytes([]byte(hostname))),
+				},
+			},
+		}
+		a.Config.Storage.Files = append(a.Config.Storage.Files, hostnameFile)
+	}
 
 	return nil
 }
@@ -282,6 +311,8 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	var platformData platformTemplateData
 
 	switch installConfig.Config.Platform.Name() {
+	case awstypes.Name:
+		platformData.AWS = aws.GetTemplateData(installConfig.Config.Platform.AWS)
 	case baremetaltypes.Name:
 		platformData.BareMetal = baremetal.GetTemplateData(
 			installConfig.Config.Platform.BareMetal,
@@ -289,7 +320,10 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 			*installConfig.Config.ControlPlane.Replicas,
 			ironicCreds.Username,
 			ironicCreds.Password,
+			dependencies,
 		)
+	case gcptypes.Name:
+		platformData.GCP = gcp.GetTemplateData(installConfig.Config.Platform.GCP)
 	case vspheretypes.Name:
 		platformData.VSphere = vsphere.GetTemplateData(installConfig.Config.Platform.VSphere)
 	}
@@ -399,6 +433,7 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	}
 
 	filename := path.Base(uri)
+	filename = strings.TrimSuffix(filename, ".template")
 	parentDir := path.Base(path.Dir(uri))
 
 	var mode int
@@ -612,6 +647,7 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 		&tls.MCSCertKey{},
 		&tls.ServiceAccountKeyPair{},
 		&tls.JournalCertKey{},
+		&tls.IronicTLSCert{},
 	} {
 		dependencies.Get(asset)
 

@@ -8,6 +8,7 @@ import (
 
 	nutanixclientv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 
@@ -76,54 +77,58 @@ func (p Provider) PreProvision(ctx context.Context, in infracapi.PreProvisionInp
 	}
 	logrus.Infof("created the category value %q with name %q", *respv.Value, *respv.Name)
 
-	// upload the rhcos image.
-	imgName := nutanixtypes.RHCOSImageName(in.InfraID)
-	imgURI := in.RhcosImage.ControlPlane
-	imgReq := &nutanixclientv3.ImageIntentInput{}
-	imgSpec := &nutanixclientv3.Image{
-		Name:        &imgName,
-		Description: ptr.To("Created By OpenShift Installer"),
-		Resources: &nutanixclientv3.ImageResources{
-			ImageType: ptr.To("DISK_IMAGE"),
-			SourceURI: &imgURI,
-		},
-	}
-	imgReq.Spec = imgSpec
-	imgMeta := &nutanixclientv3.Metadata{
-		Kind:       ptr.To("image"),
-		Categories: map[string]string{categoryKey: nutanixtypes.CategoryValueOwned},
-	}
-	imgReq.Metadata = imgMeta
-	respi, err := nutanixCl.V3.CreateImage(ctx, imgReq)
-	if err != nil {
-		return fmt.Errorf("failed to create the rhcos image %q: %w", imgName, err)
-	}
-	imgUUID := *respi.Metadata.UUID
-	logrus.Infof("creating the rhcos image %s (uuid: %s).", imgName, imgUUID)
-
-	if taskUUID, ok := respi.Status.ExecutionContext.TaskUUID.(string); ok {
-		logrus.Infof("waiting the image data uploading from %s, taskUUID: %s.", imgURI, taskUUID)
-
-		// Wait till the image creation task is successed.
-		if err = nutanixtypes.WaitForTask(nutanixCl.V3, taskUUID); err != nil {
-			e1 := fmt.Errorf("failed to create the rhcos image %q: %w", imgName, err)
-			logrus.Error(e1)
-			return e1
-		}
-		logrus.Infof("created and uploaded the rhcos image data %s (uuid: %s)", imgName, imgUUID)
+	if ic.Nutanix.PreloadedOSImageName != "" {
+		logrus.Infof("Using the existing rhcos image %q in PC", in.InstallConfig.Config.Nutanix.PreloadedOSImageName)
 	} else {
-		err = fmt.Errorf("failed to convert the task UUID %v to string", respi.Status.ExecutionContext.TaskUUID)
-		logrus.Errorf(err.Error())
-		return err
+		// upload the rhcos image.
+		imgName := nutanixtypes.RHCOSImageName(in.InstallConfig.Config.Nutanix, in.InfraID)
+		imgURI := in.RhcosImage.ControlPlane
+		imgReq := &nutanixclientv3.ImageIntentInput{}
+		imgSpec := &nutanixclientv3.Image{
+			Name:        &imgName,
+			Description: ptr.To("Created By OpenShift Installer"),
+			Resources: &nutanixclientv3.ImageResources{
+				ImageType: ptr.To("DISK_IMAGE"),
+				SourceURI: &imgURI,
+			},
+		}
+		imgReq.Spec = imgSpec
+		imgMeta := &nutanixclientv3.Metadata{
+			Kind:       ptr.To("image"),
+			Categories: map[string]string{categoryKey: nutanixtypes.CategoryValueOwned},
+		}
+		imgReq.Metadata = imgMeta
+		respi, err := nutanixCl.V3.CreateImage(ctx, imgReq)
+		if err != nil {
+			return fmt.Errorf("failed to create the rhcos image %q: %w", imgName, err)
+		}
+		imgUUID := *respi.Metadata.UUID
+		logrus.Infof("creating the rhcos image %s (uuid: %s).", imgName, imgUUID)
+
+		if taskUUID, ok := respi.Status.ExecutionContext.TaskUUID.(string); ok {
+			logrus.Infof("waiting the image data uploading from %s, taskUUID: %s.", imgURI, taskUUID)
+
+			// Wait till the image creation task is successed.
+			if err = nutanixtypes.WaitForTask(nutanixCl.V3, taskUUID); err != nil {
+				e1 := fmt.Errorf("failed to create the rhcos image %q: %w", imgName, err)
+				logrus.Error(e1)
+				return e1
+			}
+			logrus.Infof("created and uploaded the rhcos image data %s (uuid: %s)", imgName, imgUUID)
+		} else {
+			err = fmt.Errorf("failed to convert the task UUID %v to string", respi.Status.ExecutionContext.TaskUUID)
+			logrus.Errorf(err.Error())
+			return err
+		}
 	}
 
 	return nil
 }
 
-// Ignition handles preconditions for bootstrap ignition and
-// generates ignition data for the CAPI bootstrap ignition secret.
+// Ignition handles preconditions for bootstrap and master ignition and
+// generates the CAPI ignition data secrets.
 // Load the ignition iso image to prism_central.
-func (p Provider) Ignition(ctx context.Context, in infracapi.IgnitionInput) ([]byte, error) {
+func (p Provider) Ignition(ctx context.Context, in infracapi.IgnitionInput) ([]*corev1.Secret, error) {
 	ic := in.InstallConfig.Config
 	nutanixCl, err := nutanixtypes.CreateNutanixClientFromPlatform(ic.Platform.Nutanix)
 	if err != nil {
@@ -207,11 +212,25 @@ func (p Provider) Ignition(ctx context.Context, in infracapi.IgnitionInput) ([]b
 			err = fmt.Errorf("failed to create/upload the bootstrap image object %s in PC: %w", imgName, err)
 		}
 
-		return in.BootstrapIgnData, err
+		return nil, err
 	}
 	logrus.Infof("Successfully created the bootstrap image object %s and uploaded its image data", imgName)
 
-	return in.BootstrapIgnData, nil
+	ignSecrets := []*corev1.Secret{
+		infracapi.IgnitionSecret(in.BootstrapIgnData, in.InfraID, "bootstrap"),
+	}
+
+	for i := 0; i < int(*in.InstallConfig.Config.ControlPlane.Replicas); i++ {
+		// Inserts the file "/etc/hostname" with the master machine name to the ignition data
+		hostname := fmt.Sprintf("%s-master-%v", in.InfraID, i)
+		masterIgnData, err := nutanixtypes.InsertHostnameIgnition(in.MasterIgnData, hostname)
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert the file '/etc/hostname' to the ignition data for machine %q: %w", hostname, err)
+		}
+		ignSecrets = append(ignSecrets, infracapi.IgnitionSecret(masterIgnData, in.InfraID, fmt.Sprintf("master-%v", i)))
+	}
+
+	return ignSecrets, nil
 }
 
 // createImage creates the image object in PC, with the provided request input.

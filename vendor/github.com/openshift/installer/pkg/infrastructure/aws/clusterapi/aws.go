@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
@@ -26,11 +27,13 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/infrastructure/clusterapi"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
+	"github.com/openshift/installer/pkg/types/dns"
 )
 
 var (
 	_ clusterapi.Provider           = (*Provider)(nil)
 	_ clusterapi.PreProvider        = (*Provider)(nil)
+	_ clusterapi.IgnitionProvider   = (*Provider)(nil)
 	_ clusterapi.InfraReadyProvider = (*Provider)(nil)
 	_ clusterapi.BootstrapDestroyer = (*Provider)(nil)
 	_ clusterapi.PostDestroyer      = (*Provider)(nil)
@@ -84,6 +87,22 @@ func (*Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionInp
 	return nil
 }
 
+// Ignition edits the ignition contents to add the public and private load balancer ip addresses to the
+// infrastructure CR. The infrastructure CR is updated and added to the ignition files. CAPA creates a
+// bucket for ignition, and this ignition data will be placed in the bucket.
+func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]*corev1.Secret, error) {
+	editedBootstrapIgn, editedMasterIgn, err := editIgnition(ctx, in)
+	if err != nil {
+		return nil, fmt.Errorf("failed to edit bootstrap ignition: %w", err)
+	}
+
+	ignSecrets := []*corev1.Secret{
+		clusterapi.IgnitionSecret(editedBootstrapIgn, in.InfraID, "bootstrap"),
+		clusterapi.IgnitionSecret(editedMasterIgn, in.InfraID, "master"),
+	}
+	return ignSecrets, nil
+}
+
 // InfraReady creates private hosted zone and DNS records.
 func (*Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput) error {
 	awsCluster := &capa.AWSCluster{}
@@ -114,46 +133,95 @@ func (*Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput) 
 		}
 	}
 
-	tags := map[string]string{
-		fmt.Sprintf("kubernetes.io/cluster/%s", in.InfraID): "owned",
-	}
-	for k, v := range awsCluster.Spec.AdditionalTags {
-		tags[k] = v
+	client := awsconfig.NewClient(awsSession)
+
+	// The user has selected to provision their own DNS solution. Skip the creation of the
+	// Hosted Zone(s) and the records for those zones.
+	if in.InstallConfig.Config.AWS.UserProvisionedDNS == dns.UserProvisionedDNSEnabled {
+		logrus.Debugf("User Provisioned DNS enabled, skipping dns record creation")
+		return nil
 	}
 
-	client := awsconfig.NewClient(awsSession)
+	logrus.Infoln("Creating Route53 records for control plane load balancer")
 
 	phzID := in.InstallConfig.Config.AWS.HostedZone
 	if len(phzID) == 0 {
-		logrus.Infoln("Creating private Hosted Zone")
+		logrus.Debugln("Creating private Hosted Zone")
+
 		res, err := client.CreateHostedZone(ctx, &awsconfig.HostedZoneInput{
 			InfraID:  in.InfraID,
 			VpcID:    vpcID,
 			Region:   awsCluster.Spec.Region,
 			Name:     in.InstallConfig.Config.ClusterDomain(),
 			Role:     in.InstallConfig.Config.AWS.HostedZoneRole,
-			UserTags: tags,
+			UserTags: awsCluster.Spec.AdditionalTags,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create private hosted zone: %w", err)
 		}
 		phzID = aws.StringValue(res.Id)
+		logrus.Infoln("Created private Hosted Zone")
 	}
 
-	logrus.Infoln("Creating Route53 records for control plane load balancer")
+	apiName := fmt.Sprintf("api.%s.", in.InstallConfig.Config.ClusterDomain())
+	apiIntName := fmt.Sprintf("api-int.%s.", in.InstallConfig.Config.ClusterDomain())
+
+	// Create api record in public zone
+	if in.InstallConfig.Config.PublicAPI() {
+		zone, err := client.GetBaseDomain(in.InstallConfig.Config.BaseDomain)
+		if err != nil {
+			return err
+		}
+
+		pubLB := awsCluster.Status.Network.SecondaryAPIServerELB
+		aliasZoneID, err := getHostedZoneIDForNLB(ctx, awsSession, awsCluster.Spec.Region, pubLB.DNSName)
+		if err != nil {
+			return fmt.Errorf("failed to find HostedZone ID for NLB: %w", err)
+		}
+
+		if err := client.CreateOrUpdateRecord(ctx, &awsconfig.CreateRecordInput{
+			Name:           apiName,
+			Region:         awsCluster.Spec.Region,
+			DNSTarget:      pubLB.DNSName,
+			ZoneID:         aws.StringValue(zone.Id),
+			AliasZoneID:    aliasZoneID,
+			HostedZoneRole: "", // we dont want to assume role here
+		}); err != nil {
+			return fmt.Errorf("failed to create records for api in public zone: %w", err)
+		}
+		logrus.Debugln("Created public API record in public zone")
+	}
+
 	aliasZoneID, err := getHostedZoneIDForNLB(ctx, awsSession, awsCluster.Spec.Region, awsCluster.Status.Network.APIServerELB.Name)
 	if err != nil {
 		return fmt.Errorf("failed to find HostedZone ID for NLB: %w", err)
 	}
-	apiHost := awsCluster.Status.Network.SecondaryAPIServerELB.DNSName
-	if awsCluster.Status.Network.APIServerELB.Scheme == capa.ELBSchemeInternetFacing {
-		apiHost = awsCluster.Status.Network.APIServerELB.DNSName
+
+	// Create api record in private zone
+	if err := client.CreateOrUpdateRecord(ctx, &awsconfig.CreateRecordInput{
+		Name:           apiName,
+		Region:         awsCluster.Spec.Region,
+		DNSTarget:      awsCluster.Spec.ControlPlaneEndpoint.Host,
+		ZoneID:         phzID,
+		AliasZoneID:    aliasZoneID,
+		HostedZoneRole: in.InstallConfig.Config.AWS.HostedZoneRole,
+	}); err != nil {
+		return fmt.Errorf("failed to create records for api in private zone: %w", err)
 	}
-	apiIntHost := awsCluster.Spec.ControlPlaneEndpoint.Host
-	err = client.CreateOrUpdateRecord(ctx, in.InstallConfig.Config, apiHost, apiIntHost, phzID, aliasZoneID)
-	if err != nil {
-		return fmt.Errorf("failed to create route53 records: %w", err)
+	logrus.Debugln("Created public API record in private zone")
+
+	// Create api-int record in private zone
+	if err := client.CreateOrUpdateRecord(ctx, &awsconfig.CreateRecordInput{
+		Name:           apiIntName,
+		Region:         awsCluster.Spec.Region,
+		DNSTarget:      awsCluster.Spec.ControlPlaneEndpoint.Host,
+		ZoneID:         phzID,
+		AliasZoneID:    aliasZoneID,
+		HostedZoneRole: in.InstallConfig.Config.AWS.HostedZoneRole,
+	}); err != nil {
+		return fmt.Errorf("failed to create records for api-int in private zone: %w", err)
 	}
+	logrus.Debugln("Created private API record in private zone")
 
 	return nil
 }

@@ -139,6 +139,10 @@ func (c *Client) GetMachineTypeWithZones(ctx context.Context, project, region, m
 	if len(machines) == 0 {
 		cctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 		defer cancel()
+
+		if len(pz) == 0 {
+			return nil, nil, fmt.Errorf("failed to find public zone in project %s region %s", project, region)
+		}
 		machine, err := svc.MachineTypes.Get(project, pz[0].Name, machineType).Context(cctx).Do()
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to fetch instance type: %w", err)
@@ -226,13 +230,19 @@ func (c *Client) GetDNSZone(ctx context.Context, project, baseDomain string, isP
 	if !strings.HasSuffix(baseDomain, ".") {
 		baseDomain = fmt.Sprintf("%s.", baseDomain)
 	}
+
+	// currently, only private and public are supported. All peering zones are private.
+	visibility := "private"
+	if isPublic {
+		visibility = "public"
+	}
+
 	req := svc.ManagedZones.List(project).DnsName(baseDomain).Context(ctx)
 	var res *dns.ManagedZone
 	if err := req.Pages(ctx, func(page *dns.ManagedZonesListResponse) error {
 		for idx, v := range page.ManagedZones {
-			if v.Visibility != "private" && isPublic {
-				res = page.ManagedZones[idx]
-			} else if v.Visibility == "private" && !isPublic {
+			// Peering zones are not allowed during the installation process.
+			if v.Visibility == visibility && v.PeeringConfig == nil {
 				res = page.ManagedZones[idx]
 			}
 		}
@@ -361,7 +371,7 @@ func (c *Client) GetRegions(ctx context.Context, project string) ([]string, erro
 		return nil, errors.Wrapf(err, "failed to get regions for project")
 	}
 
-	computeRegions := make([]string, len(gcpRegionsList.Items))
+	computeRegions := make([]string, 0, len(gcpRegionsList.Items))
 	for _, region := range gcpRegionsList.Items {
 		computeRegions = append(computeRegions, region.Name)
 	}
@@ -444,7 +454,7 @@ func (c *Client) getServiceUsageService(ctx context.Context) (*serviceusage.Serv
 
 // GetServiceAccount retrieves a service account from a project if it exists.
 func (c *Client) GetServiceAccount(ctx context.Context, project, serviceAccount string) (string, error) {
-	svc, err := iam.NewService(ctx)
+	svc, err := iam.NewService(ctx, option.WithCredentials(c.ssn.Credentials))
 	if err != nil {
 		return "", errors.Wrapf(err, "failed create IAM service")
 	}

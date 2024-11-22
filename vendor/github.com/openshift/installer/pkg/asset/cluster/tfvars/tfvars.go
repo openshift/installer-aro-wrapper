@@ -52,6 +52,7 @@ import (
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	"github.com/openshift/installer/pkg/types/dns"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
@@ -370,7 +371,10 @@ func (t *TerraformVariables) Generate(ctx context.Context, parents asset.Parents
 		for i, w := range workers {
 			workerConfigs[i] = w.Spec.Template.Spec.ProviderSpec.Value.Object.(*machinev1beta1.AzureMachineProviderSpec) //nolint:errcheck // legacy, pre-linter
 		}
-		client := aztypes.NewClient(session)
+		client, err := installConfig.Azure.Client()
+		if err != nil {
+			return err
+		}
 		hyperVGeneration, err := client.GetHyperVGenerationVersion(ctx, masterConfigs[0].VMSize, masterConfigs[0].Location, "")
 		if err != nil {
 			return err
@@ -503,7 +507,7 @@ func (t *TerraformVariables) Generate(ctx context.Context, parents asset.Parents
 		publicZoneName := ""
 		privateZoneName := ""
 
-		if installConfig.Config.GCP.UserProvisionedDNS != gcp.UserProvisionedDNSEnabled {
+		if installConfig.Config.GCP.UserProvisionedDNS != dns.UserProvisionedDNSEnabled {
 			if installConfig.Config.Publish == types.ExternalPublishingStrategy {
 				publicZone, err := client.GetDNSZone(ctx, installConfig.Config.GCP.ProjectID, installConfig.Config.BaseDomain, true)
 				if err != nil {
@@ -554,7 +558,7 @@ func (t *TerraformVariables) Generate(ctx context.Context, parents asset.Parents
 				PrivateZoneName:     privateZoneName,
 				PublishStrategy:     installConfig.Config.Publish,
 				InfrastructureName:  clusterID.InfraID,
-				UserProvisionedDNS:  installConfig.Config.GCP.UserProvisionedDNS == gcp.UserProvisionedDNSEnabled,
+				UserProvisionedDNS:  installConfig.Config.GCP.UserProvisionedDNS == dns.UserProvisionedDNSEnabled,
 				UserTags:            tags,
 				IgnitionShim:        string(shim),
 				PresignedURL:        url,
@@ -986,7 +990,6 @@ func (t *TerraformVariables) Generate(ctx context.Context, parents asset.Parents
 
 	case vsphere.Name:
 		t.FileList = make([]*asset.File, 0)
-		logrus.Warn("installing on vSphere via terraform is no longer supported")
 		return nil
 	case nutanix.Name:
 		controlPlanes, err := mastersAsset.Machines()

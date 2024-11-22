@@ -21,9 +21,11 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
+	ibmcloudic "github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
 	"github.com/openshift/installer/pkg/asset/machines/aws"
 	"github.com/openshift/installer/pkg/asset/machines/azure"
 	"github.com/openshift/installer/pkg/asset/machines/gcp"
+	"github.com/openshift/installer/pkg/asset/machines/ibmcloud"
 	nutanixcapi "github.com/openshift/installer/pkg/asset/machines/nutanix"
 	"github.com/openshift/installer/pkg/asset/machines/openstack"
 	"github.com/openshift/installer/pkg/asset/machines/powervs"
@@ -38,6 +40,7 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	azuredefaults "github.com/openshift/installer/pkg/types/azure/defaults"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
+	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
@@ -166,13 +169,15 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 			return fmt.Errorf("failed to create CAPA tags from UserTags: %w", err)
 		}
 
+		publicOnlySubnets := awstypes.IsPublicOnlySubnetsEnabled()
+
 		pool.Platform.AWS = &mpool
 		awsMachines, err := aws.GenerateMachines(clusterID.InfraID, &aws.MachineInput{
 			Role:     "master",
 			Pool:     &pool,
 			Subnets:  subnets,
 			Tags:     tags,
-			PublicIP: false,
+			PublicIP: publicOnlySubnets,
 			Ignition: &v1beta2.Ignition{
 				Version: "3.2",
 				// master machines should get ignition from the MCS on the bootstrap node
@@ -199,7 +204,7 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 			Subnets:        bootstrapSubnets,
 			Pool:           &pool,
 			Tags:           tags,
-			PublicIP:       installConfig.Config.Publish == types.ExternalPublishingStrategy,
+			PublicIP:       publicOnlySubnets || (installConfig.Config.Publish == types.ExternalPublishingStrategy),
 			PublicIpv4Pool: ic.Platform.AWS.PublicIpv4Pool,
 			Ignition:       ignition,
 		})
@@ -221,30 +226,23 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 		mpool.Set(ic.Platform.Azure.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.Azure)
 
-		session, err := installConfig.Azure.Session()
+		client, err := installConfig.Azure.Client()
 		if err != nil {
-			return fmt.Errorf("failed to fetch session: %w", err)
+			return err
 		}
-		client := icazure.NewClient(session)
 
-		if len(mpool.Zones) == 0 {
-			// if no azs are given we set to []string{""} for convenience over later operations.
-			// It means no-zoned for the machine API
-			mpool.Zones = []string{""}
-		}
 		if len(mpool.Zones) == 0 {
 			azs, err := client.GetAvailabilityZones(ctx, ic.Platform.Azure.Region, mpool.InstanceType)
 			if err != nil {
 				return fmt.Errorf("failed to fetch availability zones: %w", err)
 			}
 			mpool.Zones = azs
-			if len(azs) == 0 {
-				// if no azs are given we set to []string{""} for convenience over later operations.
-				// It means no-zoned for the machine API
-				mpool.Zones = []string{""}
-			}
 		}
-		// client.GetControlPlaneSubnet(ctx, ic.Platform.Azure.ResourceGroupName, ic.Platform.Azure.VirtualNetwork, )
+		if len(mpool.Zones) == 0 {
+			// if no azs are given we set to []string{""} for convenience over later operations.
+			// It means no-zoned for the machine API
+			mpool.Zones = []string{""}
+		}
 
 		if mpool.OSImage.Publisher != "" {
 			img, ierr := client.GetMarketplaceImage(ctx, ic.Platform.Azure.Region, mpool.OSImage.Publisher, mpool.OSImage.Offer, mpool.OSImage.SKU, mpool.OSImage.Version)
@@ -274,6 +272,11 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 		subnet := ic.Azure.ControlPlaneSubnet
 
 		hyperVGen, err := icazure.GetHyperVGenerationVersion(capabilities, "")
+		if err != nil {
+			return err
+		}
+
+		session, err := installConfig.Azure.Session()
 		if err != nil {
 			return err
 		}
@@ -454,11 +457,48 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 			return fmt.Errorf("failed to generate Cluster API machine manifests for control-plane: %w", err)
 		}
 		pool.Platform.Nutanix = &mpool
-		templateName := nutanixtypes.RHCOSImageName(clusterID.InfraID)
+		templateName := nutanixtypes.RHCOSImageName(ic.Platform.Nutanix, clusterID.InfraID)
 
 		c.FileList, err = nutanixcapi.GenerateMachines(clusterID.InfraID, ic, &pool, templateName, "master")
 		if err != nil {
 			return fmt.Errorf("unable to generate CAPI machines for Nutanix %w", err)
+		}
+	case ibmcloudtypes.Name:
+		mpool := defaultIBMCloudMachinePoolPlatform()
+		mpool.Set(ic.Platform.IBMCloud.DefaultMachinePlatform)
+		mpool.Set(pool.Platform.IBMCloud)
+		if len(mpool.Zones) == 0 {
+			azs, err := ibmcloud.AvailabilityZones(ic.Platform.IBMCloud.Region, ic.Platform.IBMCloud.ServiceEndpoints)
+			if err != nil {
+				return fmt.Errorf("failed to fetch availability zones: %w", err)
+			}
+			mpool.Zones = azs
+		}
+
+		subnets := make(map[string]string)
+		if len(ic.Platform.IBMCloud.ControlPlaneSubnets) > 0 {
+			subnetMetas, err := installConfig.IBMCloud.ControlPlaneSubnets(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to collect subnets for machines: %w", err)
+			}
+			for _, subnet := range subnetMetas {
+				subnets[subnet.Zone] = subnet.Name
+			}
+		}
+		pool.Platform.IBMCloud = &mpool
+		imageName := ibmcloudic.VSIImageName(clusterID.InfraID)
+
+		c.FileList, err = ibmcloud.GenerateMachines(
+			ctx,
+			clusterID.InfraID,
+			ic,
+			subnets,
+			&pool,
+			imageName,
+			"master",
+		)
+		if err != nil {
+			return fmt.Errorf("failed to generate IBM Cloud VPC machine manifests: %w", err)
 		}
 	default:
 		// TODO: support other platforms
