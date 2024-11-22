@@ -99,6 +99,7 @@ require (
 	github.com/karamaru-alpha/copyloopvar v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/lasiar/canonicalheader v1.1.1 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/macabu/inamedparam v0.1.3 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
@@ -108,6 +109,7 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.3.3-0.20240416171357-98239ba02cb2 // indirect
 	github.com/openshift/assisted-image-service v0.0.0-20240607085136-02df2e56dde6 // indirect
+	github.com/openshift/assisted-service v1.0.10-0.20230830164851-6573b5d7021d // indirect
 	github.com/openshift/library-go v0.0.0-20241107160307-0064ad7bd060 // indirect
 	github.com/openshift/machine-api-operator v0.2.1-0.20240930121047-57b7917e6140 // indirect
 	github.com/openshift/machine-api-provider-gcp v0.0.1-0.20241021180644-0eca0846914a // indirect
@@ -121,6 +123,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd // indirect
+	github.com/thoas/go-funk v0.9.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/zclconf/go-cty v1.11.0 // indirect
