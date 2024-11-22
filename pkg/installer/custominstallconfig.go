@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -17,7 +16,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/targets"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
@@ -44,7 +42,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "bootstrapLoggingConfig=%v\n", bootstrapLoggingConfig)
+	_ = bootstrapLoggingConfig
 
 	httpSecret := make([]byte, 64)
 	_, err = rand.Read(httpSecret)
@@ -52,16 +50,27 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 
-	imageRegistryConfig := &bootkube.AROImageRegistryConfig{
+	imageRegistryConfig := struct {
+		AccountName   string
+		ContainerName string
+		HTTPSecret    string
+	}{
 		AccountName:   m.oc.Properties.ImageRegistryStorageAccountName,
 		ContainerName: "image-registry",
 		HTTPSecret:    hex.EncodeToString(httpSecret),
 	}
+	_ = imageRegistryConfig
 
-	dnsConfig := &bootkube.ARODNSConfig{
+	dnsConfig := struct {
+		APIIntIP                 string
+		IngressIP                string
+		GatewayDomains           []string
+		GatewayPrivateEndpointIP string
+	}{
 		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
+	_ = dnsConfig
 
 	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
 		dnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
@@ -87,7 +96,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	g.Set(installConfig, image, clusterID, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targets.Cluster {
