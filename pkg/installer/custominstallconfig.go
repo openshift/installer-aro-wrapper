@@ -22,7 +22,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -73,7 +72,11 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 
-	imageRegistryConfig := &bootkube.AROImageRegistryConfig{
+	imageRegistryConfig := struct {
+		AccountName   string
+		ContainerName string
+		HTTPSecret    string
+	}{
 		AccountName:   m.oc.Properties.ImageRegistryStorageAccountName,
 		ContainerName: "image-registry",
 		HTTPSecret:    hex.EncodeToString(httpSecret),
@@ -108,7 +111,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	g.Set(installConfig, image, clusterID, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targetAssets {
