@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gophercloud/utils/openstack/clientconfig"
+	"github.com/gophercloud/utils/v2/openstack/clientconfig"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -76,7 +76,9 @@ func (o *Openshift) Dependencies() []asset.Asset {
 }
 
 // Generate generates the respective operator config.yml files
-func (o *Openshift) Generate(dependencies asset.Parents) error {
+//
+//nolint:gocyclo
+func (o *Openshift) Generate(ctx context.Context, dependencies asset.Parents) error {
 	installConfig := &installconfig.InstallConfig{}
 	clusterID := &installconfig.ClusterID{}
 	kubeadminPassword := &password.KubeadminPassword{}
@@ -87,7 +89,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 	platform := installConfig.Config.Platform.Name()
 	switch platform {
 	case awstypes.Name:
-		ssn, err := installConfig.AWS.Session(context.TODO())
+		ssn, err := installConfig.AWS.Session(ctx)
 		if err != nil {
 			return err
 		}
@@ -128,7 +130,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 			},
 		}
 	case gcptypes.Name:
-		session, err := gcp.GetSession(context.TODO())
+		session, err := gcp.GetSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -265,7 +267,7 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 	case baremetaltypes.Name:
 		bmTemplateData := baremetalTemplateData{
 			Baremetal:                 installConfig.Config.Platform.BareMetal,
-			ProvisioningOSDownloadURL: string(*rhcosImage),
+			ProvisioningOSDownloadURL: rhcosImage.ControlPlane,
 		}
 		assetData["99_baremetal-provisioning-config.yaml"] = applyTemplateData(baremetalConfig.Files()[0].Data, bmTemplateData)
 	}

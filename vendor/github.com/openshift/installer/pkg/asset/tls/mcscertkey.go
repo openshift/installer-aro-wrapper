@@ -1,14 +1,13 @@
 package tls
 
 import (
+	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"net"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
-	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
@@ -30,16 +29,14 @@ func (a *MCSCertKey) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&RootCA{},
 		&installconfig.InstallConfig{},
-		&bootkube.ARODNSConfig{},
 	}
 }
 
 // Generate generates the cert/key pair based on its dependencies.
-func (a *MCSCertKey) Generate(dependencies asset.Parents) error {
+func (a *MCSCertKey) Generate(ctx context.Context, dependencies asset.Parents) error {
 	ca := &RootCA{}
 	installConfig := &installconfig.InstallConfig{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(ca, installConfig, aroDNSConfig)
+	dependencies.Get(ca, installConfig)
 
 	hostname := internalAPIAddress(installConfig.Config)
 
@@ -51,10 +48,6 @@ func (a *MCSCertKey) Generate(dependencies asset.Parents) error {
 
 	var vips []string
 	switch installConfig.Config.Platform.Name() {
-	case azuretypes.Name:
-		if installConfig.Config.Azure.IsARO() {
-			vips = []string{aroDNSConfig.APIIntIP}
-		}
 	case baremetaltypes.Name:
 		vips = installConfig.Config.BareMetal.APIVIPs
 	case nutanixtypes.Name:
@@ -74,7 +67,7 @@ func (a *MCSCertKey) Generate(dependencies asset.Parents) error {
 		cfg.DNSNames = append(cfg.DNSNames, vip)
 	}
 
-	return a.SignedCertKey.Generate(cfg, ca, "machine-config-server", DoNotAppendParent)
+	return a.SignedCertKey.Generate(ctx, cfg, ca, "machine-config-server", DoNotAppendParent)
 }
 
 // Name returns the human-friendly name of the asset.

@@ -10,32 +10,26 @@ import (
 	"github.com/vincent-petithory/dataurl"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/openshift/installer/pkg/asset/ignition"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/types"
-	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
 	ovirttypes "github.com/openshift/installer/pkg/types/ovirt"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
-	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
 
 const directory = "openshift"
 
 // pointerIgnitionConfig generates a config which references the remote config
 // served by the machine config server.
-func pointerIgnitionConfig(installConfig *types.InstallConfig, aroDNSConfig *bootkube.ARODNSConfig, rootCA []byte, role string) *igntypes.Config {
+func pointerIgnitionConfig(installConfig *types.InstallConfig, rootCA []byte, role string) *igntypes.Config {
 	var ignitionHost string
 	// Default platform independent ignitionHost
 	ignitionHost = fmt.Sprintf("api-int.%s:22623", installConfig.ClusterDomain())
 	// Update ignitionHost as necessary for platform
 	switch installConfig.Platform.Name() {
-	case azuretypes.Name:
-		if installConfig.Azure.IsARO() {
-			ignitionHost = net.JoinHostPort(aroDNSConfig.APIIntIP, "22623")
-		}
 	case baremetaltypes.Name:
 		// Baremetal needs to point directly at the VIP because we don't have a
 		// way to configure DNS before Ignition runs.

@@ -1,6 +1,7 @@
 package manifests
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -23,6 +24,7 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
 	"github.com/openshift/installer/pkg/asset/agent/agentconfig"
+	"github.com/openshift/installer/pkg/asset/agent/workflow"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
@@ -125,16 +127,25 @@ func (*AgentClusterInstall) Name() string {
 // the asset.
 func (*AgentClusterInstall) Dependencies() []asset.Asset {
 	return []asset.Asset{
+		&workflow.AgentWorkflow{},
 		&agent.OptionalInstallConfig{},
 		&agentconfig.AgentHosts{},
 	}
 }
 
 // Generate generates the AgentClusterInstall manifest.
-func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
+//
+//nolint:gocyclo
+func (a *AgentClusterInstall) Generate(_ context.Context, dependencies asset.Parents) error {
+	agentWorkflow := &workflow.AgentWorkflow{}
 	installConfig := &agent.OptionalInstallConfig{}
 	agentHosts := &agentconfig.AgentHosts{}
-	dependencies.Get(agentHosts, installConfig)
+	dependencies.Get(agentWorkflow, agentHosts, installConfig)
+
+	// This manifest is not required for AddNodes workflow
+	if agentWorkflow.Workflow == workflow.AgentWorkflowTypeAddNodes {
+		return nil
+	}
 
 	if installConfig.Config != nil {
 		var numberOfWorkers int = 0
@@ -165,9 +176,13 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 		}
 
 		agentClusterInstall := &hiveext.AgentClusterInstall{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AgentClusterInstall",
+				APIVersion: hiveext.GroupVersion.String(),
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      getAgentClusterInstallName(installConfig),
-				Namespace: getObjectMetaNamespace(installConfig),
+				Namespace: installConfig.ClusterNamespace(),
 			},
 			Spec: hiveext.AgentClusterInstallSpec{
 				ImageSetRef: &hivev1.ClusterImageSetReference{
@@ -209,7 +224,7 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 		}
 
 		if installConfig.Config.Proxy != nil {
-			agentClusterInstall.Spec.Proxy = (*hiveext.Proxy)(getProxy(installConfig))
+			agentClusterInstall.Spec.Proxy = (*hiveext.Proxy)(getProxy(installConfig.Config.Proxy))
 		}
 
 		if installConfig.Config.Platform.BareMetal != nil {
@@ -251,6 +266,8 @@ func (a *AgentClusterInstall) Generate(dependencies asset.Parents) error {
 
 			agentClusterInstall.Spec.APIVIPs = installConfig.Config.Platform.BareMetal.APIVIPs
 			agentClusterInstall.Spec.IngressVIPs = installConfig.Config.Platform.BareMetal.IngressVIPs
+			agentClusterInstall.Spec.APIVIP = installConfig.Config.Platform.BareMetal.APIVIPs[0]
+			agentClusterInstall.Spec.IngressVIP = installConfig.Config.Platform.BareMetal.IngressVIPs[0]
 		} else if installConfig.Config.Platform.VSphere != nil {
 			vspherePlatform := vsphere.Platform{}
 			if len(installConfig.Config.Platform.VSphere.APIVIPs) > 1 {
