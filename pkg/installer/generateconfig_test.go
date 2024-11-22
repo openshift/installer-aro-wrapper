@@ -17,6 +17,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 
+	_ "github.com/openshift/installer/data/data"
 	"github.com/openshift/installer/pkg/asset"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	aztypes "github.com/openshift/installer/pkg/types/azure"
