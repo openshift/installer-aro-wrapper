@@ -34,7 +34,10 @@ clean:
 	rm -rf aro
 	find -type d -name 'gomock_reflect_[0-9]*' -exec rm -rf {} \+ 2>/dev/null
 
-generate:
+generate_vfsdata:
+	hack/generate_vfsdata.sh
+
+generate: generate_vfsdata
 	go generate ./...
 
 image-aro:
