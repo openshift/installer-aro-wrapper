@@ -19,6 +19,7 @@ import (
 
 	_ "github.com/openshift/installer/data/data"
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/cluster"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	aztypes "github.com/openshift/installer/pkg/types/azure"
 
@@ -198,6 +199,9 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 			},
 		},
 	}
+
+	log.Info("Setting InstallDir")
+	cluster.InstallDir = os.Getenv("ARO_BASE_PATH")
 
 	log.Info("Making Installer")
 	i, err := MakeInstaller(ctx, log, assetsDirectory, &oc, &sub)
