@@ -117,14 +117,17 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 		if virtualNetwork != nil {
 			virtualNetworkID = *virtualNetwork.ID
 		}
-		lbip, err := getNextAvailableIP(ctx, installConfig)
-		if err != nil {
-			return nil, err
-		}
+		/*
+			lbip, err := getNextAvailableIP(ctx, installConfig)
+			if err != nil {
+				return nil, err
+			}
+		*/
 		apiServerLB.FrontendIPs = []capz.FrontendIP{{
 			Name: fmt.Sprintf("%s-internal-frontEnd", clusterID.InfraID),
 			FrontendIPClass: capz.FrontendIPClass{
-				PrivateIPAddress: lbip,
+				//PrivateIPAddress: lbip,
+				PrivateIPAddress: "10.0.0.100",
 			},
 		},
 		}
