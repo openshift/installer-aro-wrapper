@@ -30,16 +30,16 @@ require (
 	github.com/jewzaam/go-cosmosdb v0.0.0-20220315232836-282b67c5b234
 	github.com/jongio/azidext/go/azidext v0.5.0
 	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/onsi/gomega v1.34.0
+	github.com/onsi/gomega v1.34.1
 	github.com/openshift/api v0.0.0-20241001152557-e415140e5d5f
 	github.com/openshift/client-go v0.0.1
-	github.com/openshift/machine-config-operator v3.11.0+incompatible
+	github.com/openshift/installer v0.0.0-00010101000000-000000000000
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.28.0
-	golang.org/x/tools v0.22.0
+	golang.org/x/tools v0.24.0
 	gotest.tools/gotestsum v1.6.4
 	k8s.io/api v0.31.1
 	k8s.io/apimachinery v0.31.1
@@ -47,6 +47,8 @@ require (
 	k8s.io/code-generator v0.31.1
 	sigs.k8s.io/controller-tools v0.12.0
 )
+
+require github.com/vmware/govmomi v0.39.0 // indirect
 
 require (
 	cloud.google.com/go/auth v0.7.2 // indirect
@@ -130,13 +132,13 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	k8s.io/cli-runtime v0.31.1 // indirect
 	k8s.io/cluster-bootstrap v0.30.3 // indirect
-	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70 // indirect
+	k8s.io/gengo/v2 v2.0.0-20240310015720-9cff6334dab4 // indirect
 	k8s.io/kubectl v0.31.1 // indirect
 	libvirt.org/go/libvirtxml v1.10002.0 // indirect
 	sigs.k8s.io/cluster-api-provider-gcp v1.7.1-0.20240724153512-c3b8b533143c // indirect
 	sigs.k8s.io/cluster-api-provider-ibmcloud v0.7.0 // indirect
 	sigs.k8s.io/cluster-api-provider-openstack v0.10.3 // indirect
-	sigs.k8s.io/cluster-api-provider-vsphere v1.11.1
+	sigs.k8s.io/cluster-api-provider-vsphere v1.11.1 // indirect
 	sigs.k8s.io/kustomize/api v0.17.3 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.2 // indirect
 )
@@ -411,9 +413,9 @@ require (
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
-	golang.org/x/mod v0.19.0 // indirect
+	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
