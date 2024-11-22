@@ -278,7 +278,7 @@ func getNextAvailableIP(ctx context.Context, installConfig *installconfig.Instal
 			}
 		}
 	}
-	if *availableIP.AvailableIPAddresses == nil || len(*availableIP.AvailableIPAddresses) == 0 {
+	if availableIP.AvailableIPAddresses != nil && *availableIP.AvailableIPAddresses == nil || len(*availableIP.AvailableIPAddresses) == 0 {
 		return "", fmt.Errorf("failed to get an available IP in given virtual network for LB: %w", err)
 	}
 	for _, ip := range *availableIP.AvailableIPAddresses {
