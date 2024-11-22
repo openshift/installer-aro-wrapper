@@ -31,7 +31,6 @@ import (
 	azurevalidation "github.com/openshift/installer/pkg/types/azure/validation"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	baremetalvalidation "github.com/openshift/installer/pkg/types/baremetal/validation"
-	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/featuregates"
 	"github.com/openshift/installer/pkg/types/gcp"
 	gcpvalidation "github.com/openshift/installer/pkg/types/gcp/validation"
@@ -235,6 +234,7 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 			}
 		}
 
+		/* XXX: disable check for ARO for now
 		if !enabledCaps.Has(configv1.ClusterVersionCapabilityCloudControllerManager) {
 			if c.None == nil && c.BareMetal == nil && c.External == nil {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
@@ -250,6 +250,7 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 			allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
 				"the Ingress capability is required"))
 		}
+		*/
 	}
 
 	allErrs = append(allErrs, ValidateFeatureSet(c)...)
