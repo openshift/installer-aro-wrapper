@@ -587,7 +587,7 @@ replace (
 	github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd
 	github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 	github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-	github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20241011152036-ca0bf4e06c48
+	github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20241120043515-a9e0b5ff20c9
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d

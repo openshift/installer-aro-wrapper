@@ -22,7 +22,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
-	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 )
 
@@ -39,7 +38,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		InfraID: m.oc.Properties.InfraID,
 	}
 
-	bootstrapLoggingConfig, err := bootstraplogging.GetConfig(m.env, m.oc)
+	bootstrapLoggingConfig, err := m.getBootstrapLoggingConfig(m.env, m.oc)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +62,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
 		dnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
-		dnsConfig.GatewayDomains = append(m.env.GatewayDomains(), m.oc.Properties.ImageRegistryStorageAccountName+".blob."+m.env.Environment().StorageEndpointSuffix)
+		dnsConfig.GatewayDomains = m.getGatewayDomains(m.env, m.oc)
 	}
 
 	fileFetcher := &aroFileFetcher{directory: "/"}
