@@ -1263,6 +1263,7 @@ github.com/openshift/hive/apis/scheme
 # github.com/openshift/installer v1.4.16-0.20241127063847-b4e9cc1a48a1
 ## explicit; go 1.20
 github.com/openshift/installer/data
+github.com/openshift/installer/data/data
 github.com/openshift/installer/pkg/asset
 github.com/openshift/installer/pkg/asset/agent
 github.com/openshift/installer/pkg/asset/agent/agentconfig
