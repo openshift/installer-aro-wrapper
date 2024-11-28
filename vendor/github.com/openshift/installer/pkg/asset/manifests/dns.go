@@ -135,18 +135,16 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 			return err
 		}
 
-		if !installConfig.Config.Azure.IsARO() {
-			if installConfig.Config.Publish == types.ExternalPublishingStrategy ||
-				(installConfig.Config.Publish == types.MixedPublishingStrategy && installConfig.Config.OperatorPublishingStrategy.Ingress != "Internal") {
-				//currently, this guesses the azure resource IDs from known parameter.
-				config.Spec.PublicZone = &configv1.DNSZone{
-					ID: dnsConfig.GetDNSZoneID(installConfig.Config.Azure.BaseDomainResourceGroupName, installConfig.Config.BaseDomain),
-				}
+		if installConfig.Config.Publish == types.ExternalPublishingStrategy ||
+			(installConfig.Config.Publish == types.MixedPublishingStrategy && installConfig.Config.OperatorPublishingStrategy.Ingress != "Internal") {
+			//currently, this guesses the azure resource IDs from known parameter.
+			config.Spec.PublicZone = &configv1.DNSZone{
+				ID: dnsConfig.GetDNSZoneID(installConfig.Config.Azure.BaseDomainResourceGroupName, installConfig.Config.BaseDomain),
 			}
-			if installConfig.Azure.CloudName != azuretypes.StackCloud {
-				config.Spec.PrivateZone = &configv1.DNSZone{
-					ID: dnsConfig.GetPrivateDNSZoneID(installConfig.Config.Azure.ClusterResourceGroupName(clusterID.InfraID), installConfig.Config.ClusterDomain()),
-				}
+		}
+		if installConfig.Azure.CloudName != azuretypes.StackCloud {
+			config.Spec.PrivateZone = &configv1.DNSZone{
+				ID: dnsConfig.GetPrivateDNSZoneID(installConfig.Config.Azure.ClusterResourceGroupName(clusterID.InfraID), installConfig.Config.ClusterDomain()),
 			}
 		}
 	case gcptypes.Name:

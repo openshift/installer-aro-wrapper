@@ -25,9 +25,6 @@ import (
 	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
 	ovirtproviderapi "github.com/openshift/cluster-api-provider-ovirt/pkg/apis"
 	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
-
-	"github.com/openshift/installer/pkg/aro/aroign"
-	"github.com/openshift/installer/pkg/aro/dnsmasq"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -47,7 +44,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/machines/powervs"
 	"github.com/openshift/installer/pkg/asset/machines/vsphere"
 	"github.com/openshift/installer/pkg/asset/rhcos"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	rhcosutils "github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
 	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
@@ -264,7 +260,6 @@ func (w *Worker) Dependencies() []asset.Asset {
 		new(rhcos.Image),
 		new(rhcos.Release),
 		&machine.Worker{},
-		&bootkube.ARODNSConfig{},
 	}
 }
 
@@ -276,8 +271,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 	rhcosImage := new(rhcos.Image)
 	rhcosRelease := new(rhcos.Release)
 	wign := &machine.Worker{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(clusterID, installConfig, rhcosImage, rhcosRelease, wign, aroDNSConfig)
+	dependencies.Get(clusterID, installConfig, rhcosImage, rhcosRelease, wign)
 
 	workerUserDataSecretName := "worker-user-data"
 
@@ -338,17 +332,6 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			}
 			machineConfigs = append(machineConfigs, ignIPv6)
 		}
-		ignARODNS, err := dnsmasq.MachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.IngressIP, "worker", aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, true)
-		if err != nil {
-			return errors.Wrap(err, "failed to create ignition for ARO DNS for worker machines")
-		}
-		machineConfigs = append(machineConfigs, ignARODNS)
-
-		ignAROEtcHosts, err := aroign.EtcHostsMachineConfig(installConfig.Config.ClusterDomain(), aroDNSConfig.APIIntIP, aroDNSConfig.GatewayDomains, aroDNSConfig.GatewayPrivateEndpointIP, "worker")
-		if err != nil {
-			return errors.Wrap(err, "failed to create ignition for ARO etc hosts for worker machines")
-		}
-		machineConfigs = append(machineConfigs, ignAROEtcHosts)
 
 		switch ic.Platform.Name() {
 		case alibabacloudtypes.Name:

@@ -1,0 +1,16 @@
+[Unit]
+Description=Configure CRI-O to use the pause image
+After=release-image.service
+Requires=release-image.service
+{{if .IsOKD -}}
+Requires=release-image-pivot.service
+{{end -}}
+Before=crio.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/crio-configure.sh
+RemainAfterExit=true
+
+[Install]
+RequiredBy=crio.service

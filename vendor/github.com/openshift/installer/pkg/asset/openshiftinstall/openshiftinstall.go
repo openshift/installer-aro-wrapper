@@ -74,7 +74,12 @@ func (i *Config) Load(f asset.FileFetcher) (bool, error) {
 // OPENSHIFT_INSTALL_INVOKER environment variable and the given name for the
 // ConfigMap. This returns an error if marshalling to YAML fails.
 func CreateInstallConfigMap(name string) (string, error) {
-	invoker := "ARO"
+	var invoker string
+	if env := os.Getenv("OPENSHIFT_INSTALL_INVOKER"); env != "" {
+		invoker = env
+	} else {
+		invoker = "user"
+	}
 
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
