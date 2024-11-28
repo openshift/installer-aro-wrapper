@@ -37,7 +37,7 @@ for x in vendor/github.com/openshift/*; do
 		vendor/github.com/openshift/hive)
 			;;
 
-		# Replace the installer with our own fork below in this script.
+		# Don't use replace directive for the installer.
 		vendor/github.com/openshift/installer)
 			;;
 
@@ -88,7 +88,7 @@ for x in baremetal-operator baremetal-operator/apis baremetal-operator/pkg/hardw
   go mod edit -replace github.com/metal3-io/$x="$(go list -mod=mod -m github.com/openshift/$x@$RELEASE | sed -e 's/ /@/')"
 done
 
-go mod edit -replace github.com/openshift/installer="$(go list -mod=mod -m github.com/openshift/installer-aro@$RELEASE-azure | sed -e 's/ /@/')"
+go get github.com/openshift/installer@$RELEASE
 
 go get ./...
 
