@@ -108,6 +108,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		if err != nil {
 			return nil, err
 		}
+
 	}
 
 	// Handle MTU3900 feature flag
