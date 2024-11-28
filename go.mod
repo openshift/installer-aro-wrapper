@@ -20,10 +20,10 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-cmp v0.6.0
 	github.com/jongio/azidext/go/azidext v0.5.0
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/gomega v1.32.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/client-go v0.0.1
-	github.com/openshift/installer v0.16.1
+	github.com/openshift/installer v1.4.16-0.20241204062022-f6549e3f846a
 	github.com/openshift/machine-config-operator v3.11.0+incompatible
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
@@ -37,8 +37,14 @@ require (
 
 require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.13 // indirect
+	cloud.google.com/go/monitoring v1.18.0 // indirect
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/creack/pty v1.1.18 // indirect
+	github.com/hashicorp/terraform-exec v0.17.3 // indirect
+	github.com/hashicorp/terraform-json v0.14.0 // indirect
+	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
+	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd // indirect
+	github.com/zclconf/go-cty v1.11.0 // indirect
 )
 
 require (
@@ -144,7 +150,6 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/metal3-io/baremetal-operator/apis v0.4.0 // indirect
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.4.0 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
@@ -177,9 +182,9 @@ require (
 	github.com/ovirt/go-ovirt v0.0.0-20220427092237-114c47f2835c // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.17.0 // indirect
+	github.com/prometheus/client_golang v1.19.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.45.0 // indirect
+	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace // indirect
@@ -435,7 +440,6 @@ replace (
 	github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd
 	github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 	github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-	github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20241120043515-a9e0b5ff20c9
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d

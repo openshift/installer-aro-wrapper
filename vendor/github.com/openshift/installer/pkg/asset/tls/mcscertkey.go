@@ -7,8 +7,6 @@ import (
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
-	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
@@ -30,7 +28,6 @@ func (a *MCSCertKey) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&RootCA{},
 		&installconfig.InstallConfig{},
-		&bootkube.ARODNSConfig{},
 	}
 }
 
@@ -38,8 +35,7 @@ func (a *MCSCertKey) Dependencies() []asset.Asset {
 func (a *MCSCertKey) Generate(dependencies asset.Parents) error {
 	ca := &RootCA{}
 	installConfig := &installconfig.InstallConfig{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(ca, installConfig, aroDNSConfig)
+	dependencies.Get(ca, installConfig)
 
 	hostname := internalAPIAddress(installConfig.Config)
 
@@ -51,10 +47,6 @@ func (a *MCSCertKey) Generate(dependencies asset.Parents) error {
 
 	var vips []string
 	switch installConfig.Config.Platform.Name() {
-	case azuretypes.Name:
-		if installConfig.Config.Azure.IsARO() {
-			vips = []string{aroDNSConfig.APIIntIP}
-		}
 	case baremetaltypes.Name:
 		vips = installConfig.Config.BareMetal.APIVIPs
 	case nutanixtypes.Name:

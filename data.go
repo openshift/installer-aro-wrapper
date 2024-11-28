@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/openshift/installer/data"
-	//_ "github.com/openshift/installer/data/data"
+	_ "github.com/openshift/installer/data/data"
 )
 
 //go:embed all:vendor/github.com/openshift/installer/data
