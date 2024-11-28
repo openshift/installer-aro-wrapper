@@ -10,7 +10,6 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
 	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
@@ -34,7 +33,6 @@ func (a *WorkerIgnitionCustomizations) Dependencies() []asset.Asset {
 		&installconfig.InstallConfig{},
 		&tls.RootCA{},
 		&Worker{},
-		&bootkube.ARODNSConfig{},
 	}
 }
 
@@ -43,10 +41,9 @@ func (a *WorkerIgnitionCustomizations) Generate(dependencies asset.Parents) erro
 	installConfig := &installconfig.InstallConfig{}
 	rootCA := &tls.RootCA{}
 	worker := &Worker{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	dependencies.Get(installConfig, rootCA, worker, aroDNSConfig)
+	dependencies.Get(installConfig, rootCA, worker)
 
-	defaultPointerIgnition := pointerIgnitionConfig(installConfig.Config, aroDNSConfig, rootCA.Cert(), "worker")
+	defaultPointerIgnition := pointerIgnitionConfig(installConfig.Config, rootCA.Cert(), "worker")
 	savedPointerIgnition := worker.Config
 
 	// Create a machineconfig if the ignition has been modified

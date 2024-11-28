@@ -65,33 +65,26 @@ type cloudCredsSecretData struct {
 }
 
 type bootkubeTemplateData struct {
-	CVOCapabilities               *types.Capabilities
-	CVOClusterID                  string
-	EtcdCaBundle                  string
-	EtcdMetricCaCert              string
-	EtcdMetricSignerCert          string
-	EtcdMetricSignerClientCert    string
-	EtcdMetricSignerClientKey     string
-	EtcdMetricSignerKey           string
-	EtcdSignerCert                string
-	EtcdSignerClientCert          string
-	EtcdSignerClientKey           string
-	EtcdSignerKey                 string
-	IsFCOS                        bool
-	IsSCOS                        bool
-	IsOKD                         bool
-	McsTLSCert                    string
-	McsTLSKey                     string
-	PullSecretBase64              string
-	RootCaCert                    string
-	WorkerIgnConfig               string
-	AROWorkerRegistries           string
-	AROIngressIP                  string
-	AROIngressInternal            bool
-	AROImageRegistryHTTPSecret    string
-	AROImageRegistryAccountName   string
-	AROImageRegistryContainerName string
-	AROCloudName                  string
+	CVOCapabilities            *types.Capabilities
+	CVOClusterID               string
+	EtcdCaBundle               string
+	EtcdMetricCaCert           string
+	EtcdMetricSignerCert       string
+	EtcdMetricSignerClientCert string
+	EtcdMetricSignerClientKey  string
+	EtcdMetricSignerKey        string
+	EtcdSignerCert             string
+	EtcdSignerClientCert       string
+	EtcdSignerClientKey        string
+	EtcdSignerKey              string
+	IsFCOS                     bool
+	IsSCOS                     bool
+	IsOKD                      bool
+	McsTLSCert                 string
+	McsTLSKey                  string
+	PullSecretBase64           string
+	RootCaCert                 string
+	WorkerIgnConfig            string
 }
 
 type baremetalTemplateData struct {
