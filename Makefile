@@ -25,10 +25,10 @@ endif
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
 
 build-all:
-	go build -tags aro,containers_image_openpgp ./...
+	go build -tags altinfra,aro,containers_image_openpgp ./...
 
 aro: generate
-	go build -tags aro,containers_image_openpgp,codec.safe -ldflags "-X github.com/openshift/installer-aro-wrapper/pkg/util/version.GitCommit=$(VERSION)" ./cmd/aro
+	go build -tags altinfra,aro,containers_image_openpgp,codec.safe -ldflags "-X github.com/openshift/installer-aro-wrapper/pkg/util/version.GitCommit=$(VERSION)" ./cmd/aro
 
 clean:
 	rm -rf aro
@@ -66,7 +66,7 @@ validate-go-action:
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 
 unit-test-go:
-	go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --junitfile report.xml -- -tags=aro,containers_image_openpgp -coverprofile=cover.out ./...
+	go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --junitfile report.xml -- -tags=altinfra,aro,containers_image_openpgp -coverprofile=cover.out ./...
 
 lint-go:
 	hack/lint-go.sh
