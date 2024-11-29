@@ -4,6 +4,11 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
@@ -21,11 +26,39 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 )
+
+var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
+	"/etc/sysconfig/fluentbit",
+
+	"/etc/mdsd.d/mdsd.env",
+	"/etc/mdsd.d/secret/mdsdcert.pem",
+	"/etc/sysconfig/mdsd",
+
+	"/etc/dnsmasq.conf",
+	"/usr/local/bin/aro-dnsmasq-pre.sh",
+	"/etc/NetworkManager/dispatcher.d/99-dnsmasq-restart",
+	"/etc/NetworkManager/dispatcher.d/30-eth0-mtu-3900",
+
+	"/etc/hosts.d/aro.conf",
+	"/usr/local/bin/aro-etchosts-resolver.sh",
+
+	"/opt/openshift/manifests/aro-imageregistry.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-dns.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-etc-hosts-gateway-domains.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-dns.yaml",
+	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-etc-hosts-gateway-domains.yaml",
+
+	"/opt/openshift/manifests/aro-ingress-namespace.yaml",
+	"/opt/openshift/manifests/aro-ingress-service.yaml",
+	"/opt/openshift/manifests/aro-worker-registries.yaml"}
+
+var expectedBootstrapSystemdFileList = []string{"fluentbit.service", "mdsd.service", "aro-etchosts-resolver.service", "dnsmasq.service"}
 
 func fakeBootstrapLoggingConfig(_ env.Interface, _ *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
 	return &bootstraplogging.Config{
@@ -268,6 +301,56 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 
 	bootstrapAsset := graph.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 	bootstrapIgnition := string(bootstrapAsset.Files()[0].Data)
+	var temp map[string]any
+	err = json.Unmarshal(bootstrapAsset.Files()[0].Data, &temp)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Log(bootstrapIgnition)
+	verifyIgnitionFiles(t, temp, expectedBootstrapStorageFileList, expectedBootstrapSystemdFileList, bootstrapAsset.Files()[0].Filename)
+}
+
+func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
+	files := (temp["storage"].(map[string]any))["files"].([]any)
+	systemd := (temp["systemd"].(map[string]any))["units"].([]any)
+	storageFileList := map[string]string{}
+	for _, file := range files {
+		contents, found := file.(map[string]any)["contents"]
+		if !found {
+			contents = file.(map[string]any)["append"].([]any)[0]
+		}
+		storageFileList[file.(map[string]any)["path"].(string)] = contents.(map[string]any)["source"].(string)
+	}
+	systemdFileList := map[string]string{}
+	for _, file := range systemd {
+		contents, found := file.(map[string]any)["contents"]
+		if !found {
+			contents = file.(map[string]any)["dropins"].([]any)[0].(map[string]any)["contents"]
+		}
+		systemdFileList[file.(map[string]any)["name"].(string)] = contents.(string)
+	}
+	for _, file := range storageFiles {
+		content, isFound := storageFileList[file]
+		assert.True(t, isFound, fmt.Sprintf("file %v missing in storage file list in ignition file %s", file, fileName))
+		if isFound {
+			fileContents, err := base64.StdEncoding.DecodeString(strings.Split(content, "base64")[1][1:])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if file == "/opt/openshift/manifests/aro-imageregistry.yaml" {
+				content := string(fileContents)
+				re := regexp.MustCompile(`httpSecret: "[A-Za-z0-9]+"`)
+				fileContents = []byte(re.ReplaceAllString(content, `httpSecret: "test"`))
+			}
+			assert.EqualValues(t, expectedIgnitionFileContents[file], string(fileContents), fmt.Sprintf("missing storage data in file %v", file))
+		}
+	}
+	for _, file := range systemdFiles {
+		content, isFound := systemdFileList[file]
+		assert.True(t, isFound, fmt.Sprintf("file %v missing from systemd file list in ignition file %s", file, fileName))
+		if isFound {
+			assert.EqualValues(t, expectedIgnitionServiceContents[file], content, fmt.Sprintf("missing systemd data in file %v", file))
+		}
+	}
 }
