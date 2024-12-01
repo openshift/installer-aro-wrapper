@@ -26,6 +26,7 @@ import (
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 )
 
 const (
@@ -76,12 +77,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 	_ = imageRegistryConfig
 
-	dnsConfig := struct {
-		APIIntIP                 string
-		IngressIP                string
-		GatewayDomains           []string
-		GatewayPrivateEndpointIP string
-	}{
+	dnsConfig := dnsmasq.DNSConfig{
 		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
@@ -141,6 +137,17 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		}
 	}
 
+	bootstrapAsset := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, dnsConfig)
+	if err != nil {
+		return nil, err
+	}
+	data, err := ignition.Marshal(bootstrapAsset.Config)
+	if err != nil {
+		return nil, err
+	}
+	bootstrapAsset.File.Data = data
+	g.Set(bootstrapAsset)
 	return g, nil
 }
 
