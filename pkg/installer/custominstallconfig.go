@@ -28,6 +28,7 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/etchost"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/manifests"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/mdsd"
 )
 
@@ -149,6 +150,19 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 	err = etchost.AppendEtcHostFiles(bootstrapAsset, *installConfig, dnsConfig)
+	if err != nil {
+		return nil, err
+	}
+	config := manifests.ManifestsConfig{
+		AROWorkerRegistries: manifests.AroWorkerRegistries(installConfig.Config.ImageDigestSources),
+		HTTPSecret:          imageRegistryConfig.HTTPSecret,
+		AccountName:         imageRegistryConfig.AccountName,
+		ContainerName:       imageRegistryConfig.ContainerName,
+		CloudName:           installConfig.Config.Azure.CloudName.Name(),
+		AROIngressInternal:  installConfig.Config.Publish == "Internal",
+		AROIngressIP:        dnsConfig.IngressIP,
+	}
+	err = manifests.AppendManifestsFilesToBootstrap(bootstrapAsset, config)
 	if err != nil {
 		return nil, err
 	}
