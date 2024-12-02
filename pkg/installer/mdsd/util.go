@@ -2,6 +2,7 @@ package mdsd
 
 import (
 	"bytes"
+	"embed"
 	"html/template"
 	"io"
 	"path"
@@ -13,8 +14,8 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition"
 )
 
-func AddStorageFiles(config *igntypes.Config, base string, uri string, templateData interface{}) (err error) {
-	file, err := Assets.Open(uri)
+func AddStorageFiles(config *igntypes.Config, base string, uri string, templateData interface{}, assets embed.FS) (err error) {
+	file, err := assets.Open(uri)
 	if err != nil {
 		return err
 	}
@@ -26,7 +27,7 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	}
 
 	if info.IsDir() {
-		children, err := Assets.ReadDir(uri)
+		children, err := assets.ReadDir(uri)
 		if err != nil {
 			return err
 		}
@@ -36,7 +37,7 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 
 		for _, childInfo := range children {
 			name := childInfo.Name()
-			err = AddStorageFiles(config, path.Join(base, name), path.Join(uri, name), templateData)
+			err = AddStorageFiles(config, path.Join(base, name), path.Join(uri, name), templateData, assets)
 			if err != nil {
 				return err
 			}
@@ -77,26 +78,26 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	return nil
 }
 
-func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface{}, enabledServices []string) (err error) {
+func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface{}, enabledServices []string, assets embed.FS) (err error) {
 	enabled := make(map[string]struct{}, len(enabledServices))
 	for _, s := range enabledServices {
 		enabled[s] = struct{}{}
 	}
 
-	directory, err := Assets.Open(uri)
+	directory, err := assets.Open(uri)
 	if err != nil {
 		return err
 	}
 	defer directory.Close()
 
-	children, err := Assets.ReadDir(uri)
+	children, err := assets.ReadDir(uri)
 	if err != nil {
 		return err
 	}
 
 	for _, childInfo := range children {
 		dir := path.Join(uri, childInfo.Name())
-		file, err := Assets.Open(dir)
+		file, err := assets.Open(dir)
 		if err != nil {
 			return err
 		}
@@ -112,7 +113,7 @@ func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface
 				continue
 			}
 
-			children, err := Assets.ReadDir(uri)
+			children, err := assets.ReadDir(uri)
 			if err != nil {
 				return err
 			}
@@ -122,7 +123,7 @@ func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface
 
 			dropins := []igntypes.Dropin{}
 			for _, childInfo := range children {
-				file, err := Assets.Open(path.Join(dir, childInfo.Name()))
+				file, err := assets.Open(path.Join(dir, childInfo.Name()))
 				if err != nil {
 					return err
 				}

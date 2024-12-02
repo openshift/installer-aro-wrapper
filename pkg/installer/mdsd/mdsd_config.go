@@ -6,11 +6,11 @@ import (
 )
 
 func AppendMdsdFiles(bootstrap *bootstrap.Bootstrap, bootstrapLoggingConfig *bootstraplogging.Config) error {
-	err := AddStorageFiles(bootstrap.Config, "etc", "etc", bootstrapLoggingConfig)
+	err := AddStorageFiles(bootstrap.Config, "etc", "etc", bootstrapLoggingConfig, assets)
 	if err != nil {
 		return err
 	}
 
-	err = AddSystemdUnits(bootstrap.Config, "systemd/units", bootstrapLoggingConfig, []string{"fluentbit.service", "mdsd.service"})
+	err = AddSystemdUnits(bootstrap.Config, "systemd/units", bootstrapLoggingConfig, []string{"fluentbit.service", "mdsd.service"}, assets)
 	return err
 }
