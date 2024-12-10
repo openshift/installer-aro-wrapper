@@ -24,6 +24,8 @@ endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
 
+include .bingo/Variables.mk
+
 build-all:
 	go build -tags altinfra,aro,containers_image_openpgp ./...
 
@@ -34,7 +36,7 @@ clean:
 	rm -rf aro
 	find -type d -name 'gomock_reflect_[0-9]*' -exec rm -rf {} \+ 2>/dev/null
 
-generate:
+generate: install-tools
 	go generate ./...
 
 image-aro:
@@ -50,9 +52,9 @@ endif
 
 test-go: generate build-all validate-go lint-go unit-test-go
 
-validate-go:
+validate-go: $(GOIMPORTS)
 	gofmt -s -w cmd hack pkg test
-	go run ./vendor/golang.org/x/tools/cmd/goimports -w -local=github.com/openshift/installer-aro-wrapper cmd hack pkg test
+	$(GOIMPORTS) -w -local=github.com/openshift/installer-aro-wrapper cmd hack pkg test
 	go run ./hack/validate-imports cmd hack pkg test
 	go run ./hack/licenses
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
@@ -65,14 +67,22 @@ validate-go-action:
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 
-unit-test-go:
-	go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --junitfile report.xml -- -tags=altinfra,aro,containers_image_openpgp -coverprofile=cover.out ./...
+unit-test-go: $(GOTESTSUM)
+	$(GOTESTSUM) --format pkgname --junitfile report.xml -- -tags=altinfra,aro,containers_image_openpgp -coverprofile=cover.out ./...
 
-lint-go:
-	hack/lint-go.sh
+lint-go: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run --verbose
 
 vendor:
 	# See comments in the script for background on why we need it
 	hack/update-go-module-dependencies.sh
+
+.PHONY: install-tools
+install-tools: $(BINGO)
+	$(BINGO) get -l
+# Fixes https://github.com/uber-go/mock/issues/185 for MacOS users
+ifeq ($(shell uname -s),Darwin)
+	codesign -f -s - ${GOPATH}/bin/mockgen
+endif
 
 .PHONY: admin.kubeconfig aks.kubeconfig aro az clean client deploy dev-config.yaml discoverycache generate image-aro image-aro-multistage image-fluentbit image-proxy lint-go runlocal-rp proxy publish-image-aro publish-image-aro-multistage publish-image-fluentbit publish-image-proxy secrets secrets-update e2e.test tunnel test-e2e test-go test-python vendor build-all validate-go  unit-test-go coverage-go validate-fips
