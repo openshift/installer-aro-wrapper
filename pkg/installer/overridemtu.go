@@ -49,7 +49,7 @@ func newMTUMachineConfigIgnitionFile(role string) (types.File, error) {
 
 	mtuMachineConfig := &mcfgv1.MachineConfig{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: mcv1.SchemeGroupVersion.String(),
+			APIVersion: mcfgv1.SchemeGroupVersion.String(),
 			Kind:       "MachineConfig",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -58,12 +58,12 @@ func newMTUMachineConfigIgnitionFile(role string) (types.File, error) {
 				"machineconfiguration.openshift.io/role": role,
 			},
 		},
-		Spec: mcv1.MachineConfigSpec{
+		Spec: mcfgv1.MachineConfigSpec{
 			Config: rawExt,
 		},
 	}
 
-	configs := []*mcv1.MachineConfig{mtuMachineConfig}
+	configs := []*mcfgv1.MachineConfig{mtuMachineConfig}
 	manifests, err := machineconfig.Manifests(configs, role, "/opt/openshift/openshift")
 	if err != nil {
 		return types.File{}, err
