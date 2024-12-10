@@ -84,14 +84,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
 
-	dnsConfig := &bootkube.ARODNSConfig{
-		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
-		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
-	}
-
 	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
-		dnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
-		dnsConfig.GatewayDomains = m.getGatewayDomains(m.env, m.oc)
 		localdnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
 		localdnsConfig.GatewayDomains = m.getGatewayDomains(m.env, m.oc)
 	}
@@ -115,7 +108,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 
 	g := graph.Graph{}
-	g.Set(installConfig, image, clusterID, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
+	g.Set(installConfig, image, clusterID, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
 	for _, a := range targetAssets {
@@ -160,7 +153,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		ContainerName:       imageRegistryConfig.ContainerName,
 		CloudName:           installConfig.Config.Azure.CloudName.Name(),
 		AROIngressInternal:  installConfig.Config.Publish == "Internal",
-		AROIngressIP:        dnsConfig.IngressIP,
+		AROIngressIP:        localdnsConfig.IngressIP,
 	}
 	err = manifests.AppendManifestsFilesToBootstrap(bootstrapAsset, config)
 	if err != nil {
