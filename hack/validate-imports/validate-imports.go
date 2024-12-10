@@ -30,6 +30,8 @@ func validateUnderscoreImport(path string) error {
 	switch path {
 	case "net/http/pprof",
 		"github.com/openshift/installer-aro-wrapper/pkg/util/scheme",
+		"github.com/openshift/installer-aro-wrapper",
+		"github.com/openshift/installer/data/data",
 		"embed":
 		return nil
 	}
