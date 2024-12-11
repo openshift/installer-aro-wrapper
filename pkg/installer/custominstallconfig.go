@@ -11,12 +11,16 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/cluster"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
+	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	"github.com/openshift/installer/pkg/asset/kubeconfig"
+	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
+	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
@@ -28,6 +32,18 @@ import (
 
 const (
 	cvoOverridesFilename = "manifests/cvo-overrides.yaml"
+)
+
+var (
+	targetAssets = []asset.WritableAsset{
+		&cluster.Metadata{},
+		&machine.MasterIgnitionCustomizations{},
+		&machine.WorkerIgnitionCustomizations{},
+		&cluster.TerraformVariables{},
+		&kubeconfig.AdminClient{},
+		&password.KubeadminPassword{},
+		&tls.JournalCertKey{},
+	}
 )
 
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
@@ -95,7 +111,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	g.Set(installConfig, image, clusterID, bootstrapLoggingConfig, dnsConfig, imageRegistryConfig, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
-	for _, a := range targets.Cluster {
+	for _, a := range targetAssets {
 		err = g.Resolve(a)
 		if err != nil {
 			return nil, err
