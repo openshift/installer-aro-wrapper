@@ -300,14 +300,11 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	}
 
 	bootstrapAsset := graph.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
-	bootstrapIgnition := string(bootstrapAsset.Files()[0].Data)
 	var temp map[string]any
 	err = json.Unmarshal(bootstrapAsset.Files()[0].Data, &temp)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	t.Log(bootstrapIgnition)
 	verifyIgnitionFiles(t, temp, expectedBootstrapStorageFileList, expectedBootstrapSystemdFileList, bootstrapAsset.Files()[0].Filename)
 }
 
