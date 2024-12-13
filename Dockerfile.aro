@@ -9,6 +9,12 @@ USER root
 RUN yum update -y
 COPY . ${GOPATH}/src/github.com/openshift/installer-aro-wrapper/
 RUN git config --system --add safe.directory '*'
+RUN source .bingo/variables.env \
+    # install bingo itself
+    && make -f .bingo/Variables.mk ${BINGO} \
+    # and all the tools it manages
+    && ${BINGO} get -l
+ENV PATH=$PATH:${GOPATH}/bin/
 RUN make aro
 
 FROM ${REGISTRY}/ubi8/ubi-minimal
