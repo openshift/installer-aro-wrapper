@@ -27,7 +27,9 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
@@ -350,4 +352,14 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 			assert.EqualValues(t, expectedIgnitionServiceContents[file], content, fmt.Sprintf("missing systemd data in file %v", file))
 		}
 	}
+	installConfigMap, err := base64.StdEncoding.DecodeString(strings.Split(storageFileList["/opt/openshift/openshift/openshift-install-manifests.yaml"], ",")[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config corev1.ConfigMap
+	err = yaml.Unmarshal(installConfigMap, &config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.EqualValues(t, "ARO", config.Data["invoker"])
 }
