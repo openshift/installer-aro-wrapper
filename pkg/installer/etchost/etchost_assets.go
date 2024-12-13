@@ -1,9 +1,11 @@
 package etchost
 
 import (
-	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+
+	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 )
 
 func AppendEtcHostFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig installconfig.InstallConfig, dnsConfig dnsmasq.DNSConfig) error {
@@ -22,11 +24,11 @@ func AppendEtcHostFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig insta
 		return err
 	}
 
-	err = dnsmasq.AppendMachineConfigToBootstrap(etcHostMasterMachineConfig, bootstrapAsset, "/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-etc-hosts-gateway-domains.yaml")
+	err = bootstrapfiles.AppendMachineConfigToBootstrap(etcHostMasterMachineConfig, bootstrapAsset, "/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-etc-hosts-gateway-domains.yaml")
 	if err != nil {
 		return err
 	}
-	err = dnsmasq.AppendMachineConfigToBootstrap(etcHostWorkerMachineConfig, bootstrapAsset, "/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-etc-hosts-gateway-domains.yaml")
+	err = bootstrapfiles.AppendMachineConfigToBootstrap(etcHostWorkerMachineConfig, bootstrapAsset, "/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-etc-hosts-gateway-domains.yaml")
 	if err != nil {
 		return err
 	}
