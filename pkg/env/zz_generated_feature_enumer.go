@@ -4,11 +4,14 @@ package env
 
 import (
 	"fmt"
+	"strings"
 )
 
 const _FeatureName = "FeatureDisableDenyAssignmentsFeatureDisableSignedCertificatesFeatureEnableDevelopmentAuthorizerFeatureRequireD2sV3WorkersFeatureDisableReadinessDelay"
 
 var _FeatureIndex = [...]uint8{0, 29, 61, 95, 121, 149}
+
+const _FeatureLowerName = "featuredisabledenyassignmentsfeaturedisablesignedcertificatesfeatureenabledevelopmentauthorizerfeaturerequired2sv3workersfeaturedisablereadinessdelay"
 
 func (i Feature) String() string {
 	if i < 0 || i >= Feature(len(_FeatureIndex)-1) {
@@ -17,14 +20,38 @@ func (i Feature) String() string {
 	return _FeatureName[_FeatureIndex[i]:_FeatureIndex[i+1]]
 }
 
-var _FeatureValues = []Feature{0, 1, 2, 3, 4}
+// An "invalid array index" compiler error signifies that the constant values have changed.
+// Re-run the stringer command to generate them again.
+func _FeatureNoOp() {
+	var x [1]struct{}
+	_ = x[FeatureDisableDenyAssignments-(0)]
+	_ = x[FeatureDisableSignedCertificates-(1)]
+	_ = x[FeatureEnableDevelopmentAuthorizer-(2)]
+	_ = x[FeatureRequireD2sV3Workers-(3)]
+	_ = x[FeatureDisableReadinessDelay-(4)]
+}
+
+var _FeatureValues = []Feature{FeatureDisableDenyAssignments, FeatureDisableSignedCertificates, FeatureEnableDevelopmentAuthorizer, FeatureRequireD2sV3Workers, FeatureDisableReadinessDelay}
 
 var _FeatureNameToValueMap = map[string]Feature{
-	_FeatureName[0:29]:    0,
-	_FeatureName[29:61]:   1,
-	_FeatureName[61:95]:   2,
-	_FeatureName[95:121]:  3,
-	_FeatureName[121:149]: 4,
+	_FeatureName[0:29]:         FeatureDisableDenyAssignments,
+	_FeatureLowerName[0:29]:    FeatureDisableDenyAssignments,
+	_FeatureName[29:61]:        FeatureDisableSignedCertificates,
+	_FeatureLowerName[29:61]:   FeatureDisableSignedCertificates,
+	_FeatureName[61:95]:        FeatureEnableDevelopmentAuthorizer,
+	_FeatureLowerName[61:95]:   FeatureEnableDevelopmentAuthorizer,
+	_FeatureName[95:121]:       FeatureRequireD2sV3Workers,
+	_FeatureLowerName[95:121]:  FeatureRequireD2sV3Workers,
+	_FeatureName[121:149]:      FeatureDisableReadinessDelay,
+	_FeatureLowerName[121:149]: FeatureDisableReadinessDelay,
+}
+
+var _FeatureNames = []string{
+	_FeatureName[0:29],
+	_FeatureName[29:61],
+	_FeatureName[61:95],
+	_FeatureName[95:121],
+	_FeatureName[121:149],
 }
 
 // FeatureString retrieves an enum value from the enum constants string name.
@@ -33,12 +60,23 @@ func FeatureString(s string) (Feature, error) {
 	if val, ok := _FeatureNameToValueMap[s]; ok {
 		return val, nil
 	}
+
+	if val, ok := _FeatureNameToValueMap[strings.ToLower(s)]; ok {
+		return val, nil
+	}
 	return 0, fmt.Errorf("%s does not belong to Feature values", s)
 }
 
 // FeatureValues returns all values of the enum
 func FeatureValues() []Feature {
 	return _FeatureValues
+}
+
+// FeatureStrings returns a slice of all String values of the enum
+func FeatureStrings() []string {
+	strs := make([]string, len(_FeatureNames))
+	copy(strs, _FeatureNames)
+	return strs
 }
 
 // IsAFeature returns "true" if the value is listed in the enum definition. "false" otherwise
