@@ -14,10 +14,12 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/go-autorest/autorest/to"
+	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/golang/mock/gomock"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
+	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	"github.com/openshift/installer/pkg/asset/installconfig/azure/mock"
@@ -62,6 +64,9 @@ var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
 
 var expectedBootstrapSystemdFileList = []string{"fluentbit.service", "mdsd.service", "aro-etchosts-resolver.service", "dnsmasq.service"}
 
+var apiIntIP = "203.0.113.1"
+var expectedMasterIgnitionSource = "https://" + apiIntIP + ":22623/config/master"
+
 func fakeBootstrapLoggingConfig(_ env.Interface, _ *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
 	return &bootstraplogging.Config{
 		Certificate:       "# This is not a real certificate",
@@ -95,7 +100,7 @@ func fakeCluster() *api.OpenShiftCluster {
 			InfraID:                         "test-infra-id",
 			ImageRegistryStorageAccountName: "test-image-registry-storage-acct",
 			APIServerProfile: api.APIServerProfile{
-				IntIP: "203.0.113.1",
+				IntIP: apiIntIP,
 			},
 			IngressProfiles: []api.IngressProfile{
 				{
@@ -308,6 +313,9 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 		t.Fatal(err)
 	}
 	verifyIgnitionFiles(t, temp, expectedBootstrapStorageFileList, expectedBootstrapSystemdFileList, bootstrapAsset.Files()[0].Filename)
+
+	masterAsset := graph.Get(&machine.Master{}).(*machine.Master)
+	verifyMasterPointerIgnition(t, masterAsset.File.Data)
 }
 
 func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
@@ -362,4 +370,15 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 		t.Fatal(err)
 	}
 	assert.EqualValues(t, "ARO", config.Data["invoker"])
+}
+
+func verifyMasterPointerIgnition(t *testing.T, ignData []byte) {
+	ignContents := &igntypes.Config{}
+	err := json.Unmarshal(ignData, &ignContents)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actualSource := *ignContents.Ignition.Config.Merge[0].Source
+	assert.EqualValues(t, expectedMasterIgnitionSource, actualSource, fmt.Sprintf("expected master pointer ignition to be %s but found %s", expectedMasterIgnitionSource, actualSource))
 }
