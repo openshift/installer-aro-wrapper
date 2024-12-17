@@ -49,6 +49,7 @@ var (
 		&kubeconfig.AdminClient{},
 		&password.KubeadminPassword{},
 		&tls.JournalCertKey{},
+		&tls.RootCA{},
 	}
 )
 
@@ -142,10 +143,6 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 			return nil, err
 		}
 	}
-	// Update Master Pointer Ignition with ARO API-Int IP
-	if err = replacePointerIgnition(aroManifests, g, &localdnsConfig); err != nil {
-		return nil, err
-	}
 
 	bootstrapAsset := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 	err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, localdnsConfig)
@@ -171,6 +168,14 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	}
 	err = etchost.AppendEtcHostFiles(bootstrapAsset, *installConfig, localdnsConfig)
 	if err != nil {
+		return nil, err
+	}
+	// Update Master Pointer Ignition with ARO API-Int IP
+	if err = replacePointerIgnition(aroManifests, g, &localdnsConfig); err != nil {
+		return nil, err
+	}
+	// Update machine-confog-server cert to allow connecting with API-Int LB IP
+	if err = updateMCSCertKey(g, installConfig, &localdnsConfig); err != nil {
 		return nil, err
 	}
 	data, err := ignition.Marshal(bootstrapAsset.Config)

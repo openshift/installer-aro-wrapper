@@ -4,6 +4,7 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	"github.com/openshift/installer/pkg/asset/installconfig/azure/mock"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
+	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
@@ -316,6 +318,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 
 	masterAsset := graph.Get(&machine.Master{}).(*machine.Master)
 	verifyMasterPointerIgnition(t, masterAsset.File.Data)
+	verifyUpdateMCSCertKey(t, bootstrapAsset)
 }
 
 func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
@@ -381,4 +384,62 @@ func verifyMasterPointerIgnition(t *testing.T, ignData []byte) {
 
 	actualSource := *ignContents.Ignition.Config.Merge[0].Source
 	assert.EqualValues(t, expectedMasterIgnitionSource, actualSource, fmt.Sprintf("expected master pointer ignition to be %s but found %s", expectedMasterIgnitionSource, actualSource))
+}
+
+func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {
+	config := &igntypes.Config{}
+	config = bootstrap.Config
+
+	cert := &x509.Certificate{}
+	var rawCert, rawKey []byte
+
+	for i, fileData := range config.Storage.Files {
+		if fileData.Path == mcsCertFile {
+			contents := strings.Split(*config.Storage.Files[i].Contents.Source, ",")
+			decodedCert, err := base64.StdEncoding.DecodeString(contents[1])
+			if err != nil {
+				t.Fatal(err)
+			}
+			rawCert = decodedCert
+			assert.NotNil(t, rawCert)
+			cert, err = tls.PemToCertificate(decodedCert)
+			if err != nil {
+				t.Fatal(err)
+			}
+			certPool := x509.NewCertPool()
+			if !certPool.AppendCertsFromPEM(rawCert) {
+				t.Error("failed to append certs from PEM")
+			}
+			opts := x509.VerifyOptions{
+				Roots:   certPool,
+				DNSName: apiIntIP,
+			}
+			_, err = cert.Verify(opts)
+			assert.NoError(t, err, "verifyUpdateMCSCertKey")
+		}
+		if fileData.Path == mcsKeyFile {
+			contents := strings.Split(*config.Storage.Files[i].Contents.Source, ",")
+			decodedKey, err := base64.StdEncoding.DecodeString(contents[1])
+			if err != nil {
+				t.Fatal(err)
+			}
+			rawKey = decodedKey
+			assert.NotNil(t, rawKey)
+		}
+	}
+	for i, fileData := range config.Storage.Files {
+		if fileData.Path == mcsCertKeyFilepath {
+			contents := strings.Split(*config.Storage.Files[i].Contents.Source, ",")
+			rawDecodedText, err := base64.StdEncoding.DecodeString(contents[1])
+			if err != nil {
+				t.Fatal(err)
+			}
+			mcsSecret := &corev1.Secret{}
+			if err := yaml.Unmarshal(rawDecodedText, mcsSecret); err != nil {
+				t.Fatal(err)
+			}
+			assert.EqualValues(t, rawCert, mcsSecret.Data[corev1.TLSCertKey], fmt.Sprintf("mismatched raw certs in %s and %s", mcsCertKeyFilepath, mcsCertFile))
+			assert.EqualValues(t, rawKey, mcsSecret.Data[corev1.TLSPrivateKeyKey], fmt.Sprintf("mismatched raw private key in %s and %s", mcsCertKeyFilepath, mcsKeyFile))
+		}
+	}
 }
