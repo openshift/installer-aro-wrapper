@@ -1,5 +1,8 @@
 package installer
 
+// Copyright (c) Microsoft Corporation.
+// Licensed under the Apache License 2.0.
+
 var expectedIgnitionFileContents = map[string]string{
 	"/etc/NetworkManager/dispatcher.d/99-dnsmasq-restart": `
 #!/bin/sh
