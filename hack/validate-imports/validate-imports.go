@@ -228,6 +228,10 @@ func (validator importValidator) validateImport(imp *ast.ImportSpec, isUnitTest 
 		return fmt.Errorf("%s is imported; use github.com/gofrs/uuid", packageName)
 	}
 
+	if strings.HasPrefix(packageName, "github.com/openshift/machine-config-operator") {
+		return fmt.Errorf("%s is imported; use github.com/openshift/api/machineconfiguration", packageName)
+	}
+
 	if !isUnitTest && strings.HasPrefix(packageName, "github.com/Azure/azure-sdk-for-go/profiles") {
 		return fmt.Errorf("%s is imported; use github.com/Azure/azure-sdk-for-go/services/*", packageName)
 	}
