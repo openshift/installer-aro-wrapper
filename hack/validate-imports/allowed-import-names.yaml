@@ -58,14 +58,8 @@ allowedImportNames:
     - maoclient
   github.com/openshift/machine-api-operator/pkg/generated/clientset/versioned/fake:
     - maofake
-  github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1:
-    - mcv1
-  github.com/openshift/machine-config-operator/pkg/generated/clientset/versioned:
-    - mcoclient
-  github.com/openshift/machine-config-operator/pkg/generated/clientset/versioned/fake:
-    - mcofake
-  github.com/openshift/machine-config-operator/pkg/generated/clientset/versioned/typed/machineconfiguration.openshift.io/v1:
-    - mcoclientv1
+  github.com/openshift/api/machineconfiguration/v1:
+    - mcfgv1
   github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1:
     - monitoringv1
   golang.org/x/crypto/ssh:
