@@ -12,6 +12,9 @@ import (
 	ignutil "github.com/coreos/ignition/v2/config/util"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
+	mcv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func AddStorageFiles(config *igntypes.Config, base string, uri string, templateData interface{}, assets embed.FS) (err error) {
@@ -76,6 +79,50 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	// Replace files that already exist in the slice with ones added later, otherwise append them
 	config.Storage.Files = replaceOrAppend(config.Storage.Files, ign)
 	return nil
+}
+
+func AppendMachineConfigToBootstrap(machineConfig *mcv1.MachineConfig, bootstrapAsset *bootstrap.Bootstrap, path string) error {
+	data, err := yaml.Marshal(machineConfig)
+	if err != nil {
+		return err
+	}
+	config := ignition.FileFromBytes(path, "root", 0644, data)
+	bootstrapAsset.Config.Storage.Files = ReplaceOrAppend(bootstrapAsset.Config.Storage.Files, []igntypes.File{config})
+	return nil
+}
+
+func ReplaceOrAppend(bootstrapFiles []igntypes.File, file []igntypes.File) []igntypes.File {
+	for _, iff := range file {
+		flag := false
+		for i, f := range bootstrapFiles {
+			if f.Node.Path == iff.Node.Path {
+				bootstrapFiles[i] = iff
+				flag = true
+				break
+			}
+		}
+		if !flag {
+			bootstrapFiles = append(bootstrapFiles, iff)
+		}
+	}
+	return bootstrapFiles
+}
+
+func ReplaceOrAppendSystemd(bootstrapFiles []igntypes.Unit, file []igntypes.Unit) []igntypes.Unit {
+	for _, iff := range file {
+		flag := false
+		for i, f := range bootstrapFiles {
+			if f.Name == iff.Name {
+				bootstrapFiles[i] = iff
+				flag = true
+				break
+			}
+		}
+		if !flag {
+			bootstrapFiles = append(bootstrapFiles, iff)
+		}
+	}
+	return bootstrapFiles
 }
 
 func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface{}, enabledServices []string, assets embed.FS) (err error) {
