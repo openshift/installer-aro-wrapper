@@ -14,9 +14,9 @@ import (
 
 	ignutil "github.com/coreos/ignition/v2/config/util"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
-	mcv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -84,7 +84,7 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	return nil
 }
 
-func AppendMachineConfigToBootstrap(machineConfig *mcv1.MachineConfig, bootstrapAsset *bootstrap.Bootstrap, path string) error {
+func AppendMachineConfigToBootstrap(machineConfig *mcfgv1.MachineConfig, bootstrapAsset *bootstrap.Bootstrap, path string) error {
 	data, err := yaml.Marshal(machineConfig)
 	if err != nil {
 		return err
