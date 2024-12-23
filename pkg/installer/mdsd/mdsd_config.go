@@ -1,5 +1,8 @@
 package mdsd
 
+// Copyright (c) Microsoft Corporation.
+// Licensed under the Apache License 2.0.
+
 import (
 	"github.com/openshift/installer/pkg/asset/bootstraplogging"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"

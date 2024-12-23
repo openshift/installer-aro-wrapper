@@ -1,5 +1,8 @@
 package installer
 
+// Copyright (c) Microsoft Corporation.
+// Licensed under the Apache License 2.0.
+
 var expectedIgnitionServiceContents = map[string]string{
 	"aro-etchosts-resolver.service": `[Unit]
 Description=One shot service that appends static domains to etchosts
