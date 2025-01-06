@@ -14,8 +14,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
-	"runtime"
 	"time"
 )
 
@@ -117,21 +115,9 @@ func NewDialer(isLocalDevelopmentMode bool) (Dialer, error) {
 		return &prod{}, nil
 	}
 
-	var basepath string
 	var err error
 	d := &dev{}
-
-	if os.Getenv("OPENSHIFT_INSTALL_INVOKER") == "hive" {
-		basepath = "/.azure/"
-	} else {
-		// This assumes we are running from an ARO-RP checkout in development
-		_, curmod, _, _ := runtime.Caller(0)
-		basepath, err = filepath.Abs(filepath.Join(filepath.Dir(curmod), "../.."))
-		if err != nil {
-			return nil, err
-		}
-		basepath = filepath.Join(basepath, "secrets")
-	}
+	basepath := "/.azure/"
 
 	b, err := os.ReadFile(path.Join(basepath, "proxy.crt"))
 	if err != nil {
