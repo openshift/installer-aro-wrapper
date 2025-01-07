@@ -3,7 +3,7 @@ module github.com/openshift/installer-aro-wrapper
 go 1.21
 
 require (
-	github.com/Azure/azure-sdk-for-go v63.1.0+incompatible
+	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.12.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
@@ -12,6 +12,7 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/codahale/etm v0.0.0-20141003032925-c00c9e6fb4c9
+	github.com/coreos/go-semver v0.3.1
 	github.com/coreos/ignition/v2 v2.16.2
 	github.com/coreos/stream-metadata-go v0.4.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
@@ -29,29 +30,22 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
+	github.com/stretchr/testify v1.9.0
+	github.com/vincent-petithory/dataurl v1.0.0
 	golang.org/x/crypto v0.24.0
-	k8s.io/api v0.28.4
-	k8s.io/apimachinery v0.28.4
-	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/api v0.28.3
+	k8s.io/apimachinery v0.28.3
+	k8s.io/client-go v0.28.3
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.13 // indirect
-	cloud.google.com/go/monitoring v1.18.0 // indirect
-	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
-	github.com/creack/pty v1.1.18 // indirect
-	github.com/hashicorp/terraform-exec v0.17.3 // indirect
-	github.com/hashicorp/terraform-json v0.14.0 // indirect
-	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
-	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd // indirect
-	github.com/zclconf/go-cty v1.11.0 // indirect
-)
-
-require (
 	cloud.google.com/go v0.112.1 // indirect
 	cloud.google.com/go/compute v1.24.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.7 // indirect
+	cloud.google.com/go/monitoring v1.18.0 // indirect
 	cloud.google.com/go/storage v1.40.0 // indirect
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.9.0 // indirect
@@ -61,6 +55,7 @@ require (
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.23 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.6 // indirect
+	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
@@ -87,9 +82,9 @@ require (
 	github.com/clarketm/json v1.17.1 // indirect
 	github.com/containers/image/v5 v5.29.3 // indirect
 	github.com/containers/storage v1.53.0 // indirect
-	github.com/coreos/go-semver v0.3.1
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/coreos/vcontext v0.0.0-20231102161604-685dc7299dc5 // indirect
+	github.com/creack/pty v1.1.18 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -135,6 +130,8 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
+	github.com/hashicorp/terraform-exec v0.17.3 // indirect
+	github.com/hashicorp/terraform-json v0.14.0 // indirect
 	github.com/imdario/mergo v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -162,8 +159,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	// This module had a breaking change. Didn't upgrade it. (4.14)
-	// https://github.com/nutanix-cloud-native/prism-go-client/pull/30
 	github.com/nutanix-cloud-native/prism-go-client v0.2.1-0.20220804130801-c8a253627c64 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -187,14 +182,15 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
+	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd // indirect
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.46 // indirect
-	github.com/stretchr/testify v1.9.0
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/thedevsaddam/retry v0.0.0-20200324223450-9769a859cc6d // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
-	github.com/vincent-petithory/dataurl v1.0.0
 	github.com/vmware/govmomi v0.33.1 // indirect
+	github.com/zclconf/go-cty v1.11.0 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
@@ -228,23 +224,27 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/gorm v1.25.5 // indirect
-	k8s.io/apiextensions-apiserver v0.28.4 // indirect
-	k8s.io/cloud-provider-vsphere v1.28.0 // indirect
+	k8s.io/apiextensions-apiserver v0.28.3 // indirect
+	k8s.io/cloud-provider-vsphere v1.28.3 // indirect
 	k8s.io/component-base v0.28.3 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231113174909-778a5567bc1e // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/cluster-api v1.5.3 // indirect
-	sigs.k8s.io/cluster-api-provider-aws/v2 v2.0.0-00010101000000-000000000000 // indirect
-	sigs.k8s.io/cluster-api-provider-azure v0.0.0-00010101000000-000000000000 // indirect
+	sigs.k8s.io/cluster-api-provider-aws/v2 v2.0.0-20231024062453-0bf78b04b305 // indirect
+	sigs.k8s.io/cluster-api-provider-azure v1.11.1-0.20231026140308-a3f4914170d9 // indirect
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0
 )
 
+exclude k8s.io/client-go v12.0.0+incompatible
+
+// Dependency pins
 replace (
+	github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
+	github.com/imdario/mergo => dario.cat/mergo v0.3.16
 	k8s.io/api => k8s.io/api v0.28.3
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.28.3
@@ -254,10 +254,11 @@ replace (
 	sigs.k8s.io/controller-tools => sigs.k8s.io/controller-tools v0.5.0
 )
 
-// Installer dependencies.
+// Installer forks/tags
 replace (
-	github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
-		github.com/imdario/mergo => dario.cat/mergo v0.3.16
+	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20231128154154-6736c9b9c6c8
+	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20231128154154-6736c9b9c6c8
+	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20231128154154-6736c9b9c6c8
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20240729140855-0a58f8c30a8c
 	github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20241011223353-213c57977cc8
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20240109161853-2425b4b6d3b3
@@ -273,9 +274,6 @@ replace (
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d
 	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20240927143910-dc45d313d876
 	k8s.io/cloud-provider-vsphere => github.com/openshift/cloud-provider-vsphere v1.19.1-0.20211222185833-7829863d0558
-	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.5.3
-	sigs.k8s.io/cluster-api-provider-aws/v2 => sigs.k8s.io/cluster-api-provider-aws/v2 v2.0.0-20231024062453-0bf78b04b305
-	sigs.k8s.io/cluster-api-provider-azure => sigs.k8s.io/cluster-api-provider-azure v1.11.1-0.20231026140308-a3f4914170d9
 )
 
 // They add a require to a module in the same tree with an invalid version, but also add a replace statement to use the local module,
