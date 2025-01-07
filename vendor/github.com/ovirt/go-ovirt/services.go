@@ -191,12 +191,12 @@ func (p *AffinityGroupHostLabelServiceRemoveRequest) Send() (*AffinityGroupHostL
 		}
 		p.AffinityGroupHostLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityGroupHostLabelServiceRemoveResponse), nil
 }
@@ -351,12 +351,12 @@ func (p *AffinityGroupHostLabelsServiceAddRequest) Send() (*AffinityGroupHostLab
 		}
 		p.AffinityGroupHostLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -521,12 +521,12 @@ func (p *AffinityGroupHostLabelsServiceListRequest) Send() (*AffinityGroupHostLa
 		}
 		p.AffinityGroupHostLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadMany(reader, nil)
@@ -701,12 +701,12 @@ func (p *AffinityGroupHostServiceRemoveRequest) Send() (*AffinityGroupHostServic
 		}
 		p.AffinityGroupHostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityGroupHostServiceRemoveResponse), nil
 }
@@ -861,12 +861,12 @@ func (p *AffinityGroupHostsServiceAddRequest) Send() (*AffinityGroupHostsService
 		}
 		p.AffinityGroupHostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadOne(reader, nil, "")
@@ -1031,12 +1031,12 @@ func (p *AffinityGroupHostsServiceListRequest) Send() (*AffinityGroupHostsServic
 		}
 		p.AffinityGroupHostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadMany(reader, nil)
@@ -1220,12 +1220,12 @@ func (p *AffinityGroupServiceGetRequest) Send() (*AffinityGroupServiceGetRespons
 		}
 		p.AffinityGroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityGroupReadOne(reader, nil, "")
@@ -1381,12 +1381,12 @@ func (p *AffinityGroupServiceRemoveRequest) Send() (*AffinityGroupServiceRemoveR
 		}
 		p.AffinityGroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityGroupServiceRemoveResponse), nil
 }
@@ -1521,12 +1521,12 @@ func (p *AffinityGroupServiceUpdateRequest) Send() (*AffinityGroupServiceUpdateR
 		}
 		p.AffinityGroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityGroupReadOne(reader, nil, "")
@@ -1748,12 +1748,12 @@ func (p *AffinityGroupVmLabelServiceRemoveRequest) Send() (*AffinityGroupVmLabel
 		}
 		p.AffinityGroupVmLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityGroupVmLabelServiceRemoveResponse), nil
 }
@@ -1908,12 +1908,12 @@ func (p *AffinityGroupVmLabelsServiceAddRequest) Send() (*AffinityGroupVmLabelsS
 		}
 		p.AffinityGroupVmLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -2078,12 +2078,12 @@ func (p *AffinityGroupVmLabelsServiceListRequest) Send() (*AffinityGroupVmLabels
 		}
 		p.AffinityGroupVmLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadMany(reader, nil)
@@ -2258,12 +2258,12 @@ func (p *AffinityGroupVmServiceRemoveRequest) Send() (*AffinityGroupVmServiceRem
 		}
 		p.AffinityGroupVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityGroupVmServiceRemoveResponse), nil
 }
@@ -2418,12 +2418,12 @@ func (p *AffinityGroupVmsServiceAddRequest) Send() (*AffinityGroupVmsServiceAddR
 		}
 		p.AffinityGroupVmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -2588,12 +2588,12 @@ func (p *AffinityGroupVmsServiceListRequest) Send() (*AffinityGroupVmsServiceLis
 		}
 		p.AffinityGroupVmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadMany(reader, nil)
@@ -2790,12 +2790,12 @@ func (p *AffinityGroupsServiceAddRequest) Send() (*AffinityGroupsServiceAddRespo
 		}
 		p.AffinityGroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityGroupReadOne(reader, nil, "")
@@ -2978,12 +2978,12 @@ func (p *AffinityGroupsServiceListRequest) Send() (*AffinityGroupsServiceListRes
 		}
 		p.AffinityGroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityGroupReadMany(reader, nil)
@@ -3160,12 +3160,12 @@ func (p *AffinityLabelHostServiceGetRequest) Send() (*AffinityLabelHostServiceGe
 		}
 		p.AffinityLabelHostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadOne(reader, nil, "")
@@ -3289,12 +3289,12 @@ func (p *AffinityLabelHostServiceRemoveRequest) Send() (*AffinityLabelHostServic
 		}
 		p.AffinityLabelHostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityLabelHostServiceRemoveResponse), nil
 }
@@ -3441,12 +3441,12 @@ func (p *AffinityLabelHostsServiceAddRequest) Send() (*AffinityLabelHostsService
 		}
 		p.AffinityLabelHostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadOne(reader, nil, "")
@@ -3581,12 +3581,12 @@ func (p *AffinityLabelHostsServiceListRequest) Send() (*AffinityLabelHostsServic
 		}
 		p.AffinityLabelHostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadMany(reader, nil)
@@ -3762,12 +3762,12 @@ func (p *AffinityLabelServiceGetRequest) Send() (*AffinityLabelServiceGetRespons
 		}
 		p.AffinityLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -3892,12 +3892,12 @@ func (p *AffinityLabelServiceRemoveRequest) Send() (*AffinityLabelServiceRemoveR
 		}
 		p.AffinityLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityLabelServiceRemoveResponse), nil
 }
@@ -4017,12 +4017,12 @@ func (p *AffinityLabelServiceUpdateRequest) Send() (*AffinityLabelServiceUpdateR
 		}
 		p.AffinityLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -4214,12 +4214,12 @@ func (p *AffinityLabelVmServiceGetRequest) Send() (*AffinityLabelVmServiceGetRes
 		}
 		p.AffinityLabelVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -4343,12 +4343,12 @@ func (p *AffinityLabelVmServiceRemoveRequest) Send() (*AffinityLabelVmServiceRem
 		}
 		p.AffinityLabelVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AffinityLabelVmServiceRemoveResponse), nil
 }
@@ -4495,12 +4495,12 @@ func (p *AffinityLabelVmsServiceAddRequest) Send() (*AffinityLabelVmsServiceAddR
 		}
 		p.AffinityLabelVmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -4635,12 +4635,12 @@ func (p *AffinityLabelVmsServiceListRequest) Send() (*AffinityLabelVmsServiceLis
 		}
 		p.AffinityLabelVmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadMany(reader, nil)
@@ -4820,12 +4820,12 @@ func (p *AffinityLabelsServiceAddRequest) Send() (*AffinityLabelsServiceAddRespo
 		}
 		p.AffinityLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -4972,12 +4972,12 @@ func (p *AffinityLabelsServiceListRequest) Send() (*AffinityLabelsServiceListRes
 		}
 		p.AffinityLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadMany(reader, nil)
@@ -5153,12 +5153,12 @@ func (p *AssignedAffinityLabelServiceGetRequest) Send() (*AssignedAffinityLabelS
 		}
 		p.AssignedAffinityLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -5282,12 +5282,12 @@ func (p *AssignedAffinityLabelServiceRemoveRequest) Send() (*AssignedAffinityLab
 		}
 		p.AssignedAffinityLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AssignedAffinityLabelServiceRemoveResponse), nil
 }
@@ -5433,12 +5433,12 @@ func (p *AssignedAffinityLabelsServiceAddRequest) Send() (*AssignedAffinityLabel
 		}
 		p.AssignedAffinityLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadOne(reader, nil, "")
@@ -5573,12 +5573,12 @@ func (p *AssignedAffinityLabelsServiceListRequest) Send() (*AssignedAffinityLabe
 		}
 		p.AssignedAffinityLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAffinityLabelReadMany(reader, nil)
@@ -5752,12 +5752,12 @@ func (p *AssignedCpuProfileServiceGetRequest) Send() (*AssignedCpuProfileService
 		}
 		p.AssignedCpuProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadOne(reader, nil, "")
@@ -5888,12 +5888,12 @@ func (p *AssignedCpuProfileServiceRemoveRequest) Send() (*AssignedCpuProfileServ
 		}
 		p.AssignedCpuProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AssignedCpuProfileServiceRemoveResponse), nil
 }
@@ -6035,12 +6035,12 @@ func (p *AssignedCpuProfilesServiceAddRequest) Send() (*AssignedCpuProfilesServi
 		}
 		p.AssignedCpuProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadOne(reader, nil, "")
@@ -6185,12 +6185,12 @@ func (p *AssignedCpuProfilesServiceListRequest) Send() (*AssignedCpuProfilesServ
 		}
 		p.AssignedCpuProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadMany(reader, nil)
@@ -6362,12 +6362,12 @@ func (p *AssignedDiskProfileServiceGetRequest) Send() (*AssignedDiskProfileServi
 		}
 		p.AssignedDiskProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadOne(reader, nil, "")
@@ -6498,12 +6498,12 @@ func (p *AssignedDiskProfileServiceRemoveRequest) Send() (*AssignedDiskProfileSe
 		}
 		p.AssignedDiskProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AssignedDiskProfileServiceRemoveResponse), nil
 }
@@ -6645,12 +6645,12 @@ func (p *AssignedDiskProfilesServiceAddRequest) Send() (*AssignedDiskProfilesSer
 		}
 		p.AssignedDiskProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadOne(reader, nil, "")
@@ -6795,12 +6795,12 @@ func (p *AssignedDiskProfilesServiceListRequest) Send() (*AssignedDiskProfilesSe
 		}
 		p.AssignedDiskProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadMany(reader, nil)
@@ -7022,12 +7022,12 @@ func (p *AssignedPermissionsServiceAddRequest) Send() (*AssignedPermissionsServi
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermissionReadOne(reader, nil, "")
@@ -7257,7 +7257,11 @@ func (p *AssignedPermissionsServiceAddClusterPermissionRequest) Send() (*Assigne
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -7395,7 +7399,11 @@ func (p *AssignedPermissionsServiceAddDataCenterPermissionRequest) Send() (*Assi
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -7533,7 +7541,11 @@ func (p *AssignedPermissionsServiceAddGroupLevelRequest) Send() (*AssignedPermis
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -7671,7 +7683,11 @@ func (p *AssignedPermissionsServiceAddHostPermissionRequest) Send() (*AssignedPe
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -7823,12 +7839,12 @@ func (p *AssignedPermissionsServiceListRequest) Send() (*AssignedPermissionsServ
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermissionReadMany(reader, nil)
@@ -8008,7 +8024,11 @@ func (p *AssignedPermissionsServiceAddStorageDomainPermissionRequest) Send() (*A
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -8146,7 +8166,11 @@ func (p *AssignedPermissionsServiceAddTemplatePermissionRequest) Send() (*Assign
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -8284,7 +8308,11 @@ func (p *AssignedPermissionsServiceAddUserLevelRequest) Send() (*AssignedPermiss
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -8422,7 +8450,11 @@ func (p *AssignedPermissionsServiceAddVmPermissionRequest) Send() (*AssignedPerm
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -8560,7 +8592,11 @@ func (p *AssignedPermissionsServiceAddVmPoolPermissionRequest) Send() (*Assigned
 		}
 		p.AssignedPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -8743,12 +8779,12 @@ func (p *AssignedRolesServiceListRequest) Send() (*AssignedRolesServiceListRespo
 		}
 		p.AssignedRolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLRoleReadMany(reader, nil)
@@ -8936,12 +8972,12 @@ func (p *AssignedTagServiceGetRequest) Send() (*AssignedTagServiceGetResponse, e
 		}
 		p.AssignedTagService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadOne(reader, nil, "")
@@ -9105,12 +9141,12 @@ func (p *AssignedTagServiceRemoveRequest) Send() (*AssignedTagServiceRemoveRespo
 		}
 		p.AssignedTagService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AssignedTagServiceRemoveResponse), nil
 }
@@ -9274,12 +9310,12 @@ func (p *AssignedTagsServiceAddRequest) Send() (*AssignedTagsServiceAddResponse,
 		}
 		p.AssignedTagsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadOne(reader, nil, "")
@@ -9460,12 +9496,12 @@ func (p *AssignedTagsServiceListRequest) Send() (*AssignedTagsServiceListRespons
 		}
 		p.AssignedTagsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadMany(reader, nil)
@@ -9666,12 +9702,12 @@ func (p *AssignedVnicProfileServiceGetRequest) Send() (*AssignedVnicProfileServi
 		}
 		p.AssignedVnicProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadOne(reader, nil, "")
@@ -9802,12 +9838,12 @@ func (p *AssignedVnicProfileServiceRemoveRequest) Send() (*AssignedVnicProfileSe
 		}
 		p.AssignedVnicProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AssignedVnicProfileServiceRemoveResponse), nil
 }
@@ -9961,12 +9997,12 @@ func (p *AssignedVnicProfilesServiceAddRequest) Send() (*AssignedVnicProfilesSer
 		}
 		p.AssignedVnicProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadOne(reader, nil, "")
@@ -10111,12 +10147,12 @@ func (p *AssignedVnicProfilesServiceListRequest) Send() (*AssignedVnicProfilesSe
 		}
 		p.AssignedVnicProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadMany(reader, nil)
@@ -10310,7 +10346,11 @@ func (p *AttachedStorageDomainDiskServiceCopyRequest) Send() (*AttachedStorageDo
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -10441,7 +10481,11 @@ func (p *AttachedStorageDomainDiskServiceExportRequest) Send() (*AttachedStorage
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -10563,12 +10607,12 @@ func (p *AttachedStorageDomainDiskServiceGetRequest) Send() (*AttachedStorageDom
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -10729,7 +10773,11 @@ func (p *AttachedStorageDomainDiskServiceMoveRequest) Send() (*AttachedStorageDo
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -10850,7 +10898,11 @@ func (p *AttachedStorageDomainDiskServiceRegisterRequest) Send() (*AttachedStora
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -10959,12 +11011,12 @@ func (p *AttachedStorageDomainDiskServiceRemoveRequest) Send() (*AttachedStorage
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AttachedStorageDomainDiskServiceRemoveResponse), nil
 }
@@ -11086,7 +11138,11 @@ func (p *AttachedStorageDomainDiskServiceSparsifyRequest) Send() (*AttachedStora
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -11214,12 +11270,12 @@ func (p *AttachedStorageDomainDiskServiceUpdateRequest) Send() (*AttachedStorage
 		}
 		p.AttachedStorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -11430,12 +11486,12 @@ func (p *AttachedStorageDomainDisksServiceAddRequest) Send() (*AttachedStorageDo
 		}
 		p.AttachedStorageDomainDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -11589,12 +11645,12 @@ func (p *AttachedStorageDomainDisksServiceListRequest) Send() (*AttachedStorageD
 		}
 		p.AttachedStorageDomainDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -11785,7 +11841,11 @@ func (p *AttachedStorageDomainServiceActivateRequest) Send() (*AttachedStorageDo
 		}
 		p.AttachedStorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -11954,7 +12014,11 @@ func (p *AttachedStorageDomainServiceDeactivateRequest) Send() (*AttachedStorage
 		}
 		p.AttachedStorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -12097,12 +12161,12 @@ func (p *AttachedStorageDomainServiceGetRequest) Send() (*AttachedStorageDomainS
 		}
 		p.AttachedStorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadOne(reader, nil, "")
@@ -12233,12 +12297,12 @@ func (p *AttachedStorageDomainServiceRemoveRequest) Send() (*AttachedStorageDoma
 		}
 		p.AttachedStorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(AttachedStorageDomainServiceRemoveResponse), nil
 }
@@ -12393,12 +12457,12 @@ func (p *AttachedStorageDomainsServiceAddRequest) Send() (*AttachedStorageDomain
 		}
 		p.AttachedStorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadOne(reader, nil, "")
@@ -12543,12 +12607,12 @@ func (p *AttachedStorageDomainsServiceListRequest) Send() (*AttachedStorageDomai
 		}
 		p.AttachedStorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadMany(reader, nil)
@@ -12730,12 +12794,12 @@ func (p *BalanceServiceGetRequest) Send() (*BalanceServiceGetResponse, error) {
 		}
 		p.BalanceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBalanceReadOne(reader, nil, "")
@@ -12866,12 +12930,12 @@ func (p *BalanceServiceRemoveRequest) Send() (*BalanceServiceRemoveResponse, err
 		}
 		p.BalanceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(BalanceServiceRemoveResponse), nil
 }
@@ -13013,12 +13077,12 @@ func (p *BalancesServiceAddRequest) Send() (*BalancesServiceAddResponse, error) 
 		}
 		p.BalancesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBalanceReadOne(reader, nil, "")
@@ -13173,12 +13237,12 @@ func (p *BalancesServiceListRequest) Send() (*BalancesServiceListResponse, error
 		}
 		p.BalancesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBalanceReadMany(reader, nil)
@@ -13364,12 +13428,12 @@ func (p *BookmarkServiceGetRequest) Send() (*BookmarkServiceGetResponse, error) 
 		}
 		p.BookmarkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBookmarkReadOne(reader, nil, "")
@@ -13532,12 +13596,12 @@ func (p *BookmarkServiceRemoveRequest) Send() (*BookmarkServiceRemoveResponse, e
 		}
 		p.BookmarkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(BookmarkServiceRemoveResponse), nil
 }
@@ -13687,12 +13751,12 @@ func (p *BookmarkServiceUpdateRequest) Send() (*BookmarkServiceUpdateResponse, e
 		}
 		p.BookmarkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBookmarkReadOne(reader, nil, "")
@@ -13895,12 +13959,12 @@ func (p *BookmarksServiceAddRequest) Send() (*BookmarksServiceAddResponse, error
 		}
 		p.BookmarksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBookmarkReadOne(reader, nil, "")
@@ -14087,12 +14151,12 @@ func (p *BookmarksServiceListRequest) Send() (*BookmarksServiceListResponse, err
 		}
 		p.BookmarksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBookmarkReadMany(reader, nil)
@@ -14315,12 +14379,12 @@ func (p *ClusterEnabledFeatureServiceGetRequest) Send() (*ClusterEnabledFeatureS
 		}
 		p.ClusterEnabledFeatureService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterFeatureReadOne(reader, nil, "")
@@ -14473,12 +14537,12 @@ func (p *ClusterEnabledFeatureServiceRemoveRequest) Send() (*ClusterEnabledFeatu
 		}
 		p.ClusterEnabledFeatureService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(ClusterEnabledFeatureServiceRemoveResponse), nil
 }
@@ -14644,12 +14708,12 @@ func (p *ClusterEnabledFeaturesServiceAddRequest) Send() (*ClusterEnabledFeature
 		}
 		p.ClusterEnabledFeaturesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterFeatureReadOne(reader, nil, "")
@@ -14818,12 +14882,12 @@ func (p *ClusterEnabledFeaturesServiceListRequest) Send() (*ClusterEnabledFeatur
 		}
 		p.ClusterEnabledFeaturesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterFeatureReadMany(reader, nil)
@@ -15028,12 +15092,12 @@ func (p *ClusterExternalProvidersServiceListRequest) Send() (*ClusterExternalPro
 		}
 		p.ClusterExternalProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalProviderReadMany(reader, nil)
@@ -15209,12 +15273,12 @@ func (p *ClusterFeatureServiceGetRequest) Send() (*ClusterFeatureServiceGetRespo
 		}
 		p.ClusterFeatureService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterFeatureReadOne(reader, nil, "")
@@ -15414,12 +15478,12 @@ func (p *ClusterFeaturesServiceListRequest) Send() (*ClusterFeaturesServiceListR
 		}
 		p.ClusterFeaturesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterFeatureReadMany(reader, nil)
@@ -15648,12 +15712,12 @@ func (p *ClusterLevelServiceGetRequest) Send() (*ClusterLevelServiceGetResponse,
 		}
 		p.ClusterLevelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterLevelReadOne(reader, nil, "")
@@ -15899,12 +15963,12 @@ func (p *ClusterLevelsServiceListRequest) Send() (*ClusterLevelsServiceListRespo
 		}
 		p.ClusterLevelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterLevelReadMany(reader, nil)
@@ -16107,12 +16171,12 @@ func (p *ClusterNetworkServiceGetRequest) Send() (*ClusterNetworkServiceGetRespo
 		}
 		p.ClusterNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -16236,12 +16300,12 @@ func (p *ClusterNetworkServiceRemoveRequest) Send() (*ClusterNetworkServiceRemov
 		}
 		p.ClusterNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(ClusterNetworkServiceRemoveResponse), nil
 }
@@ -16358,12 +16422,12 @@ func (p *ClusterNetworkServiceUpdateRequest) Send() (*ClusterNetworkServiceUpdat
 		}
 		p.ClusterNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -16538,12 +16602,12 @@ func (p *ClusterNetworksServiceAddRequest) Send() (*ClusterNetworksServiceAddRes
 		}
 		p.ClusterNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -16708,12 +16772,12 @@ func (p *ClusterNetworksServiceListRequest) Send() (*ClusterNetworksServiceListR
 		}
 		p.ClusterNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadMany(reader, nil)
@@ -16971,12 +17035,12 @@ func (p *ClusterServiceGetRequest) Send() (*ClusterServiceGetResponse, error) {
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterReadOne(reader, nil, "")
@@ -17261,7 +17325,11 @@ func (p *ClusterServiceRefreshGlusterHealStatusRequest) Send() (*ClusterServiceR
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -17393,12 +17461,12 @@ func (p *ClusterServiceRemoveRequest) Send() (*ClusterServiceRemoveResponse, err
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(ClusterServiceRemoveResponse), nil
 }
@@ -17527,7 +17595,11 @@ func (p *ClusterServiceResetEmulatedMachineRequest) Send() (*ClusterServiceReset
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -17658,7 +17730,11 @@ func (p *ClusterServiceSyncAllNetworksRequest) Send() (*ClusterServiceSyncAllNet
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -17820,12 +17896,12 @@ func (p *ClusterServiceUpdateRequest) Send() (*ClusterServiceUpdateResponse, err
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterReadOne(reader, nil, "")
@@ -18021,7 +18097,11 @@ func (p *ClusterServiceUpgradeRequest) Send() (*ClusterServiceUpgradeResponse, e
 		}
 		p.ClusterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -18352,12 +18432,12 @@ func (p *ClustersServiceAddRequest) Send() (*ClustersServiceAddResponse, error) 
 		}
 		p.ClustersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterReadOne(reader, nil, "")
@@ -18607,12 +18687,12 @@ func (p *ClustersServiceListRequest) Send() (*ClustersServiceListResponse, error
 		}
 		p.ClustersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLClusterReadMany(reader, nil)
@@ -18795,7 +18875,11 @@ func (p *CopyableServiceCopyRequest) Send() (*CopyableServiceCopyResponse, error
 		}
 		p.CopyableService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -18935,12 +19019,12 @@ func (p *CpuProfileServiceGetRequest) Send() (*CpuProfileServiceGetResponse, err
 		}
 		p.CpuProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadOne(reader, nil, "")
@@ -19071,12 +19155,12 @@ func (p *CpuProfileServiceRemoveRequest) Send() (*CpuProfileServiceRemoveRespons
 		}
 		p.CpuProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(CpuProfileServiceRemoveResponse), nil
 }
@@ -19201,12 +19285,12 @@ func (p *CpuProfileServiceUpdateRequest) Send() (*CpuProfileServiceUpdateRespons
 		}
 		p.CpuProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadOne(reader, nil, "")
@@ -19382,12 +19466,12 @@ func (p *CpuProfilesServiceAddRequest) Send() (*CpuProfilesServiceAddResponse, e
 		}
 		p.CpuProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadOne(reader, nil, "")
@@ -19532,12 +19616,12 @@ func (p *CpuProfilesServiceListRequest) Send() (*CpuProfilesServiceListResponse,
 		}
 		p.CpuProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCpuProfileReadMany(reader, nil)
@@ -19711,12 +19795,12 @@ func (p *DataCenterNetworkServiceGetRequest) Send() (*DataCenterNetworkServiceGe
 		}
 		p.DataCenterNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -19840,12 +19924,12 @@ func (p *DataCenterNetworkServiceRemoveRequest) Send() (*DataCenterNetworkServic
 		}
 		p.DataCenterNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(DataCenterNetworkServiceRemoveResponse), nil
 }
@@ -19962,12 +20046,12 @@ func (p *DataCenterNetworkServiceUpdateRequest) Send() (*DataCenterNetworkServic
 		}
 		p.DataCenterNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -20144,12 +20228,12 @@ func (p *DataCenterNetworksServiceAddRequest) Send() (*DataCenterNetworksService
 		}
 		p.DataCenterNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -20318,12 +20402,12 @@ func (p *DataCenterNetworksServiceListRequest) Send() (*DataCenterNetworksServic
 		}
 		p.DataCenterNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadMany(reader, nil)
@@ -20518,7 +20602,11 @@ func (p *DataCenterServiceCleanFinishedTasksRequest) Send() (*DataCenterServiceC
 		}
 		p.DataCenterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -20702,12 +20790,12 @@ func (p *DataCenterServiceGetRequest) Send() (*DataCenterServiceGetResponse, err
 		}
 		p.DataCenterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDataCenterReadOne(reader, nil, "")
@@ -20929,12 +21017,12 @@ func (p *DataCenterServiceRemoveRequest) Send() (*DataCenterServiceRemoveRespons
 		}
 		p.DataCenterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(DataCenterServiceRemoveResponse), nil
 }
@@ -21097,7 +21185,11 @@ func (p *DataCenterServiceSetMasterRequest) Send() (*DataCenterServiceSetMasterR
 		}
 		p.DataCenterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -21268,12 +21360,12 @@ func (p *DataCenterServiceUpdateRequest) Send() (*DataCenterServiceUpdateRespons
 		}
 		p.DataCenterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDataCenterReadOne(reader, nil, "")
@@ -21587,12 +21679,12 @@ func (p *DataCentersServiceAddRequest) Send() (*DataCentersServiceAddResponse, e
 		}
 		p.DataCentersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDataCenterReadOne(reader, nil, "")
@@ -21844,12 +21936,12 @@ func (p *DataCentersServiceListRequest) Send() (*DataCentersServiceListResponse,
 		}
 		p.DataCentersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDataCenterReadMany(reader, nil)
@@ -22137,12 +22229,12 @@ func (p *DiskAttachmentServiceGetRequest) Send() (*DiskAttachmentServiceGetRespo
 		}
 		p.DiskAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadOne(reader, nil, "")
@@ -22313,12 +22405,12 @@ func (p *DiskAttachmentServiceRemoveRequest) Send() (*DiskAttachmentServiceRemov
 		}
 		p.DiskAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(DiskAttachmentServiceRemoveResponse), nil
 }
@@ -22463,12 +22555,12 @@ func (p *DiskAttachmentServiceUpdateRequest) Send() (*DiskAttachmentServiceUpdat
 		}
 		p.DiskAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadOne(reader, nil, "")
@@ -22699,12 +22791,12 @@ func (p *DiskAttachmentsServiceAddRequest) Send() (*DiskAttachmentsServiceAddRes
 		}
 		p.DiskAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadOne(reader, nil, "")
@@ -22911,12 +23003,12 @@ func (p *DiskAttachmentsServiceListRequest) Send() (*DiskAttachmentsServiceListR
 		}
 		p.DiskAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadMany(reader, nil)
@@ -23057,7 +23149,11 @@ func (p *DiskAttachmentsServiceAddProvidingDiskIdRequest) Send() (*DiskAttachmen
 		}
 		p.DiskAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -23192,7 +23288,11 @@ func (p *DiskAttachmentsServiceAddSignature1Request) Send() (*DiskAttachmentsSer
 		}
 		p.DiskAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -23359,12 +23459,12 @@ func (p *DiskProfileServiceGetRequest) Send() (*DiskProfileServiceGetResponse, e
 		}
 		p.DiskProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadOne(reader, nil, "")
@@ -23495,12 +23595,12 @@ func (p *DiskProfileServiceRemoveRequest) Send() (*DiskProfileServiceRemoveRespo
 		}
 		p.DiskProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(DiskProfileServiceRemoveResponse), nil
 }
@@ -23625,12 +23725,12 @@ func (p *DiskProfileServiceUpdateRequest) Send() (*DiskProfileServiceUpdateRespo
 		}
 		p.DiskProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadOne(reader, nil, "")
@@ -23806,12 +23906,12 @@ func (p *DiskProfilesServiceAddRequest) Send() (*DiskProfilesServiceAddResponse,
 		}
 		p.DiskProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadOne(reader, nil, "")
@@ -23956,12 +24056,12 @@ func (p *DiskProfilesServiceListRequest) Send() (*DiskProfilesServiceListRespons
 		}
 		p.DiskProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskProfileReadMany(reader, nil)
@@ -24206,7 +24306,11 @@ func (p *DiskServiceCopyRequest) Send() (*DiskServiceCopyResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -24398,7 +24502,11 @@ func (p *DiskServiceExportRequest) Send() (*DiskServiceExportResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -24524,12 +24632,12 @@ func (p *DiskServiceGetRequest) Send() (*DiskServiceGetResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -24729,7 +24837,11 @@ func (p *DiskServiceMoveRequest) Send() (*DiskServiceMoveResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -24912,7 +25024,11 @@ func (p *DiskServiceReduceRequest) Send() (*DiskServiceReduceResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -25056,7 +25172,11 @@ func (p *DiskServiceRefreshLunRequest) Send() (*DiskServiceRefreshLunResponse, e
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -25204,12 +25324,12 @@ func (p *DiskServiceRemoveRequest) Send() (*DiskServiceRemoveResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(DiskServiceRemoveResponse), nil
 }
@@ -25326,7 +25446,11 @@ func (p *DiskServiceSparsifyRequest) Send() (*DiskServiceSparsifyResponse, error
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -25474,12 +25598,12 @@ func (p *DiskServiceUpdateRequest) Send() (*DiskServiceUpdateResponse, error) {
 		}
 		p.DiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -25727,12 +25851,12 @@ func (p *DiskSnapshotServiceGetRequest) Send() (*DiskSnapshotServiceGetResponse,
 		}
 		p.DiskSnapshotService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskSnapshotReadOne(reader, nil, "")
@@ -25863,12 +25987,12 @@ func (p *DiskSnapshotServiceRemoveRequest) Send() (*DiskSnapshotServiceRemoveRes
 		}
 		p.DiskSnapshotService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(DiskSnapshotServiceRemoveResponse), nil
 }
@@ -26029,12 +26153,12 @@ func (p *DiskSnapshotsServiceListRequest) Send() (*DiskSnapshotsServiceListRespo
 		}
 		p.DiskSnapshotsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskSnapshotReadMany(reader, nil)
@@ -26332,12 +26456,12 @@ func (p *DisksServiceAddRequest) Send() (*DisksServiceAddResponse, error) {
 		}
 		p.DisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -26772,12 +26896,12 @@ func (p *DisksServiceListRequest) Send() (*DisksServiceListResponse, error) {
 		}
 		p.DisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -26975,7 +27099,11 @@ func (p *DisksServiceAddLunRequest) Send() (*DisksServiceAddLunResponse, error) 
 		}
 		p.DisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -27113,7 +27241,11 @@ func (p *DisksServiceAddOnStorageDomainRequest) Send() (*DisksServiceAddOnStorag
 		}
 		p.DisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -27308,12 +27440,12 @@ func (p *EventServiceGetRequest) Send() (*EventServiceGetResponse, error) {
 		}
 		p.EventService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLEventReadOne(reader, nil, "")
@@ -27500,12 +27632,12 @@ func (p *EventServiceRemoveRequest) Send() (*EventServiceRemoveResponse, error) 
 		}
 		p.EventService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(EventServiceRemoveResponse), nil
 }
@@ -27661,12 +27793,12 @@ func (p *EventSubscriptionServiceGetRequest) Send() (*EventSubscriptionServiceGe
 		}
 		p.EventSubscriptionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLEventSubscriptionReadOne(reader, nil, "")
@@ -27832,12 +27964,12 @@ func (p *EventSubscriptionServiceRemoveRequest) Send() (*EventSubscriptionServic
 		}
 		p.EventSubscriptionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(EventSubscriptionServiceRemoveResponse), nil
 }
@@ -28010,12 +28142,12 @@ func (p *EventSubscriptionsServiceAddRequest) Send() (*EventSubscriptionsService
 		}
 		p.EventSubscriptionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLEventSubscriptionReadOne(reader, nil, "")
@@ -28220,12 +28352,12 @@ func (p *EventSubscriptionsServiceListRequest) Send() (*EventSubscriptionsServic
 		}
 		p.EventSubscriptionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLEventSubscriptionReadMany(reader, nil)
@@ -28472,12 +28604,12 @@ func (p *EventsServiceAddRequest) Send() (*EventsServiceAddResponse, error) {
 		}
 		p.EventsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLEventReadOne(reader, nil, "")
@@ -28751,12 +28883,12 @@ func (p *EventsServiceListRequest) Send() (*EventsServiceListResponse, error) {
 		}
 		p.EventsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLEventReadMany(reader, nil)
@@ -28981,7 +29113,11 @@ func (p *EventsServiceUndeleteRequest) Send() (*EventsServiceUndeleteResponse, e
 		}
 		p.EventsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -29134,12 +29270,12 @@ func (p *ExternalNetworkProviderConfigurationServiceGetRequest) Send() (*Externa
 		}
 		p.ExternalNetworkProviderConfigurationService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalNetworkProviderConfigurationReadOne(reader, nil, "")
@@ -29302,12 +29438,12 @@ func (p *ExternalNetworkProviderConfigurationsServiceListRequest) Send() (*Exter
 		}
 		p.ExternalNetworkProviderConfigurationsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalNetworkProviderConfigurationReadMany(reader, nil)
@@ -29494,12 +29630,12 @@ func (p *ExternalProviderCertificateServiceGetRequest) Send() (*ExternalProvider
 		}
 		p.ExternalProviderCertificateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCertificateReadOne(reader, nil, "")
@@ -29711,12 +29847,12 @@ func (p *ExternalProviderCertificatesServiceListRequest) Send() (*ExternalProvid
 		}
 		p.ExternalProviderCertificatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCertificateReadMany(reader, nil)
@@ -29932,7 +30068,11 @@ func (p *ExternalProviderServiceImportCertificatesRequest) Send() (*ExternalProv
 		}
 		p.ExternalProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -30061,7 +30201,11 @@ func (p *ExternalProviderServiceTestConnectivityRequest) Send() (*ExternalProvid
 		}
 		p.ExternalProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -30124,6 +30268,231 @@ func (op *ExternalProviderService) Service(path string) (Service, error) {
 
 func (op *ExternalProviderService) String() string {
 	return fmt.Sprintf("ExternalProviderService:%s", op.path)
+}
+
+//
+// Provides capability to import external templates.
+// Currently supports OVA only.
+//
+type ExternalTemplateImportsService struct {
+	BaseService
+}
+
+func NewExternalTemplateImportsService(connection *Connection, path string) *ExternalTemplateImportsService {
+	var result ExternalTemplateImportsService
+	result.connection = connection
+	result.path = path
+	return &result
+}
+
+//
+// This operation is used to import a template from external hypervisor.
+// For example import of a template OVA can be facilitated using the following request:
+// [source]
+// ----
+// POST /externaltemplateimports
+// ----
+// With request body of type <<types/external_template_import,ExternalTemplateImport>>, for example:
+// [source,xml]
+// ----
+// <external_template_import>
+//   <template>
+//     <name>my_template</name>
+//   </template>
+//   <cluster id="2b18aca2-4469-11eb-9449-482ae35a5f83" />
+//   <storage_domain id="8bb5ade5-e988-4000-8b93-dbfc6717fe50" />
+//   <url>ova:///mnt/ova/ova_template.ova</url>
+//   <host id="8bb5ade5-e988-4000-8b93-dbfc6717fe50" />
+// </external_template_import>
+// ----
+//
+type ExternalTemplateImportsServiceAddRequest struct {
+	ExternalTemplateImportsService *ExternalTemplateImportsService
+	header                         map[string]string
+	query                          map[string]string
+	import_                        *ExternalTemplateImport
+}
+
+func (p *ExternalTemplateImportsServiceAddRequest) Header(key, value string) *ExternalTemplateImportsServiceAddRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *ExternalTemplateImportsServiceAddRequest) Query(key, value string) *ExternalTemplateImportsServiceAddRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *ExternalTemplateImportsServiceAddRequest) Import(import_ *ExternalTemplateImport) *ExternalTemplateImportsServiceAddRequest {
+	p.import_ = import_
+	return p
+}
+
+func (p *ExternalTemplateImportsServiceAddRequest) Send() (*ExternalTemplateImportsServiceAddResponse, error) {
+	rawURL := fmt.Sprintf("%s%s", p.ExternalTemplateImportsService.connection.URL(), p.ExternalTemplateImportsService.path)
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	var body bytes.Buffer
+	writer := NewXMLWriter(&body)
+	err := XMLExternalTemplateImportWriteOne(writer, p.import_, "")
+	if err != nil {
+		return nil, err
+	}
+	writer.Flush()
+	req, err := http.NewRequest("POST", rawURL, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.ExternalTemplateImportsService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.ExternalTemplateImportsService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.ExternalTemplateImportsService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.ExternalTemplateImportsService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.ExternalTemplateImportsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
+	}
+	reader := NewXMLReader(respBodyBytes)
+	result, err := XMLExternalTemplateImportReadOne(reader, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return &ExternalTemplateImportsServiceAddResponse{import_: result}, nil
+}
+
+func (p *ExternalTemplateImportsServiceAddRequest) MustSend() *ExternalTemplateImportsServiceAddResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// This operation is used to import a template from external hypervisor.
+// For example import of a template OVA can be facilitated using the following request:
+// [source]
+// ----
+// POST /externaltemplateimports
+// ----
+// With request body of type <<types/external_template_import,ExternalTemplateImport>>, for example:
+// [source,xml]
+// ----
+// <external_template_import>
+//   <template>
+//     <name>my_template</name>
+//   </template>
+//   <cluster id="2b18aca2-4469-11eb-9449-482ae35a5f83" />
+//   <storage_domain id="8bb5ade5-e988-4000-8b93-dbfc6717fe50" />
+//   <url>ova:///mnt/ova/ova_template.ova</url>
+//   <host id="8bb5ade5-e988-4000-8b93-dbfc6717fe50" />
+// </external_template_import>
+// ----
+//
+type ExternalTemplateImportsServiceAddResponse struct {
+	import_ *ExternalTemplateImport
+}
+
+func (p *ExternalTemplateImportsServiceAddResponse) Import() (*ExternalTemplateImport, bool) {
+	if p.import_ != nil {
+		return p.import_, true
+	}
+	return nil, false
+}
+
+func (p *ExternalTemplateImportsServiceAddResponse) MustImport() *ExternalTemplateImport {
+	if p.import_ == nil {
+		panic("import_ in response does not exist")
+	}
+	return p.import_
+}
+
+//
+// This operation is used to import a template from external hypervisor.
+// For example import of a template OVA can be facilitated using the following request:
+// [source]
+// ----
+// POST /externaltemplateimports
+// ----
+// With request body of type <<types/external_template_import,ExternalTemplateImport>>, for example:
+// [source,xml]
+// ----
+// <external_template_import>
+//   <template>
+//     <name>my_template</name>
+//   </template>
+//   <cluster id="2b18aca2-4469-11eb-9449-482ae35a5f83" />
+//   <storage_domain id="8bb5ade5-e988-4000-8b93-dbfc6717fe50" />
+//   <url>ova:///mnt/ova/ova_template.ova</url>
+//   <host id="8bb5ade5-e988-4000-8b93-dbfc6717fe50" />
+// </external_template_import>
+// ----
+//
+func (p *ExternalTemplateImportsService) Add() *ExternalTemplateImportsServiceAddRequest {
+	return &ExternalTemplateImportsServiceAddRequest{ExternalTemplateImportsService: p}
+}
+
+//
+// Service locator method, returns individual service on which the URI is dispatched.
+//
+func (op *ExternalTemplateImportsService) Service(path string) (Service, error) {
+	if path == "" {
+		return op, nil
+	}
+	return nil, fmt.Errorf("The path <%s> doesn't correspond to any service", path)
+}
+
+func (op *ExternalTemplateImportsService) String() string {
+	return fmt.Sprintf("ExternalTemplateImportsService:%s", op.path)
 }
 
 //
@@ -30254,12 +30623,12 @@ func (p *ExternalVmImportsServiceAddRequest) Send() (*ExternalVmImportsServiceAd
 		}
 		p.ExternalVmImportsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalVmImportReadOne(reader, nil, "")
@@ -30484,12 +30853,12 @@ func (p *FenceAgentServiceGetRequest) Send() (*FenceAgentServiceGetResponse, err
 		}
 		p.FenceAgentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAgentReadOne(reader, nil, "")
@@ -30661,12 +31030,12 @@ func (p *FenceAgentServiceRemoveRequest) Send() (*FenceAgentServiceRemoveRespons
 		}
 		p.FenceAgentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(FenceAgentServiceRemoveResponse), nil
 }
@@ -30801,12 +31170,12 @@ func (p *FenceAgentServiceUpdateRequest) Send() (*FenceAgentServiceUpdateRespons
 		}
 		p.FenceAgentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAgentReadOne(reader, nil, "")
@@ -31022,12 +31391,12 @@ func (p *FenceAgentsServiceAddRequest) Send() (*FenceAgentsServiceAddResponse, e
 		}
 		p.FenceAgentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAgentReadOne(reader, nil, "")
@@ -31293,12 +31662,12 @@ func (p *FenceAgentsServiceListRequest) Send() (*FenceAgentsServiceListResponse,
 		}
 		p.FenceAgentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLAgentReadMany(reader, nil)
@@ -31510,12 +31879,12 @@ func (p *FileServiceGetRequest) Send() (*FileServiceGetResponse, error) {
 		}
 		p.FileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLFileReadOne(reader, nil, "")
@@ -31731,12 +32100,12 @@ func (p *FilesServiceListRequest) Send() (*FilesServiceListResponse, error) {
 		}
 		p.FilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLFileReadMany(reader, nil)
@@ -31942,12 +32311,12 @@ func (p *FilterServiceGetRequest) Send() (*FilterServiceGetResponse, error) {
 		}
 		p.FilterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLFilterReadOne(reader, nil, "")
@@ -32078,12 +32447,12 @@ func (p *FilterServiceRemoveRequest) Send() (*FilterServiceRemoveResponse, error
 		}
 		p.FilterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(FilterServiceRemoveResponse), nil
 }
@@ -32226,12 +32595,12 @@ func (p *FiltersServiceAddRequest) Send() (*FiltersServiceAddResponse, error) {
 		}
 		p.FiltersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLFilterReadOne(reader, nil, "")
@@ -32386,12 +32755,12 @@ func (p *FiltersServiceListRequest) Send() (*FiltersServiceListResponse, error) 
 		}
 		p.FiltersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLFilterReadMany(reader, nil)
@@ -32581,12 +32950,12 @@ func (p *HostDeviceServiceGetRequest) Send() (*HostDeviceServiceGetResponse, err
 		}
 		p.HostDeviceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostDeviceReadOne(reader, nil, "")
@@ -32791,12 +33160,12 @@ func (p *HostDevicesServiceListRequest) Send() (*HostDevicesServiceListResponse,
 		}
 		p.HostDevicesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostDeviceReadMany(reader, nil)
@@ -32969,12 +33338,12 @@ func (p *HostHookServiceGetRequest) Send() (*HostHookServiceGetResponse, error) 
 		}
 		p.HostHookService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHookReadOne(reader, nil, "")
@@ -33144,12 +33513,12 @@ func (p *HostHooksServiceListRequest) Send() (*HostHooksServiceListResponse, err
 		}
 		p.HostHooksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHookReadMany(reader, nil)
@@ -33332,12 +33701,12 @@ func (p *HostNicServiceGetRequest) Send() (*HostNicServiceGetResponse, error) {
 		}
 		p.HostNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostNicReadOne(reader, nil, "")
@@ -33488,7 +33857,11 @@ func (p *HostNicServiceUpdateVirtualFunctionsConfigurationRequest) Send() (*Host
 		}
 		p.HostNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -33740,12 +34113,12 @@ func (p *HostNicsServiceListRequest) Send() (*HostNicsServiceListResponse, error
 		}
 		p.HostNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostNicReadMany(reader, nil)
@@ -33918,12 +34291,12 @@ func (p *HostNumaNodeServiceGetRequest) Send() (*HostNumaNodeServiceGetResponse,
 		}
 		p.HostNumaNodeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNumaNodeReadOne(reader, nil, "")
@@ -34105,12 +34478,12 @@ func (p *HostNumaNodesServiceListRequest) Send() (*HostNumaNodesServiceListRespo
 		}
 		p.HostNumaNodesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNumaNodeReadMany(reader, nil)
@@ -34292,7 +34665,11 @@ func (p *HostServiceActivateRequest) Send() (*HostServiceActivateResponse, error
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -34332,6 +34709,7 @@ type HostServiceApproveRequest struct {
 	async       *bool
 	cluster     *Cluster
 	host        *Host
+	reboot      *bool
 }
 
 func (p *HostServiceApproveRequest) Header(key, value string) *HostServiceApproveRequest {
@@ -34370,6 +34748,11 @@ func (p *HostServiceApproveRequest) Host(host *Host) *HostServiceApproveRequest 
 	return p
 }
 
+func (p *HostServiceApproveRequest) Reboot(reboot bool) *HostServiceApproveRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostServiceApproveRequest) Send() (*HostServiceApproveResponse, error) {
 	rawURL := fmt.Sprintf("%s%s/approve", p.HostService.connection.URL(), p.HostService.path)
 	actionBuilder := NewActionBuilder()
@@ -34381,6 +34764,9 @@ func (p *HostServiceApproveRequest) Send() (*HostServiceApproveResponse, error) 
 	}
 	actionBuilder.Cluster(p.cluster)
 	actionBuilder.Host(p.host)
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
+	}
 	action, err := actionBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -34440,7 +34826,11 @@ func (p *HostServiceApproveRequest) Send() (*HostServiceApproveResponse, error) 
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -34586,7 +34976,11 @@ func (p *HostServiceCommitNetConfigRequest) Send() (*HostServiceCommitNetConfigR
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -34771,7 +35165,11 @@ func (p *HostServiceCopyHostNetworksRequest) Send() (*HostServiceCopyHostNetwork
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -34941,7 +35339,11 @@ func (p *HostServiceDeactivateRequest) Send() (*HostServiceDeactivateResponse, e
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -34967,6 +35369,241 @@ type HostServiceDeactivateResponse struct {
 //
 func (p *HostService) Deactivate() *HostServiceDeactivateRequest {
 	return &HostServiceDeactivateRequest{HostService: p}
+}
+
+//
+// Discovers iSCSI targets on the host, using the initiator details.
+// Returns a list of IscsiDetails objects containing the discovered data.
+// For example, to discover iSCSI targets available in `myiscsi.example.com`,
+// from host `123`, send a request like this:
+// [source]
+// ----
+// POST /ovirt-engine/api/hosts/123/discoveriscsi
+// ----
+// With a request body like this:
+// [source,xml]
+// ----
+// <action>
+//   <iscsi>
+//     <address>myiscsi.example.com</address>
+//   </iscsi>
+// </action>
+// ----
+// The result will be like this:
+// [source,xml]
+// ----
+// <discovered_targets>
+//   <iscsi_details>
+//     <address>10.35.1.72</address>
+//     <port>3260</port>
+//     <portal>10.35.1.72:3260,1</portal>
+//     <target>iqn.2015-08.com.tgt:444</target>
+//   </iscsi_details>
+// </discovered_targets>
+// ----
+//
+type HostServiceDiscoverIscsiRequest struct {
+	HostService *HostService
+	header      map[string]string
+	query       map[string]string
+	async       *bool
+	iscsi       *IscsiDetails
+}
+
+func (p *HostServiceDiscoverIscsiRequest) Header(key, value string) *HostServiceDiscoverIscsiRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *HostServiceDiscoverIscsiRequest) Query(key, value string) *HostServiceDiscoverIscsiRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *HostServiceDiscoverIscsiRequest) Async(async bool) *HostServiceDiscoverIscsiRequest {
+	p.async = &async
+	return p
+}
+
+func (p *HostServiceDiscoverIscsiRequest) Iscsi(iscsi *IscsiDetails) *HostServiceDiscoverIscsiRequest {
+	p.iscsi = iscsi
+	return p
+}
+
+func (p *HostServiceDiscoverIscsiRequest) Send() (*HostServiceDiscoverIscsiResponse, error) {
+	rawURL := fmt.Sprintf("%s%s/discoveriscsi", p.HostService.connection.URL(), p.HostService.path)
+	actionBuilder := NewActionBuilder()
+	if p.async != nil {
+		actionBuilder.Async(*p.async)
+	}
+	actionBuilder.Iscsi(p.iscsi)
+	action, err := actionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	var body bytes.Buffer
+	writer := NewXMLWriter(&body)
+	err = XMLActionWriteOne(writer, action, "")
+	writer.Flush()
+	req, err := http.NewRequest("POST", rawURL, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.HostService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.HostService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.HostService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.HostService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
+	if errCheckAction != nil {
+		return nil, errCheckAction
+	}
+	result := action.MustDiscoveredTargets()
+	return &HostServiceDiscoverIscsiResponse{discoveredTargets: result}, nil
+}
+
+func (p *HostServiceDiscoverIscsiRequest) MustSend() *HostServiceDiscoverIscsiResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Discovers iSCSI targets on the host, using the initiator details.
+// Returns a list of IscsiDetails objects containing the discovered data.
+// For example, to discover iSCSI targets available in `myiscsi.example.com`,
+// from host `123`, send a request like this:
+// [source]
+// ----
+// POST /ovirt-engine/api/hosts/123/discoveriscsi
+// ----
+// With a request body like this:
+// [source,xml]
+// ----
+// <action>
+//   <iscsi>
+//     <address>myiscsi.example.com</address>
+//   </iscsi>
+// </action>
+// ----
+// The result will be like this:
+// [source,xml]
+// ----
+// <discovered_targets>
+//   <iscsi_details>
+//     <address>10.35.1.72</address>
+//     <port>3260</port>
+//     <portal>10.35.1.72:3260,1</portal>
+//     <target>iqn.2015-08.com.tgt:444</target>
+//   </iscsi_details>
+// </discovered_targets>
+// ----
+//
+type HostServiceDiscoverIscsiResponse struct {
+	discoveredTargets *IscsiDetailsSlice
+}
+
+func (p *HostServiceDiscoverIscsiResponse) DiscoveredTargets() (*IscsiDetailsSlice, bool) {
+	if p.discoveredTargets != nil {
+		return p.discoveredTargets, true
+	}
+	return nil, false
+}
+
+func (p *HostServiceDiscoverIscsiResponse) MustDiscoveredTargets() *IscsiDetailsSlice {
+	if p.discoveredTargets == nil {
+		panic("discoveredTargets in response does not exist")
+	}
+	return p.discoveredTargets
+}
+
+//
+// Discovers iSCSI targets on the host, using the initiator details.
+// Returns a list of IscsiDetails objects containing the discovered data.
+// For example, to discover iSCSI targets available in `myiscsi.example.com`,
+// from host `123`, send a request like this:
+// [source]
+// ----
+// POST /ovirt-engine/api/hosts/123/discoveriscsi
+// ----
+// With a request body like this:
+// [source,xml]
+// ----
+// <action>
+//   <iscsi>
+//     <address>myiscsi.example.com</address>
+//   </iscsi>
+// </action>
+// ----
+// The result will be like this:
+// [source,xml]
+// ----
+// <discovered_targets>
+//   <iscsi_details>
+//     <address>10.35.1.72</address>
+//     <port>3260</port>
+//     <portal>10.35.1.72:3260,1</portal>
+//     <target>iqn.2015-08.com.tgt:444</target>
+//   </iscsi_details>
+// </discovered_targets>
+// ----
+//
+func (p *HostService) DiscoverIscsi() *HostServiceDiscoverIscsiRequest {
+	return &HostServiceDiscoverIscsiRequest{HostService: p}
 }
 
 //
@@ -35066,7 +35703,11 @@ func (p *HostServiceEnrollCertificateRequest) Send() (*HostServiceEnrollCertific
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -35232,7 +35873,11 @@ func (p *HostServiceFenceRequest) Send() (*HostServiceFenceResponse, error) {
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -35425,7 +36070,11 @@ func (p *HostServiceForceSelectSpmRequest) Send() (*HostServiceForceSelectSpmRes
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -35583,12 +36232,12 @@ func (p *HostServiceGetRequest) Send() (*HostServiceGetResponse, error) {
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadOne(reader, nil, "")
@@ -35697,6 +36346,7 @@ type HostServiceInstallRequest struct {
 	deployHostedEngine   *bool
 	host                 *Host
 	image                *string
+	reboot               *bool
 	rootPassword         *string
 	ssh                  *Ssh
 	undeployHostedEngine *bool
@@ -35743,6 +36393,11 @@ func (p *HostServiceInstallRequest) Image(image string) *HostServiceInstallReque
 	return p
 }
 
+func (p *HostServiceInstallRequest) Reboot(reboot bool) *HostServiceInstallRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostServiceInstallRequest) RootPassword(rootPassword string) *HostServiceInstallRequest {
 	p.rootPassword = &rootPassword
 	return p
@@ -35773,6 +36428,9 @@ func (p *HostServiceInstallRequest) Send() (*HostServiceInstallResponse, error) 
 	actionBuilder.Host(p.host)
 	if p.image != nil {
 		actionBuilder.Image(*p.image)
+	}
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
 	}
 	if p.rootPassword != nil {
 		actionBuilder.RootPassword(*p.rootPassword)
@@ -35840,7 +36498,11 @@ func (p *HostServiceInstallRequest) Send() (*HostServiceInstallResponse, error) 
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -35955,7 +36617,10 @@ func (p *HostService) Install() *HostServiceInstallRequest {
 }
 
 //
+// This method has been deprecated since Engine version 4.4.6.
+// DiscoverIscsi should be used instead.
 // Discovers iSCSI targets on the host, using the initiator details.
+// Returns an array of strings containing the discovered data.
 // For example, to discover iSCSI targets available in `myiscsi.example.com`,
 // from host `123`, send a request like this:
 // [source]
@@ -35970,18 +36635,6 @@ func (p *HostService) Install() *HostServiceInstallRequest {
 //     <address>myiscsi.example.com</address>
 //   </iscsi>
 // </action>
-// ----
-// The result will be like this:
-// [source,xml]
-// ----
-// <discovered_targets>
-//   <iscsi_details>
-//     <address>10.35.1.72</address>
-//     <port>3260</port>
-//     <portal>10.35.1.72:3260,1</portal>
-//     <target>iqn.2015-08.com.tgt:444</target>
-//   </iscsi_details>
-// </discovered_targets>
 // ----
 //
 type HostServiceIscsiDiscoverRequest struct {
@@ -36084,7 +36737,11 @@ func (p *HostServiceIscsiDiscoverRequest) Send() (*HostServiceIscsiDiscoverRespo
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -36101,7 +36758,10 @@ func (p *HostServiceIscsiDiscoverRequest) MustSend() *HostServiceIscsiDiscoverRe
 }
 
 //
+// This method has been deprecated since Engine version 4.4.6.
+// DiscoverIscsi should be used instead.
 // Discovers iSCSI targets on the host, using the initiator details.
+// Returns an array of strings containing the discovered data.
 // For example, to discover iSCSI targets available in `myiscsi.example.com`,
 // from host `123`, send a request like this:
 // [source]
@@ -36117,36 +36777,9 @@ func (p *HostServiceIscsiDiscoverRequest) MustSend() *HostServiceIscsiDiscoverRe
 //   </iscsi>
 // </action>
 // ----
-// The result will be like this:
-// [source,xml]
-// ----
-// <discovered_targets>
-//   <iscsi_details>
-//     <address>10.35.1.72</address>
-//     <port>3260</port>
-//     <portal>10.35.1.72:3260,1</portal>
-//     <target>iqn.2015-08.com.tgt:444</target>
-//   </iscsi_details>
-// </discovered_targets>
-// ----
 //
 type HostServiceIscsiDiscoverResponse struct {
-	discoveredTargets *IscsiDetailsSlice
-	iscsiTargets      []string
-}
-
-func (p *HostServiceIscsiDiscoverResponse) DiscoveredTargets() (*IscsiDetailsSlice, bool) {
-	if p.discoveredTargets != nil {
-		return p.discoveredTargets, true
-	}
-	return nil, false
-}
-
-func (p *HostServiceIscsiDiscoverResponse) MustDiscoveredTargets() *IscsiDetailsSlice {
-	if p.discoveredTargets == nil {
-		panic("discoveredTargets in response does not exist")
-	}
-	return p.discoveredTargets
+	iscsiTargets []string
 }
 
 func (p *HostServiceIscsiDiscoverResponse) IscsiTargets() ([]string, bool) {
@@ -36164,7 +36797,10 @@ func (p *HostServiceIscsiDiscoverResponse) MustIscsiTargets() []string {
 }
 
 //
+// This method has been deprecated since Engine version 4.4.6.
+// DiscoverIscsi should be used instead.
 // Discovers iSCSI targets on the host, using the initiator details.
+// Returns an array of strings containing the discovered data.
 // For example, to discover iSCSI targets available in `myiscsi.example.com`,
 // from host `123`, send a request like this:
 // [source]
@@ -36179,18 +36815,6 @@ func (p *HostServiceIscsiDiscoverResponse) MustIscsiTargets() []string {
 //     <address>myiscsi.example.com</address>
 //   </iscsi>
 // </action>
-// ----
-// The result will be like this:
-// [source,xml]
-// ----
-// <discovered_targets>
-//   <iscsi_details>
-//     <address>10.35.1.72</address>
-//     <port>3260</port>
-//     <portal>10.35.1.72:3260,1</portal>
-//     <target>iqn.2015-08.com.tgt:444</target>
-//   </iscsi_details>
-// </discovered_targets>
 // ----
 //
 func (p *HostService) IscsiDiscover() *HostServiceIscsiDiscoverRequest {
@@ -36300,7 +36924,11 @@ func (p *HostServiceIscsiLoginRequest) Send() (*HostServiceIscsiLoginResponse, e
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -36424,7 +37052,11 @@ func (p *HostServiceRefreshRequest) Send() (*HostServiceRefreshResponse, error) 
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -36564,12 +37196,12 @@ func (p *HostServiceRemoveRequest) Send() (*HostServiceRemoveResponse, error) {
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(HostServiceRemoveResponse), nil
 }
@@ -36678,8 +37310,8 @@ func (p *HostService) Remove() *HostServiceRemoveRequest {
 //         <name>bond0</name>
 //       </host_nic>
 //       <ip_address_assignments>
-//         <assignment_method>static</assignment_method>
 //         <ip_address_assignment>
+//           <assignment_method>static</assignment_method>
 //           <ip>
 //             <address>192.168.122.10</address>
 //             <netmask>255.255.255.0</netmask>
@@ -37006,7 +37638,11 @@ func (p *HostServiceSetupNetworksRequest) Send() (*HostServiceSetupNetworksRespo
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -37076,8 +37712,8 @@ func (p *HostServiceSetupNetworksRequest) MustSend() *HostServiceSetupNetworksRe
 //         <name>bond0</name>
 //       </host_nic>
 //       <ip_address_assignments>
-//         <assignment_method>static</assignment_method>
 //         <ip_address_assignment>
+//           <assignment_method>static</assignment_method>
 //           <ip>
 //             <address>192.168.122.10</address>
 //             <netmask>255.255.255.0</netmask>
@@ -37237,8 +37873,8 @@ type HostServiceSetupNetworksResponse struct {
 //         <name>bond0</name>
 //       </host_nic>
 //       <ip_address_assignments>
-//         <assignment_method>static</assignment_method>
 //         <ip_address_assignment>
+//           <assignment_method>static</assignment_method>
 //           <ip>
 //             <address>192.168.122.10</address>
 //             <netmask>255.255.255.0</netmask>
@@ -37449,7 +38085,11 @@ func (p *HostServiceSyncAllNetworksRequest) Send() (*HostServiceSyncAllNetworksR
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -37599,7 +38239,11 @@ func (p *HostServiceUnregisteredStorageDomainsDiscoverRequest) Send() (*HostServ
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -37760,12 +38404,12 @@ func (p *HostServiceUpdateRequest) Send() (*HostServiceUpdateResponse, error) {
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadOne(reader, nil, "")
@@ -37962,7 +38606,11 @@ func (p *HostServiceUpgradeRequest) Send() (*HostServiceUpgradeResponse, error) 
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -38080,7 +38728,11 @@ func (p *HostServiceUpgradeCheckRequest) Send() (*HostServiceUpgradeCheckRespons
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -38124,6 +38776,7 @@ type HostServiceApproveUsingRootPasswordRequest struct {
 	async       *bool
 	cluster     *Cluster
 	host        *Host
+	reboot      *bool
 }
 
 func (p *HostServiceApproveUsingRootPasswordRequest) Header(key, value string) *HostServiceApproveUsingRootPasswordRequest {
@@ -38162,6 +38815,11 @@ func (p *HostServiceApproveUsingRootPasswordRequest) Host(host *Host) *HostServi
 	return p
 }
 
+func (p *HostServiceApproveUsingRootPasswordRequest) Reboot(reboot bool) *HostServiceApproveUsingRootPasswordRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostServiceApproveUsingRootPasswordRequest) Send() (*HostServiceApproveUsingRootPasswordResponse, error) {
 	rawURL := fmt.Sprintf("%s%s/usingrootpassword", p.HostService.connection.URL(), p.HostService.path)
 	actionBuilder := NewActionBuilder()
@@ -38173,6 +38831,9 @@ func (p *HostServiceApproveUsingRootPasswordRequest) Send() (*HostServiceApprove
 	}
 	actionBuilder.Cluster(p.cluster)
 	actionBuilder.Host(p.host)
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
+	}
 	action, err := actionBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -38232,7 +38893,11 @@ func (p *HostServiceApproveUsingRootPasswordRequest) Send() (*HostServiceApprove
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -38271,6 +38936,7 @@ type HostServiceInstallUsingRootPasswordRequest struct {
 	deployHostedEngine   *bool
 	host                 *Host
 	image                *string
+	reboot               *bool
 	rootPassword         *string
 	ssh                  *Ssh
 	undeployHostedEngine *bool
@@ -38317,6 +38983,11 @@ func (p *HostServiceInstallUsingRootPasswordRequest) Image(image string) *HostSe
 	return p
 }
 
+func (p *HostServiceInstallUsingRootPasswordRequest) Reboot(reboot bool) *HostServiceInstallUsingRootPasswordRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostServiceInstallUsingRootPasswordRequest) RootPassword(rootPassword string) *HostServiceInstallUsingRootPasswordRequest {
 	p.rootPassword = &rootPassword
 	return p
@@ -38347,6 +39018,9 @@ func (p *HostServiceInstallUsingRootPasswordRequest) Send() (*HostServiceInstall
 	actionBuilder.Host(p.host)
 	if p.image != nil {
 		actionBuilder.Image(*p.image)
+	}
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
 	}
 	if p.rootPassword != nil {
 		actionBuilder.RootPassword(*p.rootPassword)
@@ -38414,7 +39088,11 @@ func (p *HostServiceInstallUsingRootPasswordRequest) Send() (*HostServiceInstall
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -38547,7 +39225,11 @@ func (p *HostServiceUpdateUsingRootPasswordRequest) Send() (*HostServiceUpdateUs
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -38603,6 +39285,7 @@ type HostServiceApproveUsingSshRequest struct {
 	async       *bool
 	cluster     *Cluster
 	host        *Host
+	reboot      *bool
 }
 
 func (p *HostServiceApproveUsingSshRequest) Header(key, value string) *HostServiceApproveUsingSshRequest {
@@ -38641,6 +39324,11 @@ func (p *HostServiceApproveUsingSshRequest) Host(host *Host) *HostServiceApprove
 	return p
 }
 
+func (p *HostServiceApproveUsingSshRequest) Reboot(reboot bool) *HostServiceApproveUsingSshRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostServiceApproveUsingSshRequest) Send() (*HostServiceApproveUsingSshResponse, error) {
 	rawURL := fmt.Sprintf("%s%s/usingssh", p.HostService.connection.URL(), p.HostService.path)
 	actionBuilder := NewActionBuilder()
@@ -38652,6 +39340,9 @@ func (p *HostServiceApproveUsingSshRequest) Send() (*HostServiceApproveUsingSshR
 	}
 	actionBuilder.Cluster(p.cluster)
 	actionBuilder.Host(p.host)
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
+	}
 	action, err := actionBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -38711,7 +39402,11 @@ func (p *HostServiceApproveUsingSshRequest) Send() (*HostServiceApproveUsingSshR
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -38754,6 +39449,7 @@ type HostServiceInstallUsingSshRequest struct {
 	deployHostedEngine   *bool
 	host                 *Host
 	image                *string
+	reboot               *bool
 	rootPassword         *string
 	ssh                  *Ssh
 	undeployHostedEngine *bool
@@ -38800,6 +39496,11 @@ func (p *HostServiceInstallUsingSshRequest) Image(image string) *HostServiceInst
 	return p
 }
 
+func (p *HostServiceInstallUsingSshRequest) Reboot(reboot bool) *HostServiceInstallUsingSshRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostServiceInstallUsingSshRequest) RootPassword(rootPassword string) *HostServiceInstallUsingSshRequest {
 	p.rootPassword = &rootPassword
 	return p
@@ -38830,6 +39531,9 @@ func (p *HostServiceInstallUsingSshRequest) Send() (*HostServiceInstallUsingSshR
 	actionBuilder.Host(p.host)
 	if p.image != nil {
 		actionBuilder.Image(*p.image)
+	}
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
 	}
 	if p.rootPassword != nil {
 		actionBuilder.RootPassword(*p.rootPassword)
@@ -38897,7 +39601,11 @@ func (p *HostServiceInstallUsingSshRequest) Send() (*HostServiceInstallUsingSshR
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -39030,7 +39738,11 @@ func (p *HostServiceUpdateUsingSshRequest) Send() (*HostServiceUpdateUsingSshRes
 		}
 		p.HostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -39413,12 +40125,12 @@ func (p *HostStorageServiceListRequest) Send() (*HostStorageServiceListResponse,
 		}
 		p.HostStorageService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostStorageReadMany(reader, nil)
@@ -39592,6 +40304,7 @@ type HostsServiceAddRequest struct {
 	activate             *bool
 	deployHostedEngine   *bool
 	host                 *Host
+	reboot               *bool
 	undeployHostedEngine *bool
 }
 
@@ -39626,6 +40339,11 @@ func (p *HostsServiceAddRequest) Host(host *Host) *HostsServiceAddRequest {
 	return p
 }
 
+func (p *HostsServiceAddRequest) Reboot(reboot bool) *HostsServiceAddRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostsServiceAddRequest) UndeployHostedEngine(undeployHostedEngine bool) *HostsServiceAddRequest {
 	p.undeployHostedEngine = &undeployHostedEngine
 	return p
@@ -39640,6 +40358,10 @@ func (p *HostsServiceAddRequest) Send() (*HostsServiceAddResponse, error) {
 
 	if p.deployHostedEngine != nil {
 		values["deploy_hosted_engine"] = []string{fmt.Sprintf("%v", *p.deployHostedEngine)}
+	}
+
+	if p.reboot != nil {
+		values["reboot"] = []string{fmt.Sprintf("%v", *p.reboot)}
 	}
 
 	if p.undeployHostedEngine != nil {
@@ -39703,12 +40425,12 @@ func (p *HostsServiceAddRequest) Send() (*HostsServiceAddResponse, error) {
 		}
 		p.HostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadOne(reader, nil, "")
@@ -40029,12 +40751,12 @@ func (p *HostsServiceListRequest) Send() (*HostsServiceListResponse, error) {
 		}
 		p.HostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostReadMany(reader, nil)
@@ -40128,6 +40850,7 @@ type HostsServiceAddUsingRootPasswordRequest struct {
 	activate             *bool
 	deployHostedEngine   *bool
 	host                 *Host
+	reboot               *bool
 	undeployHostedEngine *bool
 }
 
@@ -40162,6 +40885,11 @@ func (p *HostsServiceAddUsingRootPasswordRequest) Host(host *Host) *HostsService
 	return p
 }
 
+func (p *HostsServiceAddUsingRootPasswordRequest) Reboot(reboot bool) *HostsServiceAddUsingRootPasswordRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostsServiceAddUsingRootPasswordRequest) UndeployHostedEngine(undeployHostedEngine bool) *HostsServiceAddUsingRootPasswordRequest {
 	p.undeployHostedEngine = &undeployHostedEngine
 	return p
@@ -40177,6 +40905,9 @@ func (p *HostsServiceAddUsingRootPasswordRequest) Send() (*HostsServiceAddUsingR
 		actionBuilder.DeployHostedEngine(*p.deployHostedEngine)
 	}
 	actionBuilder.Host(p.host)
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
+	}
 	if p.undeployHostedEngine != nil {
 		actionBuilder.UndeployHostedEngine(*p.undeployHostedEngine)
 	}
@@ -40239,7 +40970,11 @@ func (p *HostsServiceAddUsingRootPasswordRequest) Send() (*HostsServiceAddUsingR
 		}
 		p.HostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -40284,7 +41019,7 @@ func (p *HostsService) AddUsingRootPassword() *HostsServiceAddUsingRootPasswordR
 }
 
 //
-// Add a new host to the system providing the ssh password or fingerprint.
+// Add a new host to the system providing the ssh password, fingerprint or public key.
 //
 type HostsServiceAddUsingSshRequest struct {
 	HostsService         *HostsService
@@ -40293,6 +41028,7 @@ type HostsServiceAddUsingSshRequest struct {
 	activate             *bool
 	deployHostedEngine   *bool
 	host                 *Host
+	reboot               *bool
 	undeployHostedEngine *bool
 }
 
@@ -40327,6 +41063,11 @@ func (p *HostsServiceAddUsingSshRequest) Host(host *Host) *HostsServiceAddUsingS
 	return p
 }
 
+func (p *HostsServiceAddUsingSshRequest) Reboot(reboot bool) *HostsServiceAddUsingSshRequest {
+	p.reboot = &reboot
+	return p
+}
+
 func (p *HostsServiceAddUsingSshRequest) UndeployHostedEngine(undeployHostedEngine bool) *HostsServiceAddUsingSshRequest {
 	p.undeployHostedEngine = &undeployHostedEngine
 	return p
@@ -40342,6 +41083,9 @@ func (p *HostsServiceAddUsingSshRequest) Send() (*HostsServiceAddUsingSshRespons
 		actionBuilder.DeployHostedEngine(*p.deployHostedEngine)
 	}
 	actionBuilder.Host(p.host)
+	if p.reboot != nil {
+		actionBuilder.Reboot(*p.reboot)
+	}
 	if p.undeployHostedEngine != nil {
 		actionBuilder.UndeployHostedEngine(*p.undeployHostedEngine)
 	}
@@ -40404,7 +41148,11 @@ func (p *HostsServiceAddUsingSshRequest) Send() (*HostsServiceAddUsingSshRespons
 		}
 		p.HostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -40421,7 +41169,7 @@ func (p *HostsServiceAddUsingSshRequest) MustSend() *HostsServiceAddUsingSshResp
 }
 
 //
-// Add a new host to the system providing the ssh password or fingerprint.
+// Add a new host to the system providing the ssh password, fingerprint or public key.
 //
 type HostsServiceAddUsingSshResponse struct {
 	host *Host
@@ -40442,7 +41190,7 @@ func (p *HostsServiceAddUsingSshResponse) MustHost() *Host {
 }
 
 //
-// Add a new host to the system providing the ssh password or fingerprint.
+// Add a new host to the system providing the ssh password, fingerprint or public key.
 //
 func (p *HostsService) AddUsingSsh() *HostsServiceAddUsingSshRequest {
 	return &HostsServiceAddUsingSshRequest{HostsService: p}
@@ -40587,12 +41335,12 @@ func (p *IconServiceGetRequest) Send() (*IconServiceGetResponse, error) {
 		}
 		p.IconService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLIconReadOne(reader, nil, "")
@@ -40804,12 +41552,12 @@ func (p *IconsServiceListRequest) Send() (*IconsServiceListResponse, error) {
 		}
 		p.IconsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLIconReadMany(reader, nil)
@@ -41012,12 +41760,12 @@ func (p *ImageServiceGetRequest) Send() (*ImageServiceGetResponse, error) {
 		}
 		p.ImageService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLImageReadOne(reader, nil, "")
@@ -41204,7 +41952,11 @@ func (p *ImageServiceImportRequest) Send() (*ImageServiceImportResponse, error) 
 		}
 		p.ImageService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -41539,7 +42291,11 @@ func (p *ImageTransferServiceCancelRequest) Send() (*ImageTransferServiceCancelR
 		}
 		p.ImageTransferService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -41654,7 +42410,11 @@ func (p *ImageTransferServiceExtendRequest) Send() (*ImageTransferServiceExtendR
 		}
 		p.ImageTransferService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -41773,7 +42533,11 @@ func (p *ImageTransferServiceFinalizeRequest) Send() (*ImageTransferServiceFinal
 		}
 		p.ImageTransferService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -41897,12 +42661,12 @@ func (p *ImageTransferServiceGetRequest) Send() (*ImageTransferServiceGetRespons
 		}
 		p.ImageTransferService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLImageTransferReadOne(reader, nil, "")
@@ -42035,7 +42799,11 @@ func (p *ImageTransferServicePauseRequest) Send() (*ImageTransferServicePauseRes
 		}
 		p.ImageTransferService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -42160,7 +42928,11 @@ func (p *ImageTransferServiceResumeRequest) Send() (*ImageTransferServiceResumeR
 		}
 		p.ImageTransferService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -42362,12 +43134,12 @@ func (p *ImageTransfersServiceAddRequest) Send() (*ImageTransfersServiceAddRespo
 		}
 		p.ImageTransfersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLImageTransferReadOne(reader, nil, "")
@@ -42572,7 +43344,11 @@ func (p *ImageTransfersServiceAddForDiskRequest) Send() (*ImageTransfersServiceA
 		}
 		p.ImageTransfersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -42707,7 +43483,11 @@ func (p *ImageTransfersServiceAddForImageRequest) Send() (*ImageTransfersService
 		}
 		p.ImageTransfersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -42842,7 +43622,11 @@ func (p *ImageTransfersServiceAddForSnapshotRequest) Send() (*ImageTransfersServ
 		}
 		p.ImageTransfersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -42974,12 +43758,12 @@ func (p *ImageTransfersServiceListRequest) Send() (*ImageTransfersServiceListRes
 		}
 		p.ImageTransfersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLImageTransferReadMany(reader, nil)
@@ -43168,12 +43952,12 @@ func (p *ImagesServiceListRequest) Send() (*ImagesServiceListResponse, error) {
 		}
 		p.ImagesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLImageReadMany(reader, nil)
@@ -43346,12 +44130,12 @@ func (p *InstanceTypeGraphicsConsoleServiceGetRequest) Send() (*InstanceTypeGrap
 		}
 		p.InstanceTypeGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadOne(reader, nil, "")
@@ -43485,12 +44269,12 @@ func (p *InstanceTypeGraphicsConsoleServiceRemoveRequest) Send() (*InstanceTypeG
 		}
 		p.InstanceTypeGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(InstanceTypeGraphicsConsoleServiceRemoveResponse), nil
 }
@@ -43634,12 +44418,12 @@ func (p *InstanceTypeGraphicsConsolesServiceAddRequest) Send() (*InstanceTypeGra
 		}
 		p.InstanceTypeGraphicsConsolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadOne(reader, nil, "")
@@ -43784,12 +44568,12 @@ func (p *InstanceTypeGraphicsConsolesServiceListRequest) Send() (*InstanceTypeGr
 		}
 		p.InstanceTypeGraphicsConsolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadMany(reader, nil)
@@ -43963,12 +44747,12 @@ func (p *InstanceTypeNicServiceGetRequest) Send() (*InstanceTypeNicServiceGetRes
 		}
 		p.InstanceTypeNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -44102,12 +44886,12 @@ func (p *InstanceTypeNicServiceRemoveRequest) Send() (*InstanceTypeNicServiceRem
 		}
 		p.InstanceTypeNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(InstanceTypeNicServiceRemoveResponse), nil
 }
@@ -44234,12 +45018,12 @@ func (p *InstanceTypeNicServiceUpdateRequest) Send() (*InstanceTypeNicServiceUpd
 		}
 		p.InstanceTypeNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -44403,12 +45187,12 @@ func (p *InstanceTypeNicsServiceAddRequest) Send() (*InstanceTypeNicsServiceAddR
 		}
 		p.InstanceTypeNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -44563,12 +45347,12 @@ func (p *InstanceTypeNicsServiceListRequest) Send() (*InstanceTypeNicsServiceLis
 		}
 		p.InstanceTypeNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadMany(reader, nil)
@@ -44745,12 +45529,12 @@ func (p *InstanceTypeServiceGetRequest) Send() (*InstanceTypeServiceGetResponse,
 		}
 		p.InstanceTypeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLInstanceTypeReadOne(reader, nil, "")
@@ -44898,12 +45682,12 @@ func (p *InstanceTypeServiceRemoveRequest) Send() (*InstanceTypeServiceRemoveRes
 		}
 		p.InstanceTypeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(InstanceTypeServiceRemoveResponse), nil
 }
@@ -45065,12 +45849,12 @@ func (p *InstanceTypeServiceUpdateRequest) Send() (*InstanceTypeServiceUpdateRes
 		}
 		p.InstanceTypeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLInstanceTypeReadOne(reader, nil, "")
@@ -45317,12 +46101,12 @@ func (p *InstanceTypeWatchdogServiceGetRequest) Send() (*InstanceTypeWatchdogSer
 		}
 		p.InstanceTypeWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -45456,12 +46240,12 @@ func (p *InstanceTypeWatchdogServiceRemoveRequest) Send() (*InstanceTypeWatchdog
 		}
 		p.InstanceTypeWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(InstanceTypeWatchdogServiceRemoveResponse), nil
 }
@@ -45588,12 +46372,12 @@ func (p *InstanceTypeWatchdogServiceUpdateRequest) Send() (*InstanceTypeWatchdog
 		}
 		p.InstanceTypeWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -45757,12 +46541,12 @@ func (p *InstanceTypeWatchdogsServiceAddRequest) Send() (*InstanceTypeWatchdogsS
 		}
 		p.InstanceTypeWatchdogsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -45917,12 +46701,12 @@ func (p *InstanceTypeWatchdogsServiceListRequest) Send() (*InstanceTypeWatchdogs
 		}
 		p.InstanceTypeWatchdogsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadMany(reader, nil)
@@ -46176,12 +46960,12 @@ func (p *InstanceTypesServiceAddRequest) Send() (*InstanceTypesServiceAddRespons
 		}
 		p.InstanceTypesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLInstanceTypeReadOne(reader, nil, "")
@@ -46502,12 +47286,12 @@ func (p *InstanceTypesServiceListRequest) Send() (*InstanceTypesServiceListRespo
 		}
 		p.InstanceTypesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLInstanceTypeReadMany(reader, nil)
@@ -46679,12 +47463,12 @@ func (p *IscsiBondServiceGetRequest) Send() (*IscsiBondServiceGetResponse, error
 		}
 		p.IscsiBondService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLIscsiBondReadOne(reader, nil, "")
@@ -46821,12 +47605,12 @@ func (p *IscsiBondServiceRemoveRequest) Send() (*IscsiBondServiceRemoveResponse,
 		}
 		p.IscsiBondService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(IscsiBondServiceRemoveResponse), nil
 }
@@ -46977,12 +47761,12 @@ func (p *IscsiBondServiceUpdateRequest) Send() (*IscsiBondServiceUpdateResponse,
 		}
 		p.IscsiBondService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLIscsiBondReadOne(reader, nil, "")
@@ -47218,12 +48002,12 @@ func (p *IscsiBondsServiceAddRequest) Send() (*IscsiBondsServiceAddResponse, err
 		}
 		p.IscsiBondsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLIscsiBondReadOne(reader, nil, "")
@@ -47408,12 +48192,12 @@ func (p *IscsiBondsServiceListRequest) Send() (*IscsiBondsServiceListResponse, e
 		}
 		p.IscsiBondsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLIscsiBondReadMany(reader, nil)
@@ -47605,7 +48389,11 @@ func (p *JobServiceClearRequest) Send() (*JobServiceClearResponse, error) {
 		}
 		p.JobService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -47780,7 +48568,11 @@ func (p *JobServiceEndRequest) Send() (*JobServiceEndResponse, error) {
 		}
 		p.JobService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -47945,12 +48737,12 @@ func (p *JobServiceGetRequest) Send() (*JobServiceGetResponse, error) {
 		}
 		p.JobService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLJobReadOne(reader, nil, "")
@@ -48206,12 +48998,12 @@ func (p *JobsServiceAddRequest) Send() (*JobsServiceAddResponse, error) {
 		}
 		p.JobsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLJobReadOne(reader, nil, "")
@@ -48464,12 +49256,12 @@ func (p *JobsServiceListRequest) Send() (*JobsServiceListResponse, error) {
 		}
 		p.JobsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLJobReadMany(reader, nil)
@@ -48696,12 +49488,12 @@ func (p *LinkLayerDiscoveryProtocolServiceListRequest) Send() (*LinkLayerDiscove
 		}
 		p.LinkLayerDiscoveryProtocolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLLinkLayerDiscoveryProtocolElementReadMany(reader, nil)
@@ -48861,12 +49653,12 @@ func (p *MacPoolServiceGetRequest) Send() (*MacPoolServiceGetResponse, error) {
 		}
 		p.MacPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLMacPoolReadOne(reader, nil, "")
@@ -49003,12 +49795,12 @@ func (p *MacPoolServiceRemoveRequest) Send() (*MacPoolServiceRemoveResponse, err
 		}
 		p.MacPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(MacPoolServiceRemoveResponse), nil
 }
@@ -49170,12 +49962,12 @@ func (p *MacPoolServiceUpdateRequest) Send() (*MacPoolServiceUpdateResponse, err
 		}
 		p.MacPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLMacPoolReadOne(reader, nil, "")
@@ -49424,12 +50216,12 @@ func (p *MacPoolsServiceAddRequest) Send() (*MacPoolsServiceAddResponse, error) 
 		}
 		p.MacPoolsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLMacPoolReadOne(reader, nil, "")
@@ -49618,12 +50410,12 @@ func (p *MacPoolsServiceListRequest) Send() (*MacPoolsServiceListResponse, error
 		}
 		p.MacPoolsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLMacPoolReadMany(reader, nil)
@@ -49842,7 +50634,11 @@ func (p *MoveableServiceMoveRequest) Send() (*MoveableServiceMoveResponse, error
 		}
 		p.MoveableService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -49982,12 +50778,12 @@ func (p *NetworkAttachmentServiceGetRequest) Send() (*NetworkAttachmentServiceGe
 		}
 		p.NetworkAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkAttachmentReadOne(reader, nil, "")
@@ -50118,12 +50914,12 @@ func (p *NetworkAttachmentServiceRemoveRequest) Send() (*NetworkAttachmentServic
 		}
 		p.NetworkAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(NetworkAttachmentServiceRemoveResponse), nil
 }
@@ -50248,12 +51044,12 @@ func (p *NetworkAttachmentServiceUpdateRequest) Send() (*NetworkAttachmentServic
 		}
 		p.NetworkAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkAttachmentReadOne(reader, nil, "")
@@ -50418,12 +51214,12 @@ func (p *NetworkAttachmentsServiceAddRequest) Send() (*NetworkAttachmentsService
 		}
 		p.NetworkAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkAttachmentReadOne(reader, nil, "")
@@ -50568,12 +51364,12 @@ func (p *NetworkAttachmentsServiceListRequest) Send() (*NetworkAttachmentsServic
 		}
 		p.NetworkAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkAttachmentReadMany(reader, nil)
@@ -50760,12 +51556,12 @@ func (p *NetworkFilterServiceGetRequest) Send() (*NetworkFilterServiceGetRespons
 		}
 		p.NetworkFilterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkFilterReadOne(reader, nil, "")
@@ -50978,12 +51774,12 @@ func (p *NetworkFiltersServiceListRequest) Send() (*NetworkFiltersServiceListRes
 		}
 		p.NetworkFiltersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkFilterReadMany(reader, nil)
@@ -51155,12 +51951,12 @@ func (p *NetworkLabelServiceGetRequest) Send() (*NetworkLabelServiceGetResponse,
 		}
 		p.NetworkLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkLabelReadOne(reader, nil, "")
@@ -51297,12 +52093,12 @@ func (p *NetworkLabelServiceRemoveRequest) Send() (*NetworkLabelServiceRemoveRes
 		}
 		p.NetworkLabelService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(NetworkLabelServiceRemoveResponse), nil
 }
@@ -51469,12 +52265,12 @@ func (p *NetworkLabelsServiceAddRequest) Send() (*NetworkLabelsServiceAddRespons
 		}
 		p.NetworkLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkLabelReadOne(reader, nil, "")
@@ -51643,12 +52439,12 @@ func (p *NetworkLabelsServiceListRequest) Send() (*NetworkLabelsServiceListRespo
 		}
 		p.NetworkLabelsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkLabelReadMany(reader, nil)
@@ -51844,12 +52640,12 @@ func (p *NetworkServiceGetRequest) Send() (*NetworkServiceGetResponse, error) {
 		}
 		p.NetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -52045,12 +52841,12 @@ func (p *NetworkServiceRemoveRequest) Send() (*NetworkServiceRemoveResponse, err
 		}
 		p.NetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(NetworkServiceRemoveResponse), nil
 }
@@ -52241,12 +53037,12 @@ func (p *NetworkServiceUpdateRequest) Send() (*NetworkServiceUpdateResponse, err
 		}
 		p.NetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -52549,12 +53345,12 @@ func (p *NetworksServiceAddRequest) Send() (*NetworksServiceAddResponse, error) 
 		}
 		p.NetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -52825,12 +53621,12 @@ func (p *NetworksServiceListRequest) Send() (*NetworksServiceListResponse, error
 		}
 		p.NetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadMany(reader, nil)
@@ -53057,12 +53853,12 @@ func (p *NicNetworkFilterParameterServiceGetRequest) Send() (*NicNetworkFilterPa
 		}
 		p.NicNetworkFilterParameterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkFilterParameterReadOne(reader, nil, "")
@@ -53192,12 +53988,12 @@ func (p *NicNetworkFilterParameterServiceRemoveRequest) Send() (*NicNetworkFilte
 		}
 		p.NicNetworkFilterParameterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(NicNetworkFilterParameterServiceRemoveResponse), nil
 }
@@ -53340,12 +54136,12 @@ func (p *NicNetworkFilterParameterServiceUpdateRequest) Send() (*NicNetworkFilte
 		}
 		p.NicNetworkFilterParameterService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkFilterParameterReadOne(reader, nil, "")
@@ -53552,12 +54348,12 @@ func (p *NicNetworkFilterParametersServiceAddRequest) Send() (*NicNetworkFilterP
 		}
 		p.NicNetworkFilterParametersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkFilterParameterReadOne(reader, nil, "")
@@ -53720,12 +54516,12 @@ func (p *NicNetworkFilterParametersServiceListRequest) Send() (*NicNetworkFilter
 		}
 		p.NicNetworkFilterParametersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkFilterParameterReadMany(reader, nil)
@@ -53898,12 +54694,12 @@ func (p *OperatingSystemServiceGetRequest) Send() (*OperatingSystemServiceGetRes
 		}
 		p.OperatingSystemService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOperatingSystemInfoReadOne(reader, nil, "")
@@ -54074,12 +54870,12 @@ func (p *OperatingSystemsServiceListRequest) Send() (*OperatingSystemsServiceLis
 		}
 		p.OperatingSystemsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOperatingSystemInfoReadMany(reader, nil)
@@ -54251,12 +55047,12 @@ func (p *PermissionServiceGetRequest) Send() (*PermissionServiceGetResponse, err
 		}
 		p.PermissionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermissionReadOne(reader, nil, "")
@@ -54387,12 +55183,12 @@ func (p *PermissionServiceRemoveRequest) Send() (*PermissionServiceRemoveRespons
 		}
 		p.PermissionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(PermissionServiceRemoveResponse), nil
 }
@@ -54545,12 +55341,12 @@ func (p *PermitServiceGetRequest) Send() (*PermitServiceGetResponse, error) {
 		}
 		p.PermitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermitReadOne(reader, nil, "")
@@ -54714,12 +55510,12 @@ func (p *PermitServiceRemoveRequest) Send() (*PermitServiceRemoveResponse, error
 		}
 		p.PermitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(PermitServiceRemoveResponse), nil
 }
@@ -54883,12 +55679,12 @@ func (p *PermitsServiceAddRequest) Send() (*PermitsServiceAddResponse, error) {
 		}
 		p.PermitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermitReadOne(reader, nil, "")
@@ -55074,12 +55870,12 @@ func (p *PermitsServiceListRequest) Send() (*PermitsServiceListResponse, error) 
 		}
 		p.PermitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermitReadMany(reader, nil)
@@ -55307,12 +56103,12 @@ func (p *QosServiceGetRequest) Send() (*QosServiceGetResponse, error) {
 		}
 		p.QosService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQosReadOne(reader, nil, "")
@@ -55482,12 +56278,12 @@ func (p *QosServiceRemoveRequest) Send() (*QosServiceRemoveResponse, error) {
 		}
 		p.QosService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(QosServiceRemoveResponse), nil
 }
@@ -55645,12 +56441,12 @@ func (p *QosServiceUpdateRequest) Send() (*QosServiceUpdateResponse, error) {
 		}
 		p.QosService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQosReadOne(reader, nil, "")
@@ -55876,12 +56672,12 @@ func (p *QossServiceAddRequest) Send() (*QossServiceAddResponse, error) {
 		}
 		p.QossService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQosReadOne(reader, nil, "")
@@ -56069,12 +56865,12 @@ func (p *QossServiceListRequest) Send() (*QossServiceListResponse, error) {
 		}
 		p.QossService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQosReadMany(reader, nil)
@@ -56273,12 +57069,12 @@ func (p *QuotaClusterLimitServiceGetRequest) Send() (*QuotaClusterLimitServiceGe
 		}
 		p.QuotaClusterLimitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaClusterLimitReadOne(reader, nil, "")
@@ -56409,12 +57205,12 @@ func (p *QuotaClusterLimitServiceRemoveRequest) Send() (*QuotaClusterLimitServic
 		}
 		p.QuotaClusterLimitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(QuotaClusterLimitServiceRemoveResponse), nil
 }
@@ -56557,12 +57353,12 @@ func (p *QuotaClusterLimitsServiceAddRequest) Send() (*QuotaClusterLimitsService
 		}
 		p.QuotaClusterLimitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaClusterLimitReadOne(reader, nil, "")
@@ -56707,12 +57503,12 @@ func (p *QuotaClusterLimitsServiceListRequest) Send() (*QuotaClusterLimitsServic
 		}
 		p.QuotaClusterLimitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaClusterLimitReadMany(reader, nil)
@@ -56901,12 +57697,12 @@ func (p *QuotaServiceGetRequest) Send() (*QuotaServiceGetResponse, error) {
 		}
 		p.QuotaService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaReadOne(reader, nil, "")
@@ -57080,12 +57876,12 @@ func (p *QuotaServiceRemoveRequest) Send() (*QuotaServiceRemoveResponse, error) 
 		}
 		p.QuotaService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(QuotaServiceRemoveResponse), nil
 }
@@ -57242,12 +58038,12 @@ func (p *QuotaServiceUpdateRequest) Send() (*QuotaServiceUpdateResponse, error) 
 		}
 		p.QuotaService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaReadOne(reader, nil, "")
@@ -57471,12 +58267,12 @@ func (p *QuotaStorageLimitServiceGetRequest) Send() (*QuotaStorageLimitServiceGe
 		}
 		p.QuotaStorageLimitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaStorageLimitReadOne(reader, nil, "")
@@ -57607,12 +58403,12 @@ func (p *QuotaStorageLimitServiceRemoveRequest) Send() (*QuotaStorageLimitServic
 		}
 		p.QuotaStorageLimitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(QuotaStorageLimitServiceRemoveResponse), nil
 }
@@ -57780,12 +58576,12 @@ func (p *QuotaStorageLimitsServiceAddRequest) Send() (*QuotaStorageLimitsService
 		}
 		p.QuotaStorageLimitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaStorageLimitReadOne(reader, nil, "")
@@ -57980,12 +58776,12 @@ func (p *QuotaStorageLimitsServiceListRequest) Send() (*QuotaStorageLimitsServic
 		}
 		p.QuotaStorageLimitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaStorageLimitReadMany(reader, nil)
@@ -58174,12 +58970,12 @@ func (p *QuotasServiceAddRequest) Send() (*QuotasServiceAddResponse, error) {
 		}
 		p.QuotasService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaReadOne(reader, nil, "")
@@ -58348,12 +59144,12 @@ func (p *QuotasServiceListRequest) Send() (*QuotasServiceListResponse, error) {
 		}
 		p.QuotasService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLQuotaReadMany(reader, nil)
@@ -58541,12 +59337,12 @@ func (p *RoleServiceGetRequest) Send() (*RoleServiceGetResponse, error) {
 		}
 		p.RoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLRoleReadOne(reader, nil, "")
@@ -58715,12 +59511,12 @@ func (p *RoleServiceRemoveRequest) Send() (*RoleServiceRemoveResponse, error) {
 		}
 		p.RoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(RoleServiceRemoveResponse), nil
 }
@@ -58873,12 +59669,12 @@ func (p *RoleServiceUpdateRequest) Send() (*RoleServiceUpdateResponse, error) {
 		}
 		p.RoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLRoleReadOne(reader, nil, "")
@@ -59107,12 +59903,12 @@ func (p *RolesServiceAddRequest) Send() (*RolesServiceAddResponse, error) {
 		}
 		p.RolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLRoleReadOne(reader, nil, "")
@@ -59313,12 +60109,12 @@ func (p *RolesServiceListRequest) Send() (*RolesServiceListResponse, error) {
 		}
 		p.RolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLRoleReadMany(reader, nil)
@@ -59532,12 +60328,12 @@ func (p *SchedulingPoliciesServiceAddRequest) Send() (*SchedulingPoliciesService
 		}
 		p.SchedulingPoliciesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSchedulingPolicyReadOne(reader, nil, "")
@@ -59692,12 +60488,12 @@ func (p *SchedulingPoliciesServiceListRequest) Send() (*SchedulingPoliciesServic
 		}
 		p.SchedulingPoliciesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSchedulingPolicyReadMany(reader, nil)
@@ -59879,12 +60675,12 @@ func (p *SchedulingPolicyServiceGetRequest) Send() (*SchedulingPolicyServiceGetR
 		}
 		p.SchedulingPolicyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSchedulingPolicyReadOne(reader, nil, "")
@@ -60015,12 +60811,12 @@ func (p *SchedulingPolicyServiceRemoveRequest) Send() (*SchedulingPolicyServiceR
 		}
 		p.SchedulingPolicyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(SchedulingPolicyServiceRemoveResponse), nil
 }
@@ -60145,12 +60941,12 @@ func (p *SchedulingPolicyServiceUpdateRequest) Send() (*SchedulingPolicyServiceU
 		}
 		p.SchedulingPolicyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSchedulingPolicyReadOne(reader, nil, "")
@@ -60356,12 +61152,12 @@ func (p *SchedulingPolicyUnitServiceGetRequest) Send() (*SchedulingPolicyUnitSer
 		}
 		p.SchedulingPolicyUnitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSchedulingPolicyUnitReadOne(reader, nil, "")
@@ -60492,12 +61288,12 @@ func (p *SchedulingPolicyUnitServiceRemoveRequest) Send() (*SchedulingPolicyUnit
 		}
 		p.SchedulingPolicyUnitService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(SchedulingPolicyUnitServiceRemoveResponse), nil
 }
@@ -60658,12 +61454,12 @@ func (p *SchedulingPolicyUnitsServiceListRequest) Send() (*SchedulingPolicyUnits
 		}
 		p.SchedulingPolicyUnitsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSchedulingPolicyUnitReadMany(reader, nil)
@@ -60835,12 +61631,12 @@ func (p *SnapshotCdromServiceGetRequest) Send() (*SnapshotCdromServiceGetRespons
 		}
 		p.SnapshotCdromService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadOne(reader, nil, "")
@@ -61011,12 +61807,12 @@ func (p *SnapshotCdromsServiceListRequest) Send() (*SnapshotCdromsServiceListRes
 		}
 		p.SnapshotCdromsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadMany(reader, nil)
@@ -61188,12 +61984,12 @@ func (p *SnapshotDiskServiceGetRequest) Send() (*SnapshotDiskServiceGetResponse,
 		}
 		p.SnapshotDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -61364,12 +62160,12 @@ func (p *SnapshotDisksServiceListRequest) Send() (*SnapshotDisksServiceListRespo
 		}
 		p.SnapshotDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -61541,12 +62337,12 @@ func (p *SnapshotNicServiceGetRequest) Send() (*SnapshotNicServiceGetResponse, e
 		}
 		p.SnapshotNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -61717,12 +62513,12 @@ func (p *SnapshotNicsServiceListRequest) Send() (*SnapshotNicsServiceListRespons
 		}
 		p.SnapshotNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadMany(reader, nil)
@@ -61894,12 +62690,12 @@ func (p *SnapshotServiceGetRequest) Send() (*SnapshotServiceGetResponse, error) 
 		}
 		p.SnapshotService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSnapshotReadOne(reader, nil, "")
@@ -62040,12 +62836,12 @@ func (p *SnapshotServiceRemoveRequest) Send() (*SnapshotServiceRemoveResponse, e
 		}
 		p.SnapshotService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(SnapshotServiceRemoveResponse), nil
 }
@@ -62201,7 +62997,11 @@ func (p *SnapshotServiceRestoreRequest) Send() (*SnapshotServiceRestoreResponse,
 		}
 		p.SnapshotService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -62457,12 +63257,12 @@ func (p *SnapshotsServiceAddRequest) Send() (*SnapshotsServiceAddResponse, error
 		}
 		p.SnapshotsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSnapshotReadOne(reader, nil, "")
@@ -62715,12 +63515,12 @@ func (p *SnapshotsServiceListRequest) Send() (*SnapshotsServiceListResponse, err
 		}
 		p.SnapshotsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSnapshotReadMany(reader, nil)
@@ -62892,12 +63692,12 @@ func (p *StatisticServiceGetRequest) Send() (*StatisticServiceGetResponse, error
 		}
 		p.StatisticService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStatisticReadOne(reader, nil, "")
@@ -63115,12 +63915,12 @@ func (p *StatisticsServiceListRequest) Send() (*StatisticsServiceListResponse, e
 		}
 		p.StatisticsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStatisticReadMany(reader, nil)
@@ -63430,7 +64230,11 @@ func (p *StepServiceEndRequest) Send() (*StepServiceEndResponse, error) {
 		}
 		p.StepService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -63595,12 +64399,12 @@ func (p *StepServiceGetRequest) Send() (*StepServiceGetResponse, error) {
 		}
 		p.StepService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStepReadOne(reader, nil, "")
@@ -63852,12 +64656,12 @@ func (p *StepsServiceAddRequest) Send() (*StepsServiceAddResponse, error) {
 		}
 		p.StepsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStepReadOne(reader, nil, "")
@@ -64092,12 +64896,12 @@ func (p *StepsServiceListRequest) Send() (*StepsServiceListResponse, error) {
 		}
 		p.StepsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStepReadMany(reader, nil)
@@ -64328,12 +65132,12 @@ func (p *StorageDomainContentDiskServiceGetRequest) Send() (*StorageDomainConten
 		}
 		p.StorageDomainContentDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -64525,12 +65329,12 @@ func (p *StorageDomainContentDisksServiceListRequest) Send() (*StorageDomainCont
 		}
 		p.StorageDomainContentDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -64726,7 +65530,11 @@ func (p *StorageDomainDiskServiceCopyRequest) Send() (*StorageDomainDiskServiceC
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -64857,7 +65665,11 @@ func (p *StorageDomainDiskServiceExportRequest) Send() (*StorageDomainDiskServic
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -64979,12 +65791,12 @@ func (p *StorageDomainDiskServiceGetRequest) Send() (*StorageDomainDiskServiceGe
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -65145,7 +65957,11 @@ func (p *StorageDomainDiskServiceMoveRequest) Send() (*StorageDomainDiskServiceM
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -65278,7 +66094,11 @@ func (p *StorageDomainDiskServiceReduceRequest) Send() (*StorageDomainDiskServic
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -65393,12 +66213,12 @@ func (p *StorageDomainDiskServiceRemoveRequest) Send() (*StorageDomainDiskServic
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageDomainDiskServiceRemoveResponse), nil
 }
@@ -65520,7 +66340,11 @@ func (p *StorageDomainDiskServiceSparsifyRequest) Send() (*StorageDomainDiskServ
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -65648,12 +66472,12 @@ func (p *StorageDomainDiskServiceUpdateRequest) Send() (*StorageDomainDiskServic
 		}
 		p.StorageDomainDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -65864,12 +66688,12 @@ func (p *StorageDomainDisksServiceAddRequest) Send() (*StorageDomainDisksService
 		}
 		p.StorageDomainDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -66034,12 +66858,12 @@ func (p *StorageDomainDisksServiceListRequest) Send() (*StorageDomainDisksServic
 		}
 		p.StorageDomainDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -66212,12 +67036,12 @@ func (p *StorageDomainServerConnectionServiceGetRequest) Send() (*StorageDomainS
 		}
 		p.StorageDomainServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadOne(reader, nil, "")
@@ -66349,12 +67173,12 @@ func (p *StorageDomainServerConnectionServiceRemoveRequest) Send() (*StorageDoma
 		}
 		p.StorageDomainServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageDomainServerConnectionServiceRemoveResponse), nil
 }
@@ -66498,12 +67322,12 @@ func (p *StorageDomainServerConnectionsServiceAddRequest) Send() (*StorageDomain
 		}
 		p.StorageDomainServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadOne(reader, nil, "")
@@ -66646,12 +67470,12 @@ func (p *StorageDomainServerConnectionsServiceListRequest) Send() (*StorageDomai
 		}
 		p.StorageDomainServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadMany(reader, nil)
@@ -66834,12 +67658,12 @@ func (p *StorageDomainServiceGetRequest) Send() (*StorageDomainServiceGetRespons
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadOne(reader, nil, "")
@@ -66990,7 +67814,11 @@ func (p *StorageDomainServiceIsAttachedRequest) Send() (*StorageDomainServiceIsA
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -67160,7 +67988,11 @@ func (p *StorageDomainServiceReduceLunsRequest) Send() (*StorageDomainServiceRed
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -67356,7 +68188,11 @@ func (p *StorageDomainServiceRefreshLunsRequest) Send() (*StorageDomainServiceRe
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -67547,12 +68383,12 @@ func (p *StorageDomainServiceRemoveRequest) Send() (*StorageDomainServiceRemoveR
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageDomainServiceRemoveResponse), nil
 }
@@ -67711,12 +68547,12 @@ func (p *StorageDomainServiceUpdateRequest) Send() (*StorageDomainServiceUpdateR
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadOne(reader, nil, "")
@@ -67906,7 +68742,11 @@ func (p *StorageDomainServiceUpdateOvfStoreRequest) Send() (*StorageDomainServic
 		}
 		p.StorageDomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -68183,12 +69023,12 @@ func (p *StorageDomainTemplateServiceGetRequest) Send() (*StorageDomainTemplateS
 		}
 		p.StorageDomainTemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTemplateReadOne(reader, nil, "")
@@ -68394,7 +69234,11 @@ func (p *StorageDomainTemplateServiceImportRequest) Send() (*StorageDomainTempla
 		}
 		p.StorageDomainTemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -68622,7 +69466,11 @@ func (p *StorageDomainTemplateServiceRegisterRequest) Send() (*StorageDomainTemp
 		}
 		p.StorageDomainTemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -68739,12 +69587,12 @@ func (p *StorageDomainTemplateServiceRemoveRequest) Send() (*StorageDomainTempla
 		}
 		p.StorageDomainTemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageDomainTemplateServiceRemoveResponse), nil
 }
@@ -68917,12 +69765,12 @@ func (p *StorageDomainTemplatesServiceListRequest) Send() (*StorageDomainTemplat
 		}
 		p.StorageDomainTemplatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTemplateReadMany(reader, nil)
@@ -69096,12 +69944,12 @@ func (p *StorageDomainVmDiskAttachmentServiceGetRequest) Send() (*StorageDomainV
 		}
 		p.StorageDomainVmDiskAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadOne(reader, nil, "")
@@ -69264,12 +70112,12 @@ func (p *StorageDomainVmDiskAttachmentsServiceListRequest) Send() (*StorageDomai
 		}
 		p.StorageDomainVmDiskAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadMany(reader, nil)
@@ -69442,12 +70290,12 @@ func (p *StorageDomainVmServiceGetRequest) Send() (*StorageDomainVmServiceGetRes
 		}
 		p.StorageDomainVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -69688,7 +70536,11 @@ func (p *StorageDomainVmServiceImportRequest) Send() (*StorageDomainVmServiceImp
 		}
 		p.StorageDomainVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -69980,7 +70832,11 @@ func (p *StorageDomainVmServiceRegisterRequest) Send() (*StorageDomainVmServiceR
 		}
 		p.StorageDomainVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -70099,12 +70955,12 @@ func (p *StorageDomainVmServiceRemoveRequest) Send() (*StorageDomainVmServiceRem
 		}
 		p.StorageDomainVmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageDomainVmServiceRemoveResponse), nil
 }
@@ -70326,12 +71182,12 @@ func (p *StorageDomainVmsServiceListRequest) Send() (*StorageDomainVmsServiceLis
 		}
 		p.StorageDomainVmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadMany(reader, nil)
@@ -70569,12 +71425,12 @@ func (p *StorageDomainsServiceAddRequest) Send() (*StorageDomainsServiceAddRespo
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadOne(reader, nil, "")
@@ -70836,7 +71692,11 @@ func (p *StorageDomainsServiceAddBlockDomainRequest) Send() (*StorageDomainsServ
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -70974,7 +71834,11 @@ func (p *StorageDomainsServiceAddByPathRequest) Send() (*StorageDomainsServiceAd
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -71112,7 +71976,11 @@ func (p *StorageDomainsServiceAddDirectLunRequest) Send() (*StorageDomainsServic
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -71250,7 +72118,11 @@ func (p *StorageDomainsServiceAddGlusterOrPostfsRequest) Send() (*StorageDomains
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -71424,12 +72296,12 @@ func (p *StorageDomainsServiceListRequest) Send() (*StorageDomainsServiceListRes
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageDomainReadMany(reader, nil)
@@ -71573,7 +72445,11 @@ func (p *StorageDomainsServiceAddLocalRequest) Send() (*StorageDomainsServiceAdd
 		}
 		p.StorageDomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -71741,12 +72617,12 @@ func (p *StorageServerConnectionExtensionServiceGetRequest) Send() (*StorageServ
 		}
 		p.StorageServerConnectionExtensionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionExtensionReadOne(reader, nil, "")
@@ -71877,12 +72753,12 @@ func (p *StorageServerConnectionExtensionServiceRemoveRequest) Send() (*StorageS
 		}
 		p.StorageServerConnectionExtensionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageServerConnectionExtensionServiceRemoveResponse), nil
 }
@@ -72021,12 +72897,12 @@ func (p *StorageServerConnectionExtensionServiceUpdateRequest) Send() (*StorageS
 		}
 		p.StorageServerConnectionExtensionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionExtensionReadOne(reader, nil, "")
@@ -72234,12 +73110,12 @@ func (p *StorageServerConnectionExtensionsServiceAddRequest) Send() (*StorageSer
 		}
 		p.StorageServerConnectionExtensionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionExtensionReadOne(reader, nil, "")
@@ -72416,12 +73292,12 @@ func (p *StorageServerConnectionExtensionsServiceListRequest) Send() (*StorageSe
 		}
 		p.StorageServerConnectionExtensionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionExtensionReadMany(reader, nil)
@@ -72593,12 +73469,12 @@ func (p *StorageServerConnectionServiceGetRequest) Send() (*StorageServerConnect
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadOne(reader, nil, "")
@@ -72754,7 +73630,11 @@ func (p *StorageServerConnectionServiceUpdateGlusterfsRequest) Send() (*StorageS
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -72910,7 +73790,11 @@ func (p *StorageServerConnectionServiceUpdateIscsiRequest) Send() (*StorageServe
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -73066,7 +73950,11 @@ func (p *StorageServerConnectionServiceUpdateLocalRequest) Send() (*StorageServe
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -73222,7 +74110,11 @@ func (p *StorageServerConnectionServiceUpdateNfsRequest) Send() (*StorageServerC
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -73366,12 +74258,12 @@ func (p *StorageServerConnectionServiceRemoveRequest) Send() (*StorageServerConn
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(StorageServerConnectionServiceRemoveResponse), nil
 }
@@ -73537,12 +74429,12 @@ func (p *StorageServerConnectionServiceUpdateRequest) Send() (*StorageServerConn
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadOne(reader, nil, "")
@@ -73750,7 +74642,11 @@ func (p *StorageServerConnectionServiceUpdateVfsRequest) Send() (*StorageServerC
 		}
 		p.StorageServerConnectionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -73930,12 +74826,12 @@ func (p *StorageServerConnectionsServiceAddRequest) Send() (*StorageServerConnec
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadOne(reader, nil, "")
@@ -74111,7 +75007,11 @@ func (p *StorageServerConnectionsServiceAddGlusterfsRequest) Send() (*StorageSer
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -74249,7 +75149,11 @@ func (p *StorageServerConnectionsServiceAddIscsiRequest) Send() (*StorageServerC
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -74392,12 +75296,12 @@ func (p *StorageServerConnectionsServiceListRequest) Send() (*StorageServerConne
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLStorageConnectionReadMany(reader, nil)
@@ -74539,7 +75443,11 @@ func (p *StorageServerConnectionsServiceAddLocalRequest) Send() (*StorageServerC
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -74677,7 +75585,11 @@ func (p *StorageServerConnectionsServiceAddNfsRequest) Send() (*StorageServerCon
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -74815,7 +75727,11 @@ func (p *StorageServerConnectionsServiceAddVfsRequest) Send() (*StorageServerCon
 		}
 		p.StorageServerConnectionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -74993,12 +75909,12 @@ func (p *StorageServiceGetRequest) Send() (*StorageServiceGetResponse, error) {
 		}
 		p.StorageService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostStorageReadOne(reader, nil, "")
@@ -75198,12 +76114,12 @@ func (p *SystemOptionServiceGetRequest) Send() (*SystemOptionServiceGetResponse,
 		}
 		p.SystemOptionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSystemOptionReadOne(reader, nil, "")
@@ -75533,12 +76449,12 @@ func (p *SystemPermissionsServiceAddRequest) Send() (*SystemPermissionsServiceAd
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermissionReadOne(reader, nil, "")
@@ -75768,7 +76684,11 @@ func (p *SystemPermissionsServiceAddClusterPermissionRequest) Send() (*SystemPer
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -75906,7 +76826,11 @@ func (p *SystemPermissionsServiceAddDataCenterPermissionRequest) Send() (*System
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -76044,7 +76968,11 @@ func (p *SystemPermissionsServiceAddGroupLevelRequest) Send() (*SystemPermission
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -76182,7 +77110,11 @@ func (p *SystemPermissionsServiceAddHostPermissionRequest) Send() (*SystemPermis
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -76334,12 +77266,12 @@ func (p *SystemPermissionsServiceListRequest) Send() (*SystemPermissionsServiceL
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLPermissionReadMany(reader, nil)
@@ -76519,7 +77451,11 @@ func (p *SystemPermissionsServiceAddStorageDomainPermissionRequest) Send() (*Sys
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -76657,7 +77593,11 @@ func (p *SystemPermissionsServiceAddTemplatePermissionRequest) Send() (*SystemPe
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -76795,7 +77735,11 @@ func (p *SystemPermissionsServiceAddUserLevelRequest) Send() (*SystemPermissions
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -76933,7 +77877,11 @@ func (p *SystemPermissionsServiceAddVmPermissionRequest) Send() (*SystemPermissi
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -77071,7 +78019,11 @@ func (p *SystemPermissionsServiceAddVmPoolPermissionRequest) Send() (*SystemPerm
 		}
 		p.SystemPermissionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -77315,12 +78267,12 @@ func (p *SystemServiceGetRequest) Send() (*SystemServiceGetResponse, error) {
 		}
 		p.SystemService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLApiReadOne(reader, nil, "")
@@ -77607,7 +78559,11 @@ func (p *SystemServiceReloadConfigurationsRequest) Send() (*SystemServiceReloadC
 		}
 		p.SystemService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -77699,6 +78655,13 @@ func (op *SystemService) EventsService() *EventsService {
 //
 func (op *SystemService) ExternalHostProvidersService() *ExternalHostProvidersService {
 	return NewExternalHostProvidersService(op.connection, fmt.Sprintf("%s/externalhostproviders", op.path))
+}
+
+//
+// Reference to service facilitating import of external templates.
+//
+func (op *SystemService) ExternalTemplateImportsService() *ExternalTemplateImportsService {
+	return NewExternalTemplateImportsService(op.connection, fmt.Sprintf("%s/externaltemplateimports", op.path))
 }
 
 //
@@ -77948,6 +78911,12 @@ func (op *SystemService) Service(path string) (Service, error) {
 	}
 	if strings.HasPrefix(path, "externalhostproviders/") {
 		return op.ExternalHostProvidersService().Service(path[22:])
+	}
+	if path == "externaltemplateimports" {
+		return op.ExternalTemplateImportsService(), nil
+	}
+	if strings.HasPrefix(path, "externaltemplateimports/") {
+		return op.ExternalTemplateImportsService().Service(path[24:])
 	}
 	if path == "externalvmimports" {
 		return op.ExternalVmImportsService(), nil
@@ -78237,12 +79206,12 @@ func (p *TagServiceGetRequest) Send() (*TagServiceGetResponse, error) {
 		}
 		p.TagService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadOne(reader, nil, "")
@@ -78402,12 +79371,12 @@ func (p *TagServiceRemoveRequest) Send() (*TagServiceRemoveResponse, error) {
 		}
 		p.TagService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TagServiceRemoveResponse), nil
 }
@@ -78563,12 +79532,12 @@ func (p *TagServiceUpdateRequest) Send() (*TagServiceUpdateResponse, error) {
 		}
 		p.TagService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadOne(reader, nil, "")
@@ -78798,12 +79767,12 @@ func (p *TagsServiceAddRequest) Send() (*TagsServiceAddResponse, error) {
 		}
 		p.TagsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadOne(reader, nil, "")
@@ -79023,12 +79992,12 @@ func (p *TagsServiceListRequest) Send() (*TagsServiceListResponse, error) {
 		}
 		p.TagsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTagReadMany(reader, nil)
@@ -79266,12 +80235,12 @@ func (p *TemplateCdromServiceGetRequest) Send() (*TemplateCdromServiceGetRespons
 		}
 		p.TemplateCdromService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadOne(reader, nil, "")
@@ -79454,12 +80423,12 @@ func (p *TemplateCdromsServiceListRequest) Send() (*TemplateCdromsServiceListRes
 		}
 		p.TemplateCdromsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadMany(reader, nil)
@@ -79634,12 +80603,12 @@ func (p *TemplateDiskAttachmentServiceGetRequest) Send() (*TemplateDiskAttachmen
 		}
 		p.TemplateDiskAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadOne(reader, nil, "")
@@ -79790,12 +80759,12 @@ func (p *TemplateDiskAttachmentServiceRemoveRequest) Send() (*TemplateDiskAttach
 		}
 		p.TemplateDiskAttachmentService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TemplateDiskAttachmentServiceRemoveResponse), nil
 }
@@ -79953,12 +80922,12 @@ func (p *TemplateDiskAttachmentsServiceListRequest) Send() (*TemplateDiskAttachm
 		}
 		p.TemplateDiskAttachmentsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskAttachmentReadMany(reader, nil)
@@ -80156,7 +81125,11 @@ func (p *TemplateDiskServiceCopyRequest) Send() (*TemplateDiskServiceCopyRespons
 		}
 		p.TemplateDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -80295,7 +81268,11 @@ func (p *TemplateDiskServiceExportRequest) Send() (*TemplateDiskServiceExportRes
 		}
 		p.TemplateDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -80408,12 +81385,12 @@ func (p *TemplateDiskServiceGetRequest) Send() (*TemplateDiskServiceGetResponse,
 		}
 		p.TemplateDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -80544,12 +81521,12 @@ func (p *TemplateDiskServiceRemoveRequest) Send() (*TemplateDiskServiceRemoveRes
 		}
 		p.TemplateDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TemplateDiskServiceRemoveResponse), nil
 }
@@ -80699,12 +81676,12 @@ func (p *TemplateDisksServiceListRequest) Send() (*TemplateDisksServiceListRespo
 		}
 		p.TemplateDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -80877,12 +81854,12 @@ func (p *TemplateGraphicsConsoleServiceGetRequest) Send() (*TemplateGraphicsCons
 		}
 		p.TemplateGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadOne(reader, nil, "")
@@ -81016,12 +81993,12 @@ func (p *TemplateGraphicsConsoleServiceRemoveRequest) Send() (*TemplateGraphicsC
 		}
 		p.TemplateGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TemplateGraphicsConsoleServiceRemoveResponse), nil
 }
@@ -81165,12 +82142,12 @@ func (p *TemplateGraphicsConsolesServiceAddRequest) Send() (*TemplateGraphicsCon
 		}
 		p.TemplateGraphicsConsolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadOne(reader, nil, "")
@@ -81315,12 +82292,12 @@ func (p *TemplateGraphicsConsolesServiceListRequest) Send() (*TemplateGraphicsCo
 		}
 		p.TemplateGraphicsConsolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadMany(reader, nil)
@@ -81493,12 +82470,12 @@ func (p *TemplateNicServiceGetRequest) Send() (*TemplateNicServiceGetResponse, e
 		}
 		p.TemplateNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -81629,12 +82606,12 @@ func (p *TemplateNicServiceRemoveRequest) Send() (*TemplateNicServiceRemoveRespo
 		}
 		p.TemplateNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TemplateNicServiceRemoveResponse), nil
 }
@@ -81759,12 +82736,12 @@ func (p *TemplateNicServiceUpdateRequest) Send() (*TemplateNicServiceUpdateRespo
 		}
 		p.TemplateNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -81928,12 +82905,12 @@ func (p *TemplateNicsServiceAddRequest) Send() (*TemplateNicsServiceAddResponse,
 		}
 		p.TemplateNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -82078,12 +83055,12 @@ func (p *TemplateNicsServiceListRequest) Send() (*TemplateNicsServiceListRespons
 		}
 		p.TemplateNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadMany(reader, nil)
@@ -82285,7 +83262,11 @@ func (p *TemplateServiceExportRequest) Send() (*TemplateServiceExportResponse, e
 		}
 		p.TemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -82437,12 +83418,12 @@ func (p *TemplateServiceGetRequest) Send() (*TemplateServiceGetResponse, error) 
 		}
 		p.TemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTemplateReadOne(reader, nil, "")
@@ -82580,12 +83561,12 @@ func (p *TemplateServiceRemoveRequest) Send() (*TemplateServiceRemoveResponse, e
 		}
 		p.TemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TemplateServiceRemoveResponse), nil
 }
@@ -82722,7 +83703,11 @@ func (p *TemplateServiceExportToExportDomainRequest) Send() (*TemplateServiceExp
 		}
 		p.TemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -82878,7 +83863,11 @@ func (p *TemplateServiceExportToPathOnHostRequest) Send() (*TemplateServiceExpor
 		}
 		p.TemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -83031,12 +84020,12 @@ func (p *TemplateServiceUpdateRequest) Send() (*TemplateServiceUpdateResponse, e
 		}
 		p.TemplateService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTemplateReadOne(reader, nil, "")
@@ -83336,12 +84325,12 @@ func (p *TemplateWatchdogServiceGetRequest) Send() (*TemplateWatchdogServiceGetR
 		}
 		p.TemplateWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -83472,12 +84461,12 @@ func (p *TemplateWatchdogServiceRemoveRequest) Send() (*TemplateWatchdogServiceR
 		}
 		p.TemplateWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(TemplateWatchdogServiceRemoveResponse), nil
 }
@@ -83602,12 +84591,12 @@ func (p *TemplateWatchdogServiceUpdateRequest) Send() (*TemplateWatchdogServiceU
 		}
 		p.TemplateWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -83665,6 +84654,308 @@ func (op *TemplateWatchdogService) Service(path string) (Service, error) {
 
 func (op *TemplateWatchdogService) String() string {
 	return fmt.Sprintf("TemplateWatchdogService:%s", op.path)
+}
+
+//
+// A service managing a backup of a virtual machines.
+//
+type VmBackupService struct {
+	BaseService
+}
+
+func NewVmBackupService(connection *Connection, path string) *VmBackupService {
+	var result VmBackupService
+	result.connection = connection
+	result.path = path
+	return &result
+}
+
+//
+// Finalize the virtual machine backup entity.
+// End backup, unlock resources, and perform cleanups.
+//
+type VmBackupServiceFinalizeRequest struct {
+	VmBackupService *VmBackupService
+	header          map[string]string
+	query           map[string]string
+}
+
+func (p *VmBackupServiceFinalizeRequest) Header(key, value string) *VmBackupServiceFinalizeRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *VmBackupServiceFinalizeRequest) Query(key, value string) *VmBackupServiceFinalizeRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *VmBackupServiceFinalizeRequest) Send() (*VmBackupServiceFinalizeResponse, error) {
+	rawURL := fmt.Sprintf("%s%s/finalize", p.VmBackupService.connection.URL(), p.VmBackupService.path)
+	actionBuilder := NewActionBuilder()
+	action, err := actionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	var body bytes.Buffer
+	writer := NewXMLWriter(&body)
+	err = XMLActionWriteOne(writer, action, "")
+	writer.Flush()
+	req, err := http.NewRequest("POST", rawURL, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.VmBackupService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.VmBackupService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.VmBackupService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.VmBackupService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.VmBackupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
+	if errCheckAction != nil {
+		return nil, errCheckAction
+	}
+	return new(VmBackupServiceFinalizeResponse), nil
+}
+
+func (p *VmBackupServiceFinalizeRequest) MustSend() *VmBackupServiceFinalizeResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Finalize the virtual machine backup entity.
+// End backup, unlock resources, and perform cleanups.
+//
+type VmBackupServiceFinalizeResponse struct {
+}
+
+//
+// Finalize the virtual machine backup entity.
+// End backup, unlock resources, and perform cleanups.
+//
+func (p *VmBackupService) Finalize() *VmBackupServiceFinalizeRequest {
+	return &VmBackupServiceFinalizeRequest{VmBackupService: p}
+}
+
+//
+// Returns information about the virtual machine backup.
+//
+type VmBackupServiceGetRequest struct {
+	VmBackupService *VmBackupService
+	header          map[string]string
+	query           map[string]string
+	follow          *string
+}
+
+func (p *VmBackupServiceGetRequest) Header(key, value string) *VmBackupServiceGetRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *VmBackupServiceGetRequest) Query(key, value string) *VmBackupServiceGetRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *VmBackupServiceGetRequest) Follow(follow string) *VmBackupServiceGetRequest {
+	p.follow = &follow
+	return p
+}
+
+func (p *VmBackupServiceGetRequest) Send() (*VmBackupServiceGetResponse, error) {
+	rawURL := fmt.Sprintf("%s%s", p.VmBackupService.connection.URL(), p.VmBackupService.path)
+	values := make(url.Values)
+	if p.follow != nil {
+		values["follow"] = []string{fmt.Sprintf("%v", *p.follow)}
+	}
+
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	req, err := http.NewRequest("GET", rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.VmBackupService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.VmBackupService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.VmBackupService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.VmBackupService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.VmBackupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
+	}
+	reader := NewXMLReader(respBodyBytes)
+	result, err := XMLBackupReadOne(reader, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return &VmBackupServiceGetResponse{backup: result}, nil
+}
+
+func (p *VmBackupServiceGetRequest) MustSend() *VmBackupServiceGetResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Returns information about the virtual machine backup.
+//
+type VmBackupServiceGetResponse struct {
+	backup *Backup
+}
+
+func (p *VmBackupServiceGetResponse) Backup() (*Backup, bool) {
+	if p.backup != nil {
+		return p.backup, true
+	}
+	return nil, false
+}
+
+func (p *VmBackupServiceGetResponse) MustBackup() *Backup {
+	if p.backup == nil {
+		panic("backup in response does not exist")
+	}
+	return p.backup
+}
+
+//
+// Returns information about the virtual machine backup.
+//
+func (p *VmBackupService) Get() *VmBackupServiceGetRequest {
+	return &VmBackupServiceGetRequest{VmBackupService: p}
+}
+
+//
+// A reference to the service that lists the disks in backup.
+//
+func (op *VmBackupService) DisksService() *VmBackupDisksService {
+	return NewVmBackupDisksService(op.connection, fmt.Sprintf("%s/disks", op.path))
+}
+
+//
+// Service locator method, returns individual service on which the URI is dispatched.
+//
+func (op *VmBackupService) Service(path string) (Service, error) {
+	if path == "" {
+		return op, nil
+	}
+	if path == "disks" {
+		return op.DisksService(), nil
+	}
+	if strings.HasPrefix(path, "disks/") {
+		return op.DisksService().Service(path[6:])
+	}
+	return nil, fmt.Errorf("The path <%s> doesn't correspond to any service", path)
+}
+
+func (op *VmBackupService) String() string {
+	return fmt.Sprintf("VmBackupService:%s", op.path)
 }
 
 //
@@ -83771,12 +85062,12 @@ func (p *TemplateWatchdogsServiceAddRequest) Send() (*TemplateWatchdogsServiceAd
 		}
 		p.TemplateWatchdogsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -83921,12 +85212,12 @@ func (p *TemplateWatchdogsServiceListRequest) Send() (*TemplateWatchdogsServiceL
 		}
 		p.TemplateWatchdogsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadMany(reader, nil)
@@ -84231,12 +85522,12 @@ func (p *TemplatesServiceAddRequest) Send() (*TemplatesServiceAddResponse, error
 		}
 		p.TemplatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTemplateReadOne(reader, nil, "")
@@ -84610,7 +85901,11 @@ func (p *TemplatesServiceAddFromConfigurationRequest) Send() (*TemplatesServiceA
 		}
 		p.TemplatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -84766,7 +86061,11 @@ func (p *TemplatesServiceAddFromVmRequest) Send() (*TemplatesServiceAddFromVmRes
 		}
 		p.TemplatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -84922,7 +86221,11 @@ func (p *TemplatesServiceAddFromVmSnapshotRequest) Send() (*TemplatesServiceAddF
 		}
 		p.TemplatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -85101,12 +86404,12 @@ func (p *TemplatesServiceListRequest) Send() (*TemplatesServiceListResponse, err
 		}
 		p.TemplatesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLTemplateReadMany(reader, nil)
@@ -85291,12 +86594,12 @@ func (p *UnmanagedNetworkServiceGetRequest) Send() (*UnmanagedNetworkServiceGetR
 		}
 		p.UnmanagedNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUnmanagedNetworkReadOne(reader, nil, "")
@@ -85427,12 +86730,12 @@ func (p *UnmanagedNetworkServiceRemoveRequest) Send() (*UnmanagedNetworkServiceR
 		}
 		p.UnmanagedNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(UnmanagedNetworkServiceRemoveResponse), nil
 }
@@ -85582,12 +86885,12 @@ func (p *UnmanagedNetworksServiceListRequest) Send() (*UnmanagedNetworksServiceL
 		}
 		p.UnmanagedNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUnmanagedNetworkReadMany(reader, nil)
@@ -85759,12 +87062,12 @@ func (p *VirtualFunctionAllowedNetworkServiceGetRequest) Send() (*VirtualFunctio
 		}
 		p.VirtualFunctionAllowedNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -85895,12 +87198,12 @@ func (p *VirtualFunctionAllowedNetworkServiceRemoveRequest) Send() (*VirtualFunc
 		}
 		p.VirtualFunctionAllowedNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VirtualFunctionAllowedNetworkServiceRemoveResponse), nil
 }
@@ -86041,12 +87344,12 @@ func (p *VirtualFunctionAllowedNetworksServiceAddRequest) Send() (*VirtualFuncti
 		}
 		p.VirtualFunctionAllowedNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadOne(reader, nil, "")
@@ -86189,12 +87492,12 @@ func (p *VirtualFunctionAllowedNetworksServiceListRequest) Send() (*VirtualFunct
 		}
 		p.VirtualFunctionAllowedNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNetworkReadMany(reader, nil)
@@ -86378,12 +87681,12 @@ func (p *VmApplicationServiceGetRequest) Send() (*VmApplicationServiceGetRespons
 		}
 		p.VmApplicationService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLApplicationReadOne(reader, nil, "")
@@ -86566,12 +87869,12 @@ func (p *VmApplicationsServiceListRequest) Send() (*VmApplicationsServiceListRes
 		}
 		p.VmApplicationsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLApplicationReadMany(reader, nil)
@@ -86745,12 +88048,12 @@ func (p *VmBackupDiskServiceGetRequest) Send() (*VmBackupDiskServiceGetResponse,
 		}
 		p.VmBackupDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -86921,12 +88224,12 @@ func (p *VmBackupDisksServiceListRequest) Send() (*VmBackupDisksServiceListRespo
 		}
 		p.VmBackupDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -86995,304 +88298,6 @@ func (op *VmBackupDisksService) Service(path string) (Service, error) {
 
 func (op *VmBackupDisksService) String() string {
 	return fmt.Sprintf("VmBackupDisksService:%s", op.path)
-}
-
-//
-// A service managing a backup of a virtual machines.
-//
-type VmBackupService struct {
-	BaseService
-}
-
-func NewVmBackupService(connection *Connection, path string) *VmBackupService {
-	var result VmBackupService
-	result.connection = connection
-	result.path = path
-	return &result
-}
-
-//
-// Finalize the virtual machine backup entity.
-// End backup, unlock resources, and perform cleanups.
-//
-type VmBackupServiceFinalizeRequest struct {
-	VmBackupService *VmBackupService
-	header          map[string]string
-	query           map[string]string
-}
-
-func (p *VmBackupServiceFinalizeRequest) Header(key, value string) *VmBackupServiceFinalizeRequest {
-	if p.header == nil {
-		p.header = make(map[string]string)
-	}
-	p.header[key] = value
-	return p
-}
-
-func (p *VmBackupServiceFinalizeRequest) Query(key, value string) *VmBackupServiceFinalizeRequest {
-	if p.query == nil {
-		p.query = make(map[string]string)
-	}
-	p.query[key] = value
-	return p
-}
-
-func (p *VmBackupServiceFinalizeRequest) Send() (*VmBackupServiceFinalizeResponse, error) {
-	rawURL := fmt.Sprintf("%s%s/finalize", p.VmBackupService.connection.URL(), p.VmBackupService.path)
-	actionBuilder := NewActionBuilder()
-	action, err := actionBuilder.Build()
-	if err != nil {
-		return nil, err
-	}
-	values := make(url.Values)
-	if p.query != nil {
-		for k, v := range p.query {
-			values[k] = []string{v}
-		}
-	}
-	if len(values) > 0 {
-		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
-	}
-	var body bytes.Buffer
-	writer := NewXMLWriter(&body)
-	err = XMLActionWriteOne(writer, action, "")
-	writer.Flush()
-	req, err := http.NewRequest("POST", rawURL, &body)
-	if err != nil {
-		return nil, err
-	}
-
-	for hk, hv := range p.VmBackupService.connection.headers {
-		req.Header.Add(hk, hv)
-	}
-
-	if p.header != nil {
-		for hk, hv := range p.header {
-			req.Header.Add(hk, hv)
-		}
-	}
-
-	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
-	req.Header.Add("Version", "4")
-	req.Header.Add("Content-Type", "application/xml")
-	req.Header.Add("Accept", "application/xml")
-	// get OAuth access token
-	token, err := p.VmBackupService.connection.authenticate()
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	// Send the request and wait for the response
-	resp, err := p.VmBackupService.connection.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if p.VmBackupService.connection.logFunc != nil {
-		dumpReq, err := httputil.DumpRequestOut(req, true)
-		if err != nil {
-			return nil, err
-		}
-		dumpResp, err := httputil.DumpResponse(resp, true)
-		if err != nil {
-			return nil, err
-		}
-		p.VmBackupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
-	}
-	_, errCheckAction := CheckAction(resp)
-	if errCheckAction != nil {
-		return nil, errCheckAction
-	}
-	return new(VmBackupServiceFinalizeResponse), nil
-}
-
-func (p *VmBackupServiceFinalizeRequest) MustSend() *VmBackupServiceFinalizeResponse {
-	if v, err := p.Send(); err != nil {
-		panic(err)
-	} else {
-		return v
-	}
-}
-
-//
-// Finalize the virtual machine backup entity.
-// End backup, unlock resources, and perform cleanups.
-//
-type VmBackupServiceFinalizeResponse struct {
-}
-
-//
-// Finalize the virtual machine backup entity.
-// End backup, unlock resources, and perform cleanups.
-//
-func (p *VmBackupService) Finalize() *VmBackupServiceFinalizeRequest {
-	return &VmBackupServiceFinalizeRequest{VmBackupService: p}
-}
-
-//
-// Returns information about the virtual machine backup.
-//
-type VmBackupServiceGetRequest struct {
-	VmBackupService *VmBackupService
-	header          map[string]string
-	query           map[string]string
-	follow          *string
-}
-
-func (p *VmBackupServiceGetRequest) Header(key, value string) *VmBackupServiceGetRequest {
-	if p.header == nil {
-		p.header = make(map[string]string)
-	}
-	p.header[key] = value
-	return p
-}
-
-func (p *VmBackupServiceGetRequest) Query(key, value string) *VmBackupServiceGetRequest {
-	if p.query == nil {
-		p.query = make(map[string]string)
-	}
-	p.query[key] = value
-	return p
-}
-
-func (p *VmBackupServiceGetRequest) Follow(follow string) *VmBackupServiceGetRequest {
-	p.follow = &follow
-	return p
-}
-
-func (p *VmBackupServiceGetRequest) Send() (*VmBackupServiceGetResponse, error) {
-	rawURL := fmt.Sprintf("%s%s", p.VmBackupService.connection.URL(), p.VmBackupService.path)
-	values := make(url.Values)
-	if p.follow != nil {
-		values["follow"] = []string{fmt.Sprintf("%v", *p.follow)}
-	}
-
-	if p.query != nil {
-		for k, v := range p.query {
-			values[k] = []string{v}
-		}
-	}
-	if len(values) > 0 {
-		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
-	}
-	req, err := http.NewRequest("GET", rawURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	for hk, hv := range p.VmBackupService.connection.headers {
-		req.Header.Add(hk, hv)
-	}
-
-	if p.header != nil {
-		for hk, hv := range p.header {
-			req.Header.Add(hk, hv)
-		}
-	}
-
-	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
-	req.Header.Add("Version", "4")
-	req.Header.Add("Content-Type", "application/xml")
-	req.Header.Add("Accept", "application/xml")
-	// get OAuth access token
-	token, err := p.VmBackupService.connection.authenticate()
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	// Send the request and wait for the response
-	resp, err := p.VmBackupService.connection.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if p.VmBackupService.connection.logFunc != nil {
-		dumpReq, err := httputil.DumpRequestOut(req, true)
-		if err != nil {
-			return nil, err
-		}
-		dumpResp, err := httputil.DumpResponse(resp, true)
-		if err != nil {
-			return nil, err
-		}
-		p.VmBackupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
-	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
-	if errReadBody != nil {
-		return nil, errReadBody
-	}
-	reader := NewXMLReader(respBodyBytes)
-	result, err := XMLBackupReadOne(reader, nil, "")
-	if err != nil {
-		return nil, err
-	}
-	return &VmBackupServiceGetResponse{backup: result}, nil
-}
-
-func (p *VmBackupServiceGetRequest) MustSend() *VmBackupServiceGetResponse {
-	if v, err := p.Send(); err != nil {
-		panic(err)
-	} else {
-		return v
-	}
-}
-
-//
-// Returns information about the virtual machine backup.
-//
-type VmBackupServiceGetResponse struct {
-	backup *Backup
-}
-
-func (p *VmBackupServiceGetResponse) Backup() (*Backup, bool) {
-	if p.backup != nil {
-		return p.backup, true
-	}
-	return nil, false
-}
-
-func (p *VmBackupServiceGetResponse) MustBackup() *Backup {
-	if p.backup == nil {
-		panic("backup in response does not exist")
-	}
-	return p.backup
-}
-
-//
-// Returns information about the virtual machine backup.
-//
-func (p *VmBackupService) Get() *VmBackupServiceGetRequest {
-	return &VmBackupServiceGetRequest{VmBackupService: p}
-}
-
-//
-// A reference to the service that lists the disks in backup.
-//
-func (op *VmBackupService) DisksService() *VmBackupDisksService {
-	return NewVmBackupDisksService(op.connection, fmt.Sprintf("%s/disks", op.path))
-}
-
-//
-// Service locator method, returns individual service on which the URI is dispatched.
-//
-func (op *VmBackupService) Service(path string) (Service, error) {
-	if path == "" {
-		return op, nil
-	}
-	if path == "disks" {
-		return op.DisksService(), nil
-	}
-	if strings.HasPrefix(path, "disks/") {
-		return op.DisksService().Service(path[6:])
-	}
-	return nil, fmt.Errorf("The path <%s> doesn't correspond to any service", path)
-}
-
-func (op *VmBackupService) String() string {
-	return fmt.Sprintf("VmBackupService:%s", op.path)
 }
 
 //
@@ -87442,12 +88447,12 @@ func (p *VmBackupsServiceAddRequest) Send() (*VmBackupsServiceAddResponse, error
 		}
 		p.VmBackupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBackupReadOne(reader, nil, "")
@@ -87655,12 +88660,12 @@ func (p *VmBackupsServiceListRequest) Send() (*VmBackupsServiceListResponse, err
 		}
 		p.VmBackupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLBackupReadMany(reader, nil)
@@ -87862,12 +88867,12 @@ func (p *VmCdromServiceGetRequest) Send() (*VmCdromServiceGetResponse, error) {
 		}
 		p.VmCdromService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadOne(reader, nil, "")
@@ -88087,12 +89092,12 @@ func (p *VmCdromServiceUpdateRequest) Send() (*VmCdromServiceUpdateResponse, err
 		}
 		p.VmCdromService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadOne(reader, nil, "")
@@ -88339,12 +89344,12 @@ func (p *VmCdromsServiceAddRequest) Send() (*VmCdromsServiceAddResponse, error) 
 		}
 		p.VmCdromsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadOne(reader, nil, "")
@@ -88489,12 +89494,12 @@ func (p *VmCdromsServiceListRequest) Send() (*VmCdromsServiceListResponse, error
 		}
 		p.VmCdromsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCdromReadMany(reader, nil)
@@ -88668,12 +89673,12 @@ func (p *VmCheckpointDiskServiceGetRequest) Send() (*VmCheckpointDiskServiceGetR
 		}
 		p.VmCheckpointDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -88844,12 +89849,12 @@ func (p *VmCheckpointDisksServiceListRequest) Send() (*VmCheckpointDisksServiceL
 		}
 		p.VmCheckpointDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -89022,12 +90027,12 @@ func (p *VmCheckpointServiceGetRequest) Send() (*VmCheckpointServiceGetResponse,
 		}
 		p.VmCheckpointService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCheckpointReadOne(reader, nil, "")
@@ -89162,12 +90167,12 @@ func (p *VmCheckpointServiceRemoveRequest) Send() (*VmCheckpointServiceRemoveRes
 		}
 		p.VmCheckpointService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmCheckpointServiceRemoveResponse), nil
 }
@@ -89334,12 +90339,12 @@ func (p *VmCheckpointsServiceListRequest) Send() (*VmCheckpointsServiceListRespo
 		}
 		p.VmCheckpointsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLCheckpointReadMany(reader, nil)
@@ -89518,7 +90523,11 @@ func (p *VmDiskServiceActivateRequest) Send() (*VmDiskServiceActivateResponse, e
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -89639,7 +90648,11 @@ func (p *VmDiskServiceDeactivateRequest) Send() (*VmDiskServiceDeactivateRespons
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -89769,7 +90782,11 @@ func (p *VmDiskServiceExportRequest) Send() (*VmDiskServiceExportResponse, error
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -89882,12 +90899,12 @@ func (p *VmDiskServiceGetRequest) Send() (*VmDiskServiceGetResponse, error) {
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -90035,7 +91052,11 @@ func (p *VmDiskServiceMoveRequest) Send() (*VmDiskServiceMoveResponse, error) {
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -90160,7 +91181,11 @@ func (p *VmDiskServiceReduceRequest) Send() (*VmDiskServiceReduceResponse, error
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -90285,12 +91310,12 @@ func (p *VmDiskServiceRemoveRequest) Send() (*VmDiskServiceRemoveResponse, error
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmDiskServiceRemoveResponse), nil
 }
@@ -90422,12 +91447,12 @@ func (p *VmDiskServiceUpdateRequest) Send() (*VmDiskServiceUpdateResponse, error
 		}
 		p.VmDiskService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -90612,12 +91637,12 @@ func (p *VmDisksServiceAddRequest) Send() (*VmDisksServiceAddResponse, error) {
 		}
 		p.VmDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadOne(reader, nil, "")
@@ -90760,12 +91785,12 @@ func (p *VmDisksServiceListRequest) Send() (*VmDisksServiceListResponse, error) 
 		}
 		p.VmDisksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDiskReadMany(reader, nil)
@@ -90954,12 +91979,12 @@ func (p *VmGraphicsConsoleServiceGetRequest) Send() (*VmGraphicsConsoleServiceGe
 		}
 		p.VmGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadOne(reader, nil, "")
@@ -91112,7 +92137,11 @@ func (p *VmGraphicsConsoleServiceProxyTicketRequest) Send() (*VmGraphicsConsoleS
 		}
 		p.VmGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -91305,7 +92334,11 @@ func (p *VmGraphicsConsoleServiceRemoteViewerConnectionFileRequest) Send() (*VmG
 		}
 		p.VmGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -91566,12 +92599,12 @@ func (p *VmGraphicsConsoleServiceRemoveRequest) Send() (*VmGraphicsConsoleServic
 		}
 		p.VmGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmGraphicsConsoleServiceRemoveResponse), nil
 }
@@ -91706,7 +92739,11 @@ func (p *VmGraphicsConsoleServiceTicketRequest) Send() (*VmGraphicsConsoleServic
 		}
 		p.VmGraphicsConsoleService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -91898,12 +92935,12 @@ func (p *VmGraphicsConsolesServiceAddRequest) Send() (*VmGraphicsConsolesService
 		}
 		p.VmGraphicsConsolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadOne(reader, nil, "")
@@ -92064,12 +93101,12 @@ func (p *VmGraphicsConsolesServiceListRequest) Send() (*VmGraphicsConsolesServic
 		}
 		p.VmGraphicsConsolesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGraphicsConsoleReadMany(reader, nil)
@@ -92281,12 +93318,12 @@ func (p *VmHostDeviceServiceGetRequest) Send() (*VmHostDeviceServiceGetResponse,
 		}
 		p.VmHostDeviceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostDeviceReadOne(reader, nil, "")
@@ -92478,12 +93515,12 @@ func (p *VmHostDeviceServiceRemoveRequest) Send() (*VmHostDeviceServiceRemoveRes
 		}
 		p.VmHostDeviceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmHostDeviceServiceRemoveResponse), nil
 }
@@ -92661,12 +93698,12 @@ func (p *VmHostDevicesServiceAddRequest) Send() (*VmHostDevicesServiceAddRespons
 		}
 		p.VmHostDevicesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostDeviceReadOne(reader, nil, "")
@@ -92845,12 +93882,12 @@ func (p *VmHostDevicesServiceListRequest) Send() (*VmHostDevicesServiceListRespo
 		}
 		p.VmHostDevicesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLHostDeviceReadMany(reader, nil)
@@ -93031,7 +94068,11 @@ func (p *VmNicServiceActivateRequest) Send() (*VmNicServiceActivateResponse, err
 		}
 		p.VmNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -93152,7 +94193,11 @@ func (p *VmNicServiceDeactivateRequest) Send() (*VmNicServiceDeactivateResponse,
 		}
 		p.VmNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -93265,12 +94310,12 @@ func (p *VmNicServiceGetRequest) Send() (*VmNicServiceGetResponse, error) {
 		}
 		p.VmNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -93416,12 +94461,12 @@ func (p *VmNicServiceRemoveRequest) Send() (*VmNicServiceRemoveResponse, error) 
 		}
 		p.VmNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmNicServiceRemoveResponse), nil
 }
@@ -93600,12 +94645,12 @@ func (p *VmNicServiceUpdateRequest) Send() (*VmNicServiceUpdateResponse, error) 
 		}
 		p.VmNicService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -93897,12 +94942,12 @@ func (p *VmNicsServiceAddRequest) Send() (*VmNicsServiceAddResponse, error) {
 		}
 		p.VmNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadOne(reader, nil, "")
@@ -94131,12 +95176,12 @@ func (p *VmNicsServiceListRequest) Send() (*VmNicsServiceListResponse, error) {
 		}
 		p.VmNicsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLNicReadMany(reader, nil)
@@ -94308,12 +95353,12 @@ func (p *VmNumaNodeServiceGetRequest) Send() (*VmNumaNodeServiceGetResponse, err
 		}
 		p.VmNumaNodeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVirtualNumaNodeReadOne(reader, nil, "")
@@ -94452,12 +95497,12 @@ func (p *VmNumaNodeServiceRemoveRequest) Send() (*VmNumaNodeServiceRemoveRespons
 		}
 		p.VmNumaNodeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmNumaNodeServiceRemoveResponse), nil
 }
@@ -94614,12 +95659,12 @@ func (p *VmNumaNodeServiceUpdateRequest) Send() (*VmNumaNodeServiceUpdateRespons
 		}
 		p.VmNumaNodeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVirtualNumaNodeReadOne(reader, nil, "")
@@ -94838,12 +95883,12 @@ func (p *VmNumaNodesServiceAddRequest) Send() (*VmNumaNodesServiceAddResponse, e
 		}
 		p.VmNumaNodesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVirtualNumaNodeReadOne(reader, nil, "")
@@ -95034,12 +96079,12 @@ func (p *VmNumaNodesServiceListRequest) Send() (*VmNumaNodesServiceListResponse,
 		}
 		p.VmNumaNodesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVirtualNumaNodeReadMany(reader, nil)
@@ -95231,7 +96276,11 @@ func (p *VmPoolServiceAllocateVmRequest) Send() (*VmPoolServiceAllocateVmRespons
 		}
 		p.VmPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -95401,12 +96450,12 @@ func (p *VmPoolServiceGetRequest) Send() (*VmPoolServiceGetResponse, error) {
 		}
 		p.VmPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmPoolReadOne(reader, nil, "")
@@ -95592,12 +96641,12 @@ func (p *VmPoolServiceRemoveRequest) Send() (*VmPoolServiceRemoveResponse, error
 		}
 		p.VmPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmPoolServiceRemoveResponse), nil
 }
@@ -95749,12 +96798,12 @@ func (p *VmPoolServiceUpdateRequest) Send() (*VmPoolServiceUpdateResponse, error
 		}
 		p.VmPoolService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmPoolReadOne(reader, nil, "")
@@ -95981,12 +97030,12 @@ func (p *VmPoolsServiceAddRequest) Send() (*VmPoolsServiceAddResponse, error) {
 		}
 		p.VmPoolsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmPoolReadOne(reader, nil, "")
@@ -96206,12 +97255,12 @@ func (p *VmPoolsServiceListRequest) Send() (*VmPoolsServiceListResponse, error) 
 		}
 		p.VmPoolsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmPoolReadMany(reader, nil)
@@ -96414,12 +97463,12 @@ func (p *VmReportedDeviceServiceGetRequest) Send() (*VmReportedDeviceServiceGetR
 		}
 		p.VmReportedDeviceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLReportedDeviceReadOne(reader, nil, "")
@@ -96589,12 +97638,12 @@ func (p *VmReportedDevicesServiceListRequest) Send() (*VmReportedDevicesServiceL
 		}
 		p.VmReportedDevicesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLReportedDeviceReadMany(reader, nil)
@@ -96677,6 +97726,179 @@ func NewVmService(connection *Connection, path string) *VmService {
 	result.connection = connection
 	result.path = path
 	return &result
+}
+
+//
+// Apply an automatic CPU and NUMA configuration on the VM.
+// An example for a request:
+// [source]
+// ----
+// POST /ovirt-engine/api/vms/123/autopincpuandnumanodes
+// ----
+// With a request body like this:
+// [source,xml]
+// ----
+// <action>
+//   <optimize_cpu_settings>true</optimize_cpu_settings>
+// </action>
+// ----
+//
+type VmServiceAutoPinCpuAndNumaNodesRequest struct {
+	VmService           *VmService
+	header              map[string]string
+	query               map[string]string
+	async               *bool
+	optimizeCpuSettings *bool
+}
+
+func (p *VmServiceAutoPinCpuAndNumaNodesRequest) Header(key, value string) *VmServiceAutoPinCpuAndNumaNodesRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *VmServiceAutoPinCpuAndNumaNodesRequest) Query(key, value string) *VmServiceAutoPinCpuAndNumaNodesRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *VmServiceAutoPinCpuAndNumaNodesRequest) Async(async bool) *VmServiceAutoPinCpuAndNumaNodesRequest {
+	p.async = &async
+	return p
+}
+
+func (p *VmServiceAutoPinCpuAndNumaNodesRequest) OptimizeCpuSettings(optimizeCpuSettings bool) *VmServiceAutoPinCpuAndNumaNodesRequest {
+	p.optimizeCpuSettings = &optimizeCpuSettings
+	return p
+}
+
+func (p *VmServiceAutoPinCpuAndNumaNodesRequest) Send() (*VmServiceAutoPinCpuAndNumaNodesResponse, error) {
+	rawURL := fmt.Sprintf("%s%s/autopincpuandnumanodes", p.VmService.connection.URL(), p.VmService.path)
+	actionBuilder := NewActionBuilder()
+	if p.async != nil {
+		actionBuilder.Async(*p.async)
+	}
+	if p.optimizeCpuSettings != nil {
+		actionBuilder.OptimizeCpuSettings(*p.optimizeCpuSettings)
+	}
+	action, err := actionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	var body bytes.Buffer
+	writer := NewXMLWriter(&body)
+	err = XMLActionWriteOne(writer, action, "")
+	writer.Flush()
+	req, err := http.NewRequest("POST", rawURL, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.VmService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.VmService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.VmService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.VmService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
+	if errCheckAction != nil {
+		return nil, errCheckAction
+	}
+	return new(VmServiceAutoPinCpuAndNumaNodesResponse), nil
+}
+
+func (p *VmServiceAutoPinCpuAndNumaNodesRequest) MustSend() *VmServiceAutoPinCpuAndNumaNodesResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Apply an automatic CPU and NUMA configuration on the VM.
+// An example for a request:
+// [source]
+// ----
+// POST /ovirt-engine/api/vms/123/autopincpuandnumanodes
+// ----
+// With a request body like this:
+// [source,xml]
+// ----
+// <action>
+//   <optimize_cpu_settings>true</optimize_cpu_settings>
+// </action>
+// ----
+//
+type VmServiceAutoPinCpuAndNumaNodesResponse struct {
+}
+
+//
+// Apply an automatic CPU and NUMA configuration on the VM.
+// An example for a request:
+// [source]
+// ----
+// POST /ovirt-engine/api/vms/123/autopincpuandnumanodes
+// ----
+// With a request body like this:
+// [source,xml]
+// ----
+// <action>
+//   <optimize_cpu_settings>true</optimize_cpu_settings>
+// </action>
+// ----
+//
+func (p *VmService) AutoPinCpuAndNumaNodes() *VmServiceAutoPinCpuAndNumaNodesRequest {
+	return &VmServiceAutoPinCpuAndNumaNodesRequest{VmService: p}
 }
 
 //
@@ -96785,7 +98007,11 @@ func (p *VmServiceCancelMigrationRequest) Send() (*VmServiceCancelMigrationRespo
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -96951,7 +98177,11 @@ func (p *VmServiceCloneRequest) Send() (*VmServiceCloneResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -97074,7 +98304,11 @@ func (p *VmServiceCommitSnapshotRequest) Send() (*VmServiceCommitSnapshotRespons
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -97210,7 +98444,11 @@ func (p *VmServiceDetachRequest) Send() (*VmServiceDetachResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -97414,7 +98652,11 @@ func (p *VmServiceExportRequest) Send() (*VmServiceExportResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -97620,7 +98862,11 @@ func (p *VmServiceFreezeFilesystemsRequest) Send() (*VmServiceFreezeFilesystemsR
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -97800,12 +99046,12 @@ func (p *VmServiceGetRequest) Send() (*VmServiceGetResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -97961,7 +99207,11 @@ func (p *VmServiceLogonRequest) Send() (*VmServiceLogonResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -98134,7 +99384,11 @@ func (p *VmServiceMaintenanceRequest) Send() (*VmServiceMaintenanceResponse, err
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -98326,7 +99580,11 @@ func (p *VmServiceMigrateRequest) Send() (*VmServiceMigrateResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -98523,7 +99781,11 @@ func (p *VmServicePreviewSnapshotRequest) Send() (*VmServicePreviewSnapshotRespo
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -98572,12 +99834,25 @@ func (p *VmService) PreviewSnapshot() *VmServicePreviewSnapshotRequest {
 // ----
 // <action/>
 // ----
+// To reboot the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force reboot virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/reboot
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
+// ----
 //
 type VmServiceRebootRequest struct {
 	VmService *VmService
 	header    map[string]string
 	query     map[string]string
 	async     *bool
+	force     *bool
 }
 
 func (p *VmServiceRebootRequest) Header(key, value string) *VmServiceRebootRequest {
@@ -98601,11 +99876,19 @@ func (p *VmServiceRebootRequest) Async(async bool) *VmServiceRebootRequest {
 	return p
 }
 
+func (p *VmServiceRebootRequest) Force(force bool) *VmServiceRebootRequest {
+	p.force = &force
+	return p
+}
+
 func (p *VmServiceRebootRequest) Send() (*VmServiceRebootResponse, error) {
 	rawURL := fmt.Sprintf("%s%s/reboot", p.VmService.connection.URL(), p.VmService.path)
 	actionBuilder := NewActionBuilder()
 	if p.async != nil {
 		actionBuilder.Async(*p.async)
+	}
+	if p.force != nil {
+		actionBuilder.Force(*p.force)
 	}
 	action, err := actionBuilder.Build()
 	if err != nil {
@@ -98666,7 +99949,11 @@ func (p *VmServiceRebootRequest) Send() (*VmServiceRebootResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -98694,6 +99981,18 @@ func (p *VmServiceRebootRequest) MustSend() *VmServiceRebootResponse {
 // ----
 // <action/>
 // ----
+// To reboot the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force reboot virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/reboot
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
+// ----
 //
 type VmServiceRebootResponse struct {
 }
@@ -98710,6 +100009,18 @@ type VmServiceRebootResponse struct {
 // [source,xml]
 // ----
 // <action/>
+// ----
+// To reboot the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force reboot virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/reboot
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
 // ----
 //
 func (p *VmService) Reboot() *VmServiceRebootRequest {
@@ -98829,12 +100140,12 @@ func (p *VmServiceRemoveRequest) Send() (*VmServiceRemoveResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmServiceRemoveResponse), nil
 }
@@ -98965,7 +100276,11 @@ func (p *VmServiceReorderMacAddressesRequest) Send() (*VmServiceReorderMacAddres
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -98992,6 +100307,167 @@ func (p *VmService) ReorderMacAddresses() *VmServiceReorderMacAddressesRequest {
 }
 
 //
+// Sends a reset request to a virtual machine.
+// For example:
+// [source]
+// ----
+// POST /ovirt-engine/api/vms/123/reset
+// ----
+// The reset action does not take any action specific parameters; therefore, the request body should contain an
+// empty `action`:
+// [source,xml]
+// ----
+// <action/>
+// ----
+//
+type VmServiceResetRequest struct {
+	VmService *VmService
+	header    map[string]string
+	query     map[string]string
+	async     *bool
+}
+
+func (p *VmServiceResetRequest) Header(key, value string) *VmServiceResetRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *VmServiceResetRequest) Query(key, value string) *VmServiceResetRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *VmServiceResetRequest) Async(async bool) *VmServiceResetRequest {
+	p.async = &async
+	return p
+}
+
+func (p *VmServiceResetRequest) Send() (*VmServiceResetResponse, error) {
+	rawURL := fmt.Sprintf("%s%s/reset", p.VmService.connection.URL(), p.VmService.path)
+	actionBuilder := NewActionBuilder()
+	if p.async != nil {
+		actionBuilder.Async(*p.async)
+	}
+	action, err := actionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	var body bytes.Buffer
+	writer := NewXMLWriter(&body)
+	err = XMLActionWriteOne(writer, action, "")
+	writer.Flush()
+	req, err := http.NewRequest("POST", rawURL, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.VmService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.VmService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.VmService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.VmService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
+	if errCheckAction != nil {
+		return nil, errCheckAction
+	}
+	return new(VmServiceResetResponse), nil
+}
+
+func (p *VmServiceResetRequest) MustSend() *VmServiceResetResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Sends a reset request to a virtual machine.
+// For example:
+// [source]
+// ----
+// POST /ovirt-engine/api/vms/123/reset
+// ----
+// The reset action does not take any action specific parameters; therefore, the request body should contain an
+// empty `action`:
+// [source,xml]
+// ----
+// <action/>
+// ----
+//
+type VmServiceResetResponse struct {
+}
+
+//
+// Sends a reset request to a virtual machine.
+// For example:
+// [source]
+// ----
+// POST /ovirt-engine/api/vms/123/reset
+// ----
+// The reset action does not take any action specific parameters; therefore, the request body should contain an
+// empty `action`:
+// [source,xml]
+// ----
+// <action/>
+// ----
+//
+func (p *VmService) Reset() *VmServiceResetRequest {
+	return &VmServiceResetRequest{VmService: p}
+}
+
+//
 // This operation sends a shutdown request to a virtual machine.
 // For example:
 // [source]
@@ -99004,12 +100480,25 @@ func (p *VmService) ReorderMacAddresses() *VmServiceReorderMacAddressesRequest {
 // ----
 // <action/>
 // ----
+// To shutdown the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force shutdown virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/shutdown
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
+// ----
 //
 type VmServiceShutdownRequest struct {
 	VmService *VmService
 	header    map[string]string
 	query     map[string]string
 	async     *bool
+	force     *bool
 	reason    *string
 }
 
@@ -99034,6 +100523,11 @@ func (p *VmServiceShutdownRequest) Async(async bool) *VmServiceShutdownRequest {
 	return p
 }
 
+func (p *VmServiceShutdownRequest) Force(force bool) *VmServiceShutdownRequest {
+	p.force = &force
+	return p
+}
+
 func (p *VmServiceShutdownRequest) Reason(reason string) *VmServiceShutdownRequest {
 	p.reason = &reason
 	return p
@@ -99044,6 +100538,9 @@ func (p *VmServiceShutdownRequest) Send() (*VmServiceShutdownResponse, error) {
 	actionBuilder := NewActionBuilder()
 	if p.async != nil {
 		actionBuilder.Async(*p.async)
+	}
+	if p.force != nil {
+		actionBuilder.Force(*p.force)
 	}
 	if p.reason != nil {
 		actionBuilder.Reason(*p.reason)
@@ -99107,7 +100604,11 @@ func (p *VmServiceShutdownRequest) Send() (*VmServiceShutdownResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -99135,6 +100636,18 @@ func (p *VmServiceShutdownRequest) MustSend() *VmServiceShutdownResponse {
 // ----
 // <action/>
 // ----
+// To shutdown the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force shutdown virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/shutdown
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
+// ----
 //
 type VmServiceShutdownResponse struct {
 }
@@ -99151,6 +100664,18 @@ type VmServiceShutdownResponse struct {
 // [source,xml]
 // ----
 // <action/>
+// ----
+// To shutdown the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force shutdown virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/shutdown
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
 // ----
 //
 func (p *VmService) Shutdown() *VmServiceShutdownRequest {
@@ -99342,7 +100867,11 @@ func (p *VmServiceStartRequest) Send() (*VmServiceStartResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -99407,12 +100936,25 @@ func (p *VmService) Start() *VmServiceStartRequest {
 // ----
 // <action/>
 // ----
+// To stop the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force stop virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/stop
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
+// ----
 //
 type VmServiceStopRequest struct {
 	VmService *VmService
 	header    map[string]string
 	query     map[string]string
 	async     *bool
+	force     *bool
 	reason    *string
 }
 
@@ -99437,6 +100979,11 @@ func (p *VmServiceStopRequest) Async(async bool) *VmServiceStopRequest {
 	return p
 }
 
+func (p *VmServiceStopRequest) Force(force bool) *VmServiceStopRequest {
+	p.force = &force
+	return p
+}
+
 func (p *VmServiceStopRequest) Reason(reason string) *VmServiceStopRequest {
 	p.reason = &reason
 	return p
@@ -99447,6 +100994,9 @@ func (p *VmServiceStopRequest) Send() (*VmServiceStopResponse, error) {
 	actionBuilder := NewActionBuilder()
 	if p.async != nil {
 		actionBuilder.Async(*p.async)
+	}
+	if p.force != nil {
+		actionBuilder.Force(*p.force)
 	}
 	if p.reason != nil {
 		actionBuilder.Reason(*p.reason)
@@ -99510,7 +101060,11 @@ func (p *VmServiceStopRequest) Send() (*VmServiceStopResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -99538,6 +101092,18 @@ func (p *VmServiceStopRequest) MustSend() *VmServiceStopResponse {
 // ----
 // <action/>
 // ----
+// To stop the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force stop virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/stop
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
+// ----
 //
 type VmServiceStopResponse struct {
 }
@@ -99554,6 +101120,18 @@ type VmServiceStopResponse struct {
 // [source,xml]
 // ----
 // <action/>
+// ----
+// To stop the VM even if a backup is running for it,
+// the action should include the 'force' element.
+// For example, to force stop virtual machine `123`:
+// ----
+// POST /ovirt-engine/api/vms/123/stop
+// ----
+// [source,xml]
+// ----
+// <action>
+//     <force>true</force>
+// </action>
 // ----
 //
 func (p *VmService) Stop() *VmServiceStopRequest {
@@ -99668,7 +101246,11 @@ func (p *VmServiceSuspendRequest) Send() (*VmServiceSuspendResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -99828,7 +101410,11 @@ func (p *VmServiceThawFilesystemsRequest) Send() (*VmServiceThawFilesystemsRespo
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -100015,7 +101601,11 @@ func (p *VmServiceTicketRequest) Send() (*VmServiceTicketResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -100244,7 +101834,11 @@ func (p *VmServiceExportToExportDomainRequest) Send() (*VmServiceExportToExportD
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -100418,7 +102012,11 @@ func (p *VmServiceExportToPathOnHostRequest) Send() (*VmServiceExportToPathOnHos
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -100543,7 +102141,11 @@ func (p *VmServiceUndoSnapshotRequest) Send() (*VmServiceUndoSnapshotResponse, e
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -100684,12 +102286,12 @@ func (p *VmServiceUpdateRequest) Send() (*VmServiceUpdateResponse, error) {
 		}
 		p.VmService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -101072,12 +102674,12 @@ func (p *VmSessionServiceGetRequest) Send() (*VmSessionServiceGetResponse, error
 		}
 		p.VmSessionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSessionReadOne(reader, nil, "")
@@ -101268,12 +102870,12 @@ func (p *VmSessionsServiceListRequest) Send() (*VmSessionsServiceListResponse, e
 		}
 		p.VmSessionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSessionReadMany(reader, nil)
@@ -101488,12 +103090,12 @@ func (p *VmWatchdogServiceGetRequest) Send() (*VmWatchdogServiceGetResponse, err
 		}
 		p.VmWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -101632,12 +103234,12 @@ func (p *VmWatchdogServiceRemoveRequest) Send() (*VmWatchdogServiceRemoveRespons
 		}
 		p.VmWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VmWatchdogServiceRemoveResponse), nil
 }
@@ -101792,12 +103394,12 @@ func (p *VmWatchdogServiceUpdateRequest) Send() (*VmWatchdogServiceUpdateRespons
 		}
 		p.VmWatchdogService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -102016,12 +103618,12 @@ func (p *VmWatchdogsServiceAddRequest) Send() (*VmWatchdogsServiceAddResponse, e
 		}
 		p.VmWatchdogsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadOne(reader, nil, "")
@@ -102202,12 +103804,12 @@ func (p *VmWatchdogsServiceListRequest) Send() (*VmWatchdogsServiceListResponse,
 		}
 		p.VmWatchdogsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWatchdogReadMany(reader, nil)
@@ -102558,12 +104160,12 @@ func (p *VmsServiceAddRequest) Send() (*VmsServiceAddResponse, error) {
 		}
 		p.VmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadOne(reader, nil, "")
@@ -103007,7 +104609,11 @@ func (p *VmsServiceAddFromConfigurationRequest) Send() (*VmsServiceAddFromConfig
 		}
 		p.VmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -103181,7 +104787,11 @@ func (p *VmsServiceAddFromScratchRequest) Send() (*VmsServiceAddFromScratchRespo
 		}
 		p.VmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -103355,7 +104965,11 @@ func (p *VmsServiceAddFromSnapshotRequest) Send() (*VmsServiceAddFromSnapshotRes
 		}
 		p.VmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -103549,12 +105163,12 @@ func (p *VmsServiceListRequest) Send() (*VmsServiceListResponse, error) {
 		}
 		p.VmsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVmReadMany(reader, nil)
@@ -103730,12 +105344,12 @@ func (p *VnicProfileServiceGetRequest) Send() (*VnicProfileServiceGetResponse, e
 		}
 		p.VnicProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadOne(reader, nil, "")
@@ -103869,12 +105483,12 @@ func (p *VnicProfileServiceRemoveRequest) Send() (*VnicProfileServiceRemoveRespo
 		}
 		p.VnicProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(VnicProfileServiceRemoveResponse), nil
 }
@@ -104001,12 +105615,12 @@ func (p *VnicProfileServiceUpdateRequest) Send() (*VnicProfileServiceUpdateRespo
 		}
 		p.VnicProfileService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadOne(reader, nil, "")
@@ -104236,12 +105850,12 @@ func (p *VnicProfilesServiceAddRequest) Send() (*VnicProfilesServiceAddResponse,
 		}
 		p.VnicProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadOne(reader, nil, "")
@@ -104492,12 +106106,12 @@ func (p *VnicProfilesServiceListRequest) Send() (*VnicProfilesServiceListRespons
 		}
 		p.VnicProfilesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLVnicProfileReadMany(reader, nil)
@@ -104679,12 +106293,12 @@ func (p *WeightServiceGetRequest) Send() (*WeightServiceGetResponse, error) {
 		}
 		p.WeightService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWeightReadOne(reader, nil, "")
@@ -104815,12 +106429,12 @@ func (p *WeightServiceRemoveRequest) Send() (*WeightServiceRemoveResponse, error
 		}
 		p.WeightService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(WeightServiceRemoveResponse), nil
 }
@@ -104962,12 +106576,12 @@ func (p *WeightsServiceAddRequest) Send() (*WeightsServiceAddResponse, error) {
 		}
 		p.WeightsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWeightReadOne(reader, nil, "")
@@ -105122,12 +106736,12 @@ func (p *WeightsServiceListRequest) Send() (*WeightsServiceListResponse, error) 
 		}
 		p.WeightsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLWeightReadMany(reader, nil)
@@ -105299,12 +106913,12 @@ func (p *DomainGroupServiceGetRequest) Send() (*DomainGroupServiceGetResponse, e
 		}
 		p.DomainGroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGroupReadOne(reader, nil, "")
@@ -105494,12 +107108,12 @@ func (p *DomainGroupsServiceListRequest) Send() (*DomainGroupsServiceListRespons
 		}
 		p.DomainGroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGroupReadMany(reader, nil)
@@ -105688,12 +107302,12 @@ func (p *DomainServiceGetRequest) Send() (*DomainServiceGetResponse, error) {
 		}
 		p.DomainService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDomainReadOne(reader, nil, "")
@@ -105911,12 +107525,12 @@ func (p *DomainUserGroupsServiceListRequest) Send() (*DomainUserGroupsServiceLis
 		}
 		p.DomainUserGroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGroupReadMany(reader, nil)
@@ -106096,12 +107710,12 @@ func (p *DomainUserServiceGetRequest) Send() (*DomainUserServiceGetResponse, err
 		}
 		p.DomainUserService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUserReadOne(reader, nil, "")
@@ -106350,12 +107964,12 @@ func (p *DomainUsersServiceListRequest) Send() (*DomainUsersServiceListResponse,
 		}
 		p.DomainUsersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUserReadMany(reader, nil)
@@ -106598,12 +108212,12 @@ func (p *DomainsServiceListRequest) Send() (*DomainsServiceListResponse, error) 
 		}
 		p.DomainsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLDomainReadMany(reader, nil)
@@ -106832,12 +108446,12 @@ func (p *GroupServiceGetRequest) Send() (*GroupServiceGetResponse, error) {
 		}
 		p.GroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGroupReadOne(reader, nil, "")
@@ -107013,12 +108627,12 @@ func (p *GroupServiceRemoveRequest) Send() (*GroupServiceRemoveResponse, error) 
 		}
 		p.GroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(GroupServiceRemoveResponse), nil
 }
@@ -107226,12 +108840,12 @@ func (p *GroupsServiceAddRequest) Send() (*GroupsServiceAddResponse, error) {
 		}
 		p.GroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGroupReadOne(reader, nil, "")
@@ -107450,12 +109064,12 @@ func (p *GroupsServiceListRequest) Send() (*GroupsServiceListResponse, error) {
 		}
 		p.GroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGroupReadMany(reader, nil)
@@ -107672,12 +109286,12 @@ func (p *SshPublicKeyServiceGetRequest) Send() (*SshPublicKeyServiceGetResponse,
 		}
 		p.SshPublicKeyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSshPublicKeyReadOne(reader, nil, "")
@@ -107808,12 +109422,12 @@ func (p *SshPublicKeyServiceRemoveRequest) Send() (*SshPublicKeyServiceRemoveRes
 		}
 		p.SshPublicKeyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(SshPublicKeyServiceRemoveResponse), nil
 }
@@ -107937,12 +109551,12 @@ func (p *SshPublicKeyServiceUpdateRequest) Send() (*SshPublicKeyServiceUpdateRes
 		}
 		p.SshPublicKeyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSshPublicKeyReadOne(reader, nil, "")
@@ -108103,12 +109717,12 @@ func (p *SshPublicKeysServiceAddRequest) Send() (*SshPublicKeysServiceAddRespons
 		}
 		p.SshPublicKeysService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSshPublicKeyReadOne(reader, nil, "")
@@ -108284,12 +109898,12 @@ func (p *SshPublicKeysServiceListRequest) Send() (*SshPublicKeysServiceListRespo
 		}
 		p.SshPublicKeysService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLSshPublicKeyReadMany(reader, nil)
@@ -108428,6 +110042,723 @@ func (op *SshPublicKeysService) String() string {
 }
 
 //
+//
+type UserOptionService struct {
+	BaseService
+}
+
+func NewUserOptionService(connection *Connection, path string) *UserOptionService {
+	var result UserOptionService
+	result.connection = connection
+	result.path = path
+	return &result
+}
+
+//
+// Returns a user profile property of type JSON.
+// Example request(for user with identifier `123` and option with identifier `456`):
+// [source]
+// ----
+// GET /ovirt-engine/api/users/123/options/456
+// ----
+// The result will be the following XML document:
+// [source,xml]
+// ----
+//   <user_option href="/ovirt-engine/api/users/123/options/456" id="456">
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//     <user href="/ovirt-engine/api/users/123" id="123"/>
+//   </user_option>
+// ----
+//
+type UserOptionServiceGetRequest struct {
+	UserOptionService *UserOptionService
+	header            map[string]string
+	query             map[string]string
+}
+
+func (p *UserOptionServiceGetRequest) Header(key, value string) *UserOptionServiceGetRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *UserOptionServiceGetRequest) Query(key, value string) *UserOptionServiceGetRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *UserOptionServiceGetRequest) Send() (*UserOptionServiceGetResponse, error) {
+	rawURL := fmt.Sprintf("%s%s", p.UserOptionService.connection.URL(), p.UserOptionService.path)
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	req, err := http.NewRequest("GET", rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.UserOptionService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.UserOptionService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.UserOptionService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.UserOptionService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.UserOptionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
+	}
+	reader := NewXMLReader(respBodyBytes)
+	result, err := XMLUserOptionReadOne(reader, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return &UserOptionServiceGetResponse{option: result}, nil
+}
+
+func (p *UserOptionServiceGetRequest) MustSend() *UserOptionServiceGetResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Returns a user profile property of type JSON.
+// Example request(for user with identifier `123` and option with identifier `456`):
+// [source]
+// ----
+// GET /ovirt-engine/api/users/123/options/456
+// ----
+// The result will be the following XML document:
+// [source,xml]
+// ----
+//   <user_option href="/ovirt-engine/api/users/123/options/456" id="456">
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//     <user href="/ovirt-engine/api/users/123" id="123"/>
+//   </user_option>
+// ----
+//
+type UserOptionServiceGetResponse struct {
+	option *UserOption
+}
+
+func (p *UserOptionServiceGetResponse) Option() (*UserOption, bool) {
+	if p.option != nil {
+		return p.option, true
+	}
+	return nil, false
+}
+
+func (p *UserOptionServiceGetResponse) MustOption() *UserOption {
+	if p.option == nil {
+		panic("option in response does not exist")
+	}
+	return p.option
+}
+
+//
+// Returns a user profile property of type JSON.
+// Example request(for user with identifier `123` and option with identifier `456`):
+// [source]
+// ----
+// GET /ovirt-engine/api/users/123/options/456
+// ----
+// The result will be the following XML document:
+// [source,xml]
+// ----
+//   <user_option href="/ovirt-engine/api/users/123/options/456" id="456">
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//     <user href="/ovirt-engine/api/users/123" id="123"/>
+//   </user_option>
+// ----
+//
+func (p *UserOptionService) Get() *UserOptionServiceGetRequest {
+	return &UserOptionServiceGetRequest{UserOptionService: p}
+}
+
+//
+// Deletes an existing property of type JSON.
+// Example request(for user with identifier `123` and option with identifier `456`):
+// [source]
+// ----
+// DELETE /ovirt-engine/api/users/123/options/456
+// ----
+//
+type UserOptionServiceRemoveRequest struct {
+	UserOptionService *UserOptionService
+	header            map[string]string
+	query             map[string]string
+}
+
+func (p *UserOptionServiceRemoveRequest) Header(key, value string) *UserOptionServiceRemoveRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *UserOptionServiceRemoveRequest) Query(key, value string) *UserOptionServiceRemoveRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *UserOptionServiceRemoveRequest) Send() (*UserOptionServiceRemoveResponse, error) {
+	rawURL := fmt.Sprintf("%s%s", p.UserOptionService.connection.URL(), p.UserOptionService.path)
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	req, err := http.NewRequest("DELETE", rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.UserOptionService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.UserOptionService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.UserOptionService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.UserOptionService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.UserOptionService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
+	}
+	return new(UserOptionServiceRemoveResponse), nil
+}
+
+func (p *UserOptionServiceRemoveRequest) MustSend() *UserOptionServiceRemoveResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Deletes an existing property of type JSON.
+// Example request(for user with identifier `123` and option with identifier `456`):
+// [source]
+// ----
+// DELETE /ovirt-engine/api/users/123/options/456
+// ----
+//
+type UserOptionServiceRemoveResponse struct {
+}
+
+//
+// Deletes an existing property of type JSON.
+// Example request(for user with identifier `123` and option with identifier `456`):
+// [source]
+// ----
+// DELETE /ovirt-engine/api/users/123/options/456
+// ----
+//
+func (p *UserOptionService) Remove() *UserOptionServiceRemoveRequest {
+	return &UserOptionServiceRemoveRequest{UserOptionService: p}
+}
+
+//
+// Service locator method, returns individual service on which the URI is dispatched.
+//
+func (op *UserOptionService) Service(path string) (Service, error) {
+	if path == "" {
+		return op, nil
+	}
+	return nil, fmt.Errorf("The path <%s> doesn't correspond to any service", path)
+}
+
+func (op *UserOptionService) String() string {
+	return fmt.Sprintf("UserOptionService:%s", op.path)
+}
+
+//
+//
+type UserOptionsService struct {
+	BaseService
+}
+
+func NewUserOptionsService(connection *Connection, path string) *UserOptionsService {
+	var result UserOptionsService
+	result.connection = connection
+	result.path = path
+	return &result
+}
+
+//
+// Adds a new user profile property of type JSON.
+// Example request(for user with identifier `123`):
+// [source]
+// ----
+// POST /ovirt-engine/api/users/123/options
+// ----
+// Payload:
+// [source,xml]
+// ----
+//   <user_option>
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//   </user_option>
+// ----
+//
+type UserOptionsServiceAddRequest struct {
+	UserOptionsService *UserOptionsService
+	header             map[string]string
+	query              map[string]string
+	option             *UserOption
+}
+
+func (p *UserOptionsServiceAddRequest) Header(key, value string) *UserOptionsServiceAddRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *UserOptionsServiceAddRequest) Query(key, value string) *UserOptionsServiceAddRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *UserOptionsServiceAddRequest) Option(option *UserOption) *UserOptionsServiceAddRequest {
+	p.option = option
+	return p
+}
+
+func (p *UserOptionsServiceAddRequest) Send() (*UserOptionsServiceAddResponse, error) {
+	rawURL := fmt.Sprintf("%s%s", p.UserOptionsService.connection.URL(), p.UserOptionsService.path)
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	var body bytes.Buffer
+	writer := NewXMLWriter(&body)
+	err := XMLUserOptionWriteOne(writer, p.option, "")
+	if err != nil {
+		return nil, err
+	}
+	writer.Flush()
+	req, err := http.NewRequest("POST", rawURL, &body)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.UserOptionsService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.UserOptionsService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.UserOptionsService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.UserOptionsService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.UserOptionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
+	}
+	reader := NewXMLReader(respBodyBytes)
+	result, err := XMLUserOptionReadOne(reader, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return &UserOptionsServiceAddResponse{option: result}, nil
+}
+
+func (p *UserOptionsServiceAddRequest) MustSend() *UserOptionsServiceAddResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Adds a new user profile property of type JSON.
+// Example request(for user with identifier `123`):
+// [source]
+// ----
+// POST /ovirt-engine/api/users/123/options
+// ----
+// Payload:
+// [source,xml]
+// ----
+//   <user_option>
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//   </user_option>
+// ----
+//
+type UserOptionsServiceAddResponse struct {
+	option *UserOption
+}
+
+func (p *UserOptionsServiceAddResponse) Option() (*UserOption, bool) {
+	if p.option != nil {
+		return p.option, true
+	}
+	return nil, false
+}
+
+func (p *UserOptionsServiceAddResponse) MustOption() *UserOption {
+	if p.option == nil {
+		panic("option in response does not exist")
+	}
+	return p.option
+}
+
+//
+// Adds a new user profile property of type JSON.
+// Example request(for user with identifier `123`):
+// [source]
+// ----
+// POST /ovirt-engine/api/users/123/options
+// ----
+// Payload:
+// [source,xml]
+// ----
+//   <user_option>
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//   </user_option>
+// ----
+//
+func (p *UserOptionsService) Add() *UserOptionsServiceAddRequest {
+	return &UserOptionsServiceAddRequest{UserOptionsService: p}
+}
+
+//
+// Returns a list of user profile properties of type JSON.
+// Example request(for user with identifier `123`):
+// [source]
+// ----
+// GET /ovirt-engine/api/users/123/options
+// ----
+// The result will be the following XML document:
+// [source,xml]
+// ----
+// <user_options>
+//   <user_option href="/ovirt-engine/api/users/123/options/456" id="456">
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//     <user href="/ovirt-engine/api/users/123" id="123"/>
+//   </user_option>
+// </user_options>
+// ----
+//
+type UserOptionsServiceListRequest struct {
+	UserOptionsService *UserOptionsService
+	header             map[string]string
+	query              map[string]string
+}
+
+func (p *UserOptionsServiceListRequest) Header(key, value string) *UserOptionsServiceListRequest {
+	if p.header == nil {
+		p.header = make(map[string]string)
+	}
+	p.header[key] = value
+	return p
+}
+
+func (p *UserOptionsServiceListRequest) Query(key, value string) *UserOptionsServiceListRequest {
+	if p.query == nil {
+		p.query = make(map[string]string)
+	}
+	p.query[key] = value
+	return p
+}
+
+func (p *UserOptionsServiceListRequest) Send() (*UserOptionsServiceListResponse, error) {
+	rawURL := fmt.Sprintf("%s%s", p.UserOptionsService.connection.URL(), p.UserOptionsService.path)
+	values := make(url.Values)
+	if p.query != nil {
+		for k, v := range p.query {
+			values[k] = []string{v}
+		}
+	}
+	if len(values) > 0 {
+		rawURL = fmt.Sprintf("%s?%s", rawURL, values.Encode())
+	}
+	req, err := http.NewRequest("GET", rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for hk, hv := range p.UserOptionsService.connection.headers {
+		req.Header.Add(hk, hv)
+	}
+
+	if p.header != nil {
+		for hk, hv := range p.header {
+			req.Header.Add(hk, hv)
+		}
+	}
+
+	req.Header.Add("User-Agent", fmt.Sprintf("GoSDK/%s", SDK_VERSION))
+	req.Header.Add("Version", "4")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Accept", "application/xml")
+	// get OAuth access token
+	token, err := p.UserOptionsService.connection.authenticate()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Send the request and wait for the response
+	resp, err := p.UserOptionsService.connection.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if p.UserOptionsService.connection.logFunc != nil {
+		dumpReq, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, err
+		}
+		dumpResp, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, err
+		}
+		p.UserOptionsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
+	}
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
+	}
+	reader := NewXMLReader(respBodyBytes)
+	result, err := XMLUserOptionReadMany(reader, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &UserOptionsServiceListResponse{options: result}, nil
+}
+
+func (p *UserOptionsServiceListRequest) MustSend() *UserOptionsServiceListResponse {
+	if v, err := p.Send(); err != nil {
+		panic(err)
+	} else {
+		return v
+	}
+}
+
+//
+// Returns a list of user profile properties of type JSON.
+// Example request(for user with identifier `123`):
+// [source]
+// ----
+// GET /ovirt-engine/api/users/123/options
+// ----
+// The result will be the following XML document:
+// [source,xml]
+// ----
+// <user_options>
+//   <user_option href="/ovirt-engine/api/users/123/options/456" id="456">
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//     <user href="/ovirt-engine/api/users/123" id="123"/>
+//   </user_option>
+// </user_options>
+// ----
+//
+type UserOptionsServiceListResponse struct {
+	options *UserOptionSlice
+}
+
+func (p *UserOptionsServiceListResponse) Options() (*UserOptionSlice, bool) {
+	if p.options != nil {
+		return p.options, true
+	}
+	return nil, false
+}
+
+func (p *UserOptionsServiceListResponse) MustOptions() *UserOptionSlice {
+	if p.options == nil {
+		panic("options in response does not exist")
+	}
+	return p.options
+}
+
+//
+// Returns a list of user profile properties of type JSON.
+// Example request(for user with identifier `123`):
+// [source]
+// ----
+// GET /ovirt-engine/api/users/123/options
+// ----
+// The result will be the following XML document:
+// [source,xml]
+// ----
+// <user_options>
+//   <user_option href="/ovirt-engine/api/users/123/options/456" id="456">
+//     <name>SomeName</name>
+//     <content>["any", "JSON"]</content>
+//     <user href="/ovirt-engine/api/users/123" id="123"/>
+//   </user_option>
+// </user_options>
+// ----
+//
+func (p *UserOptionsService) List() *UserOptionsServiceListRequest {
+	return &UserOptionsServiceListRequest{UserOptionsService: p}
+}
+
+//
+//
+func (op *UserOptionsService) OptionService(id string) *UserOptionService {
+	return NewUserOptionService(op.connection, fmt.Sprintf("%s/%s", op.path, id))
+}
+
+//
+// Service locator method, returns individual service on which the URI is dispatched.
+//
+func (op *UserOptionsService) Service(path string) (Service, error) {
+	if path == "" {
+		return op, nil
+	}
+	index := strings.Index(path, "/")
+	if index == -1 {
+		return op.OptionService(path), nil
+	}
+	return op.OptionService(path[:index]).Service(path[index+1:])
+}
+
+func (op *UserOptionsService) String() string {
+	return fmt.Sprintf("UserOptionsService:%s", op.path)
+}
+
+//
 // A service to manage a user in the system.
 // Use this service to either get users details or remove users.
 // In order to add new users please use
@@ -108557,12 +110888,12 @@ func (p *UserServiceGetRequest) Send() (*UserServiceGetResponse, error) {
 		}
 		p.UserService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUserReadOne(reader, nil, "")
@@ -108750,12 +111081,12 @@ func (p *UserServiceRemoveRequest) Send() (*UserServiceRemoveResponse, error) {
 		}
 		p.UserService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(UserServiceRemoveResponse), nil
 }
@@ -108804,11 +111135,14 @@ func (p *UserService) Remove() *UserServiceRemoveRequest {
 //    <user_options>
 //       <property>
 //          <name>test</name>
-//          <value>test1</value>
+//          <value>["any","JSON"]</value>
 //       </property>
 //    </user_options>
 // </user>
 // ----
+// IMPORTANT: Since version 4.4.5 of the engine this operation is deprecated, and preserved only for backwards
+// compatibility. It will be removed in the future. Please use the <<services/user_option, options>>
+// endpoint instead.
 //
 type UserServiceUpdateRequest struct {
 	UserService *UserService
@@ -108898,12 +111232,12 @@ func (p *UserServiceUpdateRequest) Send() (*UserServiceUpdateResponse, error) {
 		}
 		p.UserService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUserReadOne(reader, nil, "")
@@ -108936,11 +111270,14 @@ func (p *UserServiceUpdateRequest) MustSend() *UserServiceUpdateResponse {
 //    <user_options>
 //       <property>
 //          <name>test</name>
-//          <value>test1</value>
+//          <value>["any","JSON"]</value>
 //       </property>
 //    </user_options>
 // </user>
 // ----
+// IMPORTANT: Since version 4.4.5 of the engine this operation is deprecated, and preserved only for backwards
+// compatibility. It will be removed in the future. Please use the <<services/user_option, options>>
+// endpoint instead.
 //
 type UserServiceUpdateResponse struct {
 	user *User
@@ -108975,11 +111312,14 @@ func (p *UserServiceUpdateResponse) MustUser() *User {
 //    <user_options>
 //       <property>
 //          <name>test</name>
-//          <value>test1</value>
+//          <value>["any","JSON"]</value>
 //       </property>
 //    </user_options>
 // </user>
 // ----
+// IMPORTANT: Since version 4.4.5 of the engine this operation is deprecated, and preserved only for backwards
+// compatibility. It will be removed in the future. Please use the <<services/user_option, options>>
+// endpoint instead.
 //
 func (p *UserService) Update() *UserServiceUpdateRequest {
 	return &UserServiceUpdateRequest{UserService: p}
@@ -108996,6 +111336,12 @@ func (op *UserService) EventSubscriptionsService() *EventSubscriptionsService {
 //
 func (op *UserService) GroupsService() *DomainUserGroupsService {
 	return NewDomainUserGroupsService(op.connection, fmt.Sprintf("%s/groups", op.path))
+}
+
+//
+//
+func (op *UserService) OptionsService() *UserOptionsService {
+	return NewUserOptionsService(op.connection, fmt.Sprintf("%s/options", op.path))
 }
 
 //
@@ -109040,6 +111386,12 @@ func (op *UserService) Service(path string) (Service, error) {
 	}
 	if strings.HasPrefix(path, "groups/") {
 		return op.GroupsService().Service(path[7:])
+	}
+	if path == "options" {
+		return op.OptionsService(), nil
+	}
+	if strings.HasPrefix(path, "options/") {
+		return op.OptionsService().Service(path[8:])
 	}
 	if path == "permissions" {
 		return op.PermissionsService(), nil
@@ -109208,12 +111560,12 @@ func (p *UsersServiceAddRequest) Send() (*UsersServiceAddResponse, error) {
 		}
 		p.UsersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUserReadOne(reader, nil, "")
@@ -109464,12 +111816,12 @@ func (p *UsersServiceListRequest) Send() (*UsersServiceListResponse, error) {
 		}
 		p.UsersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLUserReadMany(reader, nil)
@@ -109729,12 +112081,12 @@ func (p *EngineKatelloErrataServiceListRequest) Send() (*EngineKatelloErrataServ
 		}
 		p.EngineKatelloErrataService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLKatelloErratumReadMany(reader, nil)
@@ -109980,12 +112332,12 @@ func (p *ExternalComputeResourceServiceGetRequest) Send() (*ExternalComputeResou
 		}
 		p.ExternalComputeResourceService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalComputeResourceReadOne(reader, nil, "")
@@ -110209,12 +112561,12 @@ func (p *ExternalComputeResourcesServiceListRequest) Send() (*ExternalComputeRes
 		}
 		p.ExternalComputeResourcesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalComputeResourceReadMany(reader, nil)
@@ -110443,12 +112795,12 @@ func (p *ExternalDiscoveredHostServiceGetRequest) Send() (*ExternalDiscoveredHos
 		}
 		p.ExternalDiscoveredHostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalDiscoveredHostReadOne(reader, nil, "")
@@ -110685,12 +113037,12 @@ func (p *ExternalDiscoveredHostsServiceListRequest) Send() (*ExternalDiscoveredH
 		}
 		p.ExternalDiscoveredHostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalDiscoveredHostReadMany(reader, nil)
@@ -110938,12 +113290,12 @@ func (p *ExternalHostGroupServiceGetRequest) Send() (*ExternalHostGroupServiceGe
 		}
 		p.ExternalHostGroupService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostGroupReadOne(reader, nil, "")
@@ -111169,12 +113521,12 @@ func (p *ExternalHostGroupsServiceListRequest) Send() (*ExternalHostGroupsServic
 		}
 		p.ExternalHostGroupsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostGroupReadMany(reader, nil)
@@ -111409,12 +113761,12 @@ func (p *ExternalHostProviderServiceGetRequest) Send() (*ExternalHostProviderSer
 		}
 		p.ExternalHostProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostProviderReadOne(reader, nil, "")
@@ -111594,7 +113946,11 @@ func (p *ExternalHostProviderServiceImportCertificatesRequest) Send() (*External
 		}
 		p.ExternalHostProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -111709,12 +114065,12 @@ func (p *ExternalHostProviderServiceRemoveRequest) Send() (*ExternalHostProvider
 		}
 		p.ExternalHostProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(ExternalHostProviderServiceRemoveResponse), nil
 }
@@ -111839,7 +114195,11 @@ func (p *ExternalHostProviderServiceTestConnectivityRequest) Send() (*ExternalHo
 		}
 		p.ExternalHostProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -111978,12 +114338,12 @@ func (p *ExternalHostProviderServiceUpdateRequest) Send() (*ExternalHostProvider
 		}
 		p.ExternalHostProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostProviderReadOne(reader, nil, "")
@@ -112208,12 +114568,12 @@ func (p *ExternalHostProvidersServiceAddRequest) Send() (*ExternalHostProvidersS
 		}
 		p.ExternalHostProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostProviderReadOne(reader, nil, "")
@@ -112368,12 +114728,12 @@ func (p *ExternalHostProvidersServiceListRequest) Send() (*ExternalHostProviders
 		}
 		p.ExternalHostProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostProviderReadMany(reader, nil)
@@ -112545,12 +114905,12 @@ func (p *ExternalHostServiceGetRequest) Send() (*ExternalHostServiceGetResponse,
 		}
 		p.ExternalHostService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostReadOne(reader, nil, "")
@@ -112720,12 +115080,12 @@ func (p *ExternalHostsServiceListRequest) Send() (*ExternalHostsServiceListRespo
 		}
 		p.ExternalHostsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLExternalHostReadMany(reader, nil)
@@ -112937,12 +115297,12 @@ func (p *KatelloErrataServiceListRequest) Send() (*KatelloErrataServiceListRespo
 		}
 		p.KatelloErrataService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLKatelloErratumReadMany(reader, nil)
@@ -113193,12 +115553,12 @@ func (p *KatelloErratumServiceGetRequest) Send() (*KatelloErratumServiceGetRespo
 		}
 		p.KatelloErratumService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLKatelloErratumReadOne(reader, nil, "")
@@ -113448,12 +115808,12 @@ func (p *GlusterBrickServiceGetRequest) Send() (*GlusterBrickServiceGetResponse,
 		}
 		p.GlusterBrickService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterBrickReadOne(reader, nil, "")
@@ -113679,12 +116039,12 @@ func (p *GlusterBrickServiceRemoveRequest) Send() (*GlusterBrickServiceRemoveRes
 		}
 		p.GlusterBrickService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(GlusterBrickServiceRemoveResponse), nil
 }
@@ -113834,7 +116194,11 @@ func (p *GlusterBrickServiceReplaceRequest) Send() (*GlusterBrickServiceReplaceR
 		}
 		p.GlusterBrickService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -114038,7 +116402,11 @@ func (p *GlusterBricksServiceActivateRequest) Send() (*GlusterBricksServiceActiv
 		}
 		p.GlusterBricksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -114241,12 +116609,12 @@ func (p *GlusterBricksServiceAddRequest) Send() (*GlusterBricksServiceAddRespons
 		}
 		p.GlusterBricksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterBrickReadMany(reader, nil)
@@ -114450,12 +116818,12 @@ func (p *GlusterBricksServiceListRequest) Send() (*GlusterBricksServiceListRespo
 		}
 		p.GlusterBricksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterBrickReadMany(reader, nil)
@@ -114682,7 +117050,11 @@ func (p *GlusterBricksServiceMigrateRequest) Send() (*GlusterBricksServiceMigrat
 		}
 		p.GlusterBricksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -114883,12 +117255,12 @@ func (p *GlusterBricksServiceRemoveRequest) Send() (*GlusterBricksServiceRemoveR
 		}
 		p.GlusterBricksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(GlusterBricksServiceRemoveResponse), nil
 }
@@ -115076,7 +117448,11 @@ func (p *GlusterBricksServiceStopMigrateRequest) Send() (*GlusterBricksServiceSt
 		}
 		p.GlusterBricksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -115273,7 +117649,11 @@ func (p *GlusterHookServiceDisableRequest) Send() (*GlusterHookServiceDisableRes
 		}
 		p.GlusterHookService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -115400,7 +117780,11 @@ func (p *GlusterHookServiceEnableRequest) Send() (*GlusterHookServiceEnableRespo
 		}
 		p.GlusterHookService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -115517,12 +117901,12 @@ func (p *GlusterHookServiceGetRequest) Send() (*GlusterHookServiceGetResponse, e
 		}
 		p.GlusterHookService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterHookReadOne(reader, nil, "")
@@ -115654,12 +118038,12 @@ func (p *GlusterHookServiceRemoveRequest) Send() (*GlusterHookServiceRemoveRespo
 		}
 		p.GlusterHookService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(GlusterHookServiceRemoveResponse), nil
 }
@@ -115803,7 +118187,11 @@ func (p *GlusterHookServiceResolveRequest) Send() (*GlusterHookServiceResolveRes
 		}
 		p.GlusterHookService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -115969,12 +118357,12 @@ func (p *GlusterHooksServiceListRequest) Send() (*GlusterHooksServiceListRespons
 		}
 		p.GlusterHooksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterHookReadMany(reader, nil)
@@ -116184,12 +118572,12 @@ func (p *GlusterVolumeServiceGetRequest) Send() (*GlusterVolumeServiceGetRespons
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterVolumeReadOne(reader, nil, "")
@@ -116400,7 +118788,11 @@ func (p *GlusterVolumeServiceGetProfileStatisticsRequest) Send() (*GlusterVolume
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	action, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	action, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -116579,7 +118971,11 @@ func (p *GlusterVolumeServiceRebalanceRequest) Send() (*GlusterVolumeServiceReba
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -116718,12 +119114,12 @@ func (p *GlusterVolumeServiceRemoveRequest) Send() (*GlusterVolumeServiceRemoveR
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(GlusterVolumeServiceRemoveResponse), nil
 }
@@ -116861,7 +119257,11 @@ func (p *GlusterVolumeServiceResetAllOptionsRequest) Send() (*GlusterVolumeServi
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117026,7 +119426,11 @@ func (p *GlusterVolumeServiceResetOptionRequest) Send() (*GlusterVolumeServiceRe
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117196,7 +119600,11 @@ func (p *GlusterVolumeServiceSetOptionRequest) Send() (*GlusterVolumeServiceSetO
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117361,7 +119769,11 @@ func (p *GlusterVolumeServiceStartRequest) Send() (*GlusterVolumeServiceStartRes
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117502,7 +119914,11 @@ func (p *GlusterVolumeServiceStartProfileRequest) Send() (*GlusterVolumeServiceS
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117651,7 +120067,11 @@ func (p *GlusterVolumeServiceStopRequest) Send() (*GlusterVolumeServiceStopRespo
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117792,7 +120212,11 @@ func (p *GlusterVolumeServiceStopProfileRequest) Send() (*GlusterVolumeServiceSt
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -117932,7 +120356,11 @@ func (p *GlusterVolumeServiceStopRebalanceRequest) Send() (*GlusterVolumeService
 		}
 		p.GlusterVolumeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -118146,12 +120574,12 @@ func (p *GlusterVolumesServiceAddRequest) Send() (*GlusterVolumesServiceAddRespo
 		}
 		p.GlusterVolumesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterVolumeReadOne(reader, nil, "")
@@ -118382,12 +120810,12 @@ func (p *GlusterVolumesServiceListRequest) Send() (*GlusterVolumesServiceListRes
 		}
 		p.GlusterVolumesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLGlusterVolumeReadMany(reader, nil)
@@ -118572,12 +121000,12 @@ func (p *OpenstackImageProviderServiceGetRequest) Send() (*OpenstackImageProvide
 		}
 		p.OpenstackImageProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackImageProviderReadOne(reader, nil, "")
@@ -118723,7 +121151,11 @@ func (p *OpenstackImageProviderServiceImportCertificatesRequest) Send() (*Openst
 		}
 		p.OpenstackImageProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -118838,12 +121270,12 @@ func (p *OpenstackImageProviderServiceRemoveRequest) Send() (*OpenstackImageProv
 		}
 		p.OpenstackImageProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(OpenstackImageProviderServiceRemoveResponse), nil
 }
@@ -118968,7 +121400,11 @@ func (p *OpenstackImageProviderServiceTestConnectivityRequest) Send() (*Openstac
 		}
 		p.OpenstackImageProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -119107,12 +121543,12 @@ func (p *OpenstackImageProviderServiceUpdateRequest) Send() (*OpenstackImageProv
 		}
 		p.OpenstackImageProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackImageProviderReadOne(reader, nil, "")
@@ -119301,12 +121737,12 @@ func (p *OpenstackImageProvidersServiceAddRequest) Send() (*OpenstackImageProvid
 		}
 		p.OpenstackImageProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackImageProviderReadOne(reader, nil, "")
@@ -119461,12 +121897,12 @@ func (p *OpenstackImageProvidersServiceListRequest) Send() (*OpenstackImageProvi
 		}
 		p.OpenstackImageProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackImageProviderReadMany(reader, nil)
@@ -119638,12 +122074,12 @@ func (p *OpenstackImageServiceGetRequest) Send() (*OpenstackImageServiceGetRespo
 		}
 		p.OpenstackImageService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackImageReadOne(reader, nil, "")
@@ -119838,7 +122274,11 @@ func (p *OpenstackImageServiceImportRequest) Send() (*OpenstackImageServiceImpor
 		}
 		p.OpenstackImageService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -120028,12 +122468,12 @@ func (p *OpenstackImagesServiceListRequest) Send() (*OpenstackImagesServiceListR
 		}
 		p.OpenstackImagesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackImageReadMany(reader, nil)
@@ -120213,12 +122653,12 @@ func (p *OpenstackNetworkProviderServiceGetRequest) Send() (*OpenstackNetworkPro
 		}
 		p.OpenstackNetworkProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackNetworkProviderReadOne(reader, nil, "")
@@ -120376,7 +122816,11 @@ func (p *OpenstackNetworkProviderServiceImportCertificatesRequest) Send() (*Open
 		}
 		p.OpenstackNetworkProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -120497,12 +122941,12 @@ func (p *OpenstackNetworkProviderServiceRemoveRequest) Send() (*OpenstackNetwork
 		}
 		p.OpenstackNetworkProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(OpenstackNetworkProviderServiceRemoveResponse), nil
 }
@@ -120639,7 +123083,11 @@ func (p *OpenstackNetworkProviderServiceTestConnectivityRequest) Send() (*Openst
 		}
 		p.OpenstackNetworkProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -120795,12 +123243,12 @@ func (p *OpenstackNetworkProviderServiceUpdateRequest) Send() (*OpenstackNetwork
 		}
 		p.OpenstackNetworkProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackNetworkProviderReadOne(reader, nil, "")
@@ -121026,12 +123474,12 @@ func (p *OpenstackNetworkProvidersServiceAddRequest) Send() (*OpenstackNetworkPr
 		}
 		p.OpenstackNetworkProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackNetworkProviderReadOne(reader, nil, "")
@@ -121188,12 +123636,12 @@ func (p *OpenstackNetworkProvidersServiceListRequest) Send() (*OpenstackNetworkP
 		}
 		p.OpenstackNetworkProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackNetworkProviderReadMany(reader, nil)
@@ -121366,12 +123814,12 @@ func (p *OpenstackNetworkServiceGetRequest) Send() (*OpenstackNetworkServiceGetR
 		}
 		p.OpenstackNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackNetworkReadOne(reader, nil, "")
@@ -121519,7 +123967,11 @@ func (p *OpenstackNetworkServiceImportRequest) Send() (*OpenstackNetworkServiceI
 		}
 		p.OpenstackNetworkService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -121687,12 +124139,12 @@ func (p *OpenstackNetworksServiceListRequest) Send() (*OpenstackNetworksServiceL
 		}
 		p.OpenstackNetworksService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackNetworkReadMany(reader, nil)
@@ -121864,12 +124316,12 @@ func (p *OpenstackSubnetServiceGetRequest) Send() (*OpenstackSubnetServiceGetRes
 		}
 		p.OpenstackSubnetService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackSubnetReadOne(reader, nil, "")
@@ -122000,12 +124452,12 @@ func (p *OpenstackSubnetServiceRemoveRequest) Send() (*OpenstackSubnetServiceRem
 		}
 		p.OpenstackSubnetService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(OpenstackSubnetServiceRemoveResponse), nil
 }
@@ -122146,12 +124598,12 @@ func (p *OpenstackSubnetsServiceAddRequest) Send() (*OpenstackSubnetsServiceAddR
 		}
 		p.OpenstackSubnetsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackSubnetReadOne(reader, nil, "")
@@ -122294,12 +124746,12 @@ func (p *OpenstackSubnetsServiceListRequest) Send() (*OpenstackSubnetsServiceLis
 		}
 		p.OpenstackSubnetsService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackSubnetReadMany(reader, nil)
@@ -122471,12 +124923,12 @@ func (p *OpenstackVolumeAuthenticationKeyServiceGetRequest) Send() (*OpenstackVo
 		}
 		p.OpenstackVolumeAuthenticationKeyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenstackVolumeAuthenticationKeyReadOne(reader, nil, "")
@@ -122607,12 +125059,12 @@ func (p *OpenstackVolumeAuthenticationKeyServiceRemoveRequest) Send() (*Openstac
 		}
 		p.OpenstackVolumeAuthenticationKeyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(OpenstackVolumeAuthenticationKeyServiceRemoveResponse), nil
 }
@@ -122727,12 +125179,12 @@ func (p *OpenstackVolumeAuthenticationKeyServiceUpdateRequest) Send() (*Openstac
 		}
 		p.OpenstackVolumeAuthenticationKeyService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenstackVolumeAuthenticationKeyReadOne(reader, nil, "")
@@ -122896,12 +125348,12 @@ func (p *OpenstackVolumeAuthenticationKeysServiceAddRequest) Send() (*OpenstackV
 		}
 		p.OpenstackVolumeAuthenticationKeysService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenstackVolumeAuthenticationKeyReadOne(reader, nil, "")
@@ -123046,12 +125498,12 @@ func (p *OpenstackVolumeAuthenticationKeysServiceListRequest) Send() (*Openstack
 		}
 		p.OpenstackVolumeAuthenticationKeysService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenstackVolumeAuthenticationKeyReadMany(reader, nil)
@@ -123223,12 +125675,12 @@ func (p *OpenstackVolumeProviderServiceGetRequest) Send() (*OpenstackVolumeProvi
 		}
 		p.OpenstackVolumeProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackVolumeProviderReadOne(reader, nil, "")
@@ -123374,7 +125826,11 @@ func (p *OpenstackVolumeProviderServiceImportCertificatesRequest) Send() (*Opens
 		}
 		p.OpenstackVolumeProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -123499,12 +125955,12 @@ func (p *OpenstackVolumeProviderServiceRemoveRequest) Send() (*OpenstackVolumePr
 		}
 		p.OpenstackVolumeProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
-	_, errReadBody := ioutil.ReadAll(resp.Body)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	return new(OpenstackVolumeProviderServiceRemoveResponse), nil
 }
@@ -123629,7 +126085,11 @@ func (p *OpenstackVolumeProviderServiceTestConnectivityRequest) Send() (*Opensta
 		}
 		p.OpenstackVolumeProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	_, errCheckAction := CheckAction(resp)
+	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
+	if errReadBody != nil {
+		return nil, errReadBody
+	}
+	_, errCheckAction := CheckAction(respBodyBytes, resp)
 	if errCheckAction != nil {
 		return nil, errCheckAction
 	}
@@ -123768,12 +126228,12 @@ func (p *OpenstackVolumeProviderServiceUpdateRequest) Send() (*OpenstackVolumePr
 		}
 		p.OpenstackVolumeProviderService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackVolumeProviderReadOne(reader, nil, "")
@@ -123994,12 +126454,12 @@ func (p *OpenstackVolumeProvidersServiceAddRequest) Send() (*OpenstackVolumeProv
 		}
 		p.OpenstackVolumeProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200, 201, 202}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackVolumeProviderReadOne(reader, nil, "")
@@ -124194,12 +126654,12 @@ func (p *OpenstackVolumeProvidersServiceListRequest) Send() (*OpenstackVolumePro
 		}
 		p.OpenstackVolumeProvidersService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackVolumeProviderReadMany(reader, nil)
@@ -124371,12 +126831,12 @@ func (p *OpenstackVolumeTypeServiceGetRequest) Send() (*OpenstackVolumeTypeServi
 		}
 		p.OpenstackVolumeTypeService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackVolumeTypeReadOne(reader, nil, "")
@@ -124546,12 +127006,12 @@ func (p *OpenstackVolumeTypesServiceListRequest) Send() (*OpenstackVolumeTypesSe
 		}
 		p.OpenstackVolumeTypesService.connection.logFunc("<<<<<<Request:\n%sResponse:\n%s>>>>>>\n", string(dumpReq), string(dumpResp))
 	}
-	if !Contains(resp.StatusCode, []int{200}) {
-		return nil, CheckFault(resp)
-	}
 	respBodyBytes, errReadBody := ioutil.ReadAll(resp.Body)
 	if errReadBody != nil {
 		return nil, errReadBody
+	}
+	if !Contains(resp.StatusCode, []int{200}) {
+		return nil, CheckFault(respBodyBytes, resp)
 	}
 	reader := NewXMLReader(respBodyBytes)
 	result, err := XMLOpenStackVolumeTypeReadMany(reader, nil)
