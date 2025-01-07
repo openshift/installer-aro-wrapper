@@ -32,8 +32,9 @@ func Image(ctx context.Context) (*azuretypes.OSImage, error) {
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		SKU:       "aro_" + m[2], // "aro_4x"
-		Version:   m[1],          // "4x.yy.2020zzzz"
-		Plan:      azuretypes.ImageNoPurchasePlan,
+		//Version:   m[1],          // "4x.yy.2020zzzz"
+		Version: "415.92.20240220",
+		Plan:    azuretypes.ImageNoPurchasePlan,
 	}, nil
 }
 
