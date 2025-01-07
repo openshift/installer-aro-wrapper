@@ -68,6 +68,7 @@ var expectedBootstrapSystemdFileList = []string{"fluentbit.service", "mdsd.servi
 
 var apiIntIP = "203.0.113.1"
 var expectedMasterIgnitionSource = "https://" + apiIntIP + ":22623/config/master"
+var expectedWorkerIgnitionSource = "https://" + apiIntIP + ":22623/config/worker"
 
 func fakeBootstrapLoggingConfig(_ env.Interface, _ *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
 	return &bootstraplogging.Config{
@@ -317,7 +318,9 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	verifyIgnitionFiles(t, temp, expectedBootstrapStorageFileList, expectedBootstrapSystemdFileList, bootstrapAsset.Files()[0].Filename)
 
 	masterAsset := graph.Get(&machine.Master{}).(*machine.Master)
+	workerAsset := graph.Get(&machine.Worker{}).(*machine.Worker)
 	verifyMasterPointerIgnition(t, masterAsset.File.Data)
+	verifyWorkerPointerIgnition(t, workerAsset.File.Data)
 	verifyUpdateMCSCertKey(t, bootstrapAsset)
 }
 
@@ -384,6 +387,17 @@ func verifyMasterPointerIgnition(t *testing.T, ignData []byte) {
 
 	actualSource := *ignContents.Ignition.Config.Merge[0].Source
 	assert.EqualValues(t, expectedMasterIgnitionSource, actualSource, fmt.Sprintf("expected master pointer ignition to be %s but found %s", expectedMasterIgnitionSource, actualSource))
+}
+
+func verifyWorkerPointerIgnition(t *testing.T, ignData []byte) {
+	ignContents := &igntypes.Config{}
+	err := json.Unmarshal(ignData, &ignContents)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actualSource := *ignContents.Ignition.Config.Merge[0].Source
+	assert.EqualValues(t, expectedWorkerIgnitionSource, actualSource, fmt.Sprintf("expected master pointer ignition to be %s but found %s", expectedWorkerIgnitionSource, actualSource))
 }
 
 func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {

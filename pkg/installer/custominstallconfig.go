@@ -170,7 +170,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	if err != nil {
 		return nil, err
 	}
-	// Update Master Pointer Ignition with ARO API-Int IP
+	// Update Master and Worker Pointer Ignition with ARO API-Int IP
 	if err = replacePointerIgnition(aroManifests, g, &localdnsConfig); err != nil {
 		return nil, err
 	}
@@ -280,14 +280,24 @@ func appendFilesToCvoOverrides(a asset.WritableAsset, g graph.Graph) (err error)
 // installer's pointerIgnitionConfig() but with ARO specific DNS config
 func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig *dnsmasq.DNSConfig) (err error) {
 	masterPointerIgn := g.Get(&machine.Master{}).(*machine.Master)
+	workerPointerIgn := g.Get(&machine.Worker{}).(*machine.Worker)
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")
-	role := "master"
+	masterRole := "master"
+	workerRole := "worker"
 
 	masterPointerIgn.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
 		return &url.URL{
 			Scheme: "https",
 			Host:   ignitionHost,
-			Path:   fmt.Sprintf("/config/%s", role),
+			Path:   fmt.Sprintf("/config/%s", masterRole),
+		}
+	}().String())
+
+	workerPointerIgn.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
+		return &url.URL{
+			Scheme: "https",
+			Host:   ignitionHost,
+			Path:   fmt.Sprintf("/config/%s", workerRole),
 		}
 	}().String())
 
@@ -297,6 +307,12 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 	}
 
 	masterPointerIgn.File.Data = data
+
+	data, err = ignition.Marshal(workerPointerIgn.Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal updated worker pointer Ignition config")
+	}
+	workerPointerIgn.File.Data = data
 
 	return nil
 }
