@@ -64,7 +64,7 @@ func config(clusterDomain, apiIntIP, ingressIP string, gatewayDomains []string, 
 	return config.Bytes(), service.String(), startpre.Bytes(), nil
 }
 
-func Ignition3Config(clusterDomain, apiIntIP, ingressIP string, gatewayDomains []string, gatewayPrivateEndpointIP string, restartDnsmasq bool) (*types.Config, error) {
+func Ignition3Config(clusterDomain, apiIntIP, ingressIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) (*types.Config, error) {
 	config, service, startpre, err := config(clusterDomain, apiIntIP, ingressIP, gatewayDomains, gatewayPrivateEndpointIP)
 	if err != nil {
 		return nil, err
@@ -125,20 +125,11 @@ func Ignition3Config(clusterDomain, apiIntIP, ingressIP string, gatewayDomains [
 		},
 	}
 
-	if restartDnsmasq {
-		restartDnsmasqScript, err := nmDispatcherRestartDnsmasq()
-		if err != nil {
-			return nil, err
-		}
-
-		ign.Storage.Files = append(ign.Storage.Files, restartScriptIgnFile(restartDnsmasqScript))
-	}
-
 	return ign, nil
 }
 
-func MachineConfig(clusterDomain, apiIntIP, ingressIP, role string, gatewayDomains []string, gatewayPrivateEndpointIP string, restartDnsmasq bool) (*mcv1.MachineConfig, error) {
-	ignConfig, err := Ignition3Config(clusterDomain, apiIntIP, ingressIP, gatewayDomains, gatewayPrivateEndpointIP, restartDnsmasq)
+func MachineConfig(clusterDomain, apiIntIP, ingressIP, role string, gatewayDomains []string, gatewayPrivateEndpointIP string) (*mcv1.MachineConfig, error) {
+	ignConfig, err := Ignition3Config(clusterDomain, apiIntIP, ingressIP, gatewayDomains, gatewayPrivateEndpointIP)
 	if err != nil {
 		return nil, err
 	}

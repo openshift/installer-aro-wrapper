@@ -18,18 +18,18 @@ type DNSConfig struct {
 }
 
 func CreatednsmasqIgnitionFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig *installconfig.InstallConfig, dnsConfig DNSConfig) error {
-	dnsmasqIgnConfig, err := Ignition3Config(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP, true)
+	dnsmasqIgnConfig, err := Ignition3Config(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP)
 	if err != nil {
 		return err
 	}
 	bootstrapAsset.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(bootstrapAsset.Config.Storage.Files, dnsmasqIgnConfig.Storage.Files)
 	bootstrapAsset.Config.Systemd.Units = bootstrapfiles.ReplaceOrAppendSystemd(bootstrapAsset.Config.Systemd.Units, dnsmasqIgnConfig.Systemd.Units)
 
-	dnsmasqMasterMachineConfig, err := MachineConfig(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, "master", dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP, true)
+	dnsmasqMasterMachineConfig, err := MachineConfig(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, "master", dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP)
 	if err != nil {
 		return err
 	}
-	dnsmasqWorkerMachineConfig, err := MachineConfig(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, "worker", dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP, true)
+	dnsmasqWorkerMachineConfig, err := MachineConfig(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, "worker", dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP)
 	if err != nil {
 		return err
 	}
