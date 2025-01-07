@@ -239,7 +239,10 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
 
-exclude k8s.io/client-go v12.0.0+incompatible
+exclude (
+	cloud.google.com/go v0.26.0
+	k8s.io/client-go v12.0.0+incompatible
+)
 
 // Dependency pins
 replace (
