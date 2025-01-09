@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
+	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/tls"
@@ -275,13 +276,17 @@ func appendFilesToCvoOverrides(a asset.WritableAsset, g graph.Graph) (err error)
 // replacePointerIgnition performs the same functionality as the upstream
 // installer's pointerIgnitionConfig() but with ARO specific DNS config
 func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig *dnsmasq.DNSConfig) (err error) {
-	masterPointerIgn := g.Get(&machine.Master{}).(*machine.Master)
-	workerPointerIgn := g.Get(&machine.Worker{}).(*machine.Worker)
+	masterIgnition := g.Get(&machine.Master{}).(*machine.Master)
+	workerIgnition := g.Get(&machine.Worker{}).(*machine.Worker)
+
+	masterMachine := g.Get(&machines.Master{}).(*machines.Master)
+	workerMachine := g.Get(&machines.Worker{}).(*machines.Worker)
+
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")
 	masterRole := "master"
 	workerRole := "worker"
 
-	masterPointerIgn.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
+	masterIgnition.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
 		return &url.URL{
 			Scheme: "https",
 			Host:   ignitionHost,
@@ -289,7 +294,7 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 		}
 	}().String())
 
-	workerPointerIgn.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
+	workerIgnition.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
 		return &url.URL{
 			Scheme: "https",
 			Host:   ignitionHost,
@@ -297,18 +302,37 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 		}
 	}().String())
 
-	data, err := ignition.Marshal(masterPointerIgn.Config)
+	data, err := ignition.Marshal(masterIgnition.Config)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal updated master pointer Ignition config")
 	}
 
-	masterPointerIgn.File.Data = data
+	masterIgnition.File.Data = data
 
-	data, err = ignition.Marshal(workerPointerIgn.Config)
+	data, err = ignition.Marshal(workerIgnition.Config)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal updated worker pointer Ignition config")
 	}
-	workerPointerIgn.File.Data = data
+	workerIgnition.File.Data = data
+
+	// Update the user-data secret that references this
+	masterData, err := userDataSecret("master-user-data", masterIgnition.File.Data)
+	if err != nil {
+		return errors.Wrap(err, "failed to create user-data secret for master machines")
+	}
+	masterMachine.UserDataFile = &asset.File{
+		Filename: filepath.Join("openshift", "99_openshift-cluster-api_master-user-data-secret.yaml"),
+		Data:     masterData,
+	}
+
+	workerData, err := userDataSecret("worker-user-data", workerIgnition.File.Data)
+	if err != nil {
+		return errors.Wrap(err, "failed to create user-data secret for worker machines")
+	}
+	workerMachine.UserDataFile = &asset.File{
+		Filename: filepath.Join("openshift", "99_openshift-cluster-api_worker-user-data-secret.yaml"),
+		Data:     workerData,
+	}
 
 	return nil
 }
