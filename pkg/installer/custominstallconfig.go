@@ -334,5 +334,15 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 		Data:     workerData,
 	}
 
+	err = appendFilesToBootstrap(masterMachine, g)
+	if err != nil {
+		return errors.Wrap(err, "failed to append updated master machine files")
+	}
+
+	err = appendFilesToBootstrap(workerMachine, g)
+	if err != nil {
+		return errors.Wrap(err, "failed to append updated worker machine files")
+	}
+
 	return nil
 }
