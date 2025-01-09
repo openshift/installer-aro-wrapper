@@ -4,14 +4,18 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"net"
 	"net/url"
 	"path/filepath"
+	"text/template"
 
 	"github.com/coreos/ignition/v2/config/util"
+	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/cluster"
@@ -25,11 +29,13 @@ import (
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
+	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
 	"github.com/openshift/installer-aro-wrapper/pkg/data/manifests"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/etchost"
@@ -51,6 +57,17 @@ var (
 		&tls.JournalCertKey{},
 		&tls.RootCA{},
 	}
+	userDataTmpl = template.Must(template.New("user-data").Parse(`apiVersion: v1
+kind: Secret
+metadata:
+  name: {{.name}}
+  namespace: openshift-machine-api
+type: Opaque
+data:
+  disableTemplating: "dHJ1ZQo="
+  userData: {{.content}}
+`))
+	dnsCfgFilename = filepath.Join(rootPath, "manifests", "cluster-dns-02-config.yml")
 )
 
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
@@ -170,11 +187,15 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	if err != nil {
 		return nil, err
 	}
-	// Update Master and Worker Pointer Ignition with ARO API-Int IP
-	if err = replacePointerIgnition(aroManifests, g, &localdnsConfig); err != nil {
+	err = removeDNSConfigData(bootstrapAsset, *installConfig)
+	if err != nil {
 		return nil, err
 	}
-	// Update machine-confog-server cert to allow connecting with API-Int LB IP
+	// Update Master and Worker Pointer Ignition with ARO API-Int IP
+	if err = replacePointerIgnition(bootstrapAsset, g, &localdnsConfig); err != nil {
+		return nil, err
+	}
+	// Update machine-config-server cert to allow connecting with API-Int LB IP
 	if err = updateMCSCertKey(g, installConfig, &localdnsConfig); err != nil {
 		return nil, err
 	}
@@ -183,8 +204,6 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		return nil, err
 	}
 	bootstrapAsset.File.Data = data
-	g.Set(bootstrapAsset)
-
 	return g, nil
 }
 
@@ -194,7 +213,6 @@ func appendFilesToBootstrap(a asset.WritableAsset, g graph.Graph) error {
 		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)
 		bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, manifest)
 	}
-
 	data, err := ignition.Marshal(bootstrap.Config)
 	if err != nil {
 		return err
@@ -276,20 +294,41 @@ func appendFilesToCvoOverrides(a asset.WritableAsset, g graph.Graph) (err error)
 	return nil
 }
 
+func removeDNSConfigData(bootstrap *bootstrap.Bootstrap, installConfig installconfig.InstallConfig) error {
+	dns := &configv1.DNS{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: configv1.SchemeGroupVersion.String(),
+			Kind:       "DNS",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+			// not namespaced
+		},
+		Spec: configv1.DNSSpec{
+			BaseDomain: installConfig.Config.ClusterDomain(),
+		},
+	}
+	data, err := yaml.Marshal(dns)
+	if err != nil {
+		return err
+	}
+	config := ignition.FileFromBytes(dnsCfgFilename, "root", 0644, data)
+	bootstrap.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(bootstrap.Config.Storage.Files, []igntypes.File{config})
+	return nil
+}
+
 // replacePointerIgnition performs the same functionality as the upstream
 // installer's pointerIgnitionConfig() but with ARO specific DNS config
-func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig *dnsmasq.DNSConfig) (err error) {
+func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfig *dnsmasq.DNSConfig) (err error) {
 	masterPointerIgn := g.Get(&machine.Master{}).(*machine.Master)
 	workerPointerIgn := g.Get(&machine.Worker{}).(*machine.Worker)
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")
-	masterRole := "master"
-	workerRole := "worker"
 
 	masterPointerIgn.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
 		return &url.URL{
 			Scheme: "https",
 			Host:   ignitionHost,
-			Path:   fmt.Sprintf("/config/%s", masterRole),
+			Path:   "/config/master",
 		}
 	}().String())
 
@@ -297,7 +336,7 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 		return &url.URL{
 			Scheme: "https",
 			Host:   ignitionHost,
-			Path:   fmt.Sprintf("/config/%s", workerRole),
+			Path:   "/config/worker",
 		}
 	}().String())
 
@@ -314,5 +353,43 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 	}
 	workerPointerIgn.File.Data = data
 
+	// Update the user-data information for the machine.
+	//
+	// Note, we do not need to update asset/machines/.(Master/Worker)'s
+	// UserDataSecret since it is only used at first generation (which has
+	// already by the time we have got here) and we can just update the files it
+	// would have generated directly. We also do not need to generate the
+	// "override" MachineConfig which would amend the host.
+	//
+	// This is also done for masters since it will likely be used if Control
+	// Plane Machine Sets creates a new control plane node.
+	masterUserDataPath := filepath.Join("openshift", "99_openshift-cluster-api_master-user-data-secret.yaml")
+	workerUserDataPath := filepath.Join("openshift", "99_openshift-cluster-api_worker-user-data-secret.yaml")
+
+	masterData, err := userDataSecret("master-user-data", masterPointerIgn.File.Data)
+	if err != nil {
+		return errors.Wrap(err, "failed to create user-data secret for master machines")
+	}
+	workerData, err := userDataSecret("worker-user-data", workerPointerIgn.File.Data)
+	if err != nil {
+		return errors.Wrap(err, "failed to create user-data secret for worker machines")
+	}
+
+	a.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(a.Config.Storage.Files, []igntypes.File{
+		ignition.FileFromBytes(filepath.Join(rootPath, masterUserDataPath), "root", 0644, masterData),
+		ignition.FileFromBytes(filepath.Join(rootPath, workerUserDataPath), "root", 0644, workerData),
+	})
 	return nil
+}
+
+func userDataSecret(name string, content []byte) ([]byte, error) {
+	encodedData := map[string]string{
+		"name":    name,
+		"content": base64.StdEncoding.EncodeToString(content),
+	}
+	buf := &bytes.Buffer{}
+	if err := userDataTmpl.Execute(buf, encodedData); err != nil {
+		return nil, errors.Wrap(err, "failed to execute user-data template")
+	}
+	return buf.Bytes(), nil
 }
