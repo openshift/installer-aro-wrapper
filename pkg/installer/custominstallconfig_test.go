@@ -48,7 +48,6 @@ var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
 
 	"/etc/dnsmasq.conf",
 	"/usr/local/bin/aro-dnsmasq-pre.sh",
-	"/etc/NetworkManager/dispatcher.d/99-dnsmasq-restart",
 	"/etc/NetworkManager/dispatcher.d/30-eth0-mtu-3900",
 
 	"/etc/hosts.d/aro.conf",
