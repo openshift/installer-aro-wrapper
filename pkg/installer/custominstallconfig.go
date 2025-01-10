@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/coreos/ignition/v2/config/util"
+	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/cluster"
@@ -20,7 +21,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
-	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/tls"
@@ -185,6 +185,29 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	return g, nil
 }
 
+func addFileToBootstrap(f *asset.File, g graph.Graph) error {
+	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	manifest := ignition.FileFromBytes(filepath.Join(rootPath, f.Filename), "root", 0644, f.Data)
+	replaceOrAppend(bootstrap.Config.Storage.Files, manifest)
+	data, err := ignition.Marshal(bootstrap.Config)
+	if err != nil {
+		return err
+	}
+	bootstrap.File.Data = data
+	return nil
+}
+
+func replaceOrAppend(files []igntypes.File, file igntypes.File) []igntypes.File {
+	for i, f := range files {
+		if f.Node.Path == file.Node.Path {
+			files[i] = file
+			return files
+		}
+	}
+	files = append(files, file)
+	return files
+}
+
 func appendFilesToBootstrap(a asset.WritableAsset, g graph.Graph) error {
 	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 	for _, file := range a.Files() {
@@ -279,9 +302,6 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 	masterIgnition := g.Get(&machine.Master{}).(*machine.Master)
 	workerIgnition := g.Get(&machine.Worker{}).(*machine.Worker)
 
-	masterMachine := g.Get(&machines.Master{}).(*machines.Master)
-	workerMachine := g.Get(&machines.Worker{}).(*machines.Worker)
-
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")
 	masterRole := "master"
 	workerRole := "worker"
@@ -320,28 +340,26 @@ func replacePointerIgnition(a asset.WritableAsset, g graph.Graph, localdnsConfig
 	if err != nil {
 		return errors.Wrap(err, "failed to create user-data secret for master machines")
 	}
-	masterMachine.UserDataFile = &asset.File{
+	err = addFileToBootstrap(&asset.File{
 		Filename: filepath.Join("openshift", "99_openshift-cluster-api_master-user-data-secret.yaml"),
 		Data:     masterData,
+	}, g)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to append user-data secret for master machines")
 	}
 
 	workerData, err := userDataSecret("worker-user-data", workerIgnition.File.Data)
 	if err != nil {
 		return errors.Wrap(err, "failed to create user-data secret for worker machines")
 	}
-	workerMachine.UserDataFile = &asset.File{
+
+	err = addFileToBootstrap(&asset.File{
 		Filename: filepath.Join("openshift", "99_openshift-cluster-api_worker-user-data-secret.yaml"),
 		Data:     workerData,
-	}
-
-	err = appendFilesToBootstrap(masterMachine, g)
+	}, g)
 	if err != nil {
-		return errors.Wrap(err, "failed to append updated master machine files")
-	}
-
-	err = appendFilesToBootstrap(workerMachine, g)
-	if err != nil {
-		return errors.Wrap(err, "failed to append updated worker machine files")
+		return errors.Wrap(err, "failed to append user-data secret for worker machines")
 	}
 
 	return nil
