@@ -515,4 +515,36 @@ done < "${CONFIG_FILE}"
 cmp "${TEMP_FILE}" "${HOSTS_FILE}" || cp -f "${TEMP_FILE}" "${HOSTS_FILE}"
 # TEMP_FILE is not removed to avoid file create/delete and attributes copy churn
 `,
+	"/opt/openshift/manifests/cluster-dns-02-config.yml": `apiVersion: config.openshift.io/v1
+kind: DNS
+metadata:
+  creationTimestamp: null
+  name: cluster
+spec:
+  baseDomain: test-cluster.test.example.com
+  platform:
+    aws: null
+    type: ""
+status: {}
+`,
+	"/opt/openshift/openshift/99_openshift-cluster-api_master-user-data-secret.yaml": `apiVersion: v1
+kind: Secret
+metadata:
+  name: master-user-data
+  namespace: openshift-machine-api
+type: Opaque
+data:
+  disableTemplating: "dHJ1ZQo="
+  userData: test
+`,
+	"/opt/openshift/openshift/99_openshift-cluster-api_worker-user-data-secret.yaml": `apiVersion: v1
+kind: Secret
+metadata:
+  name: worker-user-data
+  namespace: openshift-machine-api
+type: Opaque
+data:
+  disableTemplating: "dHJ1ZQo="
+  userData: test
+`,
 }
