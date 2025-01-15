@@ -41,7 +41,7 @@ generate: install-tools
 
 image-aro:
 	docker pull $(REGISTRY)/ubi8/ubi-minimal
-	docker build --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) .
+	docker build --network=host -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) .
 
 publish-image-aro: image-aro
 	docker push $(ARO_IMAGE)
