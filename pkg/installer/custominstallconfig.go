@@ -24,7 +24,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
-	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/tls"
@@ -195,10 +194,12 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	if err = replacePointerIgnition(bootstrapAsset, g, &localdnsConfig); err != nil {
 		return nil, err
 	}
-	// Update machine-confog-server cert to allow connecting with API-Int LB IP
+	// Update machine-config-server cert to allow connecting with API-Int LB IP
 	if err = updateMCSCertKey(g, installConfig, &localdnsConfig); err != nil {
 		return nil, err
 	}
+
+	// Re-marshal the Ignition and set it back in the graph
 	data, err := ignition.Marshal(bootstrapAsset.Config)
 	if err != nil {
 		return nil, err
@@ -215,12 +216,6 @@ func appendFilesToBootstrap(a asset.WritableAsset, g graph.Graph) error {
 		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)
 		bootstrap.Config.Storage.Files = append(bootstrap.Config.Storage.Files, manifest)
 	}
-
-	data, err := ignition.Marshal(bootstrap.Config)
-	if err != nil {
-		return err
-	}
-	bootstrap.File.Data = data
 	return nil
 }
 
@@ -290,10 +285,8 @@ func appendFilesToCvoOverrides(a asset.WritableAsset, g graph.Graph) (err error)
 		if file.Path != ignPath {
 			continue
 		}
-
 		bootstrap.Config.Storage.Files[i] = ignition.FileFromBytes(ignPath, "root", 0420, cvData)
 	}
-
 	return nil
 }
 
@@ -327,22 +320,13 @@ func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfi
 	workerIgnition := g.Get(&machine.Worker{}).(*machine.Worker)
 
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")
-	masterRole := "master"
-	workerRole := "worker"
 
+	// Update the ignition file used to start the masters to point to the internal LB IP (used by manager.computeMasterVMs).
 	masterIgnition.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
 		return &url.URL{
 			Scheme: "https",
 			Host:   ignitionHost,
-			Path:   fmt.Sprintf("/config/%s", masterRole),
-		}
-	}().String())
-
-	workerIgnition.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
-		return &url.URL{
-			Scheme: "https",
-			Host:   ignitionHost,
-			Path:   fmt.Sprintf("/config/%s", workerRole),
+			Path:   "/config/master",
 		}
 	}().String())
 
@@ -352,15 +336,32 @@ func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfi
 	}
 	masterIgnition.File.Data = data
 
+	// We generate the workers as well since it is used to update the
+	// user-data-secret file
+	workerIgnition.Config.Ignition.Config.Merge[0].Source = util.StrToPtr(func() *url.URL {
+		return &url.URL{
+			Scheme: "https",
+			Host:   ignitionHost,
+			Path:   "/config/worker",
+		}
+	}().String())
+
 	data, err = ignition.Marshal(workerIgnition.Config)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal updated worker pointer Ignition config")
 	}
 	workerIgnition.File.Data = data
 
-	// Update the user-data information for the machine
-	masterMachine := g.Get(&machines.Master{}).(*machines.Master)
-	workerMachine := g.Get(&machines.Worker{}).(*machines.Worker)
+	// Update the user-data information for the machine.
+	//
+	// Note, we do not need to update asset/machines/.(Master/Worker)'s
+	// UserDataSecret since it is only used at first generation (which has
+	// already by the time we have got here) and we can just update the files it
+	// would have generated directly. We also do not need to generate the
+	// "override" MachineConfig which would amend the host.
+	//
+	// This is also done for masters since it will likely be used if Control
+	// Plane Machine Sets creates a new control plane node.
 	masterUserDataPath := filepath.Join("openshift", "99_openshift-cluster-api_master-user-data-secret.yaml")
 	workerUserDataPath := filepath.Join("openshift", "99_openshift-cluster-api_worker-user-data-secret.yaml")
 
@@ -373,28 +374,10 @@ func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfi
 		return errors.Wrap(err, "failed to create user-data secret for worker machines")
 	}
 
-	masterMachine.UserDataFile = &asset.File{
-		Filename: masterUserDataPath,
-		Data:     masterData,
-	}
-	workerMachine.UserDataFile = &asset.File{
-		Filename: workerUserDataPath,
-		Data:     workerData,
-	}
-	g.Set(masterMachine, workerMachine)
-
-	files := []igntypes.File{
+	a.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(a.Config.Storage.Files, []igntypes.File{
 		ignition.FileFromBytes(filepath.Join(rootPath, masterUserDataPath), "root", 0644, masterData),
 		ignition.FileFromBytes(filepath.Join(rootPath, workerUserDataPath), "root", 0644, workerData),
-	}
-
-	a.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(a.Config.Storage.Files, files)
-
-	d, err := ignition.Marshal(a.Config)
-	if err != nil {
-		return err
-	}
-	a.File.Data = d
+	})
 	return nil
 }
 
