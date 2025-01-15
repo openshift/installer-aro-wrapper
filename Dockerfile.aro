@@ -2,11 +2,11 @@
 ARG REGISTRY=registry.access.redhat.com
 ARG GO_VERSION=1.21.13-1
 FROM ${REGISTRY}/ubi8/go-toolset:${GO_VERSION} AS builder
-ENV GOOS=linux \
-    GOPATH=/go/ \
-    PATH=$PATH:${GOPATH}/bin/
-WORKDIR ${GOPATH}/src/github.com/openshift/installer-aro-wrapper
 USER root
+ENV GOOS=linux \
+    GOPATH=/go/
+ENV PATH=$PATH:${GOPATH}/bin/
+WORKDIR ${GOPATH}/src/github.com/openshift/installer-aro-wrapper
 COPY .bingo .bingo
 RUN source .bingo/variables.env \
     # install bingo itself
