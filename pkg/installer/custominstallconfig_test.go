@@ -58,6 +58,8 @@ var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-etc-hosts-gateway-domains.yaml",
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-dns.yaml",
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-etc-hosts-gateway-domains.yaml",
+	"/opt/openshift/openshift/99_openshift-cluster-api_master-user-data-secret.yaml",
+	"/opt/openshift/openshift/99_openshift-cluster-api_worker-user-data-secret.yaml",
 
 	"/opt/openshift/manifests/aro-ingress-namespace.yaml",
 	"/opt/openshift/manifests/aro-ingress-service.yaml",
@@ -354,6 +356,18 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 				content := string(fileContents)
 				re := regexp.MustCompile(`httpSecret: "[A-Za-z0-9]+"`)
 				fileContents = []byte(re.ReplaceAllString(content, `httpSecret: "test"`))
+			} else if file == "/opt/openshift/openshift/99_openshift-cluster-api_master-user-data-secret.yaml" ||
+				file == "/opt/openshift/openshift/99_openshift-cluster-api_worker-user-data-secret.yaml" {
+				re := regexp.MustCompile(`userData: (.*)`)
+				userData := re.FindString(string(fileContents))
+
+				innerContent, err := base64.StdEncoding.DecodeString(strings.Split(userData, "userData: ")[1])
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Contains(t, string(innerContent), "https://203.0.113.1:22623/config/")
+				continue
 			}
 			assert.EqualValues(t, expectedIgnitionFileContents[file], string(fileContents), fmt.Sprintf("missing storage data in file %v", file))
 		}

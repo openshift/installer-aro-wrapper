@@ -4,51 +4,6 @@ package installer
 // Licensed under the Apache License 2.0.
 
 var expectedIgnitionFileContents = map[string]string{
-	"/etc/NetworkManager/dispatcher.d/99-dnsmasq-restart": `
-#!/bin/sh
-# This is a NetworkManager dispatcher script to restart dnsmasq
-# in the event of a network interface change (e. g. host servicing event https://learn.microsoft.com/en-us/azure/developer/intro/hosting-apps-on-azure)
-# this will restart dnsmasq, reapplying our /etc/resolv.conf file and overwriting any modifications made by NetworkManager
-
-interface=$1
-action=$2
-
-log() {
-    logger -i "$0" -t '99-DNSMASQ-RESTART SCRIPT' "$@"
-}
-
-# log dns configuration information relevant to SRE while troubleshooting
-# The line break used here is important for formatting
-log_dns_files() {
-    log "/etc/resolv.conf contents
-
-    $(cat /etc/resolv.conf)"
-
-    log "$(echo -n \"/etc/resolv.conf file metadata: \") $(ls -lZ /etc/resolv.conf)"
-
-    log "/etc/resolv.conf.dnsmasq contents
-
-    $(cat /etc/resolv.conf.dnsmasq)"
-
-    log "$(echo -n "/etc/resolv.conf.dnsmasq file metadata: ") $(ls -lZ /etc/resolv.conf.dnsmasq)"
-}
-
-if [[ $interface == eth* && $action == "up" ]] || [[ $interface == eth* && $action == "down" ]] || [[ $interface == enP* && $action == "up" ]] || [[ $interface == enP* && $action == "down" ]]; then
-    log "$action happened on $interface, connection state is now $CONNECTIVITY_STATE"
-    log "Pre dnsmasq restart file information"
-    log_dns_files
-    log "restarting dnsmasq now"
-    if systemctl try-restart dnsmasq --wait; then
-        log "dnsmasq successfully restarted"
-        log "Post dnsmasq restart file information"
-        log_dns_files
-    else
-        log "failed to restart dnsmasq"
-    fi
-fi
-
-exit 0
-`,
 	"/etc/dnsmasq.conf": `
 resolv-file=/etc/resolv.conf.dnsmasq
 strict-order
@@ -497,4 +452,6 @@ done < "${CONFIG_FILE}"
 cmp "${TEMP_FILE}" "${HOSTS_FILE}" || cp -f "${TEMP_FILE}" "${HOSTS_FILE}"
 # TEMP_FILE is not removed to avoid file create/delete and attributes copy churn
 `,
+	"/opt/openshift/openshift/99_openshift-cluster-api_master-user-data-secret.yaml": "",
+	"/opt/openshift/openshift/99_openshift-cluster-api_worker-user-data-secret.yaml": "",
 }

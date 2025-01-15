@@ -24,6 +24,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
+	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/asset/tls"
@@ -357,7 +358,9 @@ func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfi
 	}
 	workerIgnition.File.Data = data
 
-	// Update the user-data secret that references this
+	// Update the user-data information for the machine
+	masterMachine := g.Get(&machines.Master{}).(*machines.Master)
+	workerMachine := g.Get(&machines.Worker{}).(*machines.Worker)
 	masterUserDataPath := filepath.Join("openshift", "99_openshift-cluster-api_master-user-data-secret.yaml")
 	workerUserDataPath := filepath.Join("openshift", "99_openshift-cluster-api_worker-user-data-secret.yaml")
 
@@ -370,11 +373,28 @@ func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfi
 		return errors.Wrap(err, "failed to create user-data secret for worker machines")
 	}
 
-	a.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(a.Config.Storage.Files,
-		[]igntypes.File{ignition.FileFromBytes(filepath.Join(rootPath, masterUserDataPath), "root", 0644, masterData)})
-	a.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(a.Config.Storage.Files,
-		[]igntypes.File{ignition.FileFromBytes(filepath.Join(rootPath, workerUserDataPath), "root", 0644, workerData)})
+	masterMachine.UserDataFile = &asset.File{
+		Filename: masterUserDataPath,
+		Data:     masterData,
+	}
+	workerMachine.UserDataFile = &asset.File{
+		Filename: workerUserDataPath,
+		Data:     workerData,
+	}
+	g.Set(masterMachine, workerMachine)
 
+	files := []igntypes.File{
+		ignition.FileFromBytes(filepath.Join(rootPath, masterUserDataPath), "root", 0644, masterData),
+		ignition.FileFromBytes(filepath.Join(rootPath, workerUserDataPath), "root", 0644, workerData),
+	}
+
+	a.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(a.Config.Storage.Files, files)
+
+	d, err := ignition.Marshal(a.Config)
+	if err != nil {
+		return err
+	}
+	a.File.Data = d
 	return nil
 }
 
