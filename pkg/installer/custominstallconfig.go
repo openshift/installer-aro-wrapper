@@ -314,7 +314,7 @@ func removeDNSConfigData(bootstrap *bootstrap.Bootstrap, installConfig installco
 	if err != nil {
 		return err
 	}
-	config := ignition.FileFromBytes(dnsCfgFilename, "root", 0644, data)
+	config := ignition.FileFromBytes(filepath.Join(rootPath, dnsCfgFilename), "root", 0644, data)
 	bootstrap.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(bootstrap.Config.Storage.Files, []igntypes.File{config})
 	return nil
 }
