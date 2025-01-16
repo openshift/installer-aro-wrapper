@@ -14,6 +14,11 @@ cloud.google.com/go/compute/metadata
 ## explicit; go 1.19
 cloud.google.com/go/iam
 cloud.google.com/go/iam/apiv1/iampb
+# cloud.google.com/go/monitoring v1.18.0
+## explicit; go 1.19
+cloud.google.com/go/monitoring/apiv3/v2
+cloud.google.com/go/monitoring/apiv3/v2/monitoringpb
+cloud.google.com/go/monitoring/internal
 # cloud.google.com/go/storage v1.40.0
 ## explicit; go 1.19
 cloud.google.com/go/storage
@@ -27,14 +32,12 @@ github.com/AlecAivazis/survey/v2/core
 github.com/AlecAivazis/survey/v2/terminal
 # github.com/Azure/azure-sdk-for-go v63.1.0+incompatible => github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 ## explicit
-github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/compute/mgmt/compute
 github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/dns/mgmt/dns
 github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources
 github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/subscriptions
 github.com/Azure/azure-sdk-for-go/profiles/2020-09-01/network/mgmt/network
 github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute
 github.com/Azure/azure-sdk-for-go/profiles/latest/marketplaceordering/mgmt/marketplaceordering
-github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2017-03-30/compute
 github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute
 github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2022-08-01/compute
 github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2016-04-01/dns
@@ -329,11 +332,20 @@ github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/service/cloudfront
 github.com/aws/aws-sdk-go/service/cloudfront/cloudfrontiface
 github.com/aws/aws-sdk-go/service/ec2
+github.com/aws/aws-sdk-go/service/ec2/ec2iface
+github.com/aws/aws-sdk-go/service/efs
+github.com/aws/aws-sdk-go/service/elb
+github.com/aws/aws-sdk-go/service/elbv2
+github.com/aws/aws-sdk-go/service/elbv2/elbv2iface
 github.com/aws/aws-sdk-go/service/iam
 github.com/aws/aws-sdk-go/service/iam/iamiface
+github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi
 github.com/aws/aws-sdk-go/service/route53
+github.com/aws/aws-sdk-go/service/route53/route53iface
 github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/s3/s3iface
+github.com/aws/aws-sdk-go/service/s3/s3manager
+github.com/aws/aws-sdk-go/service/servicequotas
 github.com/aws/aws-sdk-go/service/sso
 github.com/aws/aws-sdk-go/service/sso/ssoiface
 github.com/aws/aws-sdk-go/service/ssooidc
@@ -650,6 +662,13 @@ github.com/hashicorp/go-uuid
 # github.com/hashicorp/go-version v1.6.0
 ## explicit
 github.com/hashicorp/go-version
+# github.com/hashicorp/terraform-exec v0.17.3
+## explicit; go 1.18
+github.com/hashicorp/terraform-exec/internal/version
+github.com/hashicorp/terraform-exec/tfexec
+# github.com/hashicorp/terraform-json v0.14.0
+## explicit; go 1.13
+github.com/hashicorp/terraform-json
 # github.com/imdario/mergo v1.0.0 => dario.cat/mergo v0.3.16
 ## explicit; go 1.13
 github.com/imdario/mergo
@@ -701,9 +720,6 @@ github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.20
 ## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0
-## explicit; go 1.19
-github.com/matttproud/golang_protobuf_extensions/v2/pbutil
 # github.com/metal3-io/baremetal-operator/apis v0.4.0 => github.com/openshift/baremetal-operator/apis v0.0.0-20240904104510-62a7d56e2078
 ## explicit; go 1.20
 github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1
@@ -753,8 +769,8 @@ github.com/nutanix-cloud-native/prism-go-client/v3
 # github.com/oklog/ulid v1.3.1
 ## explicit
 github.com/oklog/ulid
-# github.com/onsi/gomega v1.30.0
-## explicit; go 1.18
+# github.com/onsi/gomega v1.32.0
+## explicit; go 1.20
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/internal
@@ -848,17 +864,15 @@ github.com/openshift/hive/apis/hive/v1/openstack
 github.com/openshift/hive/apis/hive/v1/ovirt
 github.com/openshift/hive/apis/hive/v1/vsphere
 github.com/openshift/hive/apis/scheme
-# github.com/openshift/installer v0.16.1 => github.com/openshift/installer-aro v0.0.0-20241120043515-a9e0b5ff20c9
+# github.com/openshift/installer v1.4.16-0.20241204062022-f6549e3f846a
 ## explicit; go 1.20
 github.com/openshift/installer/data
-github.com/openshift/installer/pkg/aro/aroign
-github.com/openshift/installer/pkg/aro/dnsmasq
+github.com/openshift/installer/data/data
 github.com/openshift/installer/pkg/asset
 github.com/openshift/installer/pkg/asset/agent
 github.com/openshift/installer/pkg/asset/agent/agentconfig
 github.com/openshift/installer/pkg/asset/agent/manifests
 github.com/openshift/installer/pkg/asset/agent/manifests/staticnetworkconfig
-github.com/openshift/installer/pkg/asset/bootstraplogging
 github.com/openshift/installer/pkg/asset/cluster
 github.com/openshift/installer/pkg/asset/cluster/alibabacloud
 github.com/openshift/installer/pkg/asset/cluster/aws
@@ -895,6 +909,7 @@ github.com/openshift/installer/pkg/asset/installconfig/ovirt
 github.com/openshift/installer/pkg/asset/installconfig/powervs
 github.com/openshift/installer/pkg/asset/installconfig/vsphere
 github.com/openshift/installer/pkg/asset/kubeconfig
+github.com/openshift/installer/pkg/asset/lbconfig
 github.com/openshift/installer/pkg/asset/machines
 github.com/openshift/installer/pkg/asset/machines/alibabacloud
 github.com/openshift/installer/pkg/asset/machines/aws
@@ -924,6 +939,10 @@ github.com/openshift/installer/pkg/asset/manifests/powervs
 github.com/openshift/installer/pkg/asset/manifests/vsphere
 github.com/openshift/installer/pkg/asset/openshiftinstall
 github.com/openshift/installer/pkg/asset/password
+github.com/openshift/installer/pkg/asset/quota
+github.com/openshift/installer/pkg/asset/quota/aws
+github.com/openshift/installer/pkg/asset/quota/gcp
+github.com/openshift/installer/pkg/asset/quota/openstack
 github.com/openshift/installer/pkg/asset/releaseimage
 github.com/openshift/installer/pkg/asset/rhcos
 github.com/openshift/installer/pkg/asset/targets
@@ -931,11 +950,36 @@ github.com/openshift/installer/pkg/asset/templates/content
 github.com/openshift/installer/pkg/asset/templates/content/bootkube
 github.com/openshift/installer/pkg/asset/templates/content/openshift
 github.com/openshift/installer/pkg/asset/tls
+github.com/openshift/installer/pkg/destroy/aws
+github.com/openshift/installer/pkg/destroy/providers
+github.com/openshift/installer/pkg/diagnostics
 github.com/openshift/installer/pkg/hostcrypt
+github.com/openshift/installer/pkg/infrastructure
+github.com/openshift/installer/pkg/infrastructure/aws
+github.com/openshift/installer/pkg/infrastructure/platform
 github.com/openshift/installer/pkg/ipnet
+github.com/openshift/installer/pkg/lineprinter
+github.com/openshift/installer/pkg/metrics/timer
 github.com/openshift/installer/pkg/quota
+github.com/openshift/installer/pkg/quota/aws
+github.com/openshift/installer/pkg/quota/gcp
 github.com/openshift/installer/pkg/rhcos
 github.com/openshift/installer/pkg/rhcos/cache
+github.com/openshift/installer/pkg/terraform
+github.com/openshift/installer/pkg/terraform/providers
+github.com/openshift/installer/pkg/terraform/stages
+github.com/openshift/installer/pkg/terraform/stages/alibabacloud
+github.com/openshift/installer/pkg/terraform/stages/aws
+github.com/openshift/installer/pkg/terraform/stages/azure
+github.com/openshift/installer/pkg/terraform/stages/baremetal
+github.com/openshift/installer/pkg/terraform/stages/gcp
+github.com/openshift/installer/pkg/terraform/stages/ibmcloud
+github.com/openshift/installer/pkg/terraform/stages/libvirt
+github.com/openshift/installer/pkg/terraform/stages/nutanix
+github.com/openshift/installer/pkg/terraform/stages/openstack
+github.com/openshift/installer/pkg/terraform/stages/ovirt
+github.com/openshift/installer/pkg/terraform/stages/powervs
+github.com/openshift/installer/pkg/terraform/stages/vsphere
 github.com/openshift/installer/pkg/tfvars
 github.com/openshift/installer/pkg/tfvars/alibabacloud
 github.com/openshift/installer/pkg/tfvars/aws
@@ -1025,8 +1069,8 @@ github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/prometheus/client_golang v1.17.0
-## explicit; go 1.19
+# github.com/prometheus/client_golang v1.19.0
+## explicit; go 1.20
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/collectors
 github.com/prometheus/client_golang/prometheus/internal
@@ -1034,7 +1078,7 @@ github.com/prometheus/client_golang/prometheus/promhttp
 # github.com/prometheus/client_model v0.5.0
 ## explicit; go 1.19
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.45.0
+# github.com/prometheus/common v0.48.0
 ## explicit; go 1.20
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
@@ -1047,6 +1091,12 @@ github.com/prometheus/procfs/internal/util
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
+# github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
+## explicit
+github.com/shurcooL/httpfs/vfsutil
+# github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
+## explicit
+github.com/shurcooL/vfsgen
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
@@ -1105,6 +1155,10 @@ github.com/vmware/govmomi/vim25/progress
 github.com/vmware/govmomi/vim25/soap
 github.com/vmware/govmomi/vim25/types
 github.com/vmware/govmomi/vim25/xml
+# github.com/zclconf/go-cty v1.11.0
+## explicit; go 1.18
+github.com/zclconf/go-cty/cty
+github.com/zclconf/go-cty/cty/set
 # go.mongodb.org/mongo-driver v1.14.0
 ## explicit; go 1.18
 go.mongodb.org/mongo-driver/bson
@@ -1288,6 +1342,7 @@ google.golang.org/api/iterator
 google.golang.org/api/option
 google.golang.org/api/option/internaloption
 google.golang.org/api/serviceusage/v1
+google.golang.org/api/serviceusage/v1beta1
 google.golang.org/api/storage/v1
 google.golang.org/api/transport
 google.golang.org/api/transport/grpc
@@ -1307,12 +1362,17 @@ google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
 # google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9
 ## explicit; go 1.19
+google.golang.org/genproto/googleapis/type/calendarperiod
 google.golang.org/genproto/googleapis/type/date
 google.golang.org/genproto/googleapis/type/expr
 # google.golang.org/genproto/googleapis/api v0.0.0-20240314234333-6e1732d8331c
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations
+google.golang.org/genproto/googleapis/api/distribution
+google.golang.org/genproto/googleapis/api/label
+google.golang.org/genproto/googleapis/api/metric
+google.golang.org/genproto/googleapis/api/monitoredres
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20240311132316-a219d84964c2
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/code
@@ -1382,6 +1442,7 @@ google.golang.org/grpc/status
 google.golang.org/grpc/tap
 # google.golang.org/protobuf v1.33.0
 ## explicit; go 1.17
+google.golang.org/protobuf/encoding/protodelim
 google.golang.org/protobuf/encoding/protojson
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
@@ -1417,7 +1478,9 @@ google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/emptypb
 google.golang.org/protobuf/types/known/fieldmaskpb
+google.golang.org/protobuf/types/known/structpb
 google.golang.org/protobuf/types/known/timestamppb
+google.golang.org/protobuf/types/known/wrapperspb
 # gopkg.in/gcfg.v1 v1.2.3
 ## explicit
 gopkg.in/gcfg.v1
@@ -1892,7 +1955,6 @@ sigs.k8s.io/yaml/goyaml.v2
 # github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd
 # github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3
 # github.com/openshift/console-operator => github.com/openshift/console-operator v0.0.0-20220902005223-378917170147
-# github.com/openshift/installer => github.com/openshift/installer-aro v0.0.0-20241120043515-a9e0b5ff20c9
 # github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 # github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 # github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d

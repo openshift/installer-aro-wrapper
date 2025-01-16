@@ -4,13 +4,11 @@ package manifests
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/vincent-petithory/dataurl"
 	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer/pkg/asset"
@@ -18,7 +16,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
-	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/vsphere"
 )
 
@@ -75,11 +72,6 @@ func (m *Manifests) Dependencies() []asset.Asset {
 		&bootkube.KubeSystemConfigmapRootCA{},
 		&bootkube.MachineConfigServerTLSSecret{},
 		&bootkube.OpenshiftConfigSecretPullSecret{},
-		&bootkube.AROWorkerRegistries{},
-		&bootkube.AROIngressService{},
-		&bootkube.ARODNSConfig{},
-		&bootkube.AROImageRegistry{},
-		&bootkube.AROImageRegistryConfig{},
 	}
 }
 
@@ -149,38 +141,23 @@ func (m *Manifests) generateBootKubeManifests(dependencies asset.Parents) []*ass
 	installConfig := &installconfig.InstallConfig{}
 	mcsCertKey := &tls.MCSCertKey{}
 	rootCA := &tls.RootCA{}
-	aroDNSConfig := &bootkube.ARODNSConfig{}
-	aroImageRegistryConfig := &bootkube.AROImageRegistryConfig{}
 	dependencies.Get(
 		clusterID,
 		installConfig,
 		mcsCertKey,
 		rootCA,
-		aroDNSConfig,
-		aroImageRegistryConfig,
 	)
 
 	templateData := &bootkubeTemplateData{
-		CVOCapabilities:               installConfig.Config.Capabilities,
-		CVOClusterID:                  clusterID.UUID,
-		McsTLSCert:                    base64.StdEncoding.EncodeToString(mcsCertKey.Cert()),
-		McsTLSKey:                     base64.StdEncoding.EncodeToString(mcsCertKey.Key()),
-		PullSecretBase64:              base64.StdEncoding.EncodeToString([]byte(installConfig.Config.PullSecret)),
-		RootCaCert:                    string(rootCA.Cert()),
-		IsFCOS:                        installConfig.Config.IsFCOS(),
-		IsSCOS:                        installConfig.Config.IsSCOS(),
-		IsOKD:                         installConfig.Config.IsOKD(),
-		AROWorkerRegistries:           aroWorkerRegistries(installConfig.Config.ImageDigestSources),
-		AROIngressIP:                  aroDNSConfig.IngressIP,
-		AROIngressInternal:            installConfig.Config.Publish == types.InternalPublishingStrategy,
-		AROImageRegistryHTTPSecret:    aroImageRegistryConfig.HTTPSecret,
-		AROImageRegistryAccountName:   aroImageRegistryConfig.AccountName,
-		AROImageRegistryContainerName: aroImageRegistryConfig.ContainerName,
-	}
-
-	switch installConfig.Config.Platform.Name() {
-	case azuretypes.Name:
-		templateData.AROCloudName = installConfig.Azure.CloudName.Name()
+		CVOCapabilities:  installConfig.Config.Capabilities,
+		CVOClusterID:     clusterID.UUID,
+		McsTLSCert:       base64.StdEncoding.EncodeToString(mcsCertKey.Cert()),
+		McsTLSKey:        base64.StdEncoding.EncodeToString(mcsCertKey.Key()),
+		PullSecretBase64: base64.StdEncoding.EncodeToString([]byte(installConfig.Config.PullSecret)),
+		RootCaCert:       string(rootCA.Cert()),
+		IsFCOS:           installConfig.Config.IsFCOS(),
+		IsSCOS:           installConfig.Config.IsSCOS(),
+		IsOKD:            installConfig.Config.IsOKD(),
 	}
 
 	files := []*asset.File{}
@@ -190,9 +167,6 @@ func (m *Manifests) generateBootKubeManifests(dependencies asset.Parents) []*ass
 		&bootkube.KubeSystemConfigmapRootCA{},
 		&bootkube.MachineConfigServerTLSSecret{},
 		&bootkube.OpenshiftConfigSecretPullSecret{},
-		&bootkube.AROWorkerRegistries{},
-		&bootkube.AROIngressService{},
-		&bootkube.AROImageRegistry{},
 	} {
 		dependencies.Get(a)
 		for _, f := range a.Files() {
@@ -298,23 +272,4 @@ func redactedInstallConfig(config types.InstallConfig) ([]byte, error) {
 func indent(indention int, v string) string {
 	newline := "\n" + strings.Repeat(" ", indention)
 	return strings.Replace(v, "\n", newline, -1)
-}
-
-func aroWorkerRegistries(idss []types.ImageDigestSource) string {
-	b := &bytes.Buffer{}
-
-	fmt.Fprintf(b, "unqualified-search-registries = [\"registry.access.redhat.com\", \"docker.io\"]\n")
-
-	for _, ids := range idss {
-		fmt.Fprintf(b, "\n[[registry]]\n  prefix = \"\"\n  location = \"%s\"\n  mirror-by-digest-only = true\n", ids.Source)
-
-		for _, mirror := range ids.Mirrors {
-			fmt.Fprintf(b, "\n  [[registry.mirror]]\n    location = \"%s\"\n", mirror)
-		}
-	}
-
-	du := dataurl.New(b.Bytes(), "text/plain")
-	du.Encoding = dataurl.EncodingASCII
-
-	return du.String()
 }
