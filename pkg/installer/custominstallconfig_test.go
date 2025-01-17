@@ -62,13 +62,29 @@ var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
 
 	"/opt/openshift/manifests/aro-ingress-namespace.yaml",
 	"/opt/openshift/manifests/aro-ingress-service.yaml",
-	"/opt/openshift/manifests/aro-worker-registries.yaml"}
+	"/opt/openshift/manifests/aro-worker-registries.yaml",
+	"/opt/openshift/manifests/cluster-dns-02-config.yml",
+	"/opt/openshift/openshift/99_openshift-cluster-api_master-user-data-secret.yaml",
+	"/opt/openshift/openshift/99_openshift-cluster-api_worker-user-data-secret.yaml",
+}
 
 var expectedBootstrapSystemdFileList = []string{"fluentbit.service", "mdsd.service", "aro-etchosts-resolver.service", "dnsmasq.service"}
 
 var apiIntIP = "203.0.113.1"
 var expectedMasterIgnitionSource = "https://" + apiIntIP + ":22623/config/master"
 var expectedWorkerIgnitionSource = "https://" + apiIntIP + ":22623/config/worker"
+var expectedDNSConfigSource = `apiVersion: config.openshift.io/v1
+kind: DNS
+metadata:
+  creationTimestamp: null
+  name: cluster
+spec:
+  baseDomain: test-cluster.test.example.com
+  platform:
+    aws: null
+    type: ""
+status: {}
+`
 
 func fakeBootstrapLoggingConfig(_ env.Interface, _ *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
 	return &bootstraplogging.Config{
@@ -322,6 +338,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	verifyMasterPointerIgnition(t, masterAsset.File.Data)
 	verifyWorkerPointerIgnition(t, workerAsset.File.Data)
 	verifyUpdateMCSCertKey(t, bootstrapAsset)
+	verifyDNSPointerIgnition(t, bootstrapAsset)
 }
 
 func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
@@ -355,6 +372,18 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 				content := string(fileContents)
 				re := regexp.MustCompile(`httpSecret: "[A-Za-z0-9]+"`)
 				fileContents = []byte(re.ReplaceAllString(content, `httpSecret: "test"`))
+			} else if strings.Contains(file, "-user-data-secret.yaml") {
+				content := string(fileContents)
+				re := regexp.MustCompile(`userData: .*`)
+				userData := re.FindString(string(fileContents))
+
+				innerContent, err := base64.StdEncoding.DecodeString(strings.Split(userData, "userData: ")[1])
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Contains(t, string(innerContent), "https://203.0.113.1:22623/config/")
+				fileContents = []byte(re.ReplaceAllString(content, `userData: test`))
 			}
 			assert.EqualValues(t, expectedIgnitionFileContents[file], string(fileContents), fmt.Sprintf("missing storage data in file %v", file))
 		}
@@ -397,7 +426,36 @@ func verifyWorkerPointerIgnition(t *testing.T, ignData []byte) {
 	}
 
 	actualSource := *ignContents.Ignition.Config.Merge[0].Source
-	assert.EqualValues(t, expectedWorkerIgnitionSource, actualSource, fmt.Sprintf("expected master pointer ignition to be %s but found %s", expectedWorkerIgnitionSource, actualSource))
+	assert.EqualValues(t, expectedWorkerIgnitionSource, actualSource, fmt.Sprintf("expected worker pointer ignition to be %s but found %s", expectedWorkerIgnitionSource, actualSource))
+}
+
+func verifyDNSPointerIgnition(t *testing.T, bootstrap *bootstrap.Bootstrap) {
+	filesNeeded := []string{dnsCfgFilename}
+	mapFiles := map[string]*string{}
+	for _, key := range filesNeeded {
+		mapFiles[key] = to.StringPtr("")
+	}
+	for _, file := range bootstrap.Config.Storage.Files {
+		if _, ok := mapFiles[file.Path]; ok {
+			mapFiles[file.Path] = file.Contents.Source
+		}
+	}
+	for _, key := range filesNeeded {
+		if *mapFiles[key] == "" {
+			assert.Failf(t, "file %s content missing from bootstrap data", key)
+		}
+	}
+	dnsConfigFile := mapFiles[dnsCfgFilename]
+	var config configv1.DNS
+	b, err := base64.StdEncoding.DecodeString(strings.Split(*dnsConfigFile, ",")[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = yaml.Unmarshal(b, &config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.EqualValues(t, expectedDNSConfigSource, string(b), fmt.Sprintf("expected dns config to be %s but found %s", expectedDNSConfigSource, string(b)))
 }
 
 func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {
