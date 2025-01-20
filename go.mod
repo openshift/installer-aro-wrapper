@@ -238,9 +238,7 @@ require (
 )
 
 // Exclude packages that have weird versioning or are broken
-exclude (
-	k8s.io/client-go v12.0.0+incompatible
-)
+exclude k8s.io/client-go v12.0.0+incompatible
 
 // Dependency pins
 replace (
@@ -279,5 +277,5 @@ replace (
 replace (
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20230831114549-1922eda29cf8
 	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20230831114549-1922eda29cf8
-	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20231114185751-51a8b107360f
+	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8
 )

@@ -612,8 +612,8 @@ github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631
 github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20230728074040-5d708631fca3/go.mod h1:JmQ2fYYySFfAMmsqnz4A+e0xl3/1B6xQVBDNTC5Ff7g=
 github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 h1:cHyxR+Y8rAMT6m1jQCaYGRwikqahI0OjjUDhFNf3ySQ=
 github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87/go.mod h1:DB/Mf2oTeiAmVVX1gN+NEqweonAPY0TKUwADizj8+ZA=
-github.com/openshift/hive/apis v0.0.0-20231114185751-51a8b107360f h1:qGFyrvaRBPawMJiDDeyvXL9fQDZVkzLSGQSyinhKXeY=
-github.com/openshift/hive/apis v0.0.0-20231114185751-51a8b107360f/go.mod h1:RRH8lt09SAiPECNdsbh7Gun0lkcRWi1nYKq6tDp5WxQ=
+github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8 h1:7e4sMDIstjEKW6SmPv8VhusDaYinDBrspd1M7ybIHC8=
+github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
 github.com/openshift/installer v1.4.16-0.20241204062022-f6549e3f846a h1:Gy1/leTRkYnLFj+DCM5wBuDvzbing3cvgh1UIkhqU+E=
 github.com/openshift/installer v1.4.16-0.20241204062022-f6549e3f846a/go.mod h1:afCInWfCzJS9cU1CBTCkq6WL3e0A4KckaEh8KtxpVms=
 github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d h1:ELypg5zkw9jXCbp2jZ6iwYWTCtSqZVrxcKBQqwIgd2Y=
