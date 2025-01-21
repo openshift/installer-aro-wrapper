@@ -14,8 +14,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
-	"runtime"
 	"time"
 )
 
@@ -110,28 +108,16 @@ func (d *dev) DialContext(ctx context.Context, network, address string) (net.Con
 // NewDialer returns a Dialer which can dial a customer cluster API server. When
 // not in local development mode, there is no magic here.  In local development
 // mode, this dials the development proxy, which proxies to the requested
-// endpoint.  This enables the RP to run without routeability to its vnet in
+// endpoint.  This enables the installer to run without routeability to its vnet in
 // local development mode.
 func NewDialer(isLocalDevelopmentMode bool) (Dialer, error) {
 	if !isLocalDevelopmentMode {
 		return &prod{}, nil
 	}
 
-	var basepath string
+	basepath := "/.azure/"
 	var err error
 	d := &dev{}
-
-	if os.Getenv("OPENSHIFT_INSTALL_INVOKER") == "hive" {
-		basepath = "/.azure/"
-	} else {
-		// This assumes we are running from an ARO-RP checkout in development
-		_, curmod, _, _ := runtime.Caller(0)
-		basepath, err = filepath.Abs(filepath.Join(filepath.Dir(curmod), "../.."))
-		if err != nil {
-			return nil, err
-		}
-		basepath = filepath.Join(basepath, "secrets")
-	}
 
 	b, err := os.ReadFile(path.Join(basepath, "proxy.crt"))
 	if err != nil {
