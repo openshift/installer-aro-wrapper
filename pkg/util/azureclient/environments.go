@@ -36,6 +36,7 @@ var (
 		ActualCloudName:          "AzureCloud",
 		GenevaMonitoringEndpoint: "https://gcs.prod.monitoring.core.windows.net/",
 		AppSuffix:                "aro.azure.com",
+		Cloud:                    cloud.AzurePublic,
 
 		ResourceManagerScope:      azure.PublicCloud.ResourceManagerEndpoint + "/.default",
 		KeyVaultScope:             azure.PublicCloud.ResourceIdentifiers.KeyVault + "/.default",
@@ -48,6 +49,7 @@ var (
 		ActualCloudName:          "AzureUSGovernment",
 		GenevaMonitoringEndpoint: "https://gcs.monitoring.core.usgovcloudapi.net/",
 		AppSuffix:                "aro.azure.us",
+		Cloud:                    cloud.AzureGovernment,
 
 		ResourceManagerScope:      azure.USGovernmentCloud.ResourceManagerEndpoint + "/.default",
 		KeyVaultScope:             azure.USGovernmentCloud.ResourceIdentifiers.KeyVault + "/.default",
