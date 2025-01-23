@@ -268,11 +268,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
 						configv1.ClusterVersionCapabilityBuild,
+						configv1.ClusterVersionCapabilityCloudControllerManager,
 						configv1.ClusterVersionCapabilityCloudCredential,
 						configv1.ClusterVersionCapabilityConsole,
 						configv1.ClusterVersionCapabilityCSISnapshot,
 						configv1.ClusterVersionCapabilityDeploymentConfig,
 						configv1.ClusterVersionCapabilityImageRegistry,
+						configv1.ClusterVersionCapabilityIngress,
 						configv1.ClusterVersionCapabilityInsights,
 						configv1.ClusterVersionCapabilityMachineAPI,
 						configv1.ClusterVersionCapabilityMarketplace,
