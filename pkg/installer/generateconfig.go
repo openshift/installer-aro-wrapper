@@ -155,8 +155,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_415",         // "aro_4x"
-		Version:   "415.92.20240220", // "4x.yy.2020zzzz"
+		SKU:       "aro_416",         // "aro_4x"
+		Version:   "416.94.20241021", // "4x.yy.2020zzzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
