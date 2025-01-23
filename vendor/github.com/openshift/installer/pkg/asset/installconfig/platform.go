@@ -9,26 +9,22 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/openshift/installer/pkg/asset"
-	alibabacloudconfig "github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	azureconfig "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	baremetalconfig "github.com/openshift/installer/pkg/asset/installconfig/baremetal"
 	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	ibmcloudconfig "github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
-	libvirtconfig "github.com/openshift/installer/pkg/asset/installconfig/libvirt"
 	nutanixconfig "github.com/openshift/installer/pkg/asset/installconfig/nutanix"
 	openstackconfig "github.com/openshift/installer/pkg/asset/installconfig/openstack"
 	powervsconfig "github.com/openshift/installer/pkg/asset/installconfig/powervs"
 	vsphereconfig "github.com/openshift/installer/pkg/asset/installconfig/vsphere"
 	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
-	"github.com/openshift/installer/pkg/types/libvirt"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -58,11 +54,6 @@ func (a *platform) Generate(asset.Parents) error {
 	}
 
 	switch platform {
-	case alibabacloud.Name:
-		a.AlibabaCloud, err = alibabacloudconfig.Platform()
-		if err != nil {
-			return err
-		}
 	case aws.Name:
 		a.AWS, err = awsconfig.Platform()
 		if err != nil {
@@ -85,11 +76,6 @@ func (a *platform) Generate(asset.Parents) error {
 		}
 	case ibmcloud.Name:
 		a.IBMCloud, err = ibmcloudconfig.Platform()
-		if err != nil {
-			return err
-		}
-	case libvirt.Name:
-		a.Libvirt, err = libvirtconfig.Platform()
 		if err != nil {
 			return err
 		}

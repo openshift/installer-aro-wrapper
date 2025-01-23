@@ -15,14 +15,12 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
-	"github.com/openshift/installer/pkg/types/libvirt"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -113,12 +111,6 @@ func osImage(config *types.InstallConfig) (string, error) {
 			return rhcos.FindArtifactURL(a)
 		}
 		return "", fmt.Errorf("%s: No ibmcloud build found", st.FormatPrefix(archName))
-	case libvirt.Name:
-		// 𝅘𝅥𝅮 Everything's going to be a-ok 𝅘𝅥𝅮
-		if a, ok := streamArch.Artifacts["qemu"]; ok {
-			return rhcos.FindArtifactURL(a)
-		}
-		return "", fmt.Errorf("%s: No qemu build found", st.FormatPrefix(archName))
 	case ovirt.Name, openstack.Name:
 		op := config.Platform.OpenStack
 		if op != nil {
@@ -177,12 +169,6 @@ func osImage(config *types.InstallConfig) (string, error) {
 			return u.String(), nil
 		}
 		return "", fmt.Errorf("%s: No vmware build found", st.FormatPrefix(archName))
-	case alibabacloud.Name:
-		osimage, err := st.GetAliyunImage(archName, config.Platform.AlibabaCloud.Region)
-		if err != nil {
-			return "", err
-		}
-		return osimage, nil
 	case powervs.Name:
 		// Check for image URL override
 		if config.Platform.PowerVS.ClusterOSImage != "" {

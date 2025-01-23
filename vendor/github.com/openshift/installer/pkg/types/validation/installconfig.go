@@ -20,25 +20,23 @@ import (
 	utilsnet "k8s.io/utils/net"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/api/features"
 	operv1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/installer/pkg/hostcrypt"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/alibabacloud"
-	alibabacloudvalidation "github.com/openshift/installer/pkg/types/alibabacloud/validation"
 	"github.com/openshift/installer/pkg/types/aws"
 	awsvalidation "github.com/openshift/installer/pkg/types/aws/validation"
 	"github.com/openshift/installer/pkg/types/azure"
 	azurevalidation "github.com/openshift/installer/pkg/types/azure/validation"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	baremetalvalidation "github.com/openshift/installer/pkg/types/baremetal/validation"
+	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/featuregates"
 	"github.com/openshift/installer/pkg/types/gcp"
 	gcpvalidation "github.com/openshift/installer/pkg/types/gcp/validation"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
 	ibmcloudvalidation "github.com/openshift/installer/pkg/types/ibmcloud/validation"
-	"github.com/openshift/installer/pkg/types/libvirt"
-	libvirtvalidation "github.com/openshift/installer/pkg/types/libvirt/validation"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	nutanixvalidation "github.com/openshift/installer/pkg/types/nutanix/validation"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -51,6 +49,9 @@ import (
 	vspherevalidation "github.com/openshift/installer/pkg/types/vsphere/validation"
 	"github.com/openshift/installer/pkg/validate"
 )
+
+// hostCryptBypassedAnnotation is set if the host crypt check was bypassed via environment variable.
+const hostCryptBypassedAnnotation = "install.openshift.io/hostcrypt-check-bypassed"
 
 // list of known plugins that require hostPrefix to be set
 var pluginsUsingHostPrefix = sets.NewString(string(operv1.NetworkTypeOVNKubernetes))
@@ -151,7 +152,7 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 
 	if c.Publish == types.InternalPublishingStrategy {
 		switch platformName := c.Platform.Name(); platformName {
-		case aws.Name, azure.Name, gcp.Name, alibabacloud.Name, ibmcloud.Name, powervs.Name:
+		case aws.Name, azure.Name, gcp.Name, ibmcloud.Name, powervs.Name:
 		default:
 			allErrs = append(allErrs, field.Invalid(field.NewPath("publish"), c.Publish, fmt.Sprintf("Internal publish strategy is not supported on %q platform", platformName)))
 		}
@@ -207,6 +208,10 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 				allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
 					"the marketplace capability requires the OperatorLifecycleManager capability"))
 			}
+			if c.Platform.BareMetal != nil && !enabledCaps.Has(configv1.ClusterVersionCapabilityBaremetal) {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
+					"platform baremetal requires the baremetal capability"))
+			}
 		}
 
 		if !enabledCaps.Has(configv1.ClusterVersionCapabilityCloudCredential) {
@@ -215,6 +220,22 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
 					"disabling CloudCredential capability available only for baremetal platforms"))
 			}
+		}
+
+		if !enabledCaps.Has(configv1.ClusterVersionCapabilityCloudControllerManager) {
+			if c.None == nil && c.BareMetal == nil && c.External == nil {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
+					"disabling CloudControllerManager is only supported on the Baremetal, None, or External platform with cloudControllerManager value none"))
+			}
+			if c.External != nil && c.External.CloudControllerManager == external.CloudControllerManagerTypeExternal {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
+					"disabling CloudControllerManager on External platform supported only with cloudControllerManager value none"))
+			}
+		}
+
+		if !enabledCaps.Has(configv1.ClusterVersionCapabilityIngress) {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("capabilities"), c.Capabilities,
+				"the Ingress capability is required"))
 		}
 	}
 
@@ -426,23 +447,6 @@ func validateNetworking(n *types.Networking, singleNodeOpenShift bool, fldPath *
 func validateNetworkingForPlatform(n *types.Networking, platform *types.Platform, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	switch {
-	case platform.Libvirt != nil:
-		errMsg := "overlaps with default Docker Bridge subnet"
-		for idx, mn := range n.MachineNetwork {
-			if validate.DoCIDRsOverlap(&mn.CIDR.IPNet, validate.DockerBridgeCIDR) {
-				allErrs = append(allErrs, field.Invalid(fldPath.Child("machineNewtork").Index(idx), mn.CIDR.String(), errMsg))
-			}
-		}
-		for idx, sn := range n.ServiceNetwork {
-			if validate.DoCIDRsOverlap(&sn.IPNet, validate.DockerBridgeCIDR) {
-				allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceNetwork").Index(idx), sn.String(), errMsg))
-			}
-		}
-		for idx, cn := range n.ClusterNetwork {
-			if validate.DoCIDRsOverlap(&cn.CIDR.IPNet, validate.DockerBridgeCIDR) {
-				allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterNetwork").Index(idx), cn.CIDR.String(), errMsg))
-			}
-		}
 	default:
 		warningMsgFmt := "%s: %s overlaps with default Docker Bridge subnet"
 		for idx, mn := range n.MachineNetwork {
@@ -882,11 +886,6 @@ func validatePlatform(platform *types.Platform, usingAgentMethod bool, fldPath *
 		}
 		allErrs = append(allErrs, validation(fldPath.Child(n))...)
 	}
-	if platform.AlibabaCloud != nil {
-		validate(alibabacloud.Name, platform.AlibabaCloud, func(f *field.Path) field.ErrorList {
-			return alibabacloudvalidation.ValidatePlatform(platform.AlibabaCloud, network, f)
-		})
-	}
 	if platform.AWS != nil {
 		validate(aws.Name, platform.AWS, func(f *field.Path) field.ErrorList {
 			return awsvalidation.ValidatePlatform(platform.AWS, c.CredentialsMode, f)
@@ -903,16 +902,18 @@ func validatePlatform(platform *types.Platform, usingAgentMethod bool, fldPath *
 	if platform.IBMCloud != nil {
 		validate(ibmcloud.Name, platform.IBMCloud, func(f *field.Path) field.ErrorList { return ibmcloudvalidation.ValidatePlatform(platform.IBMCloud, f) })
 	}
-	if platform.Libvirt != nil {
-		validate(libvirt.Name, platform.Libvirt, func(f *field.Path) field.ErrorList { return libvirtvalidation.ValidatePlatform(platform.Libvirt, f) })
-	}
 	if platform.OpenStack != nil {
 		validate(openstack.Name, platform.OpenStack, func(f *field.Path) field.ErrorList {
 			return openstackvalidation.ValidatePlatform(platform.OpenStack, network, f, c)
 		})
 	}
 	if platform.PowerVS != nil {
-		validate(powervs.Name, platform.PowerVS, func(f *field.Path) field.ErrorList { return powervsvalidation.ValidatePlatform(platform.PowerVS, f) })
+		if c.SSHKey == "" {
+			allErrs = append(allErrs, field.Required(field.NewPath("sshKey"), "sshKey is required"))
+		}
+		validate(powervs.Name, platform.PowerVS, func(f *field.Path) field.ErrorList {
+			return powervsvalidation.ValidatePlatform(platform.PowerVS, f)
+		})
 	}
 	if platform.VSphere != nil {
 		validate(vsphere.Name, platform.VSphere, func(f *field.Path) field.ErrorList {
@@ -1070,13 +1071,12 @@ func validateCloudCredentialsMode(mode types.CredentialsMode, fldPath *field.Pat
 	// validPlatformCredentialsModes is a map from the platform name to a slice of credentials modes that are valid
 	// for the platform. If a platform name is not in the map, then the credentials mode cannot be set for that platform.
 	validPlatformCredentialsModes := map[string][]types.CredentialsMode{
-		alibabacloud.Name: {types.ManualCredentialsMode},
-		aws.Name:          {types.MintCredentialsMode, types.PassthroughCredentialsMode, types.ManualCredentialsMode},
-		azure.Name:        allowedAzureModes,
-		gcp.Name:          {types.MintCredentialsMode, types.PassthroughCredentialsMode, types.ManualCredentialsMode},
-		ibmcloud.Name:     {types.ManualCredentialsMode},
-		powervs.Name:      {types.ManualCredentialsMode},
-		nutanix.Name:      {types.ManualCredentialsMode},
+		aws.Name:      {types.MintCredentialsMode, types.PassthroughCredentialsMode, types.ManualCredentialsMode},
+		azure.Name:    allowedAzureModes,
+		gcp.Name:      {types.MintCredentialsMode, types.PassthroughCredentialsMode, types.ManualCredentialsMode},
+		ibmcloud.Name: {types.ManualCredentialsMode},
+		powervs.Name:  {types.ManualCredentialsMode},
+		nutanix.Name:  {types.ManualCredentialsMode},
 	}
 	if validModes, ok := validPlatformCredentialsModes[platform.Name()]; ok {
 		validModesSet := sets.NewString()
@@ -1158,7 +1158,15 @@ func validateFIPSconfig(c *types.InstallConfig) field.ErrorList {
 	}
 
 	if err := hostcrypt.VerifyHostTargetState(c.FIPS); err != nil {
-		logrus.Warnf("%v", err)
+		if skip, ok := os.LookupEnv("OPENSHIFT_INSTALL_SKIP_HOSTCRYPT_VALIDATION"); ok && skip != "" {
+			logrus.Warnf("%v", err)
+			if c.Annotations == nil {
+				c.Annotations = make(map[string]string)
+			}
+			c.Annotations[hostCryptBypassedAnnotation] = "true"
+		} else {
+			allErrs = append(allErrs, field.Forbidden(field.NewPath("fips"), err.Error()))
+		}
 	}
 	return allErrs
 }
@@ -1204,12 +1212,19 @@ func validateAdditionalCABundlePolicy(c *types.InstallConfig) error {
 func ValidateFeatureSet(c *types.InstallConfig) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if _, ok := configv1.FeatureSets[c.FeatureSet]; !ok {
+	clusterProfile := types.GetClusterProfileName()
+	featureSets, ok := features.AllFeatureSets()[clusterProfile]
+	if !ok {
+		logrus.Warnf("no feature sets for cluster profile %q", clusterProfile)
+	}
+	if _, ok := featureSets[c.FeatureSet]; c.FeatureSet != configv1.CustomNoUpgrade && !ok {
 		sortedFeatureSets := func() []string {
 			v := []string{}
-			for n := range configv1.FeatureSets {
+			for n := range features.AllFeatureSets()[clusterProfile] {
 				v = append(v, string(n))
 			}
+			// Add CustomNoUpgrade since it is not part of features sets for profiles
+			v = append(v, string(configv1.CustomNoUpgrade))
 			sort.Strings(v)
 			return v
 		}()
