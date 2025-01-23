@@ -19,6 +19,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/cluster"
+	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
@@ -50,7 +51,7 @@ var (
 		&cluster.Metadata{},
 		&machine.MasterIgnitionCustomizations{},
 		&machine.WorkerIgnitionCustomizations{},
-		&cluster.TerraformVariables{},
+		&tfvars.TerraformVariables{},
 		&kubeconfig.AdminClient{},
 		&password.KubeadminPassword{},
 		&tls.JournalCertKey{},
