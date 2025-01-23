@@ -1145,9 +1145,6 @@ github.com/openshift/machine-api-provider-gcp/pkg/cloud/gcp/actuators/util
 ## explicit; go 1.19
 github.com/openshift/machine-api-provider-ibmcloud/pkg/apis
 github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1
-# github.com/openshift/machine-config-operator v0.0.1-0.20201023110058-6c8bd9b2915c
-## explicit; go 1.13
-github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1
 # github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b
 ## explicit; go 1.14
 github.com/opentracing/opentracing-go
