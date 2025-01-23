@@ -40,7 +40,7 @@ generate: install-tools
 	go generate ./...
 
 image-aro:
-	docker pull $(REGISTRY)/ubi8/ubi-minimal
+	docker pull $(REGISTRY)/ubi9/ubi-minimal
 	docker build --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) .
 
 publish-image-aro: image-aro
