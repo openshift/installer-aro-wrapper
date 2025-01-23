@@ -4,9 +4,9 @@ package openstack
 import (
 	"fmt"
 
-	"github.com/gophercloud/utils/openstack/clientconfig"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 
 	clusterapi "github.com/openshift/api/machine/v1beta1"
 	"github.com/openshift/installer/pkg/types"
@@ -24,18 +24,21 @@ const maxInt32 int64 = int64(^uint32(0)) >> 1
 // availability zones, Storage availability zones and Root volume types), when
 // more than one is specified, values of identical index are grouped in the
 // same MachineSet.
-func MachineSets(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string, clientOpts *clientconfig.ClientOpts) ([]*clusterapi.MachineSet, error) {
+func MachineSets(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string, trunkSupport bool) ([]*clusterapi.MachineSet, error) {
 	if configPlatform := config.Platform.Name(); configPlatform != openstack.Name {
 		return nil, fmt.Errorf("non-OpenStack configuration: %q", configPlatform)
 	}
 	if poolPlatform := pool.Platform.Name(); poolPlatform != openstack.Name {
 		return nil, fmt.Errorf("non-OpenStack machine-pool: %q", poolPlatform)
 	}
-	platform := config.Platform.OpenStack
 	mpool := pool.Platform.OpenStack
-	trunkSupport, err := checkNetworkExtensionAvailability(platform.Cloud, "trunk", clientOpts)
-	if err != nil {
-		return nil, err
+
+	// In installer CLI code paths, the replica number is set to 3 by default
+	// when install-config does not have any Compute machine-pool, or when the
+	// Compute machine-pool does not have the `replicas` property.
+	// However, external consumers of this func may not be so kind...
+	if pool.Replicas == nil {
+		pool.Replicas = ptr.To[int64](0)
 	}
 
 	failureDomains := failureDomainsFromSpec(*mpool)
@@ -45,9 +48,6 @@ func MachineSets(clusterID string, config *types.InstallConfig, pool *types.Mach
 	for idx := range machinesets {
 		var replicaNumber int32
 		{
-			// The replica number is set to 3 by default when install-config does not have
-			// any Compute machine-pool, or when the Compute machine-pool does not have the
-			// `replicas` property. As a consequence, pool.Replicas is never nil
 			replicas := *pool.Replicas / numberOfFailureDomains
 			if int64(idx) < *pool.Replicas%numberOfFailureDomains {
 				replicas++
@@ -60,7 +60,7 @@ func MachineSets(clusterID string, config *types.InstallConfig, pool *types.Mach
 
 		providerSpec, err := generateProviderSpec(
 			clusterID,
-			platform,
+			config.Platform.OpenStack,
 			mpool,
 			osImage,
 			role,

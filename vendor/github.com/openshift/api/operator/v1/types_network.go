@@ -7,6 +7,11 @@ import (
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=networks,scope=Cluster
+// +openshift:api-approved.openshift.io=https://github.com/openshift/api/pull/475
+// +openshift:file-pattern=cvoRunLevel=0000_70,operatorName=network,operatorOrdering=01
+// +kubebuilder:metadata:annotations=include.release.openshift.io/self-managed-high-availability=true
 
 // Network describes the cluster's desired network configuration. It is
 // consumed by the cluster-network-operator.
@@ -48,6 +53,7 @@ type NetworkList struct {
 }
 
 // NetworkSpec is the top-level network configuration object.
+// +kubebuilder:validation:XValidation:rule="!has(self.defaultNetwork) || !has(self.defaultNetwork.ovnKubernetesConfig) || !has(self.defaultNetwork.ovnKubernetesConfig.gatewayConfig) || !has(self.defaultNetwork.ovnKubernetesConfig.gatewayConfig.ipForwarding) || self.defaultNetwork.ovnKubernetesConfig.gatewayConfig.ipForwarding == oldSelf.defaultNetwork.ovnKubernetesConfig.gatewayConfig.ipForwarding || self.defaultNetwork.ovnKubernetesConfig.gatewayConfig.ipForwarding == 'Restricted' || self.defaultNetwork.ovnKubernetesConfig.gatewayConfig.ipForwarding == 'Global'",message="invalid value for IPForwarding, valid values are 'Restricted' or 'Global'"
 type NetworkSpec struct {
 	OperatorSpec `json:",inline"`
 
@@ -129,7 +135,7 @@ const (
 )
 
 // NetworkMigration represents the cluster network configuration.
-// +openshift:validation:FeatureSetAwareXValidation:featureSet=CustomNoUpgrade;TechPreviewNoUpgrade,rule="!has(self.mtu) || !has(self.networkType) || self.networkType == '' || has(self.mode) && self.mode == 'Live'",message="networkType migration in mode other than 'Live' may not be configured at the same time as mtu migration"
+// +openshift:validation:FeatureGateAwareXValidation:featureGate=NetworkLiveMigration,rule="!has(self.mtu) || !has(self.networkType) || self.networkType == \"\" || has(self.mode) && self.mode == 'Live'",message="networkType migration in mode other than 'Live' may not be configured at the same time as mtu migration"
 type NetworkMigration struct {
 	// networkType is the target type of network migration. Set this to the
 	// target network type to allow changing the default network. If unset, the
@@ -443,11 +449,9 @@ type IPv4OVNKubernetesConfig struct {
 	// The subnet must be large enough to accomadate one IP per node in your cluster
 	// The value must be in proper IPV4 CIDR format
 	// +kubebuilder:validation:MaxLength=18
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('/') == self.lastIndexOf('/')",message="CIDR format must contain exactly one '/'"
-	// +kubebuilder:validation:XValidation:rule="[int(self.split('/')[1])].all(x, x <= 30 && x >= 0)",message="subnet must be in the range /0 to /30 inclusive"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split('.').size() == 4",message="a valid IPv4 address must contain 4 octets"
-	// +kubebuilder:validation:XValidation:rule="[self.findAll('[0-9]+')[0]].all(x, x != '0' && int(x) <= 255 && !x.startsWith('0'))",message="first IP address octet must not contain leading zeros, must be greater than 0 and less or equal to 255"
-	// +kubebuilder:validation:XValidation:rule="[self.findAll('[0-9]+')[1], self.findAll('[0-9]+')[2], self.findAll('[0-9]+')[3]].all(x, int(x) <= 255 && (x == '0' || !x.startsWith('0')))",message="IP address octets must not contain leading zeros, and must be less or equal to 255"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 4",message="Subnet must be in valid IPV4 CIDR format"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 30",message="subnet must be in the range /0 to /30 inclusive"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && int(self.split('.')[0]) > 0",message="first IP address octet must not be 0"
 	// +optional
 	InternalTransitSwitchSubnet string `json:"internalTransitSwitchSubnet,omitempty"`
 	// internalJoinSubnet is a v4 subnet used internally by ovn-kubernetes in case the
@@ -459,11 +463,9 @@ type IPv4OVNKubernetesConfig struct {
 	// The subnet must be large enough to accomadate one IP per node in your cluster
 	// The value must be in proper IPV4 CIDR format
 	// +kubebuilder:validation:MaxLength=18
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('/') == self.lastIndexOf('/')",message="CIDR format must contain exactly one '/'"
-	// +kubebuilder:validation:XValidation:rule="[int(self.split('/')[1])].all(x, x <= 30 && x >= 0)",message="subnet must be in the range /0 to /30 inclusive"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split('.').size() == 4",message="a valid IPv4 address must contain 4 octets"
-	// +kubebuilder:validation:XValidation:rule="[self.findAll('[0-9]+')[0]].all(x, x != '0' && int(x) <= 255 && !x.startsWith('0'))",message="first IP address octet must not contain leading zeros, must be greater than 0 and less or equal to 255"
-	// +kubebuilder:validation:XValidation:rule="[self.findAll('[0-9]+')[1], self.findAll('[0-9]+')[2], self.findAll('[0-9]+')[3]].all(x, int(x) <= 255 && (x == '0' || !x.startsWith('0')))",message="IP address octets must not contain leading zeros, and must be less or equal to 255"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 4",message="Subnet must be in valid IPV4 CIDR format"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 30",message="subnet must be in the range /0 to /30 inclusive"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && int(self.split('.')[0]) > 0",message="first IP address octet must not be 0"
 	// +optional
 	InternalJoinSubnet string `json:"internalJoinSubnet,omitempty"`
 }
@@ -482,19 +484,8 @@ type IPv6OVNKubernetesConfig struct {
 	// The value must be in proper IPV6 CIDR format
 	// Note that IPV6 dual addresses are not permitted
 	// +kubebuilder:validation:MaxLength=48
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('/') == self.lastIndexOf('/')",message="CIDR format must contain exactly one '/'"
-	// +kubebuilder:validation:XValidation:rule="self.split('/').size() == 2 && [int(self.split('/')[1])].all(x, x <= 125 && x >= 0)",message="subnet must be in the range /0 to /125 inclusive"
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('::') == self.lastIndexOf('::')",message="IPv6 addresses must contain at most one '::' and may only be shortened once"
-	// +kubebuilder:validation:XValidation:rule="self.contains('::') ? self.split('/')[0].split(':').size() <= 8 : self.split('/')[0].split(':').size() == 8",message="a valid IPv6 address must contain 8 segments unless elided (::), in which case it must contain at most 6 non-empty segments"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=1 ? [self.split('/')[0].split(':', 8)[0]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 1"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=2 ? [self.split('/')[0].split(':', 8)[1]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 2"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=3 ? [self.split('/')[0].split(':', 8)[2]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 3"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=4 ? [self.split('/')[0].split(':', 8)[3]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 4"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=5 ? [self.split('/')[0].split(':', 8)[4]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 5"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=6 ? [self.split('/')[0].split(':', 8)[5]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 6"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=7 ? [self.split('/')[0].split(':', 8)[6]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 7"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=8 ? [self.split('/')[0].split(':', 8)[7]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 8"
-	// +kubebuilder:validation:XValidation:rule="!self.contains('.')",message="IPv6 dual addresses are not permitted, value should not contain `.` characters"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 6",message="Subnet must be in valid IPV6 CIDR format"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 125",message="subnet must be in the range /0 to /125 inclusive"
 	// +optional
 	InternalTransitSwitchSubnet string `json:"internalTransitSwitchSubnet,omitempty"`
 	// internalJoinSubnet is a v6 subnet used internally by ovn-kubernetes in case the
@@ -507,19 +498,8 @@ type IPv6OVNKubernetesConfig struct {
 	// The value must be in proper IPV6 CIDR format
 	// Note that IPV6 dual addresses are not permitted
 	// +kubebuilder:validation:MaxLength=48
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('/') == self.lastIndexOf('/')",message="CIDR format must contain exactly one '/'"
-	// +kubebuilder:validation:XValidation:rule="self.split('/').size() == 2 && [int(self.split('/')[1])].all(x, x <= 125 && x >= 0)",message="subnet must be in the range /0 to /125 inclusive"
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('::') == self.lastIndexOf('::')",message="IPv6 addresses must contain at most one '::' and may only be shortened once"
-	// +kubebuilder:validation:XValidation:rule="self.contains('::') ? self.split('/')[0].split(':').size() <= 8 : self.split('/')[0].split(':').size() == 8",message="a valid IPv6 address must contain 8 segments unless elided (::), in which case it must contain at most 6 non-empty segments"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=1 ? [self.split('/')[0].split(':', 8)[0]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 1"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=2 ? [self.split('/')[0].split(':', 8)[1]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 2"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=3 ? [self.split('/')[0].split(':', 8)[2]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 3"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=4 ? [self.split('/')[0].split(':', 8)[3]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 4"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=5 ? [self.split('/')[0].split(':', 8)[4]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 5"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=6 ? [self.split('/')[0].split(':', 8)[5]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 6"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=7 ? [self.split('/')[0].split(':', 8)[6]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 7"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=8 ? [self.split('/')[0].split(':', 8)[7]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 8"
-	// +kubebuilder:validation:XValidation:rule="!self.contains('.')",message="IPv6 dual addresses are not permitted, value should not contain `.` characters"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 6",message="Subnet must be in valid IPV6 CIDR format"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 125",message="subnet must be in the range /0 to /125 inclusive"
 	// +optional
 	InternalJoinSubnet string `json:"internalJoinSubnet,omitempty"`
 }
@@ -597,11 +577,9 @@ type IPv4GatewayConfig struct {
 	// The current default subnet is 169.254.169.0/29
 	// The value must be in proper IPV4 CIDR format
 	// +kubebuilder:validation:MaxLength=18
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('/') == self.lastIndexOf('/')",message="CIDR format must contain exactly one '/'"
-	// +kubebuilder:validation:XValidation:rule="[int(self.split('/')[1])].all(x, x <= 29 && x >= 0)",message="subnet must be in the range /0 to /29 inclusive"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split('.').size() == 4",message="a valid IPv4 address must contain 4 octets"
-	// +kubebuilder:validation:XValidation:rule="[self.findAll('[0-9]+')[0]].all(x, x != '0' && int(x) <= 255 && !x.startsWith('0'))",message="first IP address octet must not contain leading zeros, must be greater than 0 and less or equal to 255"
-	// +kubebuilder:validation:XValidation:rule="[self.findAll('[0-9]+')[1], self.findAll('[0-9]+')[2], self.findAll('[0-9]+')[3]].all(x, int(x) <= 255 && (x == '0' || !x.startsWith('0')))",message="IP address octets must not contain leading zeros, and must be less or equal to 255"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 4",message="Subnet must be in valid IPV4 CIDR format"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 29",message="subnet must be in the range /0 to /29 inclusive"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && int(self.split('.')[0]) > 0",message="first IP address octet must not be 0"
 	// +optional
 	InternalMasqueradeSubnet string `json:"internalMasqueradeSubnet,omitempty"`
 }
@@ -617,19 +595,8 @@ type IPv6GatewayConfig struct {
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default which is subject to change over time.
 	// The current default subnet is fd69::/125
 	// Note that IPV6 dual addresses are not permitted
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('/') == self.lastIndexOf('/')",message="CIDR format must contain exactly one '/'"
-	// +kubebuilder:validation:XValidation:rule="self.split('/').size() == 2 && [int(self.split('/')[1])].all(x, x <= 125 && x >= 0)",message="subnet must be in the range /0 to /125 inclusive"
-	// +kubebuilder:validation:XValidation:rule="self.indexOf('::') == self.lastIndexOf('::')",message="IPv6 addresses must contain at most one '::' and may only be shortened once"
-	// +kubebuilder:validation:XValidation:rule="self.contains('::') ? self.split('/')[0].split(':').size() <= 8 : self.split('/')[0].split(':').size() == 8",message="a valid IPv6 address must contain 8 segments unless elided (::), in which case it must contain at most 6 non-empty segments"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=1 ? [self.split('/')[0].split(':', 8)[0]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 1"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=2 ? [self.split('/')[0].split(':', 8)[1]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 2"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=3 ? [self.split('/')[0].split(':', 8)[2]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 3"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=4 ? [self.split('/')[0].split(':', 8)[3]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 4"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=5 ? [self.split('/')[0].split(':', 8)[4]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 5"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=6 ? [self.split('/')[0].split(':', 8)[5]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 6"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=7 ? [self.split('/')[0].split(':', 8)[6]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 7"
-	// +kubebuilder:validation:XValidation:rule="self.split('/')[0].split(':').size() >=8 ? [self.split('/')[0].split(':', 8)[7]].all(x, x == '' || (x.matches('^[0-9A-Fa-f]{1,4}$')) && size(x)<5 ) : true",message="each segment of an IPv6 address must be a hexadecimal number between 0 and FFFF, failed on segment 8"
-	// +kubebuilder:validation:XValidation:rule="!self.contains('.')",message="IPv6 dual addresses are not permitted, value should not contain `.` characters"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 6",message="Subnet must be in valid IPV6 CIDR format"
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 125",message="subnet must be in the range /0 to /125 inclusive"
 	// +optional
 	InternalMasqueradeSubnet string `json:"internalMasqueradeSubnet,omitempty"`
 }

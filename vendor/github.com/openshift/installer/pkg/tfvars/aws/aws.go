@@ -50,6 +50,7 @@ type Config struct {
 	BootstrapMetadataAuthentication string            `json:"aws_bootstrap_instance_metadata_authentication,omitempty"`
 	PreserveBootstrapIgnition       bool              `json:"aws_preserve_bootstrap_ignition"`
 	MasterSecurityGroups            []string          `json:"aws_master_security_groups,omitempty"`
+	PublicIpv4Pool                  string            `json:"aws_public_ipv4_pool"`
 	MasterUseSpotInstance           bool              `json:"aws_master_use_spot_instance,omitempty"`
 }
 
@@ -82,6 +83,8 @@ type TFVarsSources struct {
 	PreserveBootstrapIgnition bool
 
 	MasterSecurityGroups []string
+
+	PublicIpv4Pool string
 }
 
 // TFVars generates AWS-specific Terraform variables launching the cluster.
@@ -214,6 +217,7 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		WorkerIAMRoleName:         sources.WorkerIAMRoleName,
 		PreserveBootstrapIgnition: sources.PreserveBootstrapIgnition,
 		MasterSecurityGroups:      sources.MasterSecurityGroups,
+		PublicIpv4Pool:            sources.PublicIpv4Pool,
 		MasterUseSpotInstance:     useSpotInstances,
 	}
 

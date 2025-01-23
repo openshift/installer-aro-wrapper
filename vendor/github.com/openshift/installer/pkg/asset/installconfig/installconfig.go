@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	"github.com/openshift/installer/pkg/asset/installconfig/aws"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	icgcp "github.com/openshift/installer/pkg/asset/installconfig/gcp"
@@ -31,11 +30,11 @@ const (
 // InstallConfig generates the install-config.yaml file.
 type InstallConfig struct {
 	AssetBase
-	AWS          *aws.Metadata          `json:"aws,omitempty"`
-	Azure        *icazure.Metadata      `json:"azure,omitempty"`
-	IBMCloud     *icibmcloud.Metadata   `json:"ibmcloud,omitempty"`
-	AlibabaCloud *alibabacloud.Metadata `json:"alibabacloud,omitempty"`
-	PowerVS      *icpowervs.Metadata    `json:"powervs,omitempty"`
+	AWS      *aws.Metadata        `json:"aws,omitempty"`
+	Azure    *icazure.Metadata    `json:"azure,omitempty"`
+	IBMCloud *icibmcloud.Metadata `json:"ibmcloud,omitempty"`
+	PowerVS  *icpowervs.Metadata  `json:"powervs,omitempty"`
+	VSphere  *icvsphere.Metadata  `json:"vsphere,omitempty"`
 }
 
 var _ asset.WritableAsset = (*InstallConfig)(nil)
@@ -85,12 +84,11 @@ func (a *InstallConfig) Generate(parents asset.Parents) error {
 		},
 		SSHKey:     sshPublicKey.Key,
 		BaseDomain: baseDomain.BaseDomain,
+		Publish:    baseDomain.Publish,
 		PullSecret: pullSecret.PullSecret,
 	}
 
-	a.Config.AlibabaCloud = platform.AlibabaCloud
 	a.Config.AWS = platform.AWS
-	a.Config.Libvirt = platform.Libvirt
 	a.Config.None = platform.None
 	a.Config.OpenStack = platform.OpenStack
 	a.Config.VSphere = platform.VSphere
@@ -146,9 +144,6 @@ func (a *InstallConfig) finish(filename string) error {
 			return err
 		}
 	}
-	if a.Config.AlibabaCloud != nil {
-		a.AlibabaCloud = alibabacloud.NewMetadata(a.Config.AlibabaCloud.Region, a.Config.AlibabaCloud.VSwitchIDs)
-	}
 	if a.Config.Azure != nil {
 		a.Azure = icazure.NewMetadata(a.Config.Azure.CloudName, a.Config.Azure.ARMEndpoint)
 	}
@@ -156,7 +151,14 @@ func (a *InstallConfig) finish(filename string) error {
 		a.IBMCloud = icibmcloud.NewMetadata(a.Config)
 	}
 	if a.Config.PowerVS != nil {
-		a.PowerVS = icpowervs.NewMetadata(a.Config.BaseDomain)
+		a.PowerVS = icpowervs.NewMetadata(a.Config)
+	}
+	if a.Config.VSphere != nil {
+		a.VSphere = icvsphere.NewMetadata()
+
+		for _, v := range a.Config.VSphere.VCenters {
+			_ = a.VSphere.AddCredentials(v.Server, v.Username, v.Password)
+		}
 	}
 
 	if err := validation.ValidateInstallConfig(a.Config, false).ToAggregate(); err != nil {
@@ -177,14 +179,12 @@ func (a *InstallConfig) finish(filename string) error {
 // underlying platform. In some cases, platforms also duplicate validations
 // that have already been checked by validation.ValidateInstallConfig().
 func (a *InstallConfig) platformValidation() error {
-	if a.Config.Platform.AlibabaCloud != nil {
-		client, err := a.AlibabaCloud.Client()
-		if err != nil {
-			return err
-		}
-		return alibabacloud.Validate(client, a.Config)
-	}
 	if a.Config.Platform.Azure != nil {
+		if a.Config.Platform.Azure.IsARO() {
+			// ARO performs platform validation in the Resource Provider before
+			// the Installer is called
+			return nil
+		}
 		client, err := a.Azure.Client()
 		if err != nil {
 			return err
