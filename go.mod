@@ -24,7 +24,6 @@ require (
 	github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094
 	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/openshift/installer v1.4.17-0.20250117043639-162d3adca436
-	github.com/openshift/machine-config-operator v0.0.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
