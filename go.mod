@@ -14,7 +14,6 @@ require (
 	github.com/codahale/etm v0.0.0-20141003032925-c00c9e6fb4c9
 	github.com/coreos/go-semver v0.3.1
 	github.com/coreos/ignition/v2 v2.16.2
-	github.com/coreos/stream-metadata-go v0.4.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/go-test/deep v1.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -82,6 +81,7 @@ require (
 	github.com/containers/image/v5 v5.29.3 // indirect
 	github.com/containers/storage v1.53.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
+	github.com/coreos/stream-metadata-go v0.4.3 // indirect
 	github.com/coreos/vcontext v0.0.0-20231102161604-685dc7299dc5 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

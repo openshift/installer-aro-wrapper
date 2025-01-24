@@ -30,7 +30,6 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
 	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/pullsecret"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/rhcos"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
@@ -150,9 +149,15 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
-	rhcosImage, err := rhcos.Image(ctx)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
+	// TODO: Load this from the OpenShiftCluster from the RP maybe, or get it
+	// from a manifest so it can be specified in the RP's
+	// OpenShiftClusterVersions?
+	rhcosImage := &azuretypes.OSImage{
+		Publisher: "azureopenshift",
+		Offer:     "aro4",
+		SKU:       "aro_415",         // "aro_4x"
+		Version:   "415.92.20240220", // "4x.yy.2020zzzz"
+		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
 	installConfig := &installconfig.InstallConfig{
