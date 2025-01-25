@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/openshift/installer/pkg/asset"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
@@ -16,13 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
-	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
-	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/features"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/encryption"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/refreshable"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/storage"
 )
 
 type target struct {
@@ -139,13 +132,7 @@ func newCreateCmd() *cobra.Command {
 	return cmd
 }
 
-func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (installer.Interface, error) {
-	_env, err := env.NewEnv(ctx, log)
-	if err != nil {
-		return nil, err
-	}
-
-	// unmarshal oc
+func _getOpenShiftCluster() (*api.OpenShiftCluster, error) {
 	var oc api.OpenShiftCluster
 	ocFile, err := os.ReadFile("/.azure/99_aro.json")
 	if err != nil {
@@ -157,7 +144,10 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (i
 		return nil, err
 	}
 
-	// unmarshal subscription
+	return &oc, nil
+}
+
+func _getSubscription() (*api.Subscription, error) {
 	var sub api.Subscription
 	subFile, err := os.ReadFile("/.azure/99_sub.json")
 	if err != nil {
@@ -168,34 +158,26 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (i
 	if err != nil {
 		return nil, err
 	}
-	fpAuthorizer, err := refreshable.NewAuthorizer(_env, sub.Properties.TenantID)
+
+	return &sub, nil
+}
+
+func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (installer.Interface, error) {
+	var err error
+
+	// unmarshal oc
+	var oc *api.OpenShiftCluster
+	oc, err = _getOpenShiftCluster()
 	if err != nil {
 		return nil, err
 	}
 
-	fpCredClusterTenant, err := _env.FPNewClientCertificateCredential(sub.Properties.TenantID)
+	// unmarshal subscription
+	var sub *api.Subscription
+	sub, err = _getSubscription()
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := azure.ParseResourceID(oc.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	storage, err := storage.NewManager(r.SubscriptionID, _env.Environment().StorageEndpointSuffix, fpCredClusterTenant, oc.UsesWorkloadIdentity(), _env.Environment().ArmClientOptions())
-	if err != nil {
-		return nil, err
-	}
-	deployments := features.NewDeploymentsClient(_env.Environment(), r.SubscriptionID, fpAuthorizer)
-
-	aead, err := encryption.NewMulti(ctx, _env.ServiceKeyvault(), env.EncryptionSecretV2Name, env.EncryptionSecretName)
-	if err != nil {
-		return nil, err
-	}
-
-	graph := graph.NewManager(log, aead, storage)
-
-	// Generate the installer manifests
-	return installer.NewInstaller(log, _env, assetsDir, os.Getenv("ARO_UUID"), &oc, &sub, fpAuthorizer, deployments, graph), nil
+	return installer.MakeInstaller(ctx, log, assetsDir, oc, sub)
 }

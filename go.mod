@@ -78,7 +78,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cjlapao/common-go v0.0.39 // indirect
 	github.com/clarketm/json v1.17.1 // indirect
-	github.com/containers/image/v5 v5.29.3 // indirect
+	github.com/containers/image/v5 v5.29.3
 	github.com/containers/storage v1.53.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/coreos/stream-metadata-go v0.4.3 // indirect
