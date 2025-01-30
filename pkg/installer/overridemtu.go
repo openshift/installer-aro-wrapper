@@ -7,10 +7,10 @@ import (
 	"fmt"
 
 	"github.com/coreos/ignition/v2/config/v3_2/types"
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/machines/machineconfig"
-	mcv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -47,9 +47,9 @@ func newMTUMachineConfigIgnitionFile(role string) (types.File, error) {
 		return types.File{}, err
 	}
 
-	mtuMachineConfig := &mcv1.MachineConfig{
+	mtuMachineConfig := &mcfgv1.MachineConfig{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: mcv1.SchemeGroupVersion.String(),
+			APIVersion: mcfgv1.SchemeGroupVersion.String(),
 			Kind:       "MachineConfig",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -58,12 +58,12 @@ func newMTUMachineConfigIgnitionFile(role string) (types.File, error) {
 				"machineconfiguration.openshift.io/role": role,
 			},
 		},
-		Spec: mcv1.MachineConfigSpec{
+		Spec: mcfgv1.MachineConfigSpec{
 			Config: rawExt,
 		},
 	}
 
-	configs := []*mcv1.MachineConfig{mtuMachineConfig}
+	configs := []*mcfgv1.MachineConfig{mtuMachineConfig}
 	manifests, err := machineconfig.Manifests(configs, role, "/opt/openshift/openshift")
 	if err != nil {
 		return types.File{}, err

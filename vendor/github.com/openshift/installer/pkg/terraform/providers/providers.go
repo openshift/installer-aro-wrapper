@@ -13,8 +13,6 @@ import (
 )
 
 var (
-	// AliCloud is the provider for creating resources in the alibaba cloud.
-	AliCloud = provider("alicloud")
 	// AWS is the provider for creating resources in AWS.
 	AWS = provider("aws")
 	// AzureRM is the provider for creating resources in the Azure clouds.
@@ -27,8 +25,6 @@ var (
 	IBM = provider("ibm")
 	// Ignition is the provider for creating ignition config files.
 	Ignition = provider("ignition")
-	// Ironic is the provider for provisioning baremetal machines managed by Ironic.
-	Ironic = provider("ironic")
 	// Libvirt is the provider for provisioning VMs on a libvirt host.
 	Libvirt = provider("libvirt")
 	// Local is the provider for creating local files.
@@ -41,10 +37,6 @@ var (
 	OVirt = provider("ovirt")
 	// Time is the provider for adding create and sleep requirements for resources.
 	Time = provider("time")
-	// VSphere is the provider for creating resource in vSphere.
-	VSphere = provider("vsphere")
-	// VSpherePrivate is an internal provider augmenting the VSphere provider by adding functionality.
-	VSpherePrivate = provider("vsphereprivate")
 )
 
 // Provider is a terraform provider.

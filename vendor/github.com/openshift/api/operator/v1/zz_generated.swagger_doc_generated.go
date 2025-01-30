@@ -265,6 +265,7 @@ var map_ConsoleSpec = map[string]string{
 	"providers":     "providers contains configuration for using specific service providers.",
 	"route":         "route contains hostname and secret reference that contains the serving certificate. If a custom route is specified, a new route will be created with the provided hostname, under which console will be available. In case of custom hostname uses the default routing suffix of the cluster, the Secret specification for a serving certificate will not be needed. In case of custom hostname points to an arbitrary domain, manual DNS configurations steps are necessary. The default console route will be maintained to reserve the default hostname for console if the custom route is removed. If not specified, default route will be used. DEPRECATED",
 	"plugins":       "plugins defines a list of enabled console plugin names.",
+	"ingress":       "ingress allows to configure the alternative ingress for the console. This field is intended for clusters without ingress capability, where access to routes is not possible.",
 }
 
 func (ConsoleSpec) SwaggerDoc() map[string]string {
@@ -318,6 +319,16 @@ var map_DeveloperConsoleCatalogTypes = map[string]string{
 
 func (DeveloperConsoleCatalogTypes) SwaggerDoc() map[string]string {
 	return map_DeveloperConsoleCatalogTypes
+}
+
+var map_Ingress = map[string]string{
+	"":                   "Ingress allows cluster admin to configure alternative ingress for the console.",
+	"consoleURL":         "consoleURL is a URL to be used as the base console address. If not specified, the console route hostname will be used. This field is required for clusters without ingress capability, where access to routes is not possible. Make sure that appropriate ingress is set up at this URL. The console operator will monitor the URL and may go degraded if it's unreachable for an extended period. Must use the HTTPS scheme.",
+	"clientDownloadsURL": "clientDownloadsURL is a URL to be used as the address to download client binaries. If not specified, the downloads route hostname will be used. This field is required for clusters without ingress capability, where access to routes is not possible. The console operator will monitor the URL and may go degraded if it's unreachable for an extended period. Must use the HTTPS scheme.",
+}
+
+func (Ingress) SwaggerDoc() map[string]string {
+	return map_Ingress
 }
 
 var map_Perspective = map[string]string{
@@ -501,8 +512,11 @@ func (IBMCloudCSIDriverConfigSpec) SwaggerDoc() map[string]string {
 }
 
 var map_VSphereCSIDriverConfigSpec = map[string]string{
-	"":                   "VSphereCSIDriverConfigSpec defines properties that can be configured for vsphere CSI driver.",
-	"topologyCategories": "topologyCategories indicates tag categories with which vcenter resources such as hostcluster or datacenter were tagged with. If cluster Infrastructure object has a topology, values specified in Infrastructure object will be used and modifications to topologyCategories will be rejected.",
+	"":                                 "VSphereCSIDriverConfigSpec defines properties that can be configured for vsphere CSI driver.",
+	"topologyCategories":               "topologyCategories indicates tag categories with which vcenter resources such as hostcluster or datacenter were tagged with. If cluster Infrastructure object has a topology, values specified in Infrastructure object will be used and modifications to topologyCategories will be rejected.",
+	"globalMaxSnapshotsPerBlockVolume": "globalMaxSnapshotsPerBlockVolume is a global configuration parameter that applies to volumes on all kinds of datastores. If omitted, the platform chooses a default, which is subject to change over time, currently that default is 3. Snapshots can not be disabled using this parameter. Increasing number of snapshots above 3 can have negative impact on performance, for more details see: https://kb.vmware.com/s/article/1025279 Volume snapshot documentation: https://docs.vmware.com/en/VMware-vSphere-Container-Storage-Plug-in/3.0/vmware-vsphere-csp-getting-started/GUID-E0B41C69-7EEB-450F-A73D-5FD2FF39E891.html",
+	"granularMaxSnapshotsPerBlockVolumeInVSAN": "granularMaxSnapshotsPerBlockVolumeInVSAN is a granular configuration parameter on vSAN datastore only. It overrides GlobalMaxSnapshotsPerBlockVolume if set, while it falls back to the global constraint if unset. Snapshots for VSAN can not be disabled using this parameter.",
+	"granularMaxSnapshotsPerBlockVolumeInVVOL": "granularMaxSnapshotsPerBlockVolumeInVVOL is a granular configuration parameter on Virtual Volumes datastore only. It overrides GlobalMaxSnapshotsPerBlockVolume if set, while it falls back to the global constraint if unset. Snapshots for VVOL can not be disabled using this parameter.",
 }
 
 func (VSphereCSIDriverConfigSpec) SwaggerDoc() map[string]string {
@@ -655,7 +669,7 @@ func (Server) SwaggerDoc() map[string]string {
 }
 
 var map_Upstream = map[string]string{
-	"":        "Upstream can either be of type SystemResolvConf, or of type Network.\n\n* For an Upstream of type SystemResolvConf, no further fields are necessary:\n  The upstream will be configured to use /etc/resolv.conf.\n* For an Upstream of type Network, a NetworkResolver field needs to be defined\n  with an IP address or IP:port if the upstream listens on a port other than 53.",
+	"":        "Upstream can either be of type SystemResolvConf, or of type Network.\n\n  - For an Upstream of type SystemResolvConf, no further fields are necessary:\n    The upstream will be configured to use /etc/resolv.conf.\n  - For an Upstream of type Network, a NetworkResolver field needs to be defined\n    with an IP address or IP:port if the upstream listens on a port other than 53.",
 	"type":    "Type defines whether this upstream contains an IP/IP:port resolver or the local /etc/resolv.conf. Type accepts 2 possible values: SystemResolvConf or Network.\n\n* When SystemResolvConf is used, the Upstream structure does not require any further fields to be defined:\n  /etc/resolv.conf will be used\n* When Network is used, the Upstream structure must contain at least an Address",
 	"address": "Address must be defined when Type is set to Network. It will be ignored otherwise. It must be a valid ipv4 or ipv6 address.",
 	"port":    "Port may be defined when Type is set to Network. It will be ignored otherwise. Port must be between 65535",
@@ -698,6 +712,7 @@ func (EtcdList) SwaggerDoc() map[string]string {
 
 var map_EtcdSpec = map[string]string{
 	"controlPlaneHardwareSpeed": "HardwareSpeed allows user to change the etcd tuning profile which configures the latency parameters for heartbeat interval and leader election timeouts allowing the cluster to tolerate longer round-trip-times between etcd members. Valid values are \"\", \"Standard\" and \"Slower\".\n\t\"\" means no opinion and the platform is left to choose a reasonable default\n\twhich is subject to change without notice.",
+	"backendQuotaGiB":           "backendQuotaGiB sets the etcd backend storage size limit in gibibytes. The value should be an integer not less than 8 and not more than 32. When not specified, the default value is 8.",
 }
 
 func (EtcdSpec) SwaggerDoc() map[string]string {
@@ -1273,6 +1288,188 @@ var map_MachineConfigurationList = map[string]string{
 
 func (MachineConfigurationList) SwaggerDoc() map[string]string {
 	return map_MachineConfigurationList
+}
+
+var map_MachineConfigurationSpec = map[string]string{
+	"managedBootImages":    "managedBootImages allows configuration for the management of boot images for machine resources within the cluster. This configuration allows users to select resources that should be updated to the latest boot images during cluster upgrades, ensuring that new machines always boot with the current cluster version's boot image. When omitted, no boot images will be updated.",
+	"nodeDisruptionPolicy": "nodeDisruptionPolicy allows an admin to set granular node disruption actions for MachineConfig-based updates, such as drains, service reloads, etc. Specifying this will allow for less downtime when doing small configuration updates to the cluster. This configuration has no effect on cluster upgrades which will still incur node disruption where required.",
+}
+
+func (MachineConfigurationSpec) SwaggerDoc() map[string]string {
+	return map_MachineConfigurationSpec
+}
+
+var map_MachineConfigurationStatus = map[string]string{
+	"observedGeneration":         "observedGeneration is the last generation change you've dealt with",
+	"conditions":                 "conditions is a list of conditions and their status",
+	"nodeDisruptionPolicyStatus": "nodeDisruptionPolicyStatus status reflects what the latest cluster-validated policies are, and will be used by the Machine Config Daemon during future node updates.",
+}
+
+func (MachineConfigurationStatus) SwaggerDoc() map[string]string {
+	return map_MachineConfigurationStatus
+}
+
+var map_MachineManager = map[string]string{
+	"":          "MachineManager describes a target machine resource that is registered for boot image updates. It stores identifying information such as the resource type and the API Group of the resource. It also provides granular control via the selection field.",
+	"resource":  "resource is the machine management resource's type. The only current valid value is machinesets. machinesets means that the machine manager will only register resources of the kind MachineSet.",
+	"apiGroup":  "apiGroup is name of the APIGroup that the machine management resource belongs to. The only current valid value is machine.openshift.io. machine.openshift.io means that the machine manager will only register resources that belong to OpenShift machine API group.",
+	"selection": "selection allows granular control of the machine management resources that will be registered for boot image updates.",
+}
+
+func (MachineManager) SwaggerDoc() map[string]string {
+	return map_MachineManager
+}
+
+var map_MachineManagerSelector = map[string]string{
+	"mode":    "mode determines how machine managers will be selected for updates. Valid values are All and Partial. All means that every resource matched by the machine manager will be updated. Partial requires specified selector(s) and allows customisation of which resources matched by the machine manager will be updated.",
+	"partial": "partial provides label selector(s) that can be used to match machine management resources. Only permitted when mode is set to \"Partial\".",
+}
+
+func (MachineManagerSelector) SwaggerDoc() map[string]string {
+	return map_MachineManagerSelector
+}
+
+var map_ManagedBootImages = map[string]string{
+	"machineManagers": "machineManagers can be used to register machine management resources for boot image updates. The Machine Config Operator will watch for changes to this list. Only one entry is permitted per type of machine management resource.",
+}
+
+func (ManagedBootImages) SwaggerDoc() map[string]string {
+	return map_ManagedBootImages
+}
+
+var map_NodeDisruptionPolicyClusterStatus = map[string]string{
+	"":       "NodeDisruptionPolicyClusterStatus is the type for the status object, rendered by the controller as a merge of cluster defaults and user provided policies",
+	"files":  "files is a list of MachineConfig file definitions and actions to take to changes on those paths",
+	"units":  "units is a list MachineConfig unit definitions and actions to take on changes to those services",
+	"sshkey": "sshkey is the overall sshkey MachineConfig definition",
+}
+
+func (NodeDisruptionPolicyClusterStatus) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyClusterStatus
+}
+
+var map_NodeDisruptionPolicyConfig = map[string]string{
+	"":       "NodeDisruptionPolicyConfig is the overall spec definition for files/units/sshkeys",
+	"files":  "files is a list of MachineConfig file definitions and actions to take to changes on those paths This list supports a maximum of 50 entries.",
+	"units":  "units is a list MachineConfig unit definitions and actions to take on changes to those services This list supports a maximum of 50 entries.",
+	"sshkey": "sshkey maps to the ignition.sshkeys field in the MachineConfig object, definition an action for this will apply to all sshkey changes in the cluster",
+}
+
+func (NodeDisruptionPolicyConfig) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyConfig
+}
+
+var map_NodeDisruptionPolicySpecAction = map[string]string{
+	"type":    "type represents the commands that will be carried out if this NodeDisruptionPolicySpecActionType is executed Valid values are Reboot, Drain, Reload, Restart, DaemonReload and None. reload/restart requires a corresponding service target specified in the reload/restart field. Other values require no further configuration",
+	"reload":  "reload specifies the service to reload, only valid if type is reload",
+	"restart": "restart specifies the service to restart, only valid if type is restart",
+}
+
+func (NodeDisruptionPolicySpecAction) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicySpecAction
+}
+
+var map_NodeDisruptionPolicySpecFile = map[string]string{
+	"":        "NodeDisruptionPolicySpecFile is a file entry and corresponding actions to take and is used in the NodeDisruptionPolicyConfig object",
+	"path":    "path is the location of a file being managed through a MachineConfig. The Actions in the policy will apply to changes to the file at this path.",
+	"actions": "actions represents the series of commands to be executed on changes to the file at the corresponding file path. Actions will be applied in the order that they are set in this list. If there are other incoming changes to other MachineConfig entries in the same update that require a reboot, the reboot will supercede these actions. Valid actions are Reboot, Drain, Reload, DaemonReload and None. The Reboot action and the None action cannot be used in conjunction with any of the other actions. This list supports a maximum of 10 entries.",
+}
+
+func (NodeDisruptionPolicySpecFile) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicySpecFile
+}
+
+var map_NodeDisruptionPolicySpecSSHKey = map[string]string{
+	"":        "NodeDisruptionPolicySpecSSHKey is actions to take for any SSHKey change and is used in the NodeDisruptionPolicyConfig object",
+	"actions": "actions represents the series of commands to be executed on changes to the file at the corresponding file path. Actions will be applied in the order that they are set in this list. If there are other incoming changes to other MachineConfig entries in the same update that require a reboot, the reboot will supercede these actions. Valid actions are Reboot, Drain, Reload, DaemonReload and None. The Reboot action and the None action cannot be used in conjunction with any of the other actions. This list supports a maximum of 10 entries.",
+}
+
+func (NodeDisruptionPolicySpecSSHKey) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicySpecSSHKey
+}
+
+var map_NodeDisruptionPolicySpecUnit = map[string]string{
+	"":        "NodeDisruptionPolicySpecUnit is a systemd unit name and corresponding actions to take and is used in the NodeDisruptionPolicyConfig object",
+	"name":    "name represents the service name of a systemd service managed through a MachineConfig Actions specified will be applied for changes to the named service. Service names should be of the format ${NAME}${SERVICETYPE} and can up to 255 characters long. ${NAME} must be atleast 1 character long and can only consist of alphabets, digits, \":\", \"-\", \"_\", \".\", and \"\". ${SERVICETYPE} must be one of \".service\", \".socket\", \".device\", \".mount\", \".automount\", \".swap\", \".target\", \".path\", \".timer\", \".snapshot\", \".slice\" or \".scope\".",
+	"actions": "actions represents the series of commands to be executed on changes to the file at the corresponding file path. Actions will be applied in the order that they are set in this list. If there are other incoming changes to other MachineConfig entries in the same update that require a reboot, the reboot will supercede these actions. Valid actions are Reboot, Drain, Reload, DaemonReload and None. The Reboot action and the None action cannot be used in conjunction with any of the other actions. This list supports a maximum of 10 entries.",
+}
+
+func (NodeDisruptionPolicySpecUnit) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicySpecUnit
+}
+
+var map_NodeDisruptionPolicyStatus = map[string]string{
+	"clusterPolicies": "clusterPolicies is a merge of cluster default and user provided node disruption policies.",
+}
+
+func (NodeDisruptionPolicyStatus) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyStatus
+}
+
+var map_NodeDisruptionPolicyStatusAction = map[string]string{
+	"type":    "type represents the commands that will be carried out if this NodeDisruptionPolicyStatusActionType is executed Valid values are Reboot, Drain, Reload, Restart, DaemonReload, None and Special. reload/restart requires a corresponding service target specified in the reload/restart field. Other values require no further configuration",
+	"reload":  "reload specifies the service to reload, only valid if type is reload",
+	"restart": "restart specifies the service to restart, only valid if type is restart",
+}
+
+func (NodeDisruptionPolicyStatusAction) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyStatusAction
+}
+
+var map_NodeDisruptionPolicyStatusFile = map[string]string{
+	"":        "NodeDisruptionPolicyStatusFile is a file entry and corresponding actions to take and is used in the NodeDisruptionPolicyClusterStatus object",
+	"path":    "path is the location of a file being managed through a MachineConfig. The Actions in the policy will apply to changes to the file at this path.",
+	"actions": "actions represents the series of commands to be executed on changes to the file at the corresponding file path. Actions will be applied in the order that they are set in this list. If there are other incoming changes to other MachineConfig entries in the same update that require a reboot, the reboot will supercede these actions. Valid actions are Reboot, Drain, Reload, DaemonReload and None. The Reboot action and the None action cannot be used in conjunction with any of the other actions. This list supports a maximum of 10 entries.",
+}
+
+func (NodeDisruptionPolicyStatusFile) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyStatusFile
+}
+
+var map_NodeDisruptionPolicyStatusSSHKey = map[string]string{
+	"":        "NodeDisruptionPolicyStatusSSHKey is actions to take for any SSHKey change and is used in the NodeDisruptionPolicyClusterStatus object",
+	"actions": "actions represents the series of commands to be executed on changes to the file at the corresponding file path. Actions will be applied in the order that they are set in this list. If there are other incoming changes to other MachineConfig entries in the same update that require a reboot, the reboot will supercede these actions. Valid actions are Reboot, Drain, Reload, DaemonReload and None. The Reboot action and the None action cannot be used in conjunction with any of the other actions. This list supports a maximum of 10 entries.",
+}
+
+func (NodeDisruptionPolicyStatusSSHKey) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyStatusSSHKey
+}
+
+var map_NodeDisruptionPolicyStatusUnit = map[string]string{
+	"":        "NodeDisruptionPolicyStatusUnit is a systemd unit name and corresponding actions to take and is used in the NodeDisruptionPolicyClusterStatus object",
+	"name":    "name represents the service name of a systemd service managed through a MachineConfig Actions specified will be applied for changes to the named service. Service names should be of the format ${NAME}${SERVICETYPE} and can up to 255 characters long. ${NAME} must be atleast 1 character long and can only consist of alphabets, digits, \":\", \"-\", \"_\", \".\", and \"\". ${SERVICETYPE} must be one of \".service\", \".socket\", \".device\", \".mount\", \".automount\", \".swap\", \".target\", \".path\", \".timer\", \".snapshot\", \".slice\" or \".scope\".",
+	"actions": "actions represents the series of commands to be executed on changes to the file at the corresponding file path. Actions will be applied in the order that they are set in this list. If there are other incoming changes to other MachineConfig entries in the same update that require a reboot, the reboot will supercede these actions. Valid actions are Reboot, Drain, Reload, DaemonReload and None. The Reboot action and the None action cannot be used in conjunction with any of the other actions. This list supports a maximum of 10 entries.",
+}
+
+func (NodeDisruptionPolicyStatusUnit) SwaggerDoc() map[string]string {
+	return map_NodeDisruptionPolicyStatusUnit
+}
+
+var map_PartialSelector = map[string]string{
+	"":                        "PartialSelector provides label selector(s) that can be used to match machine management resources.",
+	"machineResourceSelector": "machineResourceSelector is a label selector that can be used to select machine resources like MachineSets.",
+}
+
+func (PartialSelector) SwaggerDoc() map[string]string {
+	return map_PartialSelector
+}
+
+var map_ReloadService = map[string]string{
+	"":            "ReloadService allows the user to specify the services to be reloaded",
+	"serviceName": "serviceName is the full name (e.g. crio.service) of the service to be reloaded Service names should be of the format ${NAME}${SERVICETYPE} and can up to 255 characters long. ${NAME} must be atleast 1 character long and can only consist of alphabets, digits, \":\", \"-\", \"_\", \".\", and \"\". ${SERVICETYPE} must be one of \".service\", \".socket\", \".device\", \".mount\", \".automount\", \".swap\", \".target\", \".path\", \".timer\", \".snapshot\", \".slice\" or \".scope\".",
+}
+
+func (ReloadService) SwaggerDoc() map[string]string {
+	return map_ReloadService
+}
+
+var map_RestartService = map[string]string{
+	"":            "RestartService allows the user to specify the services to be restarted",
+	"serviceName": "serviceName is the full name (e.g. crio.service) of the service to be restarted Service names should be of the format ${NAME}${SERVICETYPE} and can up to 255 characters long. ${NAME} must be atleast 1 character long and can only consist of alphabets, digits, \":\", \"-\", \"_\", \".\", and \"\". ${SERVICETYPE} must be one of \".service\", \".socket\", \".device\", \".mount\", \".automount\", \".swap\", \".target\", \".path\", \".timer\", \".snapshot\", \".slice\" or \".scope\".",
+}
+
+func (RestartService) SwaggerDoc() map[string]string {
+	return map_RestartService
 }
 
 var map_AdditionalNetworkDefinition = map[string]string{

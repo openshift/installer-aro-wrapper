@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	configv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	"github.com/openshift/installer/pkg/asset/releaseimage"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	baremetaldefaults "github.com/openshift/installer/pkg/types/baremetal/defaults"
@@ -79,6 +79,9 @@ func (a *OptionalInstallConfig) validateInstallConfig(installConfig *types.Insta
 	if err := a.validateSupportedArchs(installConfig); err != nil {
 		allErrs = append(allErrs, err...)
 	}
+	if err := a.validateReleaseArch(installConfig); err != nil {
+		allErrs = append(allErrs, err...)
+	}
 
 	if installConfig.FeatureSet != configv1.Default {
 		allErrs = append(allErrs, field.NotSupported(field.NewPath("FeatureSet"), installConfig.FeatureSet, []string{string(configv1.Default)}))
@@ -115,10 +118,10 @@ func (a *OptionalInstallConfig) validateSupportedPlatforms(installConfig *types.
 		allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.Name(), fmt.Sprintf("CPU architecture \"%s\" only supports platform \"%s\".", types.ArchitectureS390X, none.Name)))
 	}
 	if installConfig.Platform.Name() == external.Name {
-		if installConfig.Platform.External.PlatformName == string(models.PlatformTypeOci) &&
+		if installConfig.Platform.External.PlatformName == external.ExternalPlatformNameOci &&
 			installConfig.Platform.External.CloudControllerManager != external.CloudControllerManagerTypeExternal {
-			fieldPath = field.NewPath("Platform", "External", "CloudControllerManager")
-			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.External.CloudControllerManager, fmt.Sprintf("When using external %s platform, %s must be set to %s", string(models.PlatformTypeOci), fieldPath, external.CloudControllerManagerTypeExternal)))
+			fieldPath := field.NewPath("Platform", "External", "CloudControllerManager")
+			allErrs = append(allErrs, field.Invalid(fieldPath, installConfig.Platform.External.CloudControllerManager, fmt.Sprintf("When using external %s platform, %s must be set to %s", external.ExternalPlatformNameOci, fieldPath, external.CloudControllerManagerTypeExternal)))
 		}
 	}
 
@@ -130,6 +133,34 @@ func (a *OptionalInstallConfig) validateSupportedPlatforms(installConfig *types.
 		allErrs = append(allErrs, a.validateBMCConfig(installConfig)...)
 	}
 
+	return allErrs
+}
+
+func (a *OptionalInstallConfig) validateReleaseArch(installConfig *types.InstallConfig) field.ErrorList {
+	var allErrs field.ErrorList
+
+	fieldPath := field.NewPath("ControlPlane", "Architecture")
+	releaseImage := &releaseimage.Image{}
+	asseterr := releaseImage.Generate(asset.Parents{})
+	if asseterr != nil {
+		allErrs = append(allErrs, field.InternalError(fieldPath, asseterr))
+	}
+	releaseArch, err := DetermineReleaseImageArch(installConfig.PullSecret, releaseImage.PullSpec)
+	if err != nil {
+		logrus.Warnf("Unable to validate the release image architecture, skipping validation")
+	} else {
+		// Validate that the release image supports the install-config architectures.
+		switch releaseArch {
+		// Check the release image to see if it is multi.
+		case "multi":
+			logrus.Debugf("multi architecture release image %s found, all archs supported", releaseImage.PullSpec)
+		// If the release image isn't multi, then its single arch, and it must match the cpu architecture.
+		case string(installConfig.ControlPlane.Architecture):
+			logrus.Debugf("Supported architecture %s found for the release image: %s", installConfig.ControlPlane.Architecture, releaseImage.PullSpec)
+		default:
+			allErrs = append(allErrs, field.Forbidden(fieldPath, fmt.Sprintf("unsupported release image architecture. ControlPlane Arch: %s doesn't match Release Image Arch: %s", installConfig.ControlPlane.Architecture, releaseArch)))
+		}
+	}
 	return allErrs
 }
 
@@ -272,6 +303,14 @@ func (a *OptionalInstallConfig) ClusterName() string {
 		return a.Config.ObjectMeta.Name
 	}
 	return "agent-cluster"
+}
+
+// ClusterNamespace returns the namespace of the cluster.
+func (a *OptionalInstallConfig) ClusterNamespace() string {
+	if a.Config != nil && a.Config.ObjectMeta.Namespace != "" {
+		return a.Config.ObjectMeta.Namespace
+	}
+	return ""
 }
 
 // GetBaremetalHosts gets the hosts defined for a baremetal platform.
