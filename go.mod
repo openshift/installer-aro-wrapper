@@ -1,6 +1,6 @@
 module github.com/openshift/installer-aro-wrapper
 
-go 1.22
+go 1.22.9
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
