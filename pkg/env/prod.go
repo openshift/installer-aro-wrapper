@@ -100,8 +100,9 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	log.Infof("InstanceMetadata: running on %s", im.Environment().Name)
 
 	p := &prod{
-		Dialer:           dialer,
-		InstanceMetadata: im,
+		Dialer:                 dialer,
+		InstanceMetadata:       im,
+		isLocalDevelopmentMode: isLocalDevelopmentMode,
 
 		fpClientID: os.Getenv("ARO_AZURE_FP_CLIENT_ID"),
 
