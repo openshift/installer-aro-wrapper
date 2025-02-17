@@ -4,6 +4,7 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -310,6 +311,7 @@ func mockClientCalls(client *mock.MockAPI) {
 }
 
 func TestApplyInstallConfigCustomisations(t *testing.T) {
+	ctx := context.Background()
 	m := fakeManager()
 	inInstallConfig := makeInstallConfig()
 
@@ -319,7 +321,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	inInstallConfig.Azure.UseMockClient(mockClient)
 	mockClientCalls(mockClient)
 
-	graph, err := m.applyInstallConfigCustomisations(inInstallConfig, makeImage())
+	graph, err := m.applyInstallConfigCustomisations(ctx, inInstallConfig, makeImage())
 	if err != nil {
 		t.Fatal(err)
 	}

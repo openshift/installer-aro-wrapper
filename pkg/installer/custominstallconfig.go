@@ -5,6 +5,7 @@ package installer
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -19,7 +20,6 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/cluster"
-	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
@@ -49,9 +49,6 @@ const (
 var (
 	targetAssets = []asset.WritableAsset{
 		&cluster.Metadata{},
-		&machine.MasterIgnitionCustomizations{},
-		&machine.WorkerIgnitionCustomizations{},
-		&tfvars.TerraformVariables{},
 		&kubeconfig.AdminClient{},
 		&password.KubeadminPassword{},
 		&tls.JournalCertKey{},
@@ -73,7 +70,7 @@ data:
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
 // parent assets, then regenerates the InstallConfig for use for Ignition
 // generation, etc.
-func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
+func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
 	clusterID := &installconfig.ClusterID{
 		UUID:    m.clusterUUID,
 		InfraID: m.oc.Properties.InfraID,
@@ -133,7 +130,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	m.log.Print("resolving graph")
 	for _, a := range targetAssets {
-		err = g.Resolve(a)
+		err = g.Resolve(ctx, a)
 		if err != nil {
 			return nil, err
 		}
