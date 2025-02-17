@@ -8,7 +8,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"net"
 	"net/url"
 	"os"
 	"strings"
@@ -23,18 +22,16 @@ import (
 
 	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/compute"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/clientauthorizer"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/instancemetadata"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/keyvault"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/version"
 )
 
 type prod struct {
-	Core
 	proxy.Dialer
+	instancemetadata.InstanceMetadata
 
-	armClientAuthorizer   clientauthorizer.ClientAuthorizer
-	adminClientAuthorizer clientauthorizer.ClientAuthorizer
+	isLocalDevelopmentMode bool
 
 	acrDomain string
 	vmskus    map[string]*mgmtcompute.ResourceSku
@@ -60,6 +57,11 @@ type prod struct {
 }
 
 func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
+	isLocalDevelopmentMode := IsLocalDevelopmentMode()
+	if isLocalDevelopmentMode {
+		log.Info("running in local development mode")
+	}
+
 	for _, key := range []string{
 		"ARO_AZURE_FP_CLIENT_ID",
 		"ARO_DOMAIN_NAME",
@@ -69,7 +71,7 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 	}
 
-	if !IsLocalDevelopmentMode() {
+	if !isLocalDevelopmentMode {
 		for _, key := range []string{
 			"ARO_CLUSTER_MDSD_CONFIG_VERSION",
 			"ARO_CLUSTER_MDSD_ACCOUNT",
@@ -85,19 +87,21 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		}
 	}
 
-	core, err := NewCore(ctx, log)
+	dialer, err := proxy.NewDialer(isLocalDevelopmentMode)
 	if err != nil {
 		return nil, err
 	}
 
-	dialer, err := proxy.NewDialer(core.IsLocalDevelopmentMode())
+	im, err := instancemetadata.New(ctx, log, isLocalDevelopmentMode)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("InstanceMetadata: running on %s", im.Environment().Name)
 
 	p := &prod{
-		Core:   core,
-		Dialer: dialer,
+		Dialer:           dialer,
+		InstanceMetadata: im,
 
 		fpClientID: os.Getenv("ARO_AZURE_FP_CLIENT_ID"),
 
@@ -209,41 +213,8 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	return p, nil
 }
 
-func (p *prod) InitializeAuthorizers() error {
-	if !p.FeatureIsSet(FeatureEnableDevelopmentAuthorizer) {
-		p.armClientAuthorizer = clientauthorizer.NewARM(p.log, p.Core)
-	} else {
-		armClientAuthorizer, err := clientauthorizer.NewSubjectNameAndIssuer(
-			p.log,
-			"/etc/aro-rp/arm-ca-bundle.pem",
-			os.Getenv("ARO_ARM_API_CLIENT_CERT_COMMON_NAME"),
-		)
-		if err != nil {
-			return err
-		}
-
-		p.armClientAuthorizer = armClientAuthorizer
-	}
-
-	adminClientAuthorizer, err := clientauthorizer.NewSubjectNameAndIssuer(
-		p.log,
-		"/etc/aro-rp/admin-ca-bundle.pem",
-		os.Getenv("ARO_ADMIN_API_CLIENT_CERT_COMMON_NAME"),
-	)
-	if err != nil {
-		return err
-	}
-
-	p.adminClientAuthorizer = adminClientAuthorizer
-	return nil
-}
-
-func (p *prod) ArmClientAuthorizer() clientauthorizer.ClientAuthorizer {
-	return p.armClientAuthorizer
-}
-
-func (p *prod) AdminClientAuthorizer() clientauthorizer.ClientAuthorizer {
-	return p.adminClientAuthorizer
+func (c *prod) IsLocalDevelopmentMode() bool {
+	return c.isLocalDevelopmentMode
 }
 
 func (p *prod) ACRResourceID() string {
@@ -252,10 +223,6 @@ func (p *prod) ACRResourceID() string {
 
 func (p *prod) ACRDomain() string {
 	return p.acrDomain
-}
-
-func (p *prod) AROOperatorImage() string {
-	return fmt.Sprintf("%s/aro:%s", p.acrDomain, version.GitCommit)
 }
 
 func (p *prod) populateVMSkus(ctx context.Context, resourceSkusClient compute.ResourceSkusClient) error {
@@ -335,20 +302,12 @@ func (p *prod) FPClientID() string {
 	return p.fpClientID
 }
 
-func (p *prod) Listen() (net.Listener, error) {
-	return net.Listen("tcp", ":8443")
-}
-
 func (p *prod) GatewayDomains() []string {
 	gatewayDomains := make([]string, len(p.gatewayDomains))
 
 	copy(gatewayDomains, p.gatewayDomains)
 
 	return gatewayDomains
-}
-
-func (p *prod) GatewayResourceGroup() string {
-	return os.Getenv("ARO_GATEWAY_RESOURCEGROUP")
 }
 
 func (p *prod) ServiceKeyvault() keyvault.Manager {
