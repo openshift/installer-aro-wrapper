@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/util/cmp"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestNewVersion(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/util/cmp"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestOpenShiftReleaseImages(t *testing.T) {
