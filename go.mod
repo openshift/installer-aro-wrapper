@@ -10,19 +10,16 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.2.1
 	github.com/Azure/go-autorest/autorest v0.11.29
 	github.com/Azure/go-autorest/autorest/to v0.4.0
-	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/codahale/etm v0.0.0-20141003032925-c00c9e6fb4c9
 	github.com/coreos/go-semver v0.3.1
 	github.com/coreos/ignition/v2 v2.18.0
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
-	github.com/go-test/deep v1.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-cmp v0.6.0
 	github.com/jongio/azidext/go/azidext v0.5.0
 	github.com/onsi/gomega v1.33.0
 	github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094
-	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/openshift/installer v1.4.17-0.20250214172026-ed196179749c
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
@@ -76,6 +73,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/PaesslerAG/gval v1.2.2 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
+	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go v1.51.17 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -90,7 +88,6 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/coreos/stream-metadata-go v0.4.3 // indirect
 	github.com/coreos/vcontext v0.0.0-20231102161604-685dc7299dc5 // indirect
-	github.com/daixiang0/gci v0.10.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/digitalocean/go-libvirt v0.0.0-20240220204746-fcabe97a6eed // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
@@ -100,7 +97,6 @@ require (
 	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
-	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
@@ -148,7 +144,6 @@ require (
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/terraform-exec v0.17.3 // indirect
 	github.com/hashicorp/terraform-json v0.14.0 // indirect
-	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/imdario/mergo v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -191,6 +186,7 @@ require (
 	github.com/openshift/assisted-service v1.0.10-0.20230830164851-6573b5d7021d // indirect
 	github.com/openshift/assisted-service/api v0.0.0 // indirect
 	github.com/openshift/assisted-service/models v0.0.0 // indirect
+	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250 // indirect
 	github.com/openshift/cloud-credential-operator v0.0.0-20240422222427-55199c9b5870 // indirect
 	github.com/openshift/cluster-api-provider-baremetal v0.0.0-20240326141158-73a72cc82122 // indirect
 	github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd // indirect
@@ -242,7 +238,6 @@ require (
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/api v0.176.0 // indirect
 	google.golang.org/genproto v0.0.0-20240311173647-c811ad7063a7 // indirect
@@ -277,7 +272,6 @@ require (
 	sigs.k8s.io/cluster-api-provider-openstack v0.10.0 // indirect
 	sigs.k8s.io/cluster-api-provider-vsphere v1.9.3 // indirect
 	sigs.k8s.io/controller-runtime v0.17.3 // indirect
-	sigs.k8s.io/controller-tools v0.12.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.16.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.16.0 // indirect
