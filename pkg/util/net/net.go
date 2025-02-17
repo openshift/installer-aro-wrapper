@@ -4,37 +4,9 @@ package net
 // Licensed under the Apache License 2.0.
 
 import (
-	"errors"
 	"net"
 	"syscall"
 )
-
-// Listen returns a listener with its send and receive buffer sizes set, such
-// that sockets which are *returned* by the listener when Accept() is called
-// also have those buffer sizes.
-func Listen(network, address string, sz int) (net.Listener, error) {
-	l, err := net.Listen(network, address)
-	if err != nil {
-		return nil, err
-	}
-
-	sc, ok := l.(syscall.Conn)
-	if !ok {
-		return nil, errors.New("listener does not implement Syscall.Conn")
-	}
-
-	rc, err := sc.SyscallConn()
-	if err != nil {
-		return nil, err
-	}
-
-	err = setBuffers(rc, sz)
-	if err != nil {
-		return nil, err
-	}
-
-	return l, nil
-}
 
 // Dial returns a dialled connection with its send and receive buffer sizes set.
 // If sz <= 0, we leave the default size.
