@@ -16,3 +16,4 @@ RUN microdnf update && microdnf clean all
 COPY --from=builder /go/src/github.com/openshift/installer-aro-wrapper/aro /bin/openshift-install
 ENTRYPOINT ["/bin/openshift-install"]
 USER 1000
+#fake comment
