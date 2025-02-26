@@ -13,7 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
@@ -301,13 +300,6 @@ func mockClientCalls(client *mock.MockAPI) {
 			Location: to.StringPtr("centralus"),
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetGroup(gomock.Any(), "test-resource-group").
-		Return(&resources.Group{
-			ID:       to.StringPtr("test-resource-group"),
-			Location: to.StringPtr("centralus"),
-		}, nil)
-	client.EXPECT().GetHyperVGenerationVersion(gomock.Any(), "Standard_D2s_v3", "centralus", "").
-		Return("V2", nil)
 }
 
 func TestApplyInstallConfigCustomisations(t *testing.T) {
