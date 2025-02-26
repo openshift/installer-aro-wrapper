@@ -27,9 +27,9 @@ func (p Provider) Name() string {
 	return nutanixtypes.Name
 }
 
-// BootstrapHasPublicIP indicates that an ExternalIP is not
-// required in the machine ready checks.
-func (Provider) BootstrapHasPublicIP() bool { return false }
+// PublicGatherEndpoint indicates that machine ready checks should NOT wait for an ExternalIP
+// in the status when declaring machines ready.
+func (Provider) PublicGatherEndpoint() infracapi.GatherEndpoint { return infracapi.InternalIP }
 
 // PreProvision creates the resources required prior to running capi nutanix controller.
 func (p Provider) PreProvision(ctx context.Context, in infracapi.PreProvisionInput) error {
@@ -83,7 +83,7 @@ func (p Provider) PreProvision(ctx context.Context, in infracapi.PreProvisionInp
 
 	// upload the rhcos image.
 	imgName := nutanixtypes.RHCOSImageName(in.InfraID)
-	imgURI := string(*in.RhcosImage)
+	imgURI := in.RhcosImage.ControlPlane
 	imgReq := &nutanixclientv3.ImageIntentInput{}
 	imgSpec := &nutanixclientv3.Image{
 		Name:        &imgName,

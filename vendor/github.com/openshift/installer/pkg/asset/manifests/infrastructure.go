@@ -61,7 +61,9 @@ func (*Infrastructure) Dependencies() []asset.Asset {
 }
 
 // Generate generates the Infrastructure config and its CRD.
-func (i *Infrastructure) Generate(dependencies asset.Parents) error {
+//
+//nolint:gocyclo
+func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parents) error {
 	cloudProviderConfigMapKey := cloudProviderConfigDataKey
 	clusterID := &installconfig.ClusterID{}
 	installConfig := &installconfig.InstallConfig{}
@@ -203,13 +205,13 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 		config.Spec.PlatformSpec.Type = configv1.IBMCloudPlatformType
 		var cisInstanceCRN, dnsInstanceCRN string
 		if installConfig.Config.Publish == types.InternalPublishingStrategy {
-			dnsInstance, err := installConfig.IBMCloud.DNSInstance(context.TODO())
+			dnsInstance, err := installConfig.IBMCloud.DNSInstance(ctx)
 			if err != nil {
 				return errors.Wrap(err, "cannot retrieve IBM DNS Services instance CRN")
 			}
 			dnsInstanceCRN = dnsInstance.CRN
 		} else {
-			crn, err := installConfig.IBMCloud.CISInstanceCRN(context.TODO())
+			crn, err := installConfig.IBMCloud.CISInstanceCRN(ctx)
 			if err != nil {
 				return errors.Wrap(err, "cannot retrieve IBM Cloud Internet Services instance CRN")
 			}
@@ -275,21 +277,28 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 		}
 	case powervs.Name:
 		config.Spec.PlatformSpec.Type = configv1.PowerVSPlatformType
+		config.Spec.PlatformSpec.PowerVS = &configv1.PowerVSPlatformSpec{}
 		var cisInstanceCRN, dnsInstanceCRN string
 		var err error
 		switch installConfig.Config.Publish {
 		case types.InternalPublishingStrategy:
-			dnsInstanceCRN, err = installConfig.PowerVS.DNSInstanceCRN(context.TODO())
+			dnsInstanceCRN, err = installConfig.PowerVS.DNSInstanceCRN(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get instance CRN")
 			}
 		case types.ExternalPublishingStrategy:
-			cisInstanceCRN, err = installConfig.PowerVS.CISInstanceCRN(context.TODO())
+			cisInstanceCRN, err = installConfig.PowerVS.CISInstanceCRN(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get instance CRN")
 			}
 		default:
 			return errors.New("unknown publishing strategy")
+		}
+		for _, service := range installConfig.Config.Platform.PowerVS.ServiceEndpoints {
+			config.Spec.PlatformSpec.PowerVS.ServiceEndpoints = append(config.Spec.PlatformSpec.PowerVS.ServiceEndpoints, configv1.PowerVSServiceEndpoint{
+				Name: service.Name,
+				URL:  service.URL,
+			})
 		}
 		config.Status.PlatformStatus.PowerVS = &configv1.PowerVSPlatformStatus{
 			Region:           installConfig.Config.Platform.PowerVS.Region,

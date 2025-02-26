@@ -39,9 +39,9 @@ func (p Provider) Name() string {
 	return powervstypes.Name
 }
 
-// BootstrapHasPublicIP indicates that an ExternalIP is not
-// required in the machine ready checks.
-func (Provider) BootstrapHasPublicIP() bool { return false }
+// PublicGatherEndpoint indicates that machine ready checks should NOT wait for an ExternalIP
+// in the status when declaring machines ready.
+func (Provider) PublicGatherEndpoint() clusterapi.GatherEndpoint { return clusterapi.InternalIP }
 
 func leftInContext(ctx context.Context) time.Duration {
 	deadline, ok := ctx.Deadline()
@@ -207,7 +207,7 @@ func createLoadBalancerDNSRecords(ctx context.Context, in clusterapi.InfraReadyI
 
 func findMissingSecurityGroupRules(ctx context.Context, in clusterapi.InfraReadyInput, vpcID string) (sets.Set[int64], error) {
 	foundPorts := sets.Set[int64]{}
-	wantedPorts := sets.New[int64](22, 10258, 22623)
+	wantedPorts := sets.New[int64](22, 443, 5000, 6443, 10258, 22623)
 
 	existingRules, err := in.InstallConfig.PowerVS.ListSecurityGroupRules(ctx, vpcID)
 	if err != nil {

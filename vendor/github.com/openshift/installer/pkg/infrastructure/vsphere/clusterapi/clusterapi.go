@@ -28,9 +28,9 @@ func (p Provider) Name() string {
 	return vsphere.Name
 }
 
-// BootstrapHasPublicIP indicates that an ExternalIP is not
-// required in the machine ready checks.
-func (Provider) BootstrapHasPublicIP() bool { return false }
+// PublicGatherEndpoint indicates that machine ready checks should NOT wait for an ExternalIP
+// in the status when declaring machines ready.
+func (Provider) PublicGatherEndpoint() clusterapi.GatherEndpoint { return clusterapi.InternalIP }
 
 func initializeFoldersAndTemplates(ctx context.Context, cachedImage string, failureDomain vsphere.FailureDomain, session *session.Session, diskType vsphere.DiskType, clusterID, tagID string) error {
 	finder := session.Finder
@@ -93,7 +93,7 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 	var err error
 
 	if downloadImage(installConfig) {
-		cachedImage, err = cache.DownloadImageFile(string(*in.RhcosImage), cache.InstallerApplicationName)
+		cachedImage, err = cache.DownloadImageFile(in.RhcosImage.ControlPlane, cache.InstallerApplicationName)
 		if err != nil {
 			return fmt.Errorf("failed to use cached vsphere image: %w", err)
 		}

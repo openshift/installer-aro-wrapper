@@ -41,7 +41,10 @@ type API interface {
 	GetDNSZones(ctx context.Context, publish types.PublishingStrategy) ([]DNSZoneResponse, error)
 	GetDNSInstancePermittedNetworks(ctx context.Context, dnsID string, dnsZone string) ([]string, error)
 	GetDNSCustomResolverIP(ctx context.Context, dnsID string, vpcID string) (string, error)
+	CreateDNSCustomResolver(ctx context.Context, name string, dnsID string, vpcID string) (*dnssvcsv1.CustomResolver, error)
+	EnableDNSCustomResolver(ctx context.Context, dnsID string, resolverID string) (*dnssvcsv1.CustomResolver, error)
 	CreateDNSRecord(ctx context.Context, publish types.PublishingStrategy, crnstr string, baseDomain string, hostname string, cname string) error
+	AddVPCToPermittedNetworks(ctx context.Context, vpcCRN string, dnsID string, dnsZone string) error
 
 	// VPC
 	GetVPCByName(ctx context.Context, vpcName string) (*vpcv1.VPC, error)
@@ -51,6 +54,7 @@ type API interface {
 	GetVPCSubnets(ctx context.Context, vpcID string) ([]vpcv1.Subnet, error)
 
 	// TG
+	TransitGatewayID(ctx context.Context, name string) (string, error)
 	GetTGConnectionVPC(ctx context.Context, gatewayID string, vpcSubnetID string) (string, error)
 	GetAttachedTransitGateway(ctx context.Context, svcInsID string) (string, error)
 
@@ -295,6 +299,46 @@ func (c *Client) GetDNSCustomResolverIP(ctx context.Context, dnsID string, vpcID
 	return "", fmt.Errorf("DNS server IP of custom resolver for %q not found", dnsID)
 }
 
+// CreateDNSCustomResolver creates a custom resolver associated with the specified VPC in the specified DNS zone.
+func (c *Client) CreateDNSCustomResolver(ctx context.Context, name string, dnsID string, vpcID string) (*dnssvcsv1.CustomResolver, error) {
+	createCustomResolverOptions := c.dnsServicesAPI.NewCreateCustomResolverOptions(dnsID)
+	createCustomResolverOptions.SetName(name)
+
+	subnets, err := c.GetVPCSubnets(ctx, vpcID)
+	if err != nil {
+		return nil, err
+	}
+
+	locations := []dnssvcsv1.LocationInput{}
+	for _, subnet := range subnets {
+		location, err := c.dnsServicesAPI.NewLocationInput(*subnet.CRN)
+		if err != nil {
+			return nil, err
+		}
+		location.Enabled = core.BoolPtr(true)
+		locations = append(locations, *location)
+	}
+	createCustomResolverOptions.SetLocations(locations)
+
+	customResolver, _, err := c.dnsServicesAPI.CreateCustomResolverWithContext(ctx, createCustomResolverOptions)
+	if err != nil {
+		return nil, err
+	}
+	return customResolver, nil
+}
+
+// EnableDNSCustomResolver enables a specified custom resolver.
+func (c *Client) EnableDNSCustomResolver(ctx context.Context, dnsID string, resolverID string) (*dnssvcsv1.CustomResolver, error) {
+	updateCustomResolverOptions := c.dnsServicesAPI.NewUpdateCustomResolverOptions(dnsID, resolverID)
+	updateCustomResolverOptions.SetEnabled(true)
+
+	customResolver, _, err := c.dnsServicesAPI.UpdateCustomResolverWithContext(ctx, updateCustomResolverOptions)
+	if err != nil {
+		return nil, err
+	}
+	return customResolver, nil
+}
+
 // GetDNSZoneIDByName gets the CIS zone ID from its domain name.
 func (c *Client) GetDNSZoneIDByName(ctx context.Context, name string, publish types.PublishingStrategy) (string, error) {
 	zones, err := c.GetDNSZones(ctx, publish)
@@ -382,7 +426,7 @@ func (c *Client) GetDNSZones(ctx context.Context, publish types.PublishingStrate
 			}
 
 			for _, zone := range listZonesResponse.Dnszones {
-				if *zone.State == "ACTIVE" {
+				if *zone.State == "ACTIVE" || *zone.State == "PENDING_NETWORK_ADD" {
 					zoneStruct := DNSZoneResponse{
 						Name:            *zone.Name,
 						ID:              *zone.ID,
@@ -414,6 +458,24 @@ func (c *Client) GetDNSInstancePermittedNetworks(ctx context.Context, dnsID stri
 		networks = append(networks, *network.PermittedNetwork.VpcCrn)
 	}
 	return networks, nil
+}
+
+// AddVPCToPermittedNetworks adds the specified VPC to the specified DNS zone.
+func (c *Client) AddVPCToPermittedNetworks(ctx context.Context, vpcCRN string, dnsID string, dnsZone string) error {
+	createPermittedNetworkOptions := c.dnsServicesAPI.NewCreatePermittedNetworkOptions(dnsID, dnsZone)
+	permittedNetwork, err := c.dnsServicesAPI.NewPermittedNetworkVpc(vpcCRN)
+	if err != nil {
+		return err
+	}
+
+	createPermittedNetworkOptions.SetPermittedNetwork(permittedNetwork)
+	createPermittedNetworkOptions.SetType("vpc")
+
+	_, _, err = c.dnsServicesAPI.CreatePermittedNetworkWithContext(ctx, createPermittedNetworkOptions)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateDNSRecord Creates a DNS CNAME record in the given base domain and CRN.
@@ -1031,6 +1093,27 @@ func (c *Client) GetDatacenterCapabilities(ctx context.Context, region string) (
 		return nil, fmt.Errorf("failed to get datacenter capabilities: %w", err)
 	}
 	return getOk.Payload.Capabilities, nil
+}
+
+// TransitGatewayID checks to see if the name is an existing transit gateway name.
+func (c *Client) TransitGatewayID(ctx context.Context, name string) (string, error) {
+	var (
+		gateways []transitgatewayapisv1.TransitGateway
+		gateway  transitgatewayapisv1.TransitGateway
+		err      error
+	)
+
+	gateways, err = c.getTransitGateways(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, gateway = range gateways {
+		if *gateway.Name == name {
+			return *gateway.ID, nil
+		}
+	}
+
+	return "", nil
 }
 
 // GetAttachedTransitGateway finds an existing Transit Gateway attached to the provided PowerVS cloud instance.

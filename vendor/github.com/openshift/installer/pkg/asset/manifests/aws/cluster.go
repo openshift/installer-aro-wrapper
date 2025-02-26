@@ -150,6 +150,7 @@ func GenerateClusterAssets(ic *installconfig.InstallConfig, clusterID *installco
 						CidrBlocks:  sshRuleCidr,
 					},
 				},
+				NodePortIngressRuleCidrBlocks: []string{capiutils.CIDRFromInstallConfig(ic).String()},
 			},
 			S3Bucket: &capa.S3Bucket{
 				Name:                    GetIgnitionBucketName(clusterID.InfraID),
@@ -283,11 +284,13 @@ func GenerateClusterAssets(ic *installconfig.InstallConfig, clusterID *installco
 
 	return &capiutils.GenerateClusterAssetsOutput{
 		Manifests: manifests,
-		InfrastructureRef: &corev1.ObjectReference{
-			APIVersion: capa.GroupVersion.String(),
-			Kind:       "AWSCluster",
-			Name:       awsCluster.Name,
-			Namespace:  awsCluster.Namespace,
+		InfrastructureRefs: []*corev1.ObjectReference{
+			{
+				APIVersion: capa.GroupVersion.String(),
+				Kind:       "AWSCluster",
+				Name:       awsCluster.Name,
+				Namespace:  awsCluster.Namespace,
+			},
 		},
 	}, nil
 }

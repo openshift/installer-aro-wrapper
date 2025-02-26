@@ -1,6 +1,7 @@
 package installconfig
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -47,7 +48,7 @@ func (a *platform) Dependencies() []asset.Asset {
 }
 
 // Generate queries for input from the user.
-func (a *platform) Generate(asset.Parents) error {
+func (a *platform) Generate(ctx context.Context, _ asset.Parents) error {
 	platform, err := a.queryUserForPlatform()
 	if err != nil {
 		return err
@@ -84,7 +85,7 @@ func (a *platform) Generate(asset.Parents) error {
 	case none.Name:
 		a.None = &none.Platform{}
 	case openstack.Name:
-		a.OpenStack, err = openstackconfig.Platform()
+		a.OpenStack, err = openstackconfig.Platform(ctx)
 		if err != nil {
 			return err
 		}

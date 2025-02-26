@@ -32,9 +32,9 @@ func (p Provider) Name() string {
 	return openstack.Name
 }
 
-// BootstrapHasPublicIP indicates that an ExternalIP is not
-// required in the machine ready checks.
-func (Provider) BootstrapHasPublicIP() bool { return false }
+// PublicGatherEndpoint indicates that machine ready checks should NOT wait for an ExternalIP
+// in the status when declaring machines ready.
+func (Provider) PublicGatherEndpoint() clusterapi.GatherEndpoint { return clusterapi.InternalIP }
 
 var _ clusterapi.PreProvider = Provider{}
 
@@ -44,7 +44,7 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 	var (
 		infraID          = in.InfraID
 		installConfig    = in.InstallConfig
-		rhcosImage       = string(*in.RhcosImage)
+		rhcosImage       = in.RhcosImage.ControlPlane
 		manifestsAsset   = in.ManifestsAsset
 		machineManifests = in.MachineManifests
 		workersAsset     = in.WorkersAsset
@@ -126,7 +126,7 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 		return fmt.Errorf("failed to get OSPCluster: %w", err)
 	}
 
-	return infraready.FloatingIPs(ospCluster, installConfig, infraID)
+	return infraready.FloatingIPs(ctx, ospCluster, installConfig, infraID)
 }
 
 var _ clusterapi.IgnitionProvider = Provider{}

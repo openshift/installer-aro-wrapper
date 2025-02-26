@@ -22,6 +22,7 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 	var (
 		manifests          []*asset.RuntimeFile
 		network            string
+		dhcpSubnet         string
 		service            capibm.IBMPowerVSResourceReference
 		vpcName            string
 		vpcRegion          string
@@ -53,6 +54,13 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 
 	network = fmt.Sprintf("%s-network", clusterID.InfraID)
 
+	logrus.Debugf("GenerateClusterAssets: len MachineNetwork = %d", len(installConfig.Config.Networking.MachineNetwork))
+	dhcpSubnet = installConfig.Config.Networking.MachineNetwork[0].CIDR.String()
+	if numNetworks := len(installConfig.Config.Networking.MachineNetwork); numNetworks > 1 {
+		logrus.Infof("Warning: %d machineNetwork found! Ignoring all except the first.", numNetworks)
+	}
+	logrus.Debugf("GenerateClusterAssets: dhcpSubnet = %s", dhcpSubnet)
+
 	if installConfig.Config.PowerVS.ServiceInstanceGUID == "" {
 		serviceName := fmt.Sprintf("%s-power-iaas", clusterID.InfraID)
 
@@ -77,7 +85,10 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 		}
 	}
 
-	transitGatewayName = fmt.Sprintf("%s-tg", clusterID.InfraID)
+	transitGatewayName = installConfig.Config.Platform.PowerVS.TGName
+	if transitGatewayName == "" {
+		transitGatewayName = fmt.Sprintf("%s-tg", clusterID.InfraID)
+	}
 
 	cosName = fmt.Sprintf("%s-cos", clusterID.InfraID)
 
@@ -104,6 +115,9 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 		Spec: capibm.IBMPowerVSClusterSpec{
 			Network: capibm.IBMPowerVSResourceReference{
 				Name: &network,
+			},
+			DHCPServer: &capibm.DHCPServer{
+				Cidr: &dhcpSubnet,
 			},
 			ServiceInstance: &service,
 			Zone:            &installConfig.Config.Platform.PowerVS.Zone,
@@ -163,14 +177,22 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 			return nil, fmt.Errorf("unable to find a DNS server for specified VPC: %s %w", installConfig.Config.PowerVS.VPCName, err)
 		}
 
-		powerVSCluster.Spec.DHCPServer = &capibm.DHCPServer{
-			DNSServer: &dnsServerIP,
+		powerVSCluster.Spec.DHCPServer.DNSServer = &dnsServerIP
+		// TODO(mjturek): Restore once work is finished in 4.18 for disconnected scenario.
+		if !(len(installConfig.Config.DeprecatedImageContentSources) == 0 && len(installConfig.Config.ImageDigestSources) == 0) {
+			return nil, fmt.Errorf("deploying a disconnected cluster directly in 4.17 is not supported for Power VS. Please deploy disconnected in 4.16 and upgrade to 4.17")
 		}
 	}
 
 	// If a VPC was specified, pass all subnets in it to cluster API
 	if installConfig.Config.Platform.PowerVS.VPCName != "" {
 		logrus.Debugf("GenerateClusterAssets: VPCName = %s", installConfig.Config.Platform.PowerVS.VPCName)
+		if installConfig.Config.Publish == types.InternalPublishingStrategy {
+			err = installConfig.PowerVS.EnsureVPCIsPermittedNetwork(context.TODO(), installConfig.Config.PowerVS.VPCName)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error ensuring VPC is permitted: %s %w", installConfig.Config.PowerVS.VPCName, err)
+		}
 		subnets, err := installConfig.PowerVS.GetVPCSubnets(context.TODO(), vpcName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting subnets in specified VPC: %s %w", installConfig.Config.PowerVS.VPCName, err)
@@ -215,11 +237,13 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 
 	return &capiutils.GenerateClusterAssetsOutput{
 		Manifests: manifests,
-		InfrastructureRef: &corev1.ObjectReference{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
-			Kind:       "IBMPowerVSCluster",
-			Name:       powerVSCluster.Name,
-			Namespace:  powerVSCluster.Namespace,
+		InfrastructureRefs: []*corev1.ObjectReference{
+			{
+				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
+				Kind:       "IBMPowerVSCluster",
+				Name:       powerVSCluster.Name,
+				Namespace:  powerVSCluster.Namespace,
+			},
 		},
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -65,6 +66,7 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 		allErrs = append(allErrs, validateMachinePool(ctx, meta, field.NewPath("controlPlane", "platform", "aws"), config.Platform.AWS, pool, controlPlaneReq, "", arch)...)
 	}
 
+	var archSeen string
 	for idx, compute := range config.Compute {
 		fldPath := field.NewPath("compute").Index(idx)
 		if compute.Name == types.MachinePoolEdgeRoleName {
@@ -76,6 +78,17 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 		}
 
 		arch := string(compute.Architecture)
+		if arch == "" {
+			arch = string(config.ControlPlane.Architecture)
+		}
+		switch {
+		case archSeen == "":
+			archSeen = arch
+		case arch != archSeen:
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("architecture"), arch, "all compute machine pools must be of the same architecture"))
+		default:
+			// compute machine pools have the same arch so far
+		}
 		pool := &awstypes.MachinePool{}
 		pool.Set(config.AWS.DefaultMachinePlatform)
 		pool.Set(compute.Platform.AWS)
@@ -359,6 +372,15 @@ func validateMachinePool(ctx context.Context, meta *Metadata, fldPath *field.Pat
 		allErrs = append(allErrs, validateSecurityGroupIDs(ctx, meta, fldPath.Child("additionalSecurityGroupIDs"), platform, pool)...)
 	}
 
+	if len(pool.IAMProfile) > 0 {
+		if len(pool.IAMRole) > 0 {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("iamRole"), "cannot be used with iamProfile"))
+		}
+		if err := validateInstanceProfile(ctx, meta, fldPath.Child("iamProfile"), pool); err != nil {
+			allErrs = append(allErrs, err)
+		}
+	}
+
 	return allErrs
 }
 
@@ -623,4 +645,24 @@ func isHostedZoneAssociatedWithVPC(hostedZone *route53.GetHostedZoneOutput, vpcI
 		}
 	}
 	return false
+}
+
+func validateInstanceProfile(ctx context.Context, meta *Metadata, fldPath *field.Path, pool *awstypes.MachinePool) *field.Error {
+	session, err := meta.Session(ctx)
+	if err != nil {
+		return field.InternalError(fldPath, fmt.Errorf("unable to start a session: %w", err))
+	}
+	client := iam.New(session)
+	res, err := client.GetInstanceProfileWithContext(ctx, &iam.GetInstanceProfileInput{
+		InstanceProfileName: aws.String(pool.IAMProfile),
+	})
+	if err != nil {
+		msg := fmt.Errorf("unable to retrieve instance profile: %w", err).Error()
+		return field.Invalid(fldPath, pool.IAMProfile, msg)
+	}
+	if len(res.InstanceProfile.Roles) == 0 || res.InstanceProfile.Roles[0] == nil {
+		return field.Invalid(fldPath, pool.IAMProfile, "no role attached to instance profile")
+	}
+
+	return nil
 }

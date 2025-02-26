@@ -34,15 +34,9 @@ func ProviderForPlatform(platform string, fg featuregates.FeatureGate) (infrastr
 	case awstypes.Name:
 		return clusterapi.InitializeProvider(&awscapi.Provider{}), nil
 	case azuretypes.Name:
-		if types.ClusterAPIFeatureGateEnabled(platform, fg) {
-			return clusterapi.InitializeProvider(&azurecapi.Provider{}), nil
-		}
-		return nil, nil
+		return clusterapi.InitializeProvider(&azurecapi.Provider{}), nil
 	case gcptypes.Name:
-		if types.ClusterAPIFeatureGateEnabled(platform, fg) {
-			return clusterapi.InitializeProvider(gcpcapi.Provider{}), nil
-		}
-		return nil, nil
+		return clusterapi.InitializeProvider(gcpcapi.Provider{}), nil
 	case ibmcloudtypes.Name:
 		if types.ClusterAPIFeatureGateEnabled(platform, fg) {
 			return clusterapi.InitializeProvider(ibmcloudcapi.Provider{}), nil
@@ -51,10 +45,7 @@ func ProviderForPlatform(platform string, fg featuregates.FeatureGate) (infrastr
 	case vspheretypes.Name:
 		return clusterapi.InitializeProvider(vspherecapi.Provider{}), nil
 	case powervstypes.Name:
-		if types.ClusterAPIFeatureGateEnabled(platform, fg) {
-			return clusterapi.InitializeProvider(powervscapi.Provider{}), nil
-		}
-		return nil, nil
+		return clusterapi.InitializeProvider(powervscapi.Provider{}), nil
 	case openstacktypes.Name:
 		return clusterapi.InitializeProvider(openstackcapi.Provider{}), nil
 	case nutanixtypes.Name:

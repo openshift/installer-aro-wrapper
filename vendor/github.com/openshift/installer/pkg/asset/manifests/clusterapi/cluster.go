@@ -1,11 +1,13 @@
 package clusterapi
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -63,7 +65,7 @@ func (c *Cluster) Dependencies() []asset.Asset {
 }
 
 // Generate generates the respective operator config.yml files.
-func (c *Cluster) Generate(dependencies asset.Parents) error {
+func (c *Cluster) Generate(_ context.Context, dependencies asset.Parents) error {
 	installConfig := &installconfig.InstallConfig{}
 	clusterID := &installconfig.ClusterID{}
 	openshiftInstall := &openshiftinstall.Config{}
@@ -85,20 +87,6 @@ func (c *Cluster) Generate(dependencies asset.Parents) error {
 	}
 	namespace.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("Namespace"))
 	c.FileList = append(c.FileList, &asset.RuntimeFile{Object: namespace, File: asset.File{Filename: "000_capi-namespace.yaml"}})
-
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterID.InfraID,
-			Namespace: capiutils.Namespace,
-		},
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: &clusterv1.ClusterNetwork{
-				APIServerPort: ptr.To[int32](6443),
-			},
-		},
-	}
-	cluster.SetGroupVersionKind(clusterv1.GroupVersion.WithKind("Cluster"))
-	c.FileList = append(c.FileList, &asset.RuntimeFile{Object: cluster, File: asset.File{Filename: "01_capi-cluster.yaml"}})
 
 	var out *capiutils.GenerateClusterAssetsOutput
 	switch platform := installConfig.Config.Platform.Name(); platform {
@@ -134,7 +122,7 @@ func (c *Cluster) Generate(dependencies asset.Parents) error {
 		}
 	case powervstypes.Name:
 		var err error
-		osImage := strings.SplitN(string(*rhcosImage), "/", 2)
+		osImage := strings.SplitN(rhcosImage.ControlPlane, "/", 2)
 		out, err = powervs.GenerateClusterAssets(installConfig, clusterID, osImage[0], osImage[1])
 		if err != nil {
 			return fmt.Errorf("failed to generate PowerVS manifests %w", err)
@@ -149,10 +137,26 @@ func (c *Cluster) Generate(dependencies asset.Parents) error {
 		return fmt.Errorf("unsupported platform %q", platform)
 	}
 
-	// Set the infrastructure reference in the Cluster object.
-	cluster.Spec.InfrastructureRef = out.InfrastructureRef
-	if cluster.Spec.InfrastructureRef == nil {
+	if len(out.InfrastructureRefs) == 0 {
 		return fmt.Errorf("failed to generate manifests: cluster.Spec.InfrastructureRef was never set")
+	}
+
+	logrus.Infof("Adding clusters...")
+	for index, infra := range out.InfrastructureRefs {
+		cluster := &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      infra.Name,
+				Namespace: capiutils.Namespace,
+			},
+			Spec: clusterv1.ClusterSpec{
+				ClusterNetwork: &clusterv1.ClusterNetwork{
+					APIServerPort: ptr.To[int32](6443),
+				},
+			},
+		}
+		cluster.Spec.InfrastructureRef = infra
+		cluster.SetGroupVersionKind(clusterv1.GroupVersion.WithKind("Cluster"))
+		c.FileList = append(c.FileList, &asset.RuntimeFile{Object: cluster, File: asset.File{Filename: fmt.Sprintf("01_capi-cluster-%d.yaml", index)}})
 	}
 
 	// Append the infrastructure manifests.

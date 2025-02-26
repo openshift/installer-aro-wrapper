@@ -262,7 +262,7 @@ func ValidateSystemTypeForZone(client API, ic *types.InstallConfig) error {
 	}
 	availableOnes, err := powervstypes.AvailableSysTypes(ic.PowerVS.Region, ic.PowerVS.Zone)
 	if err != nil {
-		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Region)
+		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Zone)
 	}
 	requested := ic.ControlPlane.Platform.PowerVS.SysType
 	found := false
@@ -302,6 +302,29 @@ func ValidateServiceInstance(client API, ic *types.InstallConfig) error {
 		}
 		if !found {
 			return errors.New("platform:powervs:serviceInstanceGUID has an invalid guid")
+		}
+	}
+
+	return nil
+}
+
+// ValidateTransitGateway validates the optional transit gateway name in our install config.
+func ValidateTransitGateway(client API, ic *types.InstallConfig) error {
+	var (
+		id  string
+		err error
+	)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
+	defer cancel()
+
+	if len(ic.PowerVS.TGName) > 0 {
+		id, err = client.TransitGatewayID(ctx, ic.PowerVS.TGName)
+		if err != nil {
+			return err
+		}
+		if id == "" {
+			return errors.New("platform:powervs:tgName has an invalid name")
 		}
 	}
 

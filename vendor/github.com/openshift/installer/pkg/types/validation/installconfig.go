@@ -48,6 +48,7 @@ import (
 	"github.com/openshift/installer/pkg/types/vsphere"
 	vspherevalidation "github.com/openshift/installer/pkg/types/vsphere/validation"
 	"github.com/openshift/installer/pkg/validate"
+	"github.com/openshift/installer/pkg/version"
 )
 
 // hostCryptBypassedAnnotation is set if the host crypt check was bypassed via environment variable.
@@ -124,7 +125,17 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 	} else {
 		allErrs = append(allErrs, field.Required(field.NewPath("controlPlane"), "controlPlane is required"))
 	}
-	allErrs = append(allErrs, validateCompute(&c.Platform, c.ControlPlane, c.Compute, field.NewPath("compute"))...)
+
+	multiArchEnabled := types.MultiArchFeatureGateEnabled(c.Platform.Name(), c.EnabledFeatureGates())
+	allErrs = append(allErrs, validateCompute(&c.Platform, c.ControlPlane, c.Compute, field.NewPath("compute"), multiArchEnabled)...)
+
+	releaseArch, err := version.ReleaseArchitecture()
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(nil, err))
+	} else {
+		allErrs = append(allErrs, validateReleaseArchitecture(c.ControlPlane, c.Compute, types.Architecture(releaseArch))...)
+	}
+
 	if err := validate.ImagePullSecret(c.PullSecret); err != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("pullSecret"), c.PullSecret, err.Error()))
 	}
@@ -200,10 +211,6 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 
 		if c.Capabilities.BaselineCapabilitySet == configv1.ClusterVersionCapabilitySetNone {
 			enabledCaps := sets.New[configv1.ClusterVersionCapability](c.Capabilities.AdditionalEnabledCapabilities...)
-			if enabledCaps.Has(configv1.ClusterVersionCapabilityBaremetal) && !enabledCaps.Has(configv1.ClusterVersionCapabilityMachineAPI) {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
-					"the baremetal capability requires the MachineAPI capability"))
-			}
 			if enabledCaps.Has(configv1.ClusterVersionCapabilityMarketplace) && !enabledCaps.Has(configv1.ClusterVersionCapabilityOperatorLifecycleManager) {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
 					"the marketplace capability requires the OperatorLifecycleManager capability"))
@@ -212,6 +219,11 @@ func ValidateInstallConfig(c *types.InstallConfig, usingAgentMethod bool) field.
 				allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
 					"platform baremetal requires the baremetal capability"))
 			}
+		}
+
+		if enabledCaps.Has(configv1.ClusterVersionCapabilityMarketplace) && !enabledCaps.Has(configv1.ClusterVersionCapabilityOperatorLifecycleManager) {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("additionalEnabledCapabilities"), c.Capabilities.AdditionalEnabledCapabilities,
+				"the marketplace capability requires the OperatorLifecycleManager capability"))
 		}
 
 		if !enabledCaps.Has(configv1.ClusterVersionCapabilityCloudCredential) {
@@ -605,7 +617,7 @@ func validateComputeEdge(platform *types.Platform, pName string, fldPath *field.
 	return allErrs
 }
 
-func validateCompute(platform *types.Platform, control *types.MachinePool, pools []types.MachinePool, fldPath *field.Path) field.ErrorList {
+func validateCompute(platform *types.Platform, control *types.MachinePool, pools []types.MachinePool, fldPath *field.Path, isMultiArchEnabled bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	poolNames := map[string]bool{}
 	for i, p := range pools {
@@ -622,7 +634,7 @@ func validateCompute(platform *types.Platform, control *types.MachinePool, pools
 			allErrs = append(allErrs, field.Duplicate(poolFldPath.Child("name"), p.Name))
 		}
 		poolNames[p.Name] = true
-		if control != nil && control.Architecture != p.Architecture {
+		if control != nil && control.Architecture != p.Architecture && !isMultiArchEnabled {
 			allErrs = append(allErrs, field.Invalid(poolFldPath.Child("architecture"), p.Architecture, "heteregeneous multi-arch is not supported; compute pool architecture must match control plane"))
 		}
 		allErrs = append(allErrs, ValidateMachinePool(platform, &p, poolFldPath)...)
@@ -1292,6 +1304,43 @@ func validateGatedFeatures(c *types.InstallConfig) field.ErrorList {
 
 	for _, gf := range gatedFeatures {
 		fgCheck(gf)
+	}
+
+	return allErrs
+}
+
+// validateReleaseArchitecture ensures a compatible payload is used according to the desired architecture of the cluster.
+func validateReleaseArchitecture(controlPlanePool *types.MachinePool, computePool []types.MachinePool, releaseArch types.Architecture) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	clusterArch := version.DefaultArch()
+	if controlPlanePool != nil && controlPlanePool.Architecture != "" {
+		clusterArch = controlPlanePool.Architecture
+	}
+
+	switch releaseArch {
+	case "multi":
+		// All good
+	case "unknown":
+		for _, p := range computePool {
+			if p.Architecture != "" && clusterArch != p.Architecture {
+				// Overriding release architecture is a must during dev/CI so just log a warning instead of erroring out
+				logrus.Warnln("Could not determine release architecture for multi arch cluster configuration. Make sure the release is a multi architecture payload.")
+				break
+			}
+		}
+	default:
+		if clusterArch != releaseArch {
+			errMsg := fmt.Sprintf("cannot create %s controlPlane node from a single architecture %s release payload", clusterArch, releaseArch)
+			allErrs = append(allErrs, field.Invalid(field.NewPath("controlPlane", "architecture"), clusterArch, errMsg))
+		}
+		for i, p := range computePool {
+			poolFldPath := field.NewPath("compute").Index(i)
+			if p.Architecture != "" && p.Architecture != releaseArch {
+				errMsg := fmt.Sprintf("cannot create %s compute node from a single architecture %s release payload", p.Architecture, releaseArch)
+				allErrs = append(allErrs, field.Invalid(poolFldPath.Child("architecture"), p.Architecture, errMsg))
+			}
+		}
 	}
 
 	return allErrs

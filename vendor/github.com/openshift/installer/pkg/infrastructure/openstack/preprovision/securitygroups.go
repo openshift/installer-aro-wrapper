@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/attributestags"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	"github.com/gophercloud/gophercloud/v2/openstack/networking/v2/extensions/attributestags"
+	"github.com/gophercloud/gophercloud/v2/openstack/networking/v2/extensions/security/groups"
+	"github.com/gophercloud/gophercloud/v2/openstack/networking/v2/extensions/security/rules"
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -48,7 +48,7 @@ func (p protocol) Protocols() []rules.RuleProtocol {
 
 // SecurityGroups creates the master and worker security groups with the security group rules.
 func SecurityGroups(ctx context.Context, installConfig *installconfig.InstallConfig, infraID string, mastersSchedulable bool) error {
-	networkClient, err := openstackdefaults.NewServiceClient("network", openstackdefaults.DefaultClientOpts(installConfig.Config.Platform.OpenStack.Cloud))
+	networkClient, err := openstackdefaults.NewServiceClient(ctx, "network", openstackdefaults.DefaultClientOpts(installConfig.Config.Platform.OpenStack.Cloud))
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func SecurityGroups(ctx context.Context, installConfig *installconfig.InstallCon
 	logrus.Debugf("Creating the security groups")
 	var masterGroup, workerGroup *groups.SecGroup
 	{
-		masterGroup, err = groups.Create(networkClient, groups.CreateOpts{
+		masterGroup, err = groups.Create(ctx, networkClient, groups.CreateOpts{
 			Name:        infraID + "-master",
 			Description: description,
 		}).Extract()
@@ -71,13 +71,13 @@ func SecurityGroups(ctx context.Context, installConfig *installconfig.InstallCon
 		// robust JSON body.
 		//
 		// see: https://bugzilla.redhat.com/show_bug.cgi?id=2299208
-		if _, err := attributestags.ReplaceAll(networkClient, "security-groups", masterGroup.ID, attributestags.ReplaceAllOpts{
+		if _, err := attributestags.ReplaceAll(ctx, networkClient, "security-groups", masterGroup.ID, attributestags.ReplaceAllOpts{
 			Tags: []string{"openshiftClusterID=" + infraID},
 		}).Extract(); err != nil {
 			return fmt.Errorf("failed to tag the Control plane security group: %w", err)
 		}
 
-		workerGroup, err = groups.Create(networkClient, groups.CreateOpts{
+		workerGroup, err = groups.Create(ctx, networkClient, groups.CreateOpts{
 			Name:        infraID + "-worker",
 			Description: description,
 		}).Extract()
@@ -86,7 +86,7 @@ func SecurityGroups(ctx context.Context, installConfig *installconfig.InstallCon
 		}
 
 		// See comment above
-		if _, err := attributestags.ReplaceAll(networkClient, "security-groups", workerGroup.ID, attributestags.ReplaceAllOpts{
+		if _, err := attributestags.ReplaceAll(ctx, networkClient, "security-groups", workerGroup.ID, attributestags.ReplaceAllOpts{
 			Tags: []string{"openshiftClusterID=" + infraID},
 		}).Extract(); err != nil {
 			return fmt.Errorf("failed to tag the Compute security group: %w", err)
@@ -225,7 +225,7 @@ func SecurityGroups(ctx context.Context, installConfig *installconfig.InstallCon
 	}()
 
 	for ruleCreateOpts := range r {
-		if _, err := rules.Create(networkClient, ruleCreateOpts).Extract(); err != nil {
+		if _, err := rules.Create(ctx, networkClient, ruleCreateOpts).Extract(); err != nil {
 			return fmt.Errorf("failed to create the security group rule on group %q for %s %s on ports %d-%d: %w", ruleCreateOpts.SecGroupID, ruleCreateOpts.EtherType, ruleCreateOpts.Protocol, ruleCreateOpts.PortRangeMin, ruleCreateOpts.PortRangeMax, err)
 		}
 	}

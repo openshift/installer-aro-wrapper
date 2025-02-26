@@ -96,10 +96,17 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 		tfvarsAsset,
 	)
 
+	var clusterIDs []string
+
 	// Collect cluster and non-machine-related infra manifests
 	// to be applied during the initial stage.
 	infraManifests := []client.Object{}
 	for _, m := range capiManifestsAsset.RuntimeFiles() {
+		// Check for cluster definition so that we can collect the names.
+		if cluster, ok := m.Object.(*clusterv1.Cluster); ok {
+			clusterIDs = append(clusterIDs, cluster.GetName())
+		}
+
 		infraManifests = append(infraManifests, m.Object)
 	}
 
@@ -164,6 +171,7 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 	i.appliedManifests = []client.Object{}
 
 	// Create the infra manifests.
+	logrus.Info("Creating infra manifests...")
 	for _, m := range infraManifests {
 		m.SetNamespace(capiutils.Namespace)
 		if err := cl.Create(ctx, m); err != nil {
@@ -172,10 +180,13 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 		i.appliedManifests = append(i.appliedManifests, m)
 		logrus.Infof("Created manifest %+T, namespace=%s name=%s", m, m.GetNamespace(), m.GetName())
 	}
+	logrus.Info("Done creating infra manifests")
+
 	// Pass cluster kubeconfig and store it in; this is usually the role of a bootstrap provider.
-	{
+	for _, capiClusterID := range clusterIDs {
+		logrus.Infof("Creating kubeconfig entry for capi cluster %v", capiClusterID)
 		key := client.ObjectKey{
-			Name:      clusterID.InfraID,
+			Name:      capiClusterID,
 			Namespace: capiutils.Namespace,
 		}
 		cluster := &clusterv1.Cluster{}
@@ -206,17 +217,28 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 		if err := wait.PollUntilContextTimeout(ctx, 15*time.Second, networkTimeout, true,
 			func(ctx context.Context) (bool, error) {
 				c := &clusterv1.Cluster{}
-				if err := cl.Get(ctx, client.ObjectKey{
-					Name:      clusterID.InfraID,
-					Namespace: capiutils.Namespace,
-				}, c); err != nil {
-					if apierrors.IsNotFound(err) {
+				var clusters []*clusterv1.Cluster
+				for _, curClusterID := range clusterIDs {
+					if err := cl.Get(ctx, client.ObjectKey{
+						Name:      curClusterID,
+						Namespace: capiutils.Namespace,
+					}, c); err != nil {
+						if apierrors.IsNotFound(err) {
+							return false, nil
+						}
+						return false, err
+					}
+					clusters = append(clusters, c)
+				}
+
+				for _, curCluster := range clusters {
+					if !curCluster.Status.InfrastructureReady {
 						return false, nil
 					}
-					return false, err
 				}
-				cluster = c
-				return cluster.Status.InfrastructureReady, nil
+
+				cluster = clusters[0]
+				return true, nil
 			}); err != nil {
 			if wait.Interrupted(err) {
 				return fileList, fmt.Errorf("infrastructure was not ready within %v: %w", networkTimeout, err)
@@ -310,7 +332,7 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 	{
 		untilTime := time.Now().Add(provisionTimeout)
 		timezone, _ := untilTime.Zone()
-		reqBootstrapPubIP := installConfig.Config.Publish == types.ExternalPublishingStrategy && i.impl.BootstrapHasPublicIP()
+		reqBootstrapPubIP := installConfig.Config.Publish == types.ExternalPublishingStrategy && i.impl.PublicGatherEndpoint() == ExternalIP
 		logrus.Infof("Waiting up to %v (until %v %s) for machines %v to provision...", provisionTimeout, untilTime.Format(time.Kitchen), timezone, machineNames)
 		if err := wait.PollUntilContextTimeout(ctx, 15*time.Second, provisionTimeout, true,
 			func(ctx context.Context) (bool, error) {
@@ -341,9 +363,9 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 				return allReady, nil
 			}); err != nil {
 			if wait.Interrupted(err) {
-				return fileList, fmt.Errorf("control-plane machines were not provisioned within %v: %w", provisionTimeout, err)
+				return fileList, fmt.Errorf("%s within %v: %w", asset.ControlPlaneCreationError, provisionTimeout, err)
 			}
-			return fileList, fmt.Errorf("control-plane machines are not ready: %w", err)
+			return fileList, fmt.Errorf("%s: machines are not ready: %w", asset.ControlPlaneCreationError, err)
 		}
 	}
 	timer.StopTimer(machineStage)
@@ -489,22 +511,12 @@ func (i *InfraProvider) ExtractHostAddresses(dir string, config *types.InstallCo
 	manifestsDir := filepath.Join(dir, clusterapi.ArtifactsDir)
 	logrus.Debugf("Looking for machine manifests in %s", manifestsDir)
 
-	bootstrapFiles, err := filepath.Glob(filepath.Join(manifestsDir, "Machine\\-openshift\\-cluster\\-api\\-guests\\-*\\-bootstrap.yaml"))
+	addr, err := i.getBootstrapAddress(config, manifestsDir)
 	if err != nil {
-		return fmt.Errorf("failed to list bootstrap manifests: %w", err)
+		return fmt.Errorf("failed to get bootstrap address: %w", err)
 	}
-	logrus.Debugf("bootstrap manifests found: %v", bootstrapFiles)
+	ha.Bootstrap = addr
 
-	if len(bootstrapFiles) != 1 {
-		return fmt.Errorf("wrong number of bootstrap manifests found: %v. Expected exactly one", bootstrapFiles)
-	}
-	addrs, err := extractIPAddress(bootstrapFiles[0])
-	if err != nil {
-		return fmt.Errorf("failed to extract IP address for bootstrap: %w", err)
-	}
-	logrus.Debugf("found bootstrap address: %s", addrs)
-
-	ha.Bootstrap = prioritizeIPv4(config, addrs)
 	masterFiles, err := filepath.Glob(filepath.Join(manifestsDir, "Machine\\-openshift\\-cluster\\-api\\-guests\\-*\\-master\\-?.yaml"))
 	if err != nil {
 		return fmt.Errorf("failed to list master machine manifests: %w", err)
@@ -527,6 +539,30 @@ func (i *InfraProvider) ExtractHostAddresses(dir string, config *types.InstallCo
 	}
 
 	return nil
+}
+
+func (i *InfraProvider) getBootstrapAddress(config *types.InstallConfig, manifestsDir string) (string, error) {
+	// If the bootstrap node cannot have a public IP address, we
+	// SSH through the load balancer, as is this case on Azure.
+	if i.impl.PublicGatherEndpoint() == APILoadBalancer && config.Publish != types.InternalPublishingStrategy {
+		return fmt.Sprintf("api.%s", config.ClusterDomain()), nil
+	}
+
+	bootstrapFiles, err := filepath.Glob(filepath.Join(manifestsDir, "Machine\\-openshift\\-cluster\\-api\\-guests\\-*\\-bootstrap.yaml"))
+	if err != nil {
+		return "", fmt.Errorf("failed to list bootstrap manifests: %w", err)
+	}
+	logrus.Debugf("bootstrap manifests found: %v", bootstrapFiles)
+
+	if len(bootstrapFiles) != 1 {
+		return "", fmt.Errorf("wrong number of bootstrap manifests found: %v. Expected exactly one", bootstrapFiles)
+	}
+	addrs, err := extractIPAddress(bootstrapFiles[0])
+	if err != nil {
+		return "", fmt.Errorf("failed to extract IP address for bootstrap: %w", err)
+	}
+	logrus.Debugf("found bootstrap address: %s", addrs)
+	return prioritizeIPv4(config, addrs), nil
 }
 
 // IgnitionSecret provides the basic formatting for creating the

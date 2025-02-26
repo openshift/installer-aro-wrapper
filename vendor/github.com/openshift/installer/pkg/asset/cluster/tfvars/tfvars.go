@@ -12,7 +12,6 @@ import (
 
 	"github.com/IBM/vpc-go-sdk/vpcv1"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
-	coreosarch "github.com/coreos/stream-metadata-go/arch"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/utils/ptr"
@@ -39,7 +38,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests"
 	"github.com/openshift/installer/pkg/asset/openshiftinstall"
 	"github.com/openshift/installer/pkg/asset/rhcos"
-	rhcospkg "github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/tfvars"
 	awstfvars "github.com/openshift/installer/pkg/tfvars/aws"
 	azuretfvars "github.com/openshift/installer/pkg/tfvars/azure"
@@ -117,8 +115,7 @@ func (t *TerraformVariables) Dependencies() []asset.Asset {
 // Generate generates the terraform.tfvars file.
 //
 //nolint:gocyclo // legacy, pre-linter cyclomatic complexity
-func (t *TerraformVariables) Generate(parents asset.Parents) error {
-	ctx := context.TODO()
+func (t *TerraformVariables) Generate(ctx context.Context, parents asset.Parents) error {
 	clusterID := &installconfig.ClusterID{}
 	installConfig := &installconfig.InstallConfig{}
 	bootstrapIgnAsset := &bootstrap.Bootstrap{}
@@ -275,7 +272,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		for i, m := range workers {
 			workerConfigs[i] = m.Spec.Template.Spec.ProviderSpec.Value.Object.(*machinev1beta1.AWSMachineProviderConfig) //nolint:errcheck // legacy, pre-linter
 		}
-		osImage := strings.SplitN(string(*rhcosImage), ",", 2)
+		osImage := strings.SplitN(rhcosImage.ControlPlane, ",", 2)
 		osImageID := osImage[0]
 		osImageRegion := installConfig.Config.AWS.Region
 		if len(osImage) == 2 {
@@ -377,7 +374,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		if err != nil {
 			return err
 		}
-		hyperVGeneration, err := client.GetHyperVGenerationVersion(context.TODO(), masterConfigs[0].VMSize, masterConfigs[0].Location, "")
+		hyperVGeneration, err := client.GetHyperVGenerationVersion(ctx, masterConfigs[0].VMSize, masterConfigs[0].Location, "")
 		if err != nil {
 			return err
 		}
@@ -420,7 +417,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 				BaseDomainResourceGroupName:     installConfig.Config.Azure.BaseDomainResourceGroupName,
 				MasterConfigs:                   masterConfigs,
 				WorkerConfigs:                   workerConfigs,
-				ImageURL:                        string(*rhcosImage),
+				ImageURL:                        rhcosImage.ControlPlane,
 				ImageRelease:                    rhcosRelease.GetAzureReleaseVersion(),
 				PreexistingNetwork:              preexistingnetwork,
 				Publish:                         installConfig.Config.Publish,
@@ -529,7 +526,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		defer cancel()
 
 		url, err := gcpbootstrap.CreateSignedURL(clusterID.InfraID)
@@ -540,21 +537,6 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		shim, err := bootstrap.GenerateIgnitionShimWithCertBundleAndProxy(url, installConfig.Config.AdditionalTrustBundle, installConfig.Config.Proxy)
 		if err != nil {
 			return fmt.Errorf("failed to create gcp ignition shim: %w", err)
-		}
-
-		archName := coreosarch.RpmArch(string(installConfig.Config.ControlPlane.Architecture))
-		st, err := rhcospkg.FetchCoreOSBuild(ctx)
-		if err != nil {
-			return err
-		}
-		streamArch, err := st.GetArchitecture(archName)
-		if err != nil {
-			return err
-		}
-
-		img := streamArch.Images.Gcp
-		if img == nil {
-			return fmt.Errorf("%s: No GCP build found", st.FormatPrefix(archName))
 		}
 
 		tags, err := gcpconfig.NewTagManager(client).GetUserTags(ctx,
@@ -734,7 +716,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 				CISInstanceCRN:             cisCRN,
 				DNSInstanceID:              dnsID,
 				EndpointsJSONFile:          endpointsJSONFile,
-				ImageURL:                   string(*rhcosImage),
+				ImageURL:                   rhcosImage.ControlPlane,
 				MasterConfigs:              masterConfigs,
 				MasterDedicatedHosts:       masterDedicatedHosts,
 				NetworkResourceGroupName:   installConfig.Config.Platform.IBMCloud.NetworkResourceGroupName,
@@ -756,10 +738,11 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		})
 	case openstack.Name:
 		data, err = openstacktfvars.TFVars(
+			ctx,
 			installConfig,
 			mastersAsset,
 			workersAsset,
-			string(*rhcosImage),
+			rhcosImage.ControlPlane,
 			clusterID,
 			bootstrapIgn,
 		)
@@ -831,7 +814,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			installConfig.Config.Platform.Ovirt.StorageDomainID,
 			installConfig.Config.Platform.Ovirt.NetworkName,
 			installConfig.Config.Platform.Ovirt.VNICProfileID,
-			string(*rhcosImage),
+			rhcosImage.ControlPlane,
 			clusterID.InfraID,
 			masters[0].Spec.ProviderSpec.Value.Object.(*ovirtprovider.OvirtMachineProviderSpec),
 			installConfig.Config.Platform.Ovirt.AffinityGroups,
@@ -969,7 +952,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			return err
 		}
 
-		osImage := strings.SplitN(string(*rhcosImage), "/", 2)
+		osImage := strings.SplitN(rhcosImage.ControlPlane, "/", 2)
 		data, err = powervstfvars.TFVars(
 			powervstfvars.TFVarsSources{
 				MasterConfigs:          masterConfigs,
@@ -1017,7 +1000,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			controlPlaneConfigs[i] = c.Spec.ProviderSpec.Value.Object.(*machinev1.NutanixMachineProviderConfig) //nolint:errcheck // legacy, pre-linter
 		}
 
-		imgURI := string(*rhcosImage)
+		imgURI := rhcosImage.ControlPlane
 		if installConfig.Config.Nutanix.ClusterOSImage != "" {
 			imgURI = installConfig.Config.Nutanix.ClusterOSImage
 		}

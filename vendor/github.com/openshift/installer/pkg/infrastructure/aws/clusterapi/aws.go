@@ -40,16 +40,15 @@ var (
 
 // Provider implements AWS CAPI installation.
 type Provider struct {
-	computeSGID              string
 	bestEffortDeleteIgnition bool
 }
 
 // Name gives the name of the provider, AWS.
 func (*Provider) Name() string { return awstypes.Name }
 
-// BootstrapHasPublicIP indicates that machine ready checks
-// should wait for an ExternalIP in the status.
-func (*Provider) BootstrapHasPublicIP() bool { return true }
+// PublicGatherEndpoint indicates that machine ready checks should wait for an ExternalIP
+// in the status and use that when gathering bootstrap log bundles.
+func (*Provider) PublicGatherEndpoint() clusterapi.GatherEndpoint { return clusterapi.ExternalIP }
 
 // PreProvision creates the IAM roles used by all nodes in the cluster.
 func (*Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionInput) error {
@@ -253,19 +252,6 @@ func (p *Provider) DestroyBootstrap(ctx context.Context, in clusterapi.Bootstrap
 		return fmt.Errorf("controlplane not found in cluster security groups: %v", keys)
 	}
 
-	// Save the node security group ID from CAPA for use later.
-	if sg, ok := awsCluster.Status.Network.SecurityGroups[capa.SecurityGroupNode]; ok && len(sg.ID) > 0 {
-		p.computeSGID = sg.ID
-	} else if ok {
-		return fmt.Errorf("compute security group id is not populated in awscluster status")
-	} else {
-		keys := make([]capa.SecurityGroupRole, 0, len(awsCluster.Status.Network.SecurityGroups))
-		for sgr := range awsCluster.Status.Network.SecurityGroups {
-			keys = append(keys, sgr)
-		}
-		return fmt.Errorf("compute not found in cluster security groups: %v", keys)
-	}
-
 	region := in.Metadata.ClusterPlatformMetadata.AWS.Region
 	session, err := awsconfig.GetSessionWithOptions(
 		awsconfig.WithRegion(region),
@@ -389,11 +375,6 @@ func (p *Provider) PostDestroy(ctx context.Context, in clusterapi.PostDestroyerI
 		return fmt.Errorf("failed to delete ignition bucket %s: %w", bucketName, err)
 	}
 
-	// See https://issues.redhat.com/browse/OCPBUGS-43048
-	if err := removeNodeServiceAllRule(ctx, session, p.computeSGID); err != nil {
-		return fmt.Errorf("failed to delete compute Node Service superfluous ingress rules: %w", err)
-	}
-
 	return nil
 }
 
@@ -440,33 +421,4 @@ func isBucketNotFound(err interface{}) bool {
 		}
 	}
 	return false
-}
-
-// removeNodeServiceAllRule removes a too-permissive capa-upstream ingress rule.
-func removeNodeServiceAllRule(ctx context.Context, session *session.Session, sgID string) error {
-	input := &ec2.RevokeSecurityGroupIngressInput{
-		GroupId: aws.String(sgID),
-		IpPermissions: []*ec2.IpPermission{
-			{
-				IpProtocol: aws.String("tcp"),
-				FromPort:   aws.Int64(30000),
-				ToPort:     aws.Int64(32767),
-				IpRanges: []*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				},
-			},
-		},
-	}
-	_, err := ec2.New(session).RevokeSecurityGroupIngressWithContext(ctx, input)
-	if err != nil {
-		var awsErr awserr.Error
-		if errors.As(err, &awsErr) && awsErr.Code() == "InvalidPermission.NotFound" {
-			logrus.Debugln("Superfluous Node Port Service ingress rules not found or already deleted")
-			return nil
-		}
-		return err
-	}
-	logrus.Debugln("Removed superfluous Node Port Service ingress rules")
-
-	return nil
 }

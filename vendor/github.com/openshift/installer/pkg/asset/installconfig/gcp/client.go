@@ -119,7 +119,7 @@ func (c *Client) GetMachineTypeWithZones(ctx context.Context, project, region, m
 		return nil, nil, err
 	}
 
-	pz, err := GetZones(ctx, svc, project, fmt.Sprintf("region eq .*%s", region))
+	pz, err := GetZones(ctx, svc, project, region)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -361,7 +361,7 @@ func (c *Client) GetRegions(ctx context.Context, project string) ([]string, erro
 		return nil, errors.Wrapf(err, "failed to get regions for project")
 	}
 
-	computeRegions := make([]string, len(gcpRegionsList.Items))
+	computeRegions := make([]string, 0, len(gcpRegionsList.Items))
 	for _, region := range gcpRegionsList.Items {
 		computeRegions = append(computeRegions, region.Name)
 	}
@@ -369,34 +369,33 @@ func (c *Client) GetRegions(ctx context.Context, project string) ([]string, erro
 	return computeRegions, nil
 }
 
-// GetZones uses the GCP Compute Service API to get a list of zones from a project.
-func GetZones(ctx context.Context, svc *compute.Service, project, filter string) ([]*compute.Zone, error) {
+// GetZones uses the GCP Compute Service API to get a list of zones with UP status in a region from a project.
+func GetZones(ctx context.Context, svc *compute.Service, project, region string) ([]*compute.Zone, error) {
 	req := svc.Zones.List(project)
-	if filter != "" {
-		req = req.Filter(filter)
-	}
-
 	zones := []*compute.Zone{}
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	if err := req.Pages(ctx, func(page *compute.ZoneList) error {
-		zones = append(zones, page.Items...)
+		for _, zone := range page.Items {
+			if strings.HasSuffix(zone.Region, region) && strings.EqualFold(zone.Status, "UP") {
+				zones = append(zones, zone)
+			}
+		}
 		return nil
 	}); err != nil {
 		return nil, errors.Wrapf(err, "failed to get zones from project %s", project)
 	}
-
 	return zones, nil
 }
 
 // GetZones uses the GCP Compute Service API to get a list of zones from a project.
-func (c *Client) GetZones(ctx context.Context, project, filter string) ([]*compute.Zone, error) {
+func (c *Client) GetZones(ctx context.Context, project, region string) ([]*compute.Zone, error) {
 	svc, err := c.getComputeService(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return GetZones(ctx, svc, project, filter)
+	return GetZones(ctx, svc, project, region)
 }
 
 func (c *Client) getCloudResourceService(ctx context.Context) (*cloudresourcemanager.Service, error) {
@@ -444,7 +443,7 @@ func (c *Client) getServiceUsageService(ctx context.Context) (*serviceusage.Serv
 
 // GetServiceAccount retrieves a service account from a project if it exists.
 func (c *Client) GetServiceAccount(ctx context.Context, project, serviceAccount string) (string, error) {
-	svc, err := iam.NewService(ctx)
+	svc, err := iam.NewService(ctx, option.WithCredentials(c.ssn.Credentials))
 	if err != nil {
 		return "", errors.Wrapf(err, "failed create IAM service")
 	}

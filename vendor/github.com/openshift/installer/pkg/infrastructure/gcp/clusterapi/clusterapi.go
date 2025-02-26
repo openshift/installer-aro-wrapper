@@ -12,7 +12,6 @@ import (
 	capg "sigs.k8s.io/cluster-api-provider-gcp/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/openshift/installer/pkg/asset/cluster/metadata"
 	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/gcp"
 	icgcp "github.com/openshift/installer/pkg/asset/installconfig/gcp"
@@ -31,27 +30,37 @@ var _ clusterapi.PreProvider = (*Provider)(nil)
 var _ clusterapi.IgnitionProvider = (*Provider)(nil)
 var _ clusterapi.InfraReadyProvider = (*Provider)(nil)
 var _ clusterapi.PostProvider = (*Provider)(nil)
+var _ clusterapi.BootstrapDestroyer = (*Provider)(nil)
 
 // Name returns the name for the platform.
 func (p Provider) Name() string {
 	return gcptypes.Name
 }
 
-// BootstrapHasPublicIP indicates that machine ready checks
-// should wait for an ExternalIP in the status.
-func (Provider) BootstrapHasPublicIP() bool { return true }
+// PublicGatherEndpoint indicates that machine ready checks should wait for an ExternalIP
+// in the status and use that when gathering bootstrap log bundles.
+func (Provider) PublicGatherEndpoint() clusterapi.GatherEndpoint { return clusterapi.ExternalIP }
 
 // PreProvision is called before provisioning using CAPI controllers has initiated.
 // GCP resources that are not created by CAPG (and are required for other stages of the install) are
 // created here using the gcp sdk.
 func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionInput) error {
 	// Create ServiceAccounts which will be used for machines
-	projectID := in.InstallConfig.Config.Platform.GCP.ProjectID
+	platform := in.InstallConfig.Config.Platform.GCP
+	projectID := platform.ProjectID
 
-	// ServiceAccount for masters
-	// Only create ServiceAccount for masters if a shared VPC install is not being done
-	if len(in.InstallConfig.Config.Platform.GCP.NetworkProjectID) == 0 ||
-		in.InstallConfig.Config.ControlPlane.Platform.GCP.ServiceAccount == "" {
+	// Only create ServiceAccounts for machines if a pre-created Service Account is not defined
+	controlPlaneMpool := &gcptypes.MachinePool{}
+	controlPlaneMpool.Set(in.InstallConfig.Config.GCP.DefaultMachinePlatform)
+	if in.InstallConfig.Config.ControlPlane != nil {
+		controlPlaneMpool.Set(in.InstallConfig.Config.ControlPlane.Platform.GCP)
+	}
+
+	if controlPlaneMpool.ServiceAccount != "" {
+		logrus.Debugf("Using pre-created ServiceAccount for control plane nodes")
+	} else {
+		// Create ServiceAccount for control plane nodes
+		logrus.Debugf("Creating ServiceAccount for control plane nodes")
 		masterSA, err := CreateServiceAccount(ctx, in.InfraID, projectID, "master")
 		if err != nil {
 			return fmt.Errorf("failed to create master serviceAccount: %w", err)
@@ -59,15 +68,36 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 		if err = AddServiceAccountRoles(ctx, projectID, masterSA, GetMasterRoles()); err != nil {
 			return fmt.Errorf("failed to add master roles: %w", err)
 		}
+
+		// Add additional roles for shared VPC
+		if len(in.InstallConfig.Config.Platform.GCP.NetworkProjectID) > 0 {
+			projID := in.InstallConfig.Config.Platform.GCP.NetworkProjectID
+			// Add roles needed for creating firewalls
+			roles := GetSharedVPCRoles()
+			if err = AddServiceAccountRoles(ctx, projID, masterSA, roles); err != nil {
+				return fmt.Errorf("failed to add roles for shared VPC: %w", err)
+			}
+		}
 	}
 
-	// ServiceAccount for workers
-	workerSA, err := CreateServiceAccount(ctx, in.InfraID, projectID, "worker")
-	if err != nil {
-		return fmt.Errorf("failed to create worker serviceAccount: %w", err)
+	createSA := false
+	for _, compute := range in.InstallConfig.Config.Compute {
+		computeMpool := compute.Platform.GCP
+		if gcptypes.GetConfiguredServiceAccount(platform, computeMpool) == "" {
+			// If any compute nodes aren't using defined service account then create the service account
+			createSA = true
+		}
 	}
-	if err = AddServiceAccountRoles(ctx, projectID, workerSA, GetWorkerRoles()); err != nil {
-		return fmt.Errorf("failed to add worker roles: %w", err)
+	if createSA {
+		// Create ServiceAccount for workers
+		logrus.Debugf("Creating ServiceAccount for compute nodes")
+		workerSA, err := CreateServiceAccount(ctx, in.InfraID, projectID, "worker")
+		if err != nil {
+			return fmt.Errorf("failed to create worker serviceAccount: %w", err)
+		}
+		if err = AddServiceAccountRoles(ctx, projectID, workerSA, GetWorkerRoles()); err != nil {
+			return fmt.Errorf("failed to add worker roles: %w", err)
+		}
 	}
 
 	return nil
@@ -188,17 +218,6 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 		return fmt.Errorf("could not find master subnet %s in subnets %v", masterSubnetName, subnets)
 	}
 
-	zones := gcpCluster.Status.FailureDomains.GetIDs()
-
-	// Currently, the internal/private load balancer is not created by CAPG. The load balancer will be created
-	// by the installer for now.
-	// TODO: remove the creation of the LB and health check here when supported by CAPG.
-	// https://github.com/kubernetes-sigs/cluster-api-provider-gcp/issues/903
-	apiIntIPAddress, err := createInternalLB(ctx, in, masterSubnetSelflink, networkSelfLink, zones)
-	if err != nil {
-		return fmt.Errorf("failed to create internal load balancer address: %w", err)
-	}
-
 	// The firewall for masters, aka control-plane, is created by CAPG
 	// Create the ones needed for worker to master communication
 	if err = createFirewallRules(ctx, in, *gcpCluster.Status.Network.SelfLink); err != nil {
@@ -216,6 +235,11 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 			return fmt.Errorf("failed to create the private managed zone: %w", err)
 		}
 
+		apiIntIPAddress, err := getInternalLBAddress(ctx, in.InstallConfig.Config.GCP.ProjectID, in.InstallConfig.Config.GCP.Region, getAPIAddressName(in.InfraID))
+		if err != nil {
+			return fmt.Errorf("failed to get the internal load balancer address: %w", err)
+		}
+
 		// Create the public (optional) and private dns records
 		if err := createDNSRecords(ctx, in.InstallConfig, in.InfraID, apiIPAddress, apiIntIPAddress); err != nil {
 			return fmt.Errorf("failed to create DNS records: %w", err)
@@ -226,15 +250,37 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 }
 
 // DestroyBootstrap destroys the temporary bootstrap resources.
-func (p Provider) DestroyBootstrap(dir string) error {
+func (p Provider) DestroyBootstrap(ctx context.Context, in clusterapi.BootstrapDestroyInput) error {
 	logrus.Warnf("Destroying GCP Bootstrap Resources")
-	metadata, err := metadata.Load(dir)
-	if err != nil {
-		return err
+	if err := gcp.DestroyStorage(ctx, in.Metadata.InfraID); err != nil {
+		return fmt.Errorf("failed to destroy storage: %w", err)
 	}
-	if err := gcp.DestroyStorage(context.Background(), metadata.ClusterID); err != nil {
-		return fmt.Errorf("failed to destroy storage")
+
+	projectID := in.Metadata.GCP.ProjectID
+	if in.Metadata.GCP.NetworkProjectID != "" {
+		projectID = in.Metadata.GCP.NetworkProjectID
+
+		createFwRules, err := hasFirewallPermission(ctx, projectID)
+		if err != nil {
+			return fmt.Errorf("failed to remove bootstrap firewall rules: %w", err)
+		}
+		if !createFwRules {
+			return nil
+		}
 	}
+	if err := removeBootstrapFirewallRules(ctx, in.Metadata.InfraID, projectID); err != nil {
+		return fmt.Errorf("failed to remove bootstrap firewall rules: %w", err)
+	}
+
+	if in.Metadata.GCP.NetworkProjectID == "" {
+		// Remove the overly permissive firewall rules created by CAPG that are redundant with those created by installer
+		// These are not created in a shared VPC installation
+		logrus.Infof("Removing firewall rules created by cluster-api-provider-gcp")
+		if err := removeCAPGFirewallRules(ctx, in.Metadata.InfraID, in.Metadata.GCP.ProjectID); err != nil {
+			return fmt.Errorf("failed to remove firewall rules created by cluster-api-provider-gcp: %w", err)
+		}
+	}
+
 	return nil
 }
 

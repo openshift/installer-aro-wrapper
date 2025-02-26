@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gophercloud/utils/openstack/clientconfig"
+	"github.com/gophercloud/utils/v2/openstack/clientconfig"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -116,11 +116,13 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 
 	return &capiutils.GenerateClusterAssetsOutput{
 		Manifests: manifests,
-		InfrastructureRef: &corev1.ObjectReference{
-			APIVersion: capo.GroupVersion.String(),
-			Kind:       "OpenStackCluster",
-			Name:       openStackCluster.Name,
-			Namespace:  openStackCluster.Namespace,
+		InfrastructureRefs: []*corev1.ObjectReference{
+			{
+				APIVersion: capo.GroupVersion.String(),
+				Kind:       "OpenStackCluster",
+				Name:       openStackCluster.Name,
+				Namespace:  openStackCluster.Namespace,
+			},
 		},
 	}, nil
 }

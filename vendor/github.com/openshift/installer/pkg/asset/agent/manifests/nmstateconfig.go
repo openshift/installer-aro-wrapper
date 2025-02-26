@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -58,7 +59,7 @@ func (*NMStateConfig) Dependencies() []asset.Asset {
 }
 
 // Generate generates the NMStateConfig manifest.
-func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
+func (n *NMStateConfig) Generate(_ context.Context, dependencies asset.Parents) error {
 	agentWorkflow := &workflow.AgentWorkflow{}
 	clusterInfo := &joiner.ClusterInfo{}
 	agentHosts := &agentconfig.AgentHosts{}
@@ -84,6 +85,9 @@ func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
 		clusterNamespace = installConfig.ClusterNamespace()
 
 	case workflow.AgentWorkflowTypeAddNodes:
+		if err := validateHostHostnameAndIPs(agentHosts, clusterInfo.Nodes); err != nil {
+			return err
+		}
 		clusterName = clusterInfo.ClusterName
 		clusterNamespace = clusterInfo.Namespace
 
@@ -396,5 +400,26 @@ func validateHostCount(installConfig *types.InstallConfig, agentHosts *agentconf
 		return fmt.Errorf("the number of worker hosts defined (%v) exceeds the configured Compute replicas (%v)", numWorkers, numRequiredWorkers)
 	}
 
+	return nil
+}
+
+func validateHostHostnameAndIPs(agentHosts *agentconfig.AgentHosts, nodes *corev1.NodeList) error {
+	for _, host := range agentHosts.Hosts {
+		hostIPs, err := agent.GetAllHostIPs(host.NetworkConfig)
+		if err != nil {
+			return err
+		}
+
+		for _, node := range nodes.Items {
+			for _, addr := range node.Status.Addresses {
+				if _, found := hostIPs[addr.Address]; found {
+					return fmt.Errorf("address conflict found. The configured address %s is already used by the cluster node %s", addr.Address, node.GetName())
+				}
+				if host.Hostname != "" && host.Hostname == addr.Address {
+					return fmt.Errorf("hostname conflict found. The configured hostname %s is already used in the cluster", addr.Address)
+				}
+			}
+		}
+	}
 	return nil
 }
