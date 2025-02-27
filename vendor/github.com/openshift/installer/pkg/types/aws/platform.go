@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -16,8 +18,9 @@ const (
 // Platform stores all the global configuration that all machinesets
 // use.
 type Platform struct {
-	// AMIID is the AMI that should be used to boot machines for the cluster.
-	// If set, the AMI should belong to the same region as the cluster.
+	// The field is deprecated. AMIID is the AMI that should be used to boot
+	// machines for the cluster. If set, the AMI should belong to the same
+	// region as the cluster.
 	//
 	// +optional
 	AMIID string `json:"amiID,omitempty"`
@@ -81,9 +84,9 @@ type Platform struct {
 	PropagateUserTag bool `json:"propagateUserTags,omitempty"`
 
 	// LBType is an optional field to specify a load balancer type.
-	//
-	// When this field is specified, the default ingresscontroller will be
-	// created using the specified load-balancer type.
+	// When this field is specified, all ingresscontrollers (including the
+	// default ingresscontroller) will be created using the specified load-balancer
+	// type by default.
 	//
 	// Following are the accepted values:
 	//
@@ -102,10 +105,20 @@ type Platform struct {
 	// +optional
 	LBType configv1.AWSLBType `json:"lbType,omitempty"`
 
-	// PreserveBootstrapIgnition is an optional field that can be used to make the S3 deletion optional
-	// during bootstrap destroy.
+	// PreserveBootstrapIgnition is deprecated. Use bestEffortDeleteIgnition instead.
 	// +optional
 	PreserveBootstrapIgnition bool `json:"preserveBootstrapIgnition,omitempty"`
+
+	// BestEffortDeleteIgnition is an optional field that can be used to ignore errors from S3 deletion of ignition
+	// objects during cluster bootstrap. The default behavior is to fail the installation if ignition objects cannot be
+	// deleted. Enable this functionality when there are known reasons disallowing their deletion.
+	// +optional
+	BestEffortDeleteIgnition bool `json:"bestEffortDeleteIgnition,omitempty"`
+
+	// PublicIpv4Pool is an optional field that can be used to tell the installation process to use
+	// Public IPv4 address that you bring to your AWS account with BYOIP.
+	// +optional
+	PublicIpv4Pool string `json:"publicIpv4Pool,omitempty"`
 }
 
 // ServiceEndpoint store the configuration for services to
@@ -134,4 +147,11 @@ func IsSecretRegion(region string) bool {
 		return true
 	}
 	return false
+}
+
+// IsPublicOnlySubnetsEnabled returns whether the public-only subnets feature has been enabled via env var.
+func IsPublicOnlySubnetsEnabled() bool {
+	// Even though this looks too simple for a function, it's better than having to update the logic everywhere it's
+	// used in case we decide to check for specific values set in the env var.
+	return os.Getenv("OPENSHIFT_INSTALL_AWS_PUBLIC_ONLY") != ""
 }

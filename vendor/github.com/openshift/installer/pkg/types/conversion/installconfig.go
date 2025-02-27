@@ -285,5 +285,18 @@ func convertAWS(config *types.InstallConfig) error {
 	if config.Platform.AWS.ExperimentalPropagateUserTag != nil {
 		config.Platform.AWS.PropagateUserTag = *config.Platform.AWS.ExperimentalPropagateUserTag
 	}
+	// BestEffortDeleteIgnition takes precedence when set
+	if !config.AWS.BestEffortDeleteIgnition {
+		config.AWS.BestEffortDeleteIgnition = config.AWS.PreserveBootstrapIgnition
+	}
+	if ami := config.AWS.AMIID; len(ami) > 0 {
+		if config.AWS.DefaultMachinePlatform == nil {
+			config.AWS.DefaultMachinePlatform = &aws.MachinePool{}
+		}
+		// DefaultMachinePlatform.AMIID takes precedence in the machine manifest code anyway
+		if len(config.AWS.DefaultMachinePlatform.AMIID) == 0 {
+			config.AWS.DefaultMachinePlatform.AMIID = ami
+		}
+	}
 	return nil
 }

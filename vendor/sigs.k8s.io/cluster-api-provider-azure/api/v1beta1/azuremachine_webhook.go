@@ -70,7 +70,7 @@ func (mw *azureMachineWebhook) ValidateCreate(ctx context.Context, obj runtime.O
 		return nil, nil
 	}
 
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("AzureMachine").GroupKind(), m.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind(AzureMachineKind).GroupKind(), m.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
@@ -206,10 +206,24 @@ func (mw *azureMachineWebhook) ValidateUpdate(ctx context.Context, oldObj, newOb
 		}
 	}
 
+	if err := webhookutils.ValidateImmutable(
+		field.NewPath("spec", "capacityReservationGroupID"),
+		old.Spec.CapacityReservationGroupID,
+		m.Spec.CapacityReservationGroupID); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
+	if err := webhookutils.ValidateImmutable(
+		field.NewPath("spec", "disableExtensionOperations"),
+		old.Spec.DisableExtensionOperations,
+		m.Spec.DisableExtensionOperations); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("AzureMachine").GroupKind(), m.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind(AzureMachineKind).GroupKind(), m.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.

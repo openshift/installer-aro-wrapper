@@ -155,6 +155,14 @@ func (e *statusError) Error() string {
 	return fmt.Sprintf("%s %s: %s", e.res.Request.Method, e.res.Request.URL, e.res.Status)
 }
 
+func IsStatusError(err error, code int) bool {
+	statusErr, ok := err.(*statusError)
+	if !ok || statusErr == nil || statusErr.res == nil {
+		return false
+	}
+	return statusErr.res.StatusCode == code
+}
+
 // RawResponse may be used with the Do method as the resBody argument in order
 // to capture the raw response data.
 type RawResponse struct {
@@ -197,6 +205,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, resBody interface{})
 		switch res.StatusCode {
 		case http.StatusOK:
 		case http.StatusCreated:
+		case http.StatusAccepted:
 		case http.StatusNoContent:
 		case http.StatusBadRequest:
 			// TODO: structured error types

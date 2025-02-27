@@ -4,6 +4,7 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
@@ -300,16 +300,10 @@ func mockClientCalls(client *mock.MockAPI) {
 			Location: to.StringPtr("centralus"),
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetGroup(gomock.Any(), "test-resource-group").
-		Return(&resources.Group{
-			ID:       to.StringPtr("test-resource-group"),
-			Location: to.StringPtr("centralus"),
-		}, nil)
-	client.EXPECT().GetHyperVGenerationVersion(gomock.Any(), "Standard_D2s_v3", "centralus", "").
-		Return("V2", nil)
 }
 
 func TestApplyInstallConfigCustomisations(t *testing.T) {
+	ctx := context.Background()
 	m := fakeManager()
 	inInstallConfig := makeInstallConfig()
 
@@ -319,7 +313,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	inInstallConfig.Azure.UseMockClient(mockClient)
 	mockClientCalls(mockClient)
 
-	graph, err := m.applyInstallConfigCustomisations(inInstallConfig, makeImage())
+	graph, err := m.applyInstallConfigCustomisations(ctx, inInstallConfig, makeImage())
 	if err != nil {
 		t.Fatal(err)
 	}

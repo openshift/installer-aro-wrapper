@@ -3,7 +3,6 @@ package azure
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -82,11 +81,11 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 		*machineSetProvider = *provider
 		machines = append(machines, machine)
 	}
-	replicas := int32(total)
 
+	replicas := int32(total)
 	failureDomains := []machinev1.AzureFailureDomain{}
+
 	if len(mpool.Zones) > 1 {
-		sort.Strings(mpool.Zones)
 		for _, zone := range mpool.Zones {
 			domain := machinev1.AzureFailureDomain{
 				Zone: zone,
@@ -184,7 +183,7 @@ func provider(platform *azure.Platform, mpool *azure.MachinePool, osImage string
 		image.Version = mpool.OSImage.Version
 	} else if useImageGallery {
 		// image gallery names cannot have dashes
-		galleryName := strings.Replace(clusterID, "-", "_", -1)
+		galleryName := strings.ReplaceAll(clusterID, "-", "_")
 		id := clusterID
 		if hyperVGen == "V2" {
 			id += "-gen2"
@@ -298,15 +297,16 @@ func ConfigMasters(machines []machineapi.Machine, controlPlane *machinev1.Contro
 }
 
 func getNetworkInfo(platform *azure.Platform, clusterID, role string) (string, string, string, error) {
+	networkResourceGroupName := platform.NetworkResourceGroupName
 	if platform.VirtualNetwork == "" {
-		return platform.ClusterResourceGroupName(clusterID), fmt.Sprintf("%s-vnet", clusterID), fmt.Sprintf("%s-%s-subnet", clusterID, role), nil
+		networkResourceGroupName = platform.ClusterResourceGroupName(clusterID)
 	}
 
 	switch role {
 	case "worker":
-		return platform.NetworkResourceGroupName, platform.VirtualNetwork, platform.ComputeSubnet, nil
+		return networkResourceGroupName, platform.VirtualNetworkName(clusterID), platform.ComputeSubnetName(clusterID), nil
 	case "master":
-		return platform.NetworkResourceGroupName, platform.VirtualNetwork, platform.ControlPlaneSubnet, nil
+		return networkResourceGroupName, platform.VirtualNetworkName(clusterID), platform.ControlPlaneSubnetName(clusterID), nil
 	default:
 		return "", "", "", fmt.Errorf("unrecognized machine role %s", role)
 	}
