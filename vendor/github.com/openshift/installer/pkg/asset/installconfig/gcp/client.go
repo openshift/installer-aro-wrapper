@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	googleoauth "golang.org/x/oauth2/google"
-	"google.golang.org/api/cloudresourcemanager/v1"
+	"google.golang.org/api/cloudresourcemanager/v3"
 	compute "google.golang.org/api/compute/v1"
 	dns "google.golang.org/api/dns/v1"
 	"google.golang.org/api/googleapi"
@@ -16,6 +16,8 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/serviceusage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	gcpconsts "github.com/openshift/installer/pkg/constants/gcp"
 )
 
 //go:generate mockgen -source=./client.go -destination=./mock/gcpclient_generated.go -package=mock
@@ -48,6 +50,8 @@ type API interface {
 	GetProjectPermissions(ctx context.Context, project string, permissions []string) (sets.Set[string], error)
 	GetProjectByID(ctx context.Context, project string) (*cloudresourcemanager.Project, error)
 	ValidateServiceAccountHasPermissions(ctx context.Context, project string, permissions []string) (bool, error)
+	GetProjectTags(ctx context.Context, projectID string) (sets.Set[string], error)
+	GetNamespacedTagValue(ctx context.Context, tagNamespacedName string) (*cloudresourcemanager.TagValue, error)
 }
 
 // Client makes calls to the GCP API.
@@ -115,7 +119,7 @@ func (c *Client) GetMachineTypeWithZones(ctx context.Context, project, region, m
 		return nil, nil, err
 	}
 
-	pz, err := GetZones(ctx, svc, project, fmt.Sprintf("region eq .*%s", region))
+	pz, err := GetZones(ctx, svc, project, region)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -317,9 +321,9 @@ func (c *Client) GetProjects(ctx context.Context) (map[string]string, error) {
 		return nil, err
 	}
 
-	req := svc.Projects.List()
+	req := svc.Projects.Search()
 	projects := make(map[string]string)
-	if err := req.Pages(ctx, func(page *cloudresourcemanager.ListProjectsResponse) error {
+	if err := req.Pages(ctx, func(page *cloudresourcemanager.SearchProjectsResponse) error {
 		for _, project := range page.Projects {
 			projects[project.ProjectId] = project.Name
 		}
@@ -340,7 +344,7 @@ func (c *Client) GetProjectByID(ctx context.Context, project string) (*cloudreso
 		return nil, err
 	}
 
-	return svc.Projects.Get(project).Context(ctx).Do()
+	return svc.Projects.Get(fmt.Sprintf(gcpconsts.ProjectNameFmt, project)).Context(ctx).Do()
 }
 
 // GetRegions gets the regions that are valid for the project. An error is returned when unsuccessful
@@ -357,7 +361,7 @@ func (c *Client) GetRegions(ctx context.Context, project string) ([]string, erro
 		return nil, errors.Wrapf(err, "failed to get regions for project")
 	}
 
-	computeRegions := make([]string, len(gcpRegionsList.Items))
+	computeRegions := make([]string, 0, len(gcpRegionsList.Items))
 	for _, region := range gcpRegionsList.Items {
 		computeRegions = append(computeRegions, region.Name)
 	}
@@ -365,34 +369,33 @@ func (c *Client) GetRegions(ctx context.Context, project string) ([]string, erro
 	return computeRegions, nil
 }
 
-// GetZones uses the GCP Compute Service API to get a list of zones from a project.
-func GetZones(ctx context.Context, svc *compute.Service, project, filter string) ([]*compute.Zone, error) {
+// GetZones uses the GCP Compute Service API to get a list of zones with UP status in a region from a project.
+func GetZones(ctx context.Context, svc *compute.Service, project, region string) ([]*compute.Zone, error) {
 	req := svc.Zones.List(project)
-	if filter != "" {
-		req = req.Filter(filter)
-	}
-
 	zones := []*compute.Zone{}
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	if err := req.Pages(ctx, func(page *compute.ZoneList) error {
-		zones = append(zones, page.Items...)
+		for _, zone := range page.Items {
+			if strings.HasSuffix(zone.Region, region) && strings.EqualFold(zone.Status, "UP") {
+				zones = append(zones, zone)
+			}
+		}
 		return nil
 	}); err != nil {
 		return nil, errors.Wrapf(err, "failed to get zones from project %s", project)
 	}
-
 	return zones, nil
 }
 
 // GetZones uses the GCP Compute Service API to get a list of zones from a project.
-func (c *Client) GetZones(ctx context.Context, project, filter string) ([]*compute.Zone, error) {
+func (c *Client) GetZones(ctx context.Context, project, region string) ([]*compute.Zone, error) {
 	svc, err := c.getComputeService(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return GetZones(ctx, svc, project, filter)
+	return GetZones(ctx, svc, project, region)
 }
 
 func (c *Client) getCloudResourceService(ctx context.Context) (*cloudresourcemanager.Service, error) {
@@ -440,7 +443,7 @@ func (c *Client) getServiceUsageService(ctx context.Context) (*serviceusage.Serv
 
 // GetServiceAccount retrieves a service account from a project if it exists.
 func (c *Client) GetServiceAccount(ctx context.Context, project, serviceAccount string) (string, error) {
-	svc, err := iam.NewService(ctx)
+	svc, err := iam.NewService(ctx, option.WithCredentials(c.ssn.Credentials))
 	if err != nil {
 		return "", errors.Wrapf(err, "failed create IAM service")
 	}
@@ -485,7 +488,7 @@ func (c *Client) getPermissions(ctx context.Context, project string, permissions
 
 	projectsService := cloudresourcemanager.NewProjectsService(service)
 	rb := &cloudresourcemanager.TestIamPermissionsRequest{Permissions: permissions}
-	response, err := projectsService.TestIamPermissions(project, rb).Context(ctx).Do()
+	response, err := projectsService.TestIamPermissions(fmt.Sprintf(gcpconsts.ProjectNameFmt, project), rb).Context(ctx).Do()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get Iam permissions")
 	}
@@ -512,4 +515,50 @@ func (c *Client) ValidateServiceAccountHasPermissions(ctx context.Context, proje
 		return false, err
 	}
 	return validPermissions.Len() == len(permissions), nil
+}
+
+// GetProjectTags returns the list of effective tags attached to the provided project resource.
+func (c *Client) GetProjectTags(ctx context.Context, projectID string) (sets.Set[string], error) {
+	service, err := c.getCloudResourceService(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cloud resource service: %w", err)
+	}
+
+	effectiveTags := sets.New[string]()
+	effectiveTagsService := cloudresourcemanager.NewEffectiveTagsService(service)
+	effectiveTagsRequest := effectiveTagsService.List().
+		Context(ctx).
+		Parent(fmt.Sprintf(gcpconsts.ProjectParentPathFmt, projectID))
+
+	if err := effectiveTagsRequest.Pages(ctx, func(page *cloudresourcemanager.ListEffectiveTagsResponse) error {
+		for _, effectiveTag := range page.EffectiveTags {
+			effectiveTags.Insert(effectiveTag.NamespacedTagValue)
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("failed to fetch tags attached to %s project: %w", projectID, err)
+	}
+
+	return effectiveTags, nil
+}
+
+// GetNamespacedTagValue returns the Tag Value metadata fetched using the tag's NamespacedName.
+func (c *Client) GetNamespacedTagValue(ctx context.Context, tagNamespacedName string) (*cloudresourcemanager.TagValue, error) {
+	service, err := c.getCloudResourceService(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cloud resource service: %w", err)
+	}
+
+	tagValuesService := cloudresourcemanager.NewTagValuesService(service)
+
+	tagValue, err := tagValuesService.GetNamespaced().
+		Context(ctx).
+		Name(tagNamespacedName).
+		Do()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch %s tag value: %w", tagNamespacedName, err)
+	}
+
+	return tagValue, nil
 }

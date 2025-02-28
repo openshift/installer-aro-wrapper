@@ -24,6 +24,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/cluster-api/util/topology"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -85,11 +86,15 @@ func (r *AzureMachineTemplate) ValidateCreate(ctx context.Context, obj runtime.O
 		}
 	}
 
+	if ptr.Deref(r.Spec.Template.Spec.DisableExtensionOperations, false) && len(r.Spec.Template.Spec.VMExtensions) > 0 {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("AzureMachineTemplate", "spec", "template", "spec", "VMExtensions"), "VMExtensions must be empty when DisableExtensionOperations is true"))
+	}
+
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
 
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("AzureMachineTemplate").GroupKind(), t.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind(AzureMachineTemplateKind).GroupKind(), t.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
@@ -133,7 +138,7 @@ func (r *AzureMachineTemplate) ValidateUpdate(ctx context.Context, oldRaw runtim
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("AzureMachineTemplate").GroupKind(), t.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind(AzureMachineTemplateKind).GroupKind(), t.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.

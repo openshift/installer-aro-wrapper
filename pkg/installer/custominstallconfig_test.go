@@ -4,6 +4,7 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
@@ -156,8 +156,8 @@ func makeInstallConfig() *installconfig.InstallConfig {
 			OSImage: azuretypes.OSImage{
 				Publisher: "azureopenshift",
 				Offer:     "aro4",
-				SKU:       "aro_416",
-				Version:   "416.00.20240517",
+				SKU:       "aro_417",
+				Version:   "417.00.20240517",
 				Plan:      azuretypes.ImageNoPurchasePlan,
 			},
 		},
@@ -276,7 +276,7 @@ func makeInstallConfig() *installconfig.InstallConfig {
 
 func makeImage() *releaseimage.Image {
 	return &releaseimage.Image{
-		PullSpec: "quay.io/openshift-release-dev/ocp-release:4.16.0-x86_64",
+		PullSpec: "quay.io/openshift-release-dev/ocp-release:4.17.0-x86_64",
 	}
 }
 
@@ -291,25 +291,19 @@ func mockClientCalls(client *mock.MockAPI) {
 			"CPUArchitectureType":          "x64",
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_416", "416.00.20240517").
+	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_417", "417.00.20240517").
 		Return(compute.VirtualMachineImage{
 			VirtualMachineImageProperties: &compute.VirtualMachineImageProperties{
 				HyperVGeneration: compute.HyperVGenerationTypesV2,
 			},
-			Name:     to.StringPtr("aro_416"),
+			Name:     to.StringPtr("aro_417"),
 			Location: to.StringPtr("centralus"),
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetGroup(gomock.Any(), "test-resource-group").
-		Return(&resources.Group{
-			ID:       to.StringPtr("test-resource-group"),
-			Location: to.StringPtr("centralus"),
-		}, nil)
-	client.EXPECT().GetHyperVGenerationVersion(gomock.Any(), "Standard_D2s_v3", "centralus", "").
-		Return("V2", nil)
 }
 
 func TestApplyInstallConfigCustomisations(t *testing.T) {
+	ctx := context.Background()
 	m := fakeManager()
 	inInstallConfig := makeInstallConfig()
 
@@ -319,7 +313,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	inInstallConfig.Azure.UseMockClient(mockClient)
 	mockClientCalls(mockClient)
 
-	graph, err := m.applyInstallConfigCustomisations(inInstallConfig, makeImage())
+	graph, err := m.applyInstallConfigCustomisations(ctx, inInstallConfig, makeImage())
 	if err != nil {
 		t.Fatal(err)
 	}

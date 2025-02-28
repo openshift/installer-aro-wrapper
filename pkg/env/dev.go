@@ -6,7 +6,6 @@ package env
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -14,7 +13,6 @@ import (
 	"github.com/jongio/azidext/go/azidext"
 	"github.com/sirupsen/logrus"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/util/clientauthorizer"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/version"
 )
 
@@ -54,27 +52,6 @@ func newDev(ctx context.Context, log *logrus.Entry) (Interface, error) {
 	d.prod.clusterGenevaLoggingNamespace = version.DevClusterGenevaLoggingNamespace
 
 	return d, nil
-}
-
-func (d *dev) InitializeAuthorizers() error {
-	d.armClientAuthorizer = clientauthorizer.NewAll()
-	d.adminClientAuthorizer = clientauthorizer.NewAll()
-	return nil
-}
-
-func (d *dev) AROOperatorImage() string {
-	override := os.Getenv("ARO_ARO_IMAGE")
-	if override != "" {
-		return override
-	}
-
-	return fmt.Sprintf("%s/aro:%s", d.ACRDomain(), version.GitCommit)
-}
-
-func (d *dev) Listen() (net.Listener, error) {
-	// in dev mode there is no authentication, so for safety we only listen on
-	// localhost
-	return net.Listen("tcp", "localhost:8443")
 }
 
 func (d *dev) FPAuthorizer(tenantID string, scopes ...string) (autorest.Authorizer, error) {

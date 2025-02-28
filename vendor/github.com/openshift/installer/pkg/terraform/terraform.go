@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
 	"github.com/openshift/installer/pkg/infrastructure"
 	"github.com/openshift/installer/pkg/lineprinter"
 	"github.com/openshift/installer/pkg/metrics/timer"
@@ -35,7 +36,11 @@ func InitializeProvider(stages []Stage) infrastructure.Provider {
 
 // Provision implements pkg/infrastructure/provider.Provision. Provision iterates
 // through each of the stages and applies the Terraform config for the stage.
-func (p *Provider) Provision(dir string, vars []*asset.File) ([]*asset.File, error) {
+func (p *Provider) Provision(_ context.Context, dir string, parents asset.Parents) ([]*asset.File, error) {
+	tfVars := &tfvars.TerraformVariables{}
+	parents.Get(tfVars)
+	vars := tfVars.Files()
+
 	fileList := []*asset.File{}
 	terraformDir := filepath.Join(dir, "terraform")
 	if err := os.Mkdir(terraformDir, 0777); err != nil {
@@ -76,7 +81,7 @@ func (p *Provider) Provision(dir string, vars []*asset.File) ([]*asset.File, err
 // DestroyBootstrap implements pkg/infrastructure/provider.DestroyBootstrap.
 // DestroyBootstrap iterates through each stage, and will run the destroy
 // command when defined on a stage.
-func (p *Provider) DestroyBootstrap(dir string) error {
+func (p *Provider) DestroyBootstrap(ctx context.Context, dir string) error {
 	varFiles := []string{tfVarsFileName, tfPlatformVarsFileName}
 	for _, stage := range p.stages {
 		varFiles = append(varFiles, stage.OutputsFilename())

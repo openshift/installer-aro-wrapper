@@ -255,14 +255,14 @@ func ValidateResourceGroup(client API, ic *types.InstallConfig) error {
 	return nil
 }
 
-// ValidateSystemTypeForRegion checks if the specified sysType is available in the target region.
-func ValidateSystemTypeForRegion(client API, ic *types.InstallConfig) error {
+// ValidateSystemTypeForZone checks if the specified sysType is available in the target zone.
+func ValidateSystemTypeForZone(client API, ic *types.InstallConfig) error {
 	if ic.ControlPlane == nil || ic.ControlPlane.Platform.PowerVS == nil || ic.ControlPlane.Platform.PowerVS.SysType == "" {
 		return nil
 	}
-	availableOnes, err := powervstypes.AvailableSysTypes(ic.PowerVS.Region)
+	availableOnes, err := powervstypes.AvailableSysTypes(ic.PowerVS.Region, ic.PowerVS.Zone)
 	if err != nil {
-		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Region)
+		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Zone)
 	}
 	requested := ic.ControlPlane.Platform.PowerVS.SysType
 	found := false
@@ -275,7 +275,7 @@ func ValidateSystemTypeForRegion(client API, ic *types.InstallConfig) error {
 	if found {
 		return nil
 	}
-	return fmt.Errorf("%s is not available in: %s", requested, ic.PowerVS.Region)
+	return fmt.Errorf("%s is not available in: %s", requested, ic.PowerVS.Zone)
 }
 
 // ValidateServiceInstance validates the optional service instance GUID in our install config.
@@ -302,6 +302,29 @@ func ValidateServiceInstance(client API, ic *types.InstallConfig) error {
 		}
 		if !found {
 			return errors.New("platform:powervs:serviceInstanceGUID has an invalid guid")
+		}
+	}
+
+	return nil
+}
+
+// ValidateTransitGateway validates the optional transit gateway name in our install config.
+func ValidateTransitGateway(client API, ic *types.InstallConfig) error {
+	var (
+		id  string
+		err error
+	)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Minute)
+	defer cancel()
+
+	if len(ic.PowerVS.TGName) > 0 {
+		id, err = client.TransitGatewayID(ctx, ic.PowerVS.TGName)
+		if err != nil {
+			return err
+		}
+		if id == "" {
+			return errors.New("platform:powervs:tgName has an invalid name")
 		}
 	}
 

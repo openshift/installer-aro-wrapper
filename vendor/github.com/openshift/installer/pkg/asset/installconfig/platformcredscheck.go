@@ -14,14 +14,12 @@ import (
 	ovirtconfig "github.com/openshift/installer/pkg/asset/installconfig/ovirt"
 	powervsconfig "github.com/openshift/installer/pkg/asset/installconfig/powervs"
 	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
-	"github.com/openshift/installer/pkg/types/libvirt"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -45,27 +43,20 @@ func (a *PlatformCredsCheck) Dependencies() []asset.Asset {
 }
 
 // Generate queries for input from the user.
-func (a *PlatformCredsCheck) Generate(dependencies asset.Parents) error {
-	ctx := context.TODO()
+func (a *PlatformCredsCheck) Generate(ctx context.Context, dependencies asset.Parents) error {
 	ic := &InstallConfig{}
 	dependencies.Get(ic)
 
 	var err error
 	platform := ic.Config.Platform.Name()
 	switch platform {
-	case alibabacloud.Name:
-		_, err = ic.AlibabaCloud.Client()
-		if err != nil {
-			return errors.Wrap(err, "creating AlibabaCloud Cloud session")
-		}
-
 	case aws.Name:
 		_, err := ic.AWS.Session(ctx)
 		if err != nil {
 			return err
 		}
 	case gcp.Name:
-		client, err := gcpconfig.NewClient(context.TODO())
+		client, err := gcpconfig.NewClient(ctx)
 		if err != nil {
 			return err
 		}
@@ -91,7 +82,7 @@ func (a *PlatformCredsCheck) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return errors.Wrap(err, "creating OpenStack session")
 		}
-	case baremetal.Name, libvirt.Name, external.Name, none.Name, vsphere.Name, nutanix.Name:
+	case baremetal.Name, external.Name, none.Name, vsphere.Name, nutanix.Name:
 		// no creds to check
 	case azure.Name:
 		azureSession, err := ic.Azure.Session()

@@ -5,15 +5,12 @@ import (
 	"fmt"
 
 	machineapi "github.com/openshift/api/machine/v1beta1"
+	gcpconsts "github.com/openshift/installer/pkg/constants/gcp"
 	"github.com/openshift/installer/pkg/types"
 )
 
 const (
 	kmsKeyNameFmt = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s"
-
-	// ocpDefaultLabelFmt is the format string for the default label
-	// added to the OpenShift created GCP resources.
-	ocpDefaultLabelFmt = "kubernetes-io-cluster-%s"
 )
 
 // Auth is the collection of credentials that will be used by terrform.
@@ -48,7 +45,9 @@ type config struct {
 	EnableConfidentialCompute string            `json:"gcp_master_confidential_compute,omitempty"`
 	ExtraLabels               map[string]string `json:"gcp_extra_labels,omitempty"`
 	UserProvisionedDNS        bool              `json:"gcp_user_provisioned_dns,omitempty"`
+	ExtraTags                 map[string]string `json:"gcp_extra_tags,omitempty"`
 	IgnitionShim              string            `json:"gcp_ignition_shim,omitempty"`
+	PresignedURL              string            `json:"gcp_signed_url"`
 }
 
 // TFVarsSources contains the parameters to be converted into Terraform variables
@@ -63,7 +62,9 @@ type TFVarsSources struct {
 	PreexistingNetwork  bool
 	InfrastructureName  string
 	UserProvisionedDNS  bool
+	UserTags            map[string]string
 	IgnitionShim        string
+	PresignedURL        string
 }
 
 // TFVars generates gcp-specific Terraform variables launching the cluster.
@@ -77,7 +78,7 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 
 	labels := make(map[string]string, len(masterConfig.Labels)+1)
 	// add OCP default label
-	labels[fmt.Sprintf(ocpDefaultLabelFmt, sources.InfrastructureName)] = "owned"
+	labels[fmt.Sprintf(gcpconsts.ClusterIDLabelFmt, sources.InfrastructureName)] = "owned"
 	for k, v := range masterConfig.Labels {
 		labels[k] = v
 	}
@@ -105,7 +106,9 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		OnHostMaintenance:         string(masterConfig.OnHostMaintenance),
 		ExtraLabels:               labels,
 		UserProvisionedDNS:        sources.UserProvisionedDNS,
+		ExtraTags:                 sources.UserTags,
 		IgnitionShim:              sources.IgnitionShim,
+		PresignedURL:              sources.PresignedURL,
 	}
 
 	if masterConfig.Disks[0].EncryptionKey != nil {

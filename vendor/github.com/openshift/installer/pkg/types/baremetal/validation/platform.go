@@ -26,13 +26,9 @@ import (
 	"github.com/openshift/installer/pkg/validate"
 )
 
-// dynamicProvisioningValidator is a function that validates certain fields in the platform.
-type dynamicProvisioningValidator func(*baremetal.Platform, *field.Path) field.ErrorList
+type interfaceValidatorFactory func(string) (func(string) error, error)
 
-// dynamicProvisioningValidators is an array of dynamicProvisioningValidator functions. This array can be added to by an init function, and
-// is intended to be used for validations that require dependencies not built with the default tags, e.g. libvirt
-// libraries.
-var dynamicProvisioningValidators []dynamicProvisioningValidator
+var interfaceValidator interfaceValidatorFactory = libvirtInterfaceValidator
 
 func validateIPinMachineCIDR(vip string, n *types.Networking) error {
 	var networks []string
@@ -437,7 +433,8 @@ func ValidatePlatform(p *baremetal.Platform, agentBasedInstallation bool, n *typ
 		}
 	}
 
-	if !agentBasedInstallation && p.Hosts == nil {
+	enabledCaps := c.GetEnabledCapabilities()
+	if !agentBasedInstallation && enabledCaps.Has(configv1.ClusterVersionCapabilityMachineAPI) && p.Hosts == nil {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("hosts"), p.Hosts, "bare metal hosts are missing"))
 	}
 
@@ -445,22 +442,9 @@ func ValidatePlatform(p *baremetal.Platform, agentBasedInstallation bool, n *typ
 		allErrs = append(allErrs, ValidateMachinePool(p.DefaultMachinePlatform, fldPath.Child("defaultMachinePlatform"))...)
 	}
 
-	if !agentBasedInstallation {
-		if err := validateHostsCount(p.Hosts, c); err != nil {
-			allErrs = append(allErrs, field.Required(fldPath.Child("Hosts"), err.Error()))
-		}
-		allErrs = append(allErrs, validateHostsWithoutBMC(p.Hosts, fldPath)...)
-		allErrs = append(allErrs, validateBootMode(p.Hosts, fldPath.Child("Hosts"))...)
-		allErrs = append(allErrs, validateRootDeviceHints(p.Hosts, fldPath.Child("Hosts"))...)
-		allErrs = append(allErrs, validateNetworkConfig(p.Hosts, fldPath.Child("Hosts"))...)
-
-		allErrs = append(allErrs, validateHostsName(p.Hosts, fldPath.Child("Hosts"))...)
-	}
-
-	// Platform fields only allowed in TechPreviewNoUpgrade
-	if c.FeatureSet != configv1.TechPreviewNoUpgrade {
-		if c.BareMetal.LoadBalancer != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPath.Child("loadBalancer"), "load balancer is not supported in this feature set"))
+	if !agentBasedInstallation && enabledCaps.Has(configv1.ClusterVersionCapabilityMachineAPI) {
+		if err := ValidateHosts(p, fldPath, c); err != nil {
+			allErrs = append(allErrs, err...)
 		}
 	}
 
@@ -470,6 +454,22 @@ func ValidatePlatform(p *baremetal.Platform, agentBasedInstallation bool, n *typ
 		}
 	}
 
+	return allErrs
+}
+
+// ValidateHosts returns an error if the Hosts are not valid.
+func ValidateHosts(p *baremetal.Platform, fldPath *field.Path, c *types.InstallConfig) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if err := validateHostsCount(p.Hosts, c); err != nil {
+		allErrs = append(allErrs, field.Required(fldPath.Child("Hosts"), err.Error()))
+	}
+	allErrs = append(allErrs, validateHostsWithoutBMC(p.Hosts, fldPath)...)
+	allErrs = append(allErrs, validateBootMode(p.Hosts, fldPath.Child("Hosts"))...)
+	allErrs = append(allErrs, validateRootDeviceHints(p.Hosts, fldPath.Child("Hosts"))...)
+	allErrs = append(allErrs, validateNetworkConfig(p.Hosts, fldPath.Child("Hosts"))...)
+
+	allErrs = append(allErrs, validateHostsName(p.Hosts, fldPath.Child("Hosts"))...)
 	return allErrs
 }
 
@@ -593,11 +593,36 @@ func ValidateProvisioningNetworking(p *baremetal.Platform, n *types.Networking, 
 
 // validateProvisioningBootstrapNetworking checks that provisioning network requirements specified is valid for the bootstrap VM.
 func validateProvisioningBootstrapNetworking(p *baremetal.Platform, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
+	errorList := field.ErrorList{}
 
-	for _, validator := range dynamicProvisioningValidators {
-		allErrs = append(allErrs, validator(p, fldPath)...)
+	if interfaceValidator != nil {
+		findInterface, err := interfaceValidator(p.LibvirtURI)
+		if err != nil {
+			errorList = append(errorList, field.InternalError(fldPath.Child("libvirtURI"), err))
+			return errorList
+		}
+
+		if err := findInterface(p.ExternalBridge); err != nil {
+			errorList = append(errorList, field.Invalid(fldPath.Child("externalBridge"), p.ExternalBridge, err.Error()))
+		}
+
+		if err := findInterface(p.ProvisioningBridge); p.ProvisioningNetwork != baremetal.DisabledProvisioningNetwork && err != nil {
+			errorList = append(errorList, field.Invalid(fldPath.Child("provisioningBridge"), p.ProvisioningBridge, err.Error()))
+		}
+
 	}
 
-	return allErrs
+	if err := validate.MAC(p.ExternalMACAddress); p.ExternalMACAddress != "" && err != nil {
+		errorList = append(errorList, field.Invalid(fldPath.Child("externalMACAddress"), p.ExternalMACAddress, err.Error()))
+	}
+
+	if err := validate.MAC(p.ProvisioningMACAddress); p.ProvisioningMACAddress != "" && err != nil {
+		errorList = append(errorList, field.Invalid(fldPath.Child("provisioningMACAddress"), p.ProvisioningMACAddress, err.Error()))
+	}
+
+	if p.ProvisioningMACAddress != "" && strings.EqualFold(p.ProvisioningMACAddress, p.ExternalMACAddress) {
+		errorList = append(errorList, field.Duplicate(fldPath.Child("provisioningMACAddress"), "provisioning and external MAC addresses may not be identical"))
+	}
+
+	return errorList
 }

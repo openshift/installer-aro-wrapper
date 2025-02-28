@@ -29,11 +29,11 @@ $(ENUMER): $(BINGO_DIR)/enumer.mod
 	@echo "(re)installing $(GOBIN)/enumer-v1.5.10"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=enumer.mod -o=$(GOBIN)/enumer-v1.5.10 "github.com/dmarkham/enumer"
 
-GOIMPORTS := $(GOBIN)/goimports-v0.23.0
+GOIMPORTS := $(GOBIN)/goimports-v0.29.0
 $(GOIMPORTS): $(BINGO_DIR)/goimports.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/goimports-v0.23.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goimports.mod -o=$(GOBIN)/goimports-v0.23.0 "golang.org/x/tools/cmd/goimports"
+	@echo "(re)installing $(GOBIN)/goimports-v0.29.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goimports.mod -o=$(GOBIN)/goimports-v0.29.0 "golang.org/x/tools/cmd/goimports"
 
 GOLANGCI_LINT := $(GOBIN)/golangci-lint-v1.59.1
 $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
@@ -41,15 +41,15 @@ $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
 	@echo "(re)installing $(GOBIN)/golangci-lint-v1.59.1"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v1.59.1 "github.com/golangci/golangci-lint/cmd/golangci-lint"
 
-GOTESTSUM := $(GOBIN)/gotestsum-v1.11.0
+GOTESTSUM := $(GOBIN)/gotestsum-v1.12.0
 $(GOTESTSUM): $(BINGO_DIR)/gotestsum.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/gotestsum-v1.11.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gotestsum.mod -o=$(GOBIN)/gotestsum-v1.11.0 "gotest.tools/gotestsum"
+	@echo "(re)installing $(GOBIN)/gotestsum-v1.12.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gotestsum.mod -o=$(GOBIN)/gotestsum-v1.12.0 "gotest.tools/gotestsum"
 
-MOCKGEN := $(GOBIN)/mockgen-v1.6.0
+MOCKGEN := $(GOBIN)/mockgen-v1.7.0-rc.1
 $(MOCKGEN): $(BINGO_DIR)/mockgen.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/mockgen-v1.6.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mockgen.mod -o=$(GOBIN)/mockgen-v1.6.0 "github.com/golang/mock/mockgen"
+	@echo "(re)installing $(GOBIN)/mockgen-v1.7.0-rc.1"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mockgen.mod -o=$(GOBIN)/mockgen-v1.7.0-rc.1 "github.com/golang/mock/mockgen"
 
