@@ -156,8 +156,8 @@ func makeInstallConfig() *installconfig.InstallConfig {
 			OSImage: azuretypes.OSImage{
 				Publisher: "azureopenshift",
 				Offer:     "aro4",
-				SKU:       "aro_416",
-				Version:   "416.00.20240517",
+				SKU:       "aro_417",
+				Version:   "417.00.20240517",
 				Plan:      azuretypes.ImageNoPurchasePlan,
 			},
 		},
@@ -276,7 +276,7 @@ func makeInstallConfig() *installconfig.InstallConfig {
 
 func makeImage() *releaseimage.Image {
 	return &releaseimage.Image{
-		PullSpec: "quay.io/openshift-release-dev/ocp-release:4.16.0-x86_64",
+		PullSpec: "quay.io/openshift-release-dev/ocp-release:4.17.0-x86_64",
 	}
 }
 
@@ -291,12 +291,12 @@ func mockClientCalls(client *mock.MockAPI) {
 			"CPUArchitectureType":          "x64",
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_416", "416.00.20240517").
+	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_417", "417.00.20240517").
 		Return(compute.VirtualMachineImage{
 			VirtualMachineImageProperties: &compute.VirtualMachineImageProperties{
 				HyperVGeneration: compute.HyperVGenerationTypesV2,
 			},
-			Name:     to.StringPtr("aro_416"),
+			Name:     to.StringPtr("aro_417"),
 			Location: to.StringPtr("centralus"),
 		}, nil).
 		AnyTimes()
