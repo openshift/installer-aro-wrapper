@@ -79,7 +79,7 @@ cache-size=0
 	Port 24224
 `,
 	"/etc/hosts.d/aro.conf": `203.0.113.1	api.test-cluster.test.example.com api-int.test-cluster.test.example.com
-203.0.113.2	gateway.mock1.example.com gateway.mock2.example.com 
+203.0.113.2	gateway.mock1.example.com gateway.mock2.example.com ` + `
 `,
 	"/etc/mdsd.d/mdsd.env": `MONITORING_GCS_ENVIRONMENT=test-logging-environment
 MONITORING_GCS_ACCOUNT=test-logging-account
@@ -184,7 +184,7 @@ spec:
         user:
           name: root
       - contents:
-          source: data:text/plain;charset=utf-8;base64,CiMhL2Jpbi9iYXNoCnNldCAtZXVvIHBpcGVmYWlsCgojIFRoaXMgYmFzaCBzY3JpcHQgaXMgYSBwYXJ0IG9mIHRoZSBBUk8gRG5zTWFzcSBjb25maWd1cmF0aW9uCiMgSXQncyBkZXBsb3llZCBhcyBwYXJ0IG9mIHRoZSA5OS1hcm8tZG5zLSogbWFjaGluZSBjb25maWcKIyBTZWUgaHR0cHM6Ly9naXRodWIuY29tL0F6dXJlL0FSTy1SUAoKIyBUaGlzIGZpbGUgY2FuIGJlIHJlcnVuIGFuZCB0aGUgZWZmZWN0IGlzIGlkZW1wb3RlbnQsIG91dHB1dCBtaWdodCBjaGFuZ2UgaWYgdGhlIERIQ1AgY29uZmlndXJhdGlvbiBjaGFuZ2VzCgpUTVBTRUxGUkVTT0xWPSQobWt0ZW1wKQpUTVBORVRSRVNPTFY9JChta3RlbXApCgplY2hvICIjIEdlbmVyYXRlZCBmb3IgZG5zbWFzcS5zZXJ2aWNlIC0gc2hvdWxkIHBvaW50IHRvIHNlbGYiID4gJFRNUFNFTEZSRVNPTFYKZWNobyAiIyBHZW5lcmF0ZWQgZm9yIGRuc21hc3Euc2VydmljZSAtIHNob3VsZCBjb250YWluIERIQ1AgY29uZmlndXJlZCBETlMiID4gJFRNUE5FVFJFU09MVgoKaWYgbm1jbGkgZGV2aWNlIHNob3cgYnItZXg7IHRoZW4KICAgIGVjaG8gIk9WTiBtb2RlIC0gYnItZXggZGV2aWNlIGV4aXN0cyIKICAgICNnZXR0aW5nIEROUyBzZWFyY2ggc3RyaW5ncwogICAgU0VBUkNIX1JBVz0kKG5tY2xpIC0tZ2V0IElQNC5ET01BSU4gZGV2aWNlIHNob3cgYnItZXgpCiAgICAjZ2V0dGluZyBETlMgc2VydmVycwogICAgTkFNRVNFUlZFUl9SQVc9JChubWNsaSAtLWdldCBJUDQuRE5TIGRldmljZSBzaG93IGJyLWV4IHwgdHIgLXMgIiB8ICIgIlxuIikKICAgIExPQ0FMX0lQU19SQVc9JChubWNsaSAtLWdldCBJUDQuQUREUkVTUyBkZXZpY2Ugc2hvdyBici1leCkKZWxzZQogICAgTkVUREVWPSQobm1jbGkgLS1nZXQgZGV2aWNlIGNvbm5lY3Rpb24gc2hvdyAtLWFjdGl2ZSB8IGhlYWQgLW4gMSkgI3RoZXJlIHNob3VsZCBiZSBvbmx5IG9uZSBhY3RpdmUgZGV2aWNlCiAgICBlY2hvICJPVlMgU0ROIG1vZGUgLSBici1leCBub3QgZm91bmQsIHVzaW5nIGRldmljZSAkTkVUREVWIgogICAgU0VBUkNIX1JBVz0kKG5tY2xpIC0tZ2V0IElQNC5ET01BSU4gZGV2aWNlIHNob3cgJE5FVERFVikKICAgIE5BTUVTRVJWRVJfUkFXPSQobm1jbGkgLS1nZXQgSVA0LkROUyBkZXZpY2Ugc2hvdyAkTkVUREVWIHwgdHIgLXMgIiB8ICIgIlxuIikKICAgIExPQ0FMX0lQU19SQVc9JChubWNsaSAtLWdldCBJUDQuQUREUkVTUyBkZXZpY2Ugc2hvdyAkTkVUREVWKQpmaQoKI3NlYXJjaCBsaW5lCmVjaG8gInNlYXJjaCAkU0VBUkNIX1JBVyIgfCB0ciAnXG4nICcgJyA+PiAkVE1QTkVUUkVTT0xWCmVjaG8gIiIgPj4gJFRNUE5FVFJFU09MVgplY2hvICJzZWFyY2ggJFNFQVJDSF9SQVciIHwgdHIgJ1xuJyAnICcgPj4gJFRNUFNFTEZSRVNPTFYKZWNobyAiIiA+PiAkVE1QU0VMRlJFU09MVgoKI25hbWVzZXJ2ZXJzIGFzIHNlcGFyYXRlIGxpbmVzCmVjaG8gIiROQU1FU0VSVkVSX1JBVyIgfCB3aGlsZSByZWFkIC1yIGxpbmUKZG8KICAgIGVjaG8gIm5hbWVzZXJ2ZXIgJGxpbmUiID4+ICRUTVBORVRSRVNPTFYKZG9uZQojIGRldmljZSBJUHMgYXJlIHJldHVybmVkIGluIGFkZHJlc3MvbWFzayBmb3JtYXQKZWNobyAiJExPQ0FMX0lQU19SQVciIHwgd2hpbGUgcmVhZCAtciBsaW5lCmRvCiAgICBlY2hvICJuYW1lc2VydmVyICRsaW5lIiB8IGN1dCAtZCcvJyAtZiAxID4+ICRUTVBTRUxGUkVTT0xWCmRvbmUKCiMgZG9uZSwgY29weWluZyBmaWxlcyB0byBkZXN0aW5hdGlvbiBsb2NhdGlvbnMgYW5kIGNsZWFuaW5nIHVwCi9iaW4vY3AgJFRNUE5FVFJFU09MViAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EKY2htb2QgMDc0NCAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EKL2Jpbi9jcCAkVE1QU0VMRlJFU09MViAvZXRjL3Jlc29sdi5jb25mCi91c3Ivc2Jpbi9yZXN0b3JlY29uIC9ldGMvcmVzb2x2LmNvbmYKL2Jpbi9ybSAkVE1QTkVUUkVTT0xWCi9iaW4vcm0gJFRNUFNFTEZSRVNPTFYK
+          source: data:text/plain;charset=utf-8;base64,CiMhL2Jpbi9iYXNoCnNldCAtZXVvIHBpcGVmYWlsCgojIFRoaXMgYmFzaCBzY3JpcHQgaXMgYSBwYXJ0IG9mIHRoZSBBUk8gRG5zTWFzcSBjb25maWd1cmF0aW9uCiMgSXQncyBkZXBsb3llZCBhcyBwYXJ0IG9mIHRoZSA5OS1hcm8tZG5zLSogbWFjaGluZSBjb25maWcKIyBTZWUgaHR0cHM6Ly9naXRodWIuY29tL0F6dXJlL0FSTy1SUAoKIyBUaGlzIGZpbGUgY2FuIGJlIHJlcnVuIGFuZCB0aGUgZWZmZWN0IGlzIGlkZW1wb3RlbnQsIG91dHB1dCBtaWdodCBjaGFuZ2UgaWYgdGhlIERIQ1AgY29uZmlndXJhdGlvbiBjaGFuZ2VzCgpOT0RFSVA9JCgvc2Jpbi9pcCAtLWpzb24gcm91dGUgZ2V0IDE2OC42My4xMjkuMTYgfCAvYmluL2pxIC1yICIuW10ucHJlZnNyYyIpCgppZiBbICIkTk9ERUlQIiAhPSAiIiBdOyB0aGVuCiAgICAvYmluL2NwIC1aIC9ldGMvcmVzb2x2LmNvbmYgL2V0Yy9yZXNvbHYuY29uZi5kbnNtYXNxCiAgICBTRUFSQ0hET01BSU49JChhd2sgJy9ec2VhcmNoLyB7IHByaW50ICQyOyB9JyAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EpCiAgICAvYmluL2NobW9kIDA3NDQgL2V0Yy9yZXNvbHYuY29uZi5kbnNtYXNxCgogICAgY2F0IDw8RU9GIHwgL2Jpbi90ZWUgL2V0Yy9OZXR3b3JrTWFuYWdlci9jb25mLmQvYXJvLWRucy5jb25mCiMgQWRkZWQgYnkgZG5zbWFzcS5zZXJ2aWNlCltnbG9iYWwtZG5zXQpzZWFyY2hlcz0kU0VBUkNIRE9NQUlOCgpbZ2xvYmFsLWRucy1kb21haW4tKl0Kc2VydmVycz0kTk9ERUlQCkVPRgoKICAgICMgbmV0d29yayBtYW5hZ2VyIG1heSBhbHJlYWR5IGJlIHJ1bm5pbmcgYXQgdGhpcyBwb2ludC4KICAgICMgcmVsb2FkIHRvIHVwZGF0ZSAvZXRjL3Jlc29sdi5jb25mIHdpdGggdGhpcyBjb25maWd1cmF0aW9uCiAgICAvdXNyL2Jpbi9ubWNsaSBnZW5lcmFsIHJlbG9hZCBjb25mCiAgICAvdXNyL2Jpbi9ubWNsaSBnZW5lcmFsIHJlbG9hZCBkbnMtcmMKZmkK
           verification: {}
         group: {}
         mode: 484
@@ -208,8 +208,10 @@ spec:
           # resolv.conf.dnsmasq upstream customer dns.
           ExecStartPre=/bin/bash /usr/local/bin/aro-dnsmasq-pre.sh
           ExecStart=/usr/sbin/dnsmasq -k
-          ExecStopPost=/bin/bash -c '/bin/mv /etc/resolv.conf.dnsmasq /etc/resolv.conf; /usr/sbin/restorecon /etc/resolv.conf'
+          ExecStopPost=/bin/bash -c '/bin/rm /etc/NetworkManager/conf.d/aro-dns.conf && /usr/bin/nmcli general reload conf && /usr/bin/nmcli general reload dns-rc'
           Restart=always
+          StandardOutput=journal+console
+          StandardError=journal+console
 
           [Install]
           WantedBy=multi-user.target
@@ -325,7 +327,7 @@ spec:
         user:
           name: root
       - contents:
-          source: data:text/plain;charset=utf-8;base64,CiMhL2Jpbi9iYXNoCnNldCAtZXVvIHBpcGVmYWlsCgojIFRoaXMgYmFzaCBzY3JpcHQgaXMgYSBwYXJ0IG9mIHRoZSBBUk8gRG5zTWFzcSBjb25maWd1cmF0aW9uCiMgSXQncyBkZXBsb3llZCBhcyBwYXJ0IG9mIHRoZSA5OS1hcm8tZG5zLSogbWFjaGluZSBjb25maWcKIyBTZWUgaHR0cHM6Ly9naXRodWIuY29tL0F6dXJlL0FSTy1SUAoKIyBUaGlzIGZpbGUgY2FuIGJlIHJlcnVuIGFuZCB0aGUgZWZmZWN0IGlzIGlkZW1wb3RlbnQsIG91dHB1dCBtaWdodCBjaGFuZ2UgaWYgdGhlIERIQ1AgY29uZmlndXJhdGlvbiBjaGFuZ2VzCgpUTVBTRUxGUkVTT0xWPSQobWt0ZW1wKQpUTVBORVRSRVNPTFY9JChta3RlbXApCgplY2hvICIjIEdlbmVyYXRlZCBmb3IgZG5zbWFzcS5zZXJ2aWNlIC0gc2hvdWxkIHBvaW50IHRvIHNlbGYiID4gJFRNUFNFTEZSRVNPTFYKZWNobyAiIyBHZW5lcmF0ZWQgZm9yIGRuc21hc3Euc2VydmljZSAtIHNob3VsZCBjb250YWluIERIQ1AgY29uZmlndXJlZCBETlMiID4gJFRNUE5FVFJFU09MVgoKaWYgbm1jbGkgZGV2aWNlIHNob3cgYnItZXg7IHRoZW4KICAgIGVjaG8gIk9WTiBtb2RlIC0gYnItZXggZGV2aWNlIGV4aXN0cyIKICAgICNnZXR0aW5nIEROUyBzZWFyY2ggc3RyaW5ncwogICAgU0VBUkNIX1JBVz0kKG5tY2xpIC0tZ2V0IElQNC5ET01BSU4gZGV2aWNlIHNob3cgYnItZXgpCiAgICAjZ2V0dGluZyBETlMgc2VydmVycwogICAgTkFNRVNFUlZFUl9SQVc9JChubWNsaSAtLWdldCBJUDQuRE5TIGRldmljZSBzaG93IGJyLWV4IHwgdHIgLXMgIiB8ICIgIlxuIikKICAgIExPQ0FMX0lQU19SQVc9JChubWNsaSAtLWdldCBJUDQuQUREUkVTUyBkZXZpY2Ugc2hvdyBici1leCkKZWxzZQogICAgTkVUREVWPSQobm1jbGkgLS1nZXQgZGV2aWNlIGNvbm5lY3Rpb24gc2hvdyAtLWFjdGl2ZSB8IGhlYWQgLW4gMSkgI3RoZXJlIHNob3VsZCBiZSBvbmx5IG9uZSBhY3RpdmUgZGV2aWNlCiAgICBlY2hvICJPVlMgU0ROIG1vZGUgLSBici1leCBub3QgZm91bmQsIHVzaW5nIGRldmljZSAkTkVUREVWIgogICAgU0VBUkNIX1JBVz0kKG5tY2xpIC0tZ2V0IElQNC5ET01BSU4gZGV2aWNlIHNob3cgJE5FVERFVikKICAgIE5BTUVTRVJWRVJfUkFXPSQobm1jbGkgLS1nZXQgSVA0LkROUyBkZXZpY2Ugc2hvdyAkTkVUREVWIHwgdHIgLXMgIiB8ICIgIlxuIikKICAgIExPQ0FMX0lQU19SQVc9JChubWNsaSAtLWdldCBJUDQuQUREUkVTUyBkZXZpY2Ugc2hvdyAkTkVUREVWKQpmaQoKI3NlYXJjaCBsaW5lCmVjaG8gInNlYXJjaCAkU0VBUkNIX1JBVyIgfCB0ciAnXG4nICcgJyA+PiAkVE1QTkVUUkVTT0xWCmVjaG8gIiIgPj4gJFRNUE5FVFJFU09MVgplY2hvICJzZWFyY2ggJFNFQVJDSF9SQVciIHwgdHIgJ1xuJyAnICcgPj4gJFRNUFNFTEZSRVNPTFYKZWNobyAiIiA+PiAkVE1QU0VMRlJFU09MVgoKI25hbWVzZXJ2ZXJzIGFzIHNlcGFyYXRlIGxpbmVzCmVjaG8gIiROQU1FU0VSVkVSX1JBVyIgfCB3aGlsZSByZWFkIC1yIGxpbmUKZG8KICAgIGVjaG8gIm5hbWVzZXJ2ZXIgJGxpbmUiID4+ICRUTVBORVRSRVNPTFYKZG9uZQojIGRldmljZSBJUHMgYXJlIHJldHVybmVkIGluIGFkZHJlc3MvbWFzayBmb3JtYXQKZWNobyAiJExPQ0FMX0lQU19SQVciIHwgd2hpbGUgcmVhZCAtciBsaW5lCmRvCiAgICBlY2hvICJuYW1lc2VydmVyICRsaW5lIiB8IGN1dCAtZCcvJyAtZiAxID4+ICRUTVBTRUxGUkVTT0xWCmRvbmUKCiMgZG9uZSwgY29weWluZyBmaWxlcyB0byBkZXN0aW5hdGlvbiBsb2NhdGlvbnMgYW5kIGNsZWFuaW5nIHVwCi9iaW4vY3AgJFRNUE5FVFJFU09MViAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EKY2htb2QgMDc0NCAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EKL2Jpbi9jcCAkVE1QU0VMRlJFU09MViAvZXRjL3Jlc29sdi5jb25mCi91c3Ivc2Jpbi9yZXN0b3JlY29uIC9ldGMvcmVzb2x2LmNvbmYKL2Jpbi9ybSAkVE1QTkVUUkVTT0xWCi9iaW4vcm0gJFRNUFNFTEZSRVNPTFYK
+          source: data:text/plain;charset=utf-8;base64,CiMhL2Jpbi9iYXNoCnNldCAtZXVvIHBpcGVmYWlsCgojIFRoaXMgYmFzaCBzY3JpcHQgaXMgYSBwYXJ0IG9mIHRoZSBBUk8gRG5zTWFzcSBjb25maWd1cmF0aW9uCiMgSXQncyBkZXBsb3llZCBhcyBwYXJ0IG9mIHRoZSA5OS1hcm8tZG5zLSogbWFjaGluZSBjb25maWcKIyBTZWUgaHR0cHM6Ly9naXRodWIuY29tL0F6dXJlL0FSTy1SUAoKIyBUaGlzIGZpbGUgY2FuIGJlIHJlcnVuIGFuZCB0aGUgZWZmZWN0IGlzIGlkZW1wb3RlbnQsIG91dHB1dCBtaWdodCBjaGFuZ2UgaWYgdGhlIERIQ1AgY29uZmlndXJhdGlvbiBjaGFuZ2VzCgpOT0RFSVA9JCgvc2Jpbi9pcCAtLWpzb24gcm91dGUgZ2V0IDE2OC42My4xMjkuMTYgfCAvYmluL2pxIC1yICIuW10ucHJlZnNyYyIpCgppZiBbICIkTk9ERUlQIiAhPSAiIiBdOyB0aGVuCiAgICAvYmluL2NwIC1aIC9ldGMvcmVzb2x2LmNvbmYgL2V0Yy9yZXNvbHYuY29uZi5kbnNtYXNxCiAgICBTRUFSQ0hET01BSU49JChhd2sgJy9ec2VhcmNoLyB7IHByaW50ICQyOyB9JyAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EpCiAgICAvYmluL2NobW9kIDA3NDQgL2V0Yy9yZXNvbHYuY29uZi5kbnNtYXNxCgogICAgY2F0IDw8RU9GIHwgL2Jpbi90ZWUgL2V0Yy9OZXR3b3JrTWFuYWdlci9jb25mLmQvYXJvLWRucy5jb25mCiMgQWRkZWQgYnkgZG5zbWFzcS5zZXJ2aWNlCltnbG9iYWwtZG5zXQpzZWFyY2hlcz0kU0VBUkNIRE9NQUlOCgpbZ2xvYmFsLWRucy1kb21haW4tKl0Kc2VydmVycz0kTk9ERUlQCkVPRgoKICAgICMgbmV0d29yayBtYW5hZ2VyIG1heSBhbHJlYWR5IGJlIHJ1bm5pbmcgYXQgdGhpcyBwb2ludC4KICAgICMgcmVsb2FkIHRvIHVwZGF0ZSAvZXRjL3Jlc29sdi5jb25mIHdpdGggdGhpcyBjb25maWd1cmF0aW9uCiAgICAvdXNyL2Jpbi9ubWNsaSBnZW5lcmFsIHJlbG9hZCBjb25mCiAgICAvdXNyL2Jpbi9ubWNsaSBnZW5lcmFsIHJlbG9hZCBkbnMtcmMKZmkK
           verification: {}
         group: {}
         mode: 484
@@ -349,8 +351,10 @@ spec:
           # resolv.conf.dnsmasq upstream customer dns.
           ExecStartPre=/bin/bash /usr/local/bin/aro-dnsmasq-pre.sh
           ExecStart=/usr/sbin/dnsmasq -k
-          ExecStopPost=/bin/bash -c '/bin/mv /etc/resolv.conf.dnsmasq /etc/resolv.conf; /usr/sbin/restorecon /etc/resolv.conf'
+          ExecStopPost=/bin/bash -c '/bin/rm /etc/NetworkManager/conf.d/aro-dns.conf && /usr/bin/nmcli general reload conf && /usr/bin/nmcli general reload dns-rc'
           Restart=always
+          StandardOutput=journal+console
+          StandardError=journal+console
 
           [Install]
           WantedBy=multi-user.target
@@ -421,51 +425,27 @@ set -euo pipefail
 
 # This file can be rerun and the effect is idempotent, output might change if the DHCP configuration changes
 
-TMPSELFRESOLV=$(mktemp)
-TMPNETRESOLV=$(mktemp)
+NODEIP=$(/sbin/ip --json route get 168.63.129.16 | /bin/jq -r ".[].prefsrc")
 
-echo "# Generated for dnsmasq.service - should point to self" > $TMPSELFRESOLV
-echo "# Generated for dnsmasq.service - should contain DHCP configured DNS" > $TMPNETRESOLV
+if [ "$NODEIP" != "" ]; then
+    /bin/cp -Z /etc/resolv.conf /etc/resolv.conf.dnsmasq
+    SEARCHDOMAIN=$(awk '/^search/ { print $2; }' /etc/resolv.conf.dnsmasq)
+    /bin/chmod 0744 /etc/resolv.conf.dnsmasq
 
-if nmcli device show br-ex; then
-    echo "OVN mode - br-ex device exists"
-    #getting DNS search strings
-    SEARCH_RAW=$(nmcli --get IP4.DOMAIN device show br-ex)
-    #getting DNS servers
-    NAMESERVER_RAW=$(nmcli --get IP4.DNS device show br-ex | tr -s " | " "\n")
-    LOCAL_IPS_RAW=$(nmcli --get IP4.ADDRESS device show br-ex)
-else
-    NETDEV=$(nmcli --get device connection show --active | head -n 1) #there should be only one active device
-    echo "OVS SDN mode - br-ex not found, using device $NETDEV"
-    SEARCH_RAW=$(nmcli --get IP4.DOMAIN device show $NETDEV)
-    NAMESERVER_RAW=$(nmcli --get IP4.DNS device show $NETDEV | tr -s " | " "\n")
-    LOCAL_IPS_RAW=$(nmcli --get IP4.ADDRESS device show $NETDEV)
+    cat <<EOF | /bin/tee /etc/NetworkManager/conf.d/aro-dns.conf
+# Added by dnsmasq.service
+[global-dns]
+searches=$SEARCHDOMAIN
+
+[global-dns-domain-*]
+servers=$NODEIP
+EOF
+
+    # network manager may already be running at this point.
+    # reload to update /etc/resolv.conf with this configuration
+    /usr/bin/nmcli general reload conf
+    /usr/bin/nmcli general reload dns-rc
 fi
-
-#search line
-echo "search $SEARCH_RAW" | tr '\n' ' ' >> $TMPNETRESOLV
-echo "" >> $TMPNETRESOLV
-echo "search $SEARCH_RAW" | tr '\n' ' ' >> $TMPSELFRESOLV
-echo "" >> $TMPSELFRESOLV
-
-#nameservers as separate lines
-echo "$NAMESERVER_RAW" | while read -r line
-do
-    echo "nameserver $line" >> $TMPNETRESOLV
-done
-# device IPs are returned in address/mask format
-echo "$LOCAL_IPS_RAW" | while read -r line
-do
-    echo "nameserver $line" | cut -d'/' -f 1 >> $TMPSELFRESOLV
-done
-
-# done, copying files to destination locations and cleaning up
-/bin/cp $TMPNETRESOLV /etc/resolv.conf.dnsmasq
-chmod 0744 /etc/resolv.conf.dnsmasq
-/bin/cp $TMPSELFRESOLV /etc/resolv.conf
-/usr/sbin/restorecon /etc/resolv.conf
-/bin/rm $TMPNETRESOLV
-/bin/rm $TMPSELFRESOLV
 `,
 	"/usr/local/bin/aro-etchosts-resolver.sh": `#!/bin/bash
 set -uo pipefail
