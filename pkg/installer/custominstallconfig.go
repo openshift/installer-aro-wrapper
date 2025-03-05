@@ -18,16 +18,12 @@ import (
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/cluster"
-	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/kubeconfig"
-	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/openshift/installer/pkg/asset/tls"
+	"github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -47,16 +43,6 @@ const (
 )
 
 var (
-	targetAssets = []asset.WritableAsset{
-		&cluster.Metadata{},
-		&machine.MasterIgnitionCustomizations{},
-		&machine.WorkerIgnitionCustomizations{},
-		&tfvars.TerraformVariables{},
-		&kubeconfig.AdminClient{},
-		&password.KubeadminPassword{},
-		&tls.JournalCertKey{},
-		&tls.RootCA{},
-	}
 	userDataTmpl = template.Must(template.New("user-data").Parse(`apiVersion: v1
 kind: Secret
 metadata:
@@ -132,7 +118,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	g.Set(installConfig, image, clusterID, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
-	for _, a := range targetAssets {
+	for _, a := range targets.IgnitionConfigs {
 		err = g.Resolve(a)
 		if err != nil {
 			return nil, err
