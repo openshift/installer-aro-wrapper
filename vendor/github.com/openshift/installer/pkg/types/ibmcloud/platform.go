@@ -12,16 +12,22 @@ const (
 	IBMCloudServiceCISVar string = "IBMCLOUD_CIS_API_ENDPOINT"
 
 	// IBMCloudServiceCOSVar is the variable name used by the IBM Cloud Terraform Provider to override the COS endpoint.
-	IBMCloudServiceCOSVar string = "IBMCLOUD_COS_CONFIG_ENDPOINT"
+	IBMCloudServiceCOSVar string = "IBMCLOUD_COS_ENDPOINT"
+
+	// IBMCloudServiceCOSConfigVar is the variable name used by IBM Cloud Terraform Provider to override the COS Config endpoint.
+	IBMCloudServiceCOSConfigVar string = "IBMCLOUD_COS_CONFIG_ENDPOINT"
 
 	// IBMCloudServiceDNSServicesVar is the variable name used by the IBM Cloud Terraform Provider to override the DNS Services endpoint.
 	IBMCloudServiceDNSServicesVar string = "IBMCLOUD_PRIVATE_DNS_API_ENDPOINT"
 
+	// IBMCloudServiceGlobalCatalogVar is the variable name used by the IBM Cloud Terraform Provider to override the Global Catalog endpoint.
+	IBMCloudServiceGlobalCatalogVar string = "IBMCLOUD_RESOURCE_CATALOG_API_ENDPOINT"
+
 	// IBMCloudServiceGlobalSearchVar is the variable name used by the IBM Cloud Terraform Provider to override the Global Search endpoint.
-	IBMCloudServiceGlobalSearchVar string = "IBMCLOUD_GS_API_ENDPOINT"
+	IBMCloudServiceGlobalSearchVar string = "IBMCLOUD_GS_API_ENDPOINT" //nolint:gosec // not hardcoded creds
 
 	// IBMCloudServiceGlobalTaggingVar is the variable name used by the IBM Cloud Terraform Provider to override the Global Tagging endpoint.
-	IBMCloudServiceGlobalTaggingVar string = "IBMCLOUD_GT_API_ENDPOINT"
+	IBMCloudServiceGlobalTaggingVar string = "IBMCLOUD_GT_API_ENDPOINT" //nolint:gosec // not hardcoded creds
 
 	// IBMCloudServiceHyperProtectVar is the variable name used by the IBM Cloud Terraform Provider to override the Hyper Protect endpoint.
 	IBMCloudServiceHyperProtectVar string = "IBMCLOUD_HPCS_API_ENDPOINT"
@@ -30,7 +36,7 @@ const (
 	IBMCloudServiceIAMVar string = "IBMCLOUD_IAM_API_ENDPOINT"
 
 	// IBMCloudServiceKeyProtectVar is the variable name used by the IBM Cloud Terraform Provider to override the Key Protect endpoint.
-	IBMCloudServiceKeyProtectVar string = "IBMCLOUD_KP_API_ENDPOINT"
+	IBMCloudServiceKeyProtectVar string = "IBMCLOUD_KP_API_ENDPOINT" //nolint:gosec // not hardcoded creds
 
 	// IBMCloudServiceResourceControllerVar is the variable name used by the IBM Cloud Terraform Provider to override the Resource Controller endpoint.
 	IBMCloudServiceResourceControllerVar string = "IBMCLOUD_RESOURCE_CONTROLLER_API_ENDPOINT"
@@ -47,7 +53,9 @@ var (
 	IBMCloudServiceOverrides = map[configv1.IBMCloudServiceName]string{
 		configv1.IBMCloudServiceCIS:                IBMCloudServiceCISVar,
 		configv1.IBMCloudServiceCOS:                IBMCloudServiceCOSVar,
+		configv1.IBMCloudServiceCOSConfig:          IBMCloudServiceCOSConfigVar,
 		configv1.IBMCloudServiceDNSServices:        IBMCloudServiceDNSServicesVar,
+		configv1.IBMCloudServiceGlobalCatalog:      IBMCloudServiceGlobalCatalogVar,
 		configv1.IBMCloudServiceGlobalSearch:       IBMCloudServiceGlobalSearchVar,
 		configv1.IBMCloudServiceGlobalTagging:      IBMCloudServiceGlobalTaggingVar,
 		configv1.IBMCloudServiceHyperProtect:       IBMCloudServiceHyperProtectVar,
@@ -66,10 +74,16 @@ type EndpointsJSON struct {
 	IBMCloudEndpointCIS *EndpointsVisibility `json:"IBMCLOUD_CIS_API_ENDPOINT,omitempty"`
 
 	// IBMCloudEndpointCOS contains endpoint mapping for IBM Cloud COS.
-	IBMCloudEndpointCOS *EndpointsVisibility `json:"IBMCLOUD_COS_CONFIG_ENDPOINT,omitempty"`
+	IBMCloudEndpointCOS *EndpointsVisibility `json:"IBMCLOUD_COS_ENDPOINT,omitempty"`
+
+	// IBMCloudEndpointCOSConfig contains endpoint mapping for IBM Cloud COS Config.
+	IBMCloudEndpointCOSConfig *EndpointsVisibility `json:"IBMCLOUD_COS_CONFIG_ENDPOINT,omitempty"`
 
 	// IBMCloudEndpointDNSServices contains endpoint mapping for IBM Cloud DNS Services.
 	IBMCloudEndpointDNSServices *EndpointsVisibility `json:"IBMCLOUD_PRIVATE_DNS_API_ENDPOINT,omitempty"`
+
+	// IBMCloudEndpointGlobalCatalog contains endpoint mapping for IBM Cloud Global Catalog.
+	IBMCloudEndpointGlobalCatalog *EndpointsVisibility `json:"IBMCLOUD_RESOURCE_CATALOG_API_ENDPOINT,omitempty"`
 
 	// IBMCloudEndpointGlobalSearch contains endpoint mapping for IBM Cloud Global Search.
 	IBMCloudEndpointGlobalSearch *EndpointsVisibility `json:"IBMCLOUD_GS_API_ENDPOINT,omitempty"`

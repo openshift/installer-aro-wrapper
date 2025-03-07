@@ -5,6 +5,7 @@ package installer
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -48,9 +49,6 @@ const (
 var (
 	targetAssets = []asset.WritableAsset{
 		&cluster.Metadata{},
-		&machine.MasterIgnitionCustomizations{},
-		&machine.WorkerIgnitionCustomizations{},
-		&cluster.TerraformVariables{},
 		&kubeconfig.AdminClient{},
 		&password.KubeadminPassword{},
 		&tls.JournalCertKey{},
@@ -72,7 +70,7 @@ data:
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
 // parent assets, then regenerates the InstallConfig for use for Ignition
 // generation, etc.
-func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
+func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
 	clusterID := &installconfig.ClusterID{
 		UUID:    m.clusterUUID,
 		InfraID: m.oc.Properties.InfraID,
@@ -132,7 +130,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 
 	m.log.Print("resolving graph")
 	for _, a := range targetAssets {
-		err = g.Resolve(a)
+		err = g.Resolve(ctx, a)
 		if err != nil {
 			return nil, err
 		}
