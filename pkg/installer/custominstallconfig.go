@@ -23,7 +23,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/openshift/installer/pkg/asset/targets"
+	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -118,7 +118,7 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	g.Set(installConfig, image, clusterID, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
-	for _, a := range targets.IgnitionConfigs {
+	for _, a := range targetassets.IgnitionConfigs {
 		err = g.Resolve(a)
 		if err != nil {
 			return nil, err
