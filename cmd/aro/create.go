@@ -54,6 +54,7 @@ var (
 
 				runner := func(directory string, manifests []asset.WritableAsset) error {
 					for _, m := range manifests {
+						logrus.Infof("resolving asset %s from graph", m.Name())
 						err = g.Resolve(m)
 						if err != nil {
 							err = errors.Wrapf(err, "failed to fetch %s", m.Name())
@@ -70,12 +71,6 @@ var (
 						}
 					}
 					return nil
-				}
-
-				err = runner(rootOpts.dir, targetassets.Manifests)
-				if err != nil {
-					logrus.Error(err)
-					logrus.Exit(1)
 				}
 
 				err = runner(rootOpts.dir, targetassets.IgnitionConfigs)
