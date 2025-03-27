@@ -238,6 +238,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
 						OutboundType:             outboundType,
 						ResourceGroupName:        resourceGroup,
+						// We specify BaseDomainResourceGroupName even though we
+						// do not create Public DNS zones to pass validation.
+						// See https://issues.redhat.com/browse/OCPSTRAT-991 for
+						// a more permanent fix (disabling public DNS
+						// provisioning).
+						BaseDomainResourceGroupName: resourceGroup,
 					},
 				},
 				PullSecret: pullSecret,
