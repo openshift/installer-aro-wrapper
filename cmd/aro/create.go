@@ -85,12 +85,6 @@ var (
 					return nil
 				}
 
-				err = runner(rootOpts.dir, targetedManifests)
-				if err != nil {
-					logrus.Error(err)
-					logrus.Exit(1)
-				}
-
 				err = runner(rootOpts.dir, targetassets.IgnitionConfigs)
 				if err != nil {
 					logrus.Error(err)
