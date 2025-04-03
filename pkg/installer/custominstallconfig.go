@@ -62,6 +62,11 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 		InfraID: m.oc.Properties.InfraID,
 	}
 
+	// Adding a bogus base domain to bypass installer check for base domain.
+	// ARO does not use the base domain to create DNS entries but the installer
+	// does so adding this random base domain value.
+	installConfig.Config.Azure.BaseDomainResourceGroupName = installConfig.Config.Azure.ResourceGroupName
+
 	bootstrapLoggingConfig, err := m.getBootstrapLoggingConfig(m.env, m.oc)
 	if err != nil {
 		return nil, err
