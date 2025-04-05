@@ -938,6 +938,7 @@ github.com/openshift/installer/pkg/asset/quota/gcp
 github.com/openshift/installer/pkg/asset/quota/openstack
 github.com/openshift/installer/pkg/asset/releaseimage
 github.com/openshift/installer/pkg/asset/rhcos
+github.com/openshift/installer/pkg/asset/store
 github.com/openshift/installer/pkg/asset/targets
 github.com/openshift/installer/pkg/asset/templates/content
 github.com/openshift/installer/pkg/asset/templates/content/bootkube
