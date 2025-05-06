@@ -51,7 +51,7 @@ exit 0
 `,
 	"/etc/dnsmasq.conf": `
 resolv-file=/etc/resolv.conf.dnsmasq
-strict-order
+dns-forward-max=10000
 address=/api.test-cluster.test.example.com/203.0.113.1
 address=/api-int.test-cluster.test.example.com/203.0.113.1
 address=/.apps.test-cluster.test.example.com/192.0.2.1
@@ -79,7 +79,7 @@ cache-size=0
 	Port 24224
 `,
 	"/etc/hosts.d/aro.conf": `203.0.113.1	api.test-cluster.test.example.com api-int.test-cluster.test.example.com
-203.0.113.2	gateway.mock1.example.com gateway.mock2.example.com ` + `
+203.0.113.2	gateway.mock1.example.com gateway.mock2.example.com
 `,
 	"/etc/mdsd.d/mdsd.env": `MONITORING_GCS_ENVIRONMENT=test-logging-environment
 MONITORING_GCS_ACCOUNT=test-logging-account
@@ -175,7 +175,7 @@ spec:
     storage:
       files:
       - contents:
-          source: data:text/plain;charset=utf-8;base64,CnJlc29sdi1maWxlPS9ldGMvcmVzb2x2LmNvbmYuZG5zbWFzcQpzdHJpY3Qtb3JkZXIKYWRkcmVzcz0vYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tLzIwMy4wLjExMy4xCmFkZHJlc3M9L2FwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjEKYWRkcmVzcz0vLmFwcHMudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMTkyLjAuMi4xCmFkZHJlc3M9L2dhdGV3YXkubW9jazEuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjIKYWRkcmVzcz0vZ2F0ZXdheS5tb2NrMi5leGFtcGxlLmNvbS8yMDMuMC4xMTMuMgp1c2VyPWRuc21hc3EKZ3JvdXA9ZG5zbWFzcQpuby1ob3N0cwpjYWNoZS1zaXplPTAK
+          source: data:text/plain;charset=utf-8;base64,CnJlc29sdi1maWxlPS9ldGMvcmVzb2x2LmNvbmYuZG5zbWFzcQpkbnMtZm9yd2FyZC1tYXg9MTAwMDAKYWRkcmVzcz0vYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tLzIwMy4wLjExMy4xCmFkZHJlc3M9L2FwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjEKYWRkcmVzcz0vLmFwcHMudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMTkyLjAuMi4xCmFkZHJlc3M9L2dhdGV3YXkubW9jazEuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjIKYWRkcmVzcz0vZ2F0ZXdheS5tb2NrMi5leGFtcGxlLmNvbS8yMDMuMC4xMTMuMgp1c2VyPWRuc21hc3EKZ3JvdXA9ZG5zbWFzcQpuby1ob3N0cwpjYWNoZS1zaXplPTAK
           verification: {}
         group: {}
         mode: 420
@@ -261,7 +261,7 @@ spec:
     storage:
       files:
       - contents:
-          source: data:text/plain;charset=utf-8;base64,MjAzLjAuMTEzLjEJYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tIGFwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20KMjAzLjAuMTEzLjIJZ2F0ZXdheS5tb2NrMS5leGFtcGxlLmNvbSBnYXRld2F5Lm1vY2syLmV4YW1wbGUuY29tIAo=
+          source: data:text/plain;charset=utf-8;base64,MjAzLjAuMTEzLjEJYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tIGFwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20KMjAzLjAuMTEzLjIJZ2F0ZXdheS5tb2NrMS5leGFtcGxlLmNvbSBnYXRld2F5Lm1vY2syLmV4YW1wbGUuY29tCg==
         mode: 420
         overwrite: true
         path: /etc/hosts.d/aro.conf
@@ -318,7 +318,7 @@ spec:
     storage:
       files:
       - contents:
-          source: data:text/plain;charset=utf-8;base64,CnJlc29sdi1maWxlPS9ldGMvcmVzb2x2LmNvbmYuZG5zbWFzcQpzdHJpY3Qtb3JkZXIKYWRkcmVzcz0vYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tLzIwMy4wLjExMy4xCmFkZHJlc3M9L2FwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjEKYWRkcmVzcz0vLmFwcHMudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMTkyLjAuMi4xCmFkZHJlc3M9L2dhdGV3YXkubW9jazEuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjIKYWRkcmVzcz0vZ2F0ZXdheS5tb2NrMi5leGFtcGxlLmNvbS8yMDMuMC4xMTMuMgp1c2VyPWRuc21hc3EKZ3JvdXA9ZG5zbWFzcQpuby1ob3N0cwpjYWNoZS1zaXplPTAK
+          source: data:text/plain;charset=utf-8;base64,CnJlc29sdi1maWxlPS9ldGMvcmVzb2x2LmNvbmYuZG5zbWFzcQpkbnMtZm9yd2FyZC1tYXg9MTAwMDAKYWRkcmVzcz0vYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tLzIwMy4wLjExMy4xCmFkZHJlc3M9L2FwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjEKYWRkcmVzcz0vLmFwcHMudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20vMTkyLjAuMi4xCmFkZHJlc3M9L2dhdGV3YXkubW9jazEuZXhhbXBsZS5jb20vMjAzLjAuMTEzLjIKYWRkcmVzcz0vZ2F0ZXdheS5tb2NrMi5leGFtcGxlLmNvbS8yMDMuMC4xMTMuMgp1c2VyPWRuc21hc3EKZ3JvdXA9ZG5zbWFzcQpuby1ob3N0cwpjYWNoZS1zaXplPTAK
           verification: {}
         group: {}
         mode: 420
@@ -381,7 +381,7 @@ spec:
     storage:
       files:
       - contents:
-          source: data:text/plain;charset=utf-8;base64,MjAzLjAuMTEzLjEJYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tIGFwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20KMjAzLjAuMTEzLjIJZ2F0ZXdheS5tb2NrMS5leGFtcGxlLmNvbSBnYXRld2F5Lm1vY2syLmV4YW1wbGUuY29tIAo=
+          source: data:text/plain;charset=utf-8;base64,MjAzLjAuMTEzLjEJYXBpLnRlc3QtY2x1c3Rlci50ZXN0LmV4YW1wbGUuY29tIGFwaS1pbnQudGVzdC1jbHVzdGVyLnRlc3QuZXhhbXBsZS5jb20KMjAzLjAuMTEzLjIJZ2F0ZXdheS5tb2NrMS5leGFtcGxlLmNvbSBnYXRld2F5Lm1vY2syLmV4YW1wbGUuY29tCg==
         mode: 420
         overwrite: true
         path: /etc/hosts.d/aro.conf
