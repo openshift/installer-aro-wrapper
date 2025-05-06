@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"path/filepath"
 	"text/template"
 
@@ -40,6 +41,7 @@ import (
 )
 
 const (
+	outputManifestDir    = "/output/manifests"
 	cvoOverridesFilename = "manifests/cvo-overrides.yaml"
 )
 
@@ -192,6 +194,13 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 }
 
 func appendFilesToBootstrap(a asset.WritableAsset, g graph.Graph) error {
+	// Hack: Since https://github.com/openshift/installer-aro-wrapper/commit/d7faee68ae29682f82938ea42dbdc641fa150c28#diff-f63cf295ca563cf25cc0b5abf73b229858b2a389b4afa5bd9a82e05cfda47836
+	// removed the creation of this directory, we need to create it here; the Hive install
+	// manager depends on it and assumes that it exists.
+	if err := os.MkdirAll(outputManifestDir, 0755); err != nil {
+		return errors.Wrapf(err, "failed to create directory %s", outputManifestDir)
+	}
+
 	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 	for _, file := range a.Files() {
 		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)
