@@ -28,7 +28,7 @@ func TestZones(t *testing.T) {
 		{
 			name:       "zonal",
 			zones:      []string{"1", "2", "3"},
-			wantMaster: &[]string{"1", "2", "3"},
+			wantMaster: &[]string{"[parameters('controlPlaneZones')[copyIndex(0)]]"},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
