@@ -106,6 +106,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		return nil, nil, errors.WithStack(err)
 	}
 
+	// centraluseuap reports one zone, so we need to perform a non-zonal install in that region
+	if strings.EqualFold(m.oc.Location, "centraluseuap") {
+		workerZones = []string{""}
+		controlPlaneZones = []string{""}
+	}
+
 	// Set NetworkType to OVNKubernetes by default
 	softwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
 	if string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork) != "" {
