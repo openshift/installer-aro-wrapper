@@ -57,12 +57,19 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 		}
 	}
 
+	params["controlPlaneZones"] = map[string]interface{}{
+		"value": installConfig.Config.ControlPlane.Platform.Azure.Zones,
+	}
+
 	t := &arm.Template{
 		Schema:         "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 		ContentVersion: "1.0.0.0",
 		Parameters: map[string]*arm.TemplateParameter{
 			"sas": {
 				Type: paramType,
+			},
+			"controlPlaneZones": {
+				Type: "array",
 			},
 		},
 		Resources: []*arm.Resource{
@@ -84,6 +91,6 @@ func zones(installConfig *installconfig.InstallConfig) *[]string {
 		return nil
 	} else {
 		// Use the zones we have been specified
-		return &installConfig.Config.ControlPlane.Platform.Azure.Zones
+		return &[]string{"[parameters('controlPlaneZones')[copyIndex(0)]]"}
 	}
 }
