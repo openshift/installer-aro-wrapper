@@ -5,7 +5,6 @@ package installer
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -28,11 +27,6 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 	var installConfig *installconfig.InstallConfig
 	var machineMaster *machine.Master
 	err = pg.Get(&installConfig, &machineMaster)
-	if err != nil {
-		return err
-	}
-
-	zones, err := zones(installConfig)
 	if err != nil {
 		return err
 	}
@@ -63,6 +57,10 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 		}
 	}
 
+	params["controlPlaneZones"] = map[string]interface{}{
+		"value": installConfig.Config.ControlPlane.Platform.Azure.Zones,
+	}
+
 	t := &arm.Template{
 		Schema:         "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 		ContentVersion: "1.0.0.0",
@@ -70,34 +68,29 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 			"sas": {
 				Type: paramType,
 			},
+			"controlPlaneZones": {
+				Type: "array",
+			},
 		},
 		Resources: []*arm.Resource{
 			m.networkBootstrapNIC(installConfig),
 			m.networkMasterNICs(installConfig),
 			m.computeBootstrapVM(installConfig),
-			m.computeMasterVMs(installConfig, zones, machineMaster),
+			m.computeMasterVMs(installConfig, zones(installConfig), machineMaster),
 		},
 	}
 
 	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, params)
 }
 
-// zones configures how master nodes are distributed across availability zones. In regions where the number of zones matches
-// the number of nodes, it's one node per zone. In regions where there are no zones, all the nodes are in the same place.
-// Valid zone values are nil, 1, 2, and 3. Greater than 3 zones is not supported.
-func zones(installConfig *installconfig.InstallConfig) (zones *[]string, err error) {
-	zoneCount := len(installConfig.Config.ControlPlane.Platform.Azure.Zones)
-	replicas := int(*installConfig.Config.ControlPlane.Replicas)
-
-	if zoneCount > replicas || replicas > 3 {
-		err = fmt.Errorf("cluster creation with %d zone(s) and %d replica(s) is unsupported", zoneCount, replicas)
-	} else if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) {
-		return
-	} else if zoneCount <= 2 {
-		zones = &installConfig.Config.ControlPlane.Platform.Azure.Zones
+// Handle the case where nonzonal resources actually need to have an empty zone
+// param instead of {""}
+func zones(installConfig *installconfig.InstallConfig) *[]string {
+	if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) {
+		// Non-zonal
+		return nil
 	} else {
-		zones = &[]string{"[string(copyIndex(1))]"}
+		// Use the zones we have been specified
+		return &[]string{"[parameters('controlPlaneZones')[copyIndex(0)]]"}
 	}
-
-	return
 }
