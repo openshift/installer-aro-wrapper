@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
@@ -33,6 +34,8 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
+
+const CONTROL_PLANE_MACHINE_COUNT = 3
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
@@ -88,22 +91,20 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	masterZones := computeskus.Zones(masterSKU)
-	if len(masterZones) == 0 {
-		masterZones = []string{""}
-	}
+
 	masterVMNetworkingType := determineVMNetworkingType(masterSKU)
 
 	workerSKU, err := m.env.VMSku(string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	workerZones := computeskus.Zones(workerSKU)
-	if len(workerZones) == 0 {
-		workerZones = []string{""}
-	}
+
 	workerVMNetworkingType := determineVMNetworkingType(workerSKU)
 
+	controlPlaneZones, workerZones, err := determineAvailabilityZones(masterSKU, workerSKU)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
 
 	// Set NetworkType to OVNKubernetes by default
 	softwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
@@ -185,10 +186,10 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 				ControlPlane: &types.MachinePool{
 					Name:     "master",
-					Replicas: to.Int64Ptr(3),
+					Replicas: to.Int64Ptr(CONTROL_PLANE_MACHINE_COUNT),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
-							Zones:            masterZones,
+							Zones:            controlPlaneZones,
 							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
 							VMNetworkingType: masterVMNetworkingType,
@@ -359,4 +360,40 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 		ClientID:              m.env.FPClientID(),
 		ClientCertificatePath: clientCertificateFile.Name(),
 	}, nil
+}
+
+func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.ResourceSku) ([]string, []string, error) {
+	// We handle the case where regions have no zones or >= zones than replicas,
+	// but not when replicas > zones. We (currently) only support 3 control
+	// plane replicas and Azure AZs will always be a minimum of 3, see
+	// https://azure.microsoft.com/en-us/blog/our-commitment-to-expand-azure-availability-zones-to-more-regions/
+	controlPlaneZones := computeskus.Zones(controlPlaneSKU)
+	if len(controlPlaneZones) == 0 {
+		controlPlaneZones = []string{""}
+	} else if len(controlPlaneZones) < CONTROL_PLANE_MACHINE_COUNT {
+		return nil, nil, fmt.Errorf("cluster creation with %d zones and %d control plane replicas is unsupported", len(controlPlaneZones), CONTROL_PLANE_MACHINE_COUNT)
+	} else if len(controlPlaneZones) >= CONTROL_PLANE_MACHINE_COUNT {
+		// Some regions may have more availability zones than control plane
+		// replicas. In that case, sort them (just in case) and pick the first
+		// ones in the list to satisfy the replica requirements. We may want to
+		// be smarter in future, since if we have 3 replicas we will never take
+		// advantage of a 4th zone if all 4 have SKU availability, but this will
+		// cover the case where a SKU is available in zones 1, 2, 4 correctly.
+		slices.Sort(controlPlaneZones)
+		controlPlaneZones = controlPlaneZones[:CONTROL_PLANE_MACHINE_COUNT]
+	}
+
+	// Unlike above, we don't particularly mind if we pass the Installer more
+	// zones than the usual 3 in a zonal region, since it automatically balances
+	// them across the available zones. However, if a SKU is available in less
+	// than 3 regions we will fail, since taints on cluster components like
+	// Prometheus will prevent the eventual install from turning healthy.
+	workerZones := computeskus.Zones(workerSKU)
+	if len(workerZones) == 0 {
+		workerZones = []string{""}
+	} else if len(workerZones) < 3 {
+		return nil, nil, fmt.Errorf("cluster creation with a worker SKU available on less than 3 zones is unsupported (available: %d)", len(workerZones))
+	}
+
+	return controlPlaneZones, workerZones, nil
 }
