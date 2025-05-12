@@ -55,6 +55,7 @@ func TestDetermineZones(t *testing.T) {
 		workerSkuZones        []string
 		wantControlPlaneZones []string
 		wantWorkerZones       []string
+		allowExpandedAZs      bool
 		wantErr               string
 	}{
 
@@ -80,15 +81,30 @@ func TestDetermineZones(t *testing.T) {
 			wantWorkerZones:       []string{"1", "2", "3"},
 		},
 		{
-			name:                  "region with 4 availability zones, control plane uses first 3, workers use all",
+			name:                  "region with 4 availability zones, expanded AZs, control plane uses first 3, workers use all",
+			allowExpandedAZs:      true,
 			controlPlaneSkuZones:  []string{"1", "2", "3", "4"},
 			workerSkuZones:        []string{"1", "2", "3", "4"},
 			wantControlPlaneZones: []string{"1", "2", "3"},
 			wantWorkerZones:       []string{"1", "2", "3", "4"},
 		},
 		{
+			name:                  "region with 4 availability zones, basic AZs only, control plane and workers use 3",
+			allowExpandedAZs:      false,
+			controlPlaneSkuZones:  []string{"1", "2", "3", "4"},
+			workerSkuZones:        []string{"1", "2", "3", "4"},
+			wantControlPlaneZones: []string{"1", "2", "3"},
+			wantWorkerZones:       []string{"1", "2", "3"},
+		},
+		{
 			name:                 "not enough control plane zones",
 			controlPlaneSkuZones: []string{"1", "2"},
+			workerSkuZones:       []string{"1", "2", "3"},
+			wantErr:              "cluster creation with 2 zones and 3 control plane replicas is unsupported",
+		},
+		{
+			name:                 "not enough control plane zones, basic AZs only",
+			controlPlaneSkuZones: []string{"1", "2", "4"},
 			workerSkuZones:       []string{"1", "2", "3"},
 			wantErr:              "cluster creation with 2 zones and 3 control plane replicas is unsupported",
 		},
@@ -99,7 +115,14 @@ func TestDetermineZones(t *testing.T) {
 			wantErr:              "cluster creation with a worker SKU available on less than 3 zones is unsupported (available: 2)",
 		},
 		{
-			name:                  "region with 4 availability zones, control plane only available in non-consecutive 3, workers use all",
+			name:                 "not enough worker zones, basic AZs only",
+			controlPlaneSkuZones: []string{"1", "2", "3"},
+			workerSkuZones:       []string{"1", "2", "4"},
+			wantErr:              "cluster creation with a worker SKU available on less than 3 zones is unsupported (available: 2)",
+		},
+		{
+			name:                  "region with 4 availability zones, expanded AZs, control plane only available in non-consecutive 3, workers use all",
+			allowExpandedAZs:      true,
 			controlPlaneSkuZones:  []string{"1", "2", "4"},
 			workerSkuZones:        []string{"1", "2", "3", "4"},
 			wantControlPlaneZones: []string{"1", "2", "4"},
@@ -118,17 +141,21 @@ func TestDetermineZones(t *testing.T) {
 				},
 			}
 
+			if tt.allowExpandedAZs {
+				t.Setenv(ALLOW_EXPANDED_AZ_ENV, "1")
+			}
+
 			controlPlaneZones, workerZones, err := determineAvailabilityZones(controlPlaneSku, workerSku)
 			if err != nil && err.Error() != tt.wantErr {
-				t.Error(cmp.Diff(err, tt.wantErr))
+				t.Error(cmp.Diff(tt.wantErr, err))
 			}
 
 			if !reflect.DeepEqual(controlPlaneZones, tt.wantControlPlaneZones) {
-				t.Error(cmp.Diff(controlPlaneZones, tt.wantControlPlaneZones))
+				t.Error(cmp.Diff(tt.wantControlPlaneZones, controlPlaneZones))
 			}
 
 			if !reflect.DeepEqual(workerZones, tt.wantWorkerZones) {
-				t.Error(cmp.Diff(workerZones, tt.wantWorkerZones))
+				t.Error(cmp.Diff(tt.wantWorkerZones, workerZones))
 			}
 		})
 	}
