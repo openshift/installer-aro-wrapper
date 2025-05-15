@@ -36,6 +36,7 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
 
+const ALLOW_EXPANDED_AZ_ENV = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
 const CONTROL_PLANE_MACHINE_COUNT = 3
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
@@ -364,23 +365,42 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 }
 
 func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.ResourceSku) ([]string, []string, error) {
+	controlPlaneZones := computeskus.Zones(controlPlaneSKU)
+	workerZones := computeskus.Zones(workerSKU)
+
+	// We sort the zones so that we will pick them in numerical order if we need
+	// less replicas than zones. With non-basic AZs, this means that control
+	// plane nodes will not go onto the 4th AZ by default. For workers, if more
+	// than 3 are specified on cluster creation, they will be spread across all
+	// available zones, but will pick 1,2,3 in the normal 3-node configuration.
+	// This is likely less surprising for setups where a 4th AZ might cause
+	// automation to fail by picking, e.g. zones 1, 2, 4. We may wish to be
+	// smarter about this in future. Note: If expanded AZs are available (see
+	// the env var) and a SKU is available in e.g. zones 1, 2, 4, we will deploy
+	// control planes there.
+	slices.Sort(controlPlaneZones)
+	slices.Sort(workerZones)
+
+	// Gate allowing expanded AZs behind
+	if os.Getenv(ALLOW_EXPANDED_AZ_ENV) == "" {
+		basicAZs := []string{"1", "2", "3"}
+		onlyBasicAZs := func(s string) bool {
+			return !slices.Contains(basicAZs, s)
+		}
+		controlPlaneZones = slices.DeleteFunc(controlPlaneZones, onlyBasicAZs)
+		workerZones = slices.DeleteFunc(workerZones, onlyBasicAZs)
+	}
+
 	// We handle the case where regions have no zones or >= zones than replicas,
 	// but not when replicas > zones. We (currently) only support 3 control
 	// plane replicas and Azure AZs will always be a minimum of 3, see
 	// https://azure.microsoft.com/en-us/blog/our-commitment-to-expand-azure-availability-zones-to-more-regions/
-	controlPlaneZones := computeskus.Zones(controlPlaneSKU)
 	if len(controlPlaneZones) == 0 {
 		controlPlaneZones = []string{""}
 	} else if len(controlPlaneZones) < CONTROL_PLANE_MACHINE_COUNT {
 		return nil, nil, fmt.Errorf("cluster creation with %d zones and %d control plane replicas is unsupported", len(controlPlaneZones), CONTROL_PLANE_MACHINE_COUNT)
 	} else if len(controlPlaneZones) >= CONTROL_PLANE_MACHINE_COUNT {
-		// Some regions may have more availability zones than control plane
-		// replicas. In that case, sort them (just in case) and pick the first
-		// ones in the list to satisfy the replica requirements. We may want to
-		// be smarter in future, since if we have 3 replicas we will never take
-		// advantage of a 4th zone if all 4 have SKU availability, but this will
-		// cover the case where a SKU is available in zones 1, 2, 4 correctly.
-		slices.Sort(controlPlaneZones)
+		// Pick lower zones first
 		controlPlaneZones = controlPlaneZones[:CONTROL_PLANE_MACHINE_COUNT]
 	}
 
@@ -388,13 +408,17 @@ func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.Resource
 	// zones than the usual 3 in a zonal region, since it automatically balances
 	// them across the available zones. However, if a SKU is available in less
 	// than 3 regions we will fail, since taints on cluster components like
-	// Prometheus will prevent the eventual install from turning healthy.
-	workerZones := computeskus.Zones(workerSKU)
+	// Prometheus may prevent the eventual install from turning healthy. As
+	// such, prevent situations where 2 workers may be deployed on one zone and
+	// 1 on another, even though OpenShift treats that as a theoretically valid
+	// configuration.
 	if len(workerZones) == 0 {
 		workerZones = []string{""}
 	} else if len(workerZones) < 3 {
 		return nil, nil, fmt.Errorf("cluster creation with a worker SKU available on less than 3 zones is unsupported (available: %d)", len(workerZones))
 	}
+
+	slices.Sort(workerZones)
 
 	return controlPlaneZones, workerZones, nil
 }
