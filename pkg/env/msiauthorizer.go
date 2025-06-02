@@ -20,7 +20,7 @@ const (
 	MSIContextGateway MSIContext = "GATEWAY"
 )
 
-func (c *core) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autorest.Authorizer, error) {
+func (c *prod) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autorest.Authorizer, error) {
 	var tokenCredential azcore.TokenCredential
 	var err error
 

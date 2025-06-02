@@ -158,8 +158,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_415",         // "aro_4x"
-		Version:   "415.92.20240220", // "4x.yy.2020zzzz"
+		SKU:       "aro_417",         // "aro_4x"
+		Version:   "417.94.20240701", // "4x.yy.2020zzzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
@@ -241,6 +241,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
 						OutboundType:             outboundType,
 						ResourceGroupName:        resourceGroup,
+						// We specify BaseDomainResourceGroupName even though we
+						// do not create Public DNS zones to pass validation.
+						// See https://issues.redhat.com/browse/OCPSTRAT-991 for
+						// a more permanent fix (disabling public DNS
+						// provisioning).
+						BaseDomainResourceGroupName: resourceGroup,
 					},
 				},
 				PullSecret: pullSecret,
@@ -271,11 +277,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
 						configv1.ClusterVersionCapabilityBuild,
+						configv1.ClusterVersionCapabilityCloudControllerManager,
 						configv1.ClusterVersionCapabilityCloudCredential,
 						configv1.ClusterVersionCapabilityConsole,
 						configv1.ClusterVersionCapabilityCSISnapshot,
 						configv1.ClusterVersionCapabilityDeploymentConfig,
 						configv1.ClusterVersionCapabilityImageRegistry,
+						configv1.ClusterVersionCapabilityIngress,
 						configv1.ClusterVersionCapabilityInsights,
 						configv1.ClusterVersionCapabilityMachineAPI,
 						configv1.ClusterVersionCapabilityMarketplace,

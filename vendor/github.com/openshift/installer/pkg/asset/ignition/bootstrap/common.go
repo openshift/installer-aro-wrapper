@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vincent-petithory/dataurl"
 	utilsnet "k8s.io/utils/net"
+	"k8s.io/utils/ptr"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/data"
@@ -38,7 +39,9 @@ import (
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
+	aztypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 )
 
@@ -111,6 +114,7 @@ func (a *Common) Dependencies() []asset.Asset {
 		&baremetal.IronicCreds{},
 		&CVOIgnore{},
 		&installconfig.InstallConfig{},
+		&installconfig.ClusterID{},
 		&kubeconfig.AdminInternalClient{},
 		&kubeconfig.Kubelet{},
 		&kubeconfig.LoopbackClient{},
@@ -158,6 +162,7 @@ func (a *Common) Dependencies() []asset.Asset {
 		&tls.MCSCertKey{},
 		&tls.RootCA{},
 		&tls.ServiceAccountKeyPair{},
+		&tls.IronicTLSCert{},
 		&releaseimage.Image{},
 		new(rhcos.Image),
 	}
@@ -167,7 +172,8 @@ func (a *Common) Dependencies() []asset.Asset {
 func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootstrapTemplateData) error {
 	installConfig := &installconfig.InstallConfig{}
 	bootstrapSSHKeyPair := &tls.BootstrapSSHKeyPair{}
-	dependencies.Get(installConfig, bootstrapSSHKeyPair)
+	clusterID := &installconfig.ClusterID{}
+	dependencies.Get(installConfig, bootstrapSSHKeyPair, clusterID)
 
 	a.Config = &igntypes.Config{
 		Ignition: igntypes.Ignition{
@@ -181,7 +187,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/common/units", templateData, commonEnabledServices); err != nil {
 		return err
 	}
-	if !(templateData.IsOKD && templateData.Invoker == "agent-installer") {
+	if !templateData.IsOKD {
 		if err := AddSystemdUnits(a.Config, "bootstrap/systemd/rhcos/units", templateData, rhcosEnabledServices); err != nil {
 			return err
 		}
@@ -217,6 +223,28 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 			igntypes.SSHAuthorizedKey(string(bootstrapSSHKeyPair.Public())),
 		}},
 	)
+
+	switch platform {
+	case nutanixtypes.Name:
+		// Inserts the file "/etc/hostname" with the bootstrap machine name to the bootstrap ignition data
+		hostname := fmt.Sprintf("%s-bootstrap", clusterID.InfraID)
+		hostnameFile := igntypes.File{
+			Node: igntypes.Node{
+				Path:      "/etc/hostname",
+				Overwrite: ptr.To(true),
+			},
+			FileEmbedded1: igntypes.FileEmbedded1{
+				Mode: ptr.To(420),
+				Contents: igntypes.Resource{
+					Source: ptr.To(dataurl.EncodeBytes([]byte(hostname))),
+				},
+			},
+		}
+		a.Config.Storage.Files = append(a.Config.Storage.Files, hostnameFile)
+	case aztypes.Name:
+		// See https://issues.redhat.com/browse/OCPBUGS-43625
+		ignition.AppendVarPartition(a.Config)
+	}
 
 	return nil
 }
@@ -283,7 +311,14 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 
 	switch installConfig.Config.Platform.Name() {
 	case baremetaltypes.Name:
-		platformData.BareMetal = baremetal.GetTemplateData(installConfig.Config.Platform.BareMetal, installConfig.Config.MachineNetwork, ironicCreds.Username, ironicCreds.Password)
+		platformData.BareMetal = baremetal.GetTemplateData(
+			installConfig.Config.Platform.BareMetal,
+			installConfig.Config.MachineNetwork,
+			*installConfig.Config.ControlPlane.Replicas,
+			ironicCreds.Username,
+			ironicCreds.Password,
+			dependencies,
+		)
 	case vspheretypes.Name:
 		platformData.VSphere = vsphere.GetTemplateData(installConfig.Config.Platform.VSphere)
 	}
@@ -294,15 +329,15 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		bootstrapNodeIP = ""
 	}
 
-	platformFirstAPIVIP := firstAPIVIP(&installConfig.Config.Platform)
-	APIIntVIPonIPv6 := utilsnet.IsIPv6String(platformFirstAPIVIP)
-
-	networkStack := 0
-	for _, snet := range installConfig.Config.ServiceNetwork {
-		if snet.IP.To4() != nil {
-			networkStack |= 1
+	var hasIPv4, hasIPv6, ipv6Primary bool
+	for i, snet := range installConfig.Config.ServiceNetwork {
+		if utilsnet.IsIPv4(snet.IP) {
+			hasIPv4 = true
 		} else {
-			networkStack |= 2
+			hasIPv6 = true
+			if i == 0 {
+				ipv6Primary = true
+			}
 		}
 	}
 
@@ -331,12 +366,12 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		EtcdCluster:           strings.Join(etcdEndpoints, ","),
 		Proxy:                 &proxy.Config.Status,
 		Registries:            registries,
-		BootImage:             string(*rhcosImage),
+		BootImage:             rhcosImage.ControlPlane,
 		PlatformData:          platformData,
 		ClusterProfile:        clusterProfile,
 		BootstrapInPlace:      bootstrapInPlaceConfig,
-		UseIPv6ForNodeIP:      APIIntVIPonIPv6,
-		UseDualForNodeIP:      networkStack == 3,
+		UseIPv6ForNodeIP:      ipv6Primary,
+		UseDualForNodeIP:      hasIPv4 && hasIPv6,
 		IsFCOS:                installConfig.Config.IsFCOS(),
 		IsSCOS:                installConfig.Config.IsSCOS(),
 		IsOKD:                 installConfig.Config.IsOKD(),
@@ -606,6 +641,7 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 		&tls.MCSCertKey{},
 		&tls.ServiceAccountKeyPair{},
 		&tls.JournalCertKey{},
+		&tls.IronicTLSCert{},
 	} {
 		dependencies.Get(asset)
 
@@ -696,35 +732,4 @@ func warnIfCertificatesExpired(config *igntypes.Config) {
 	if expiredCerts > 0 {
 		logrus.Warnf("Bootstrap Ignition-Config: %d certificates expired. Installation attempts with the created Ignition-Configs will possibly fail.", expiredCerts)
 	}
-}
-
-// APIVIPs returns the string representations of the platform's API VIPs
-// It returns nil if the platform does not configure VIPs
-func apiVIPs(p *types.Platform) []string {
-	switch {
-	case p == nil:
-		return nil
-	case p.BareMetal != nil:
-		return p.BareMetal.APIVIPs
-	case p.OpenStack != nil:
-		return p.OpenStack.APIVIPs
-	case p.VSphere != nil:
-		return p.VSphere.APIVIPs
-	case p.Ovirt != nil:
-		return p.Ovirt.APIVIPs
-	case p.Nutanix != nil:
-		return p.Nutanix.APIVIPs
-	default:
-		return nil
-	}
-}
-
-// firstAPIVIP returns the first VIP of the API server (e.g. in case of
-// dual-stack)
-func firstAPIVIP(p *types.Platform) string {
-	for _, vip := range apiVIPs(p) {
-		return vip
-	}
-
-	return ""
 }

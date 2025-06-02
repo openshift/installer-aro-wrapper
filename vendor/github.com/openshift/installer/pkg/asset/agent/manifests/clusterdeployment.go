@@ -1,6 +1,7 @@
 package manifests
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,9 +11,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
+	hiveext "github.com/openshift/assisted-service/api/hiveextension/v1beta1"
 	hivev1 "github.com/openshift/hive/apis/hive/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
+	"github.com/openshift/installer/pkg/asset/agent/workflow"
 )
 
 var (
@@ -36,34 +39,41 @@ func (*ClusterDeployment) Name() string {
 // the asset.
 func (*ClusterDeployment) Dependencies() []asset.Asset {
 	return []asset.Asset{
+		&workflow.AgentWorkflow{},
 		&agent.OptionalInstallConfig{},
 	}
 }
 
 // Generate generates the ClusterDeployment manifest.
-func (cd *ClusterDeployment) Generate(dependencies asset.Parents) error {
+func (cd *ClusterDeployment) Generate(_ context.Context, dependencies asset.Parents) error {
+	agentWorkflow := &workflow.AgentWorkflow{}
 	installConfig := &agent.OptionalInstallConfig{}
-	dependencies.Get(installConfig)
+	dependencies.Get(agentWorkflow, installConfig)
+
+	// This manifest is not required for AddNodes workflow
+	if agentWorkflow.Workflow == workflow.AgentWorkflowTypeAddNodes {
+		return nil
+	}
 
 	if installConfig.Config != nil {
 		clusterDeployment := &hivev1.ClusterDeployment{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ClusterDeployment",
-				APIVersion: "v1",
+				APIVersion: hivev1.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      getClusterDeploymentName(installConfig),
-				Namespace: getObjectMetaNamespace(installConfig),
+				Namespace: installConfig.ClusterNamespace(),
 			},
 			Spec: hivev1.ClusterDeploymentSpec{
 				ClusterName: getClusterDeploymentName(installConfig),
 				BaseDomain:  installConfig.Config.BaseDomain,
 				PullSecretRef: &corev1.LocalObjectReference{
-					Name: getPullSecretName(installConfig),
+					Name: getPullSecretName(installConfig.ClusterName()),
 				},
 				ClusterInstallRef: &hivev1.ClusterInstallLocalReference{
-					Group:   "extensions.hive.openshift.io",
-					Version: "v1beta1",
+					Group:   hiveext.Group,
+					Version: hiveext.Version,
 					Kind:    "AgentClusterInstall",
 					Name:    getAgentClusterInstallName(installConfig),
 				},
