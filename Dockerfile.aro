@@ -18,7 +18,7 @@ RUN source .bingo/variables.env \
     # and all the tools it manages
     && ${BINGO} get -l
 ENV PATH=$PATH:${GOPATH}/bin/
-RUN make aro
+RUN make aro RELEASE=${IS_OFFICIAL_RELEASE} -o generate && make validate-fips
 
 FROM ${REGISTRY}/ubi8/ubi-minimal
 RUN microdnf update && microdnf clean all
