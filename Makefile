@@ -67,6 +67,12 @@ validate-go-action:
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 
+.PHONY: validate-fips
+validate-fips: $(BINGO)
+	GOFLAGS="-mod=mod" $(BINGO) get -l fips-detect
+	GOFLAGS="-mod=mod" $(BINGO) get -l gojq
+	hack/fips/validate-fips.sh ./aro
+
 unit-test-go: $(GOTESTSUM)
 	$(GOTESTSUM) --format pkgname --junitfile report.xml -- -tags=altinfra,aro,containers_image_openpgp -coverprofile=cover.out ./...
 
@@ -79,10 +85,8 @@ vendor:
 
 .PHONY: install-tools
 install-tools: $(BINGO)
-	$(BINGO) get -l
+	GOFLAGS="-mod=mod" $(BINGO) get -l
 # Fixes https://github.com/uber-go/mock/issues/185 for MacOS users
 ifeq ($(shell uname -s),Darwin)
 	codesign -f -s - ${GOPATH}/bin/mockgen
 endif
-
-.PHONY: admin.kubeconfig aks.kubeconfig aro az clean client deploy dev-config.yaml discoverycache generate image-aro image-aro-multistage image-fluentbit image-proxy lint-go runlocal-rp proxy publish-image-aro publish-image-aro-multistage publish-image-fluentbit publish-image-proxy secrets secrets-update e2e.test tunnel test-e2e test-go test-python vendor build-all validate-go  unit-test-go coverage-go validate-fips
