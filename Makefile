@@ -27,10 +27,10 @@ ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
 include .bingo/Variables.mk
 
 build-all:
-	go build -tags altinfra,aro,containers_image_openpgp ./...
+	go build -tags altinfra,fipscapable,aro,containers_image_openpgp ./...
 
 aro: generate
-	go build -tags altinfra,aro,containers_image_openpgp,codec.safe -ldflags "-X github.com/openshift/installer-aro-wrapper/pkg/util/version.GitCommit=$(VERSION)" ./cmd/aro
+	go build -tags altinfra,fipscapable,aro,containers_image_openpgp,codec.safe ./cmd/aro
 
 clean:
 	rm -rf aro

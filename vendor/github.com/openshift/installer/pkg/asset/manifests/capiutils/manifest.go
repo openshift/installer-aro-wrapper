@@ -6,10 +6,15 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 )
 
+const (
+	// ManifestDir defines the directory name for Cluster API manifests.
+	ManifestDir = "cluster-api"
+)
+
 // GenerateClusterAssetsOutput is the output of GenerateClusterAssets.
 type GenerateClusterAssetsOutput struct {
-	Manifests         []*asset.RuntimeFile
-	InfrastructureRef *corev1.ObjectReference
+	Manifests          []*asset.RuntimeFile
+	InfrastructureRefs []*corev1.ObjectReference
 }
 
 // GenerateMachinesOutput is the output of GenerateMachines.

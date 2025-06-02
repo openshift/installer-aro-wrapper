@@ -10,6 +10,8 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/machines"
+	"github.com/openshift/installer/pkg/asset/manifests"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -24,6 +26,16 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/refreshable"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/storage"
 )
+
+// Custom manifest list here, since we're not deploying the initial nodes with
+// CAPI (yet)
+var targetedManifests = []asset.WritableAsset{
+	&machines.Master{},
+	&machines.Worker{},
+	&machines.ClusterAPI{},
+	&manifests.Manifests{},
+	&manifests.Openshift{},
+}
 
 type target struct {
 	name    string
@@ -54,7 +66,8 @@ var (
 
 				runner := func(directory string, manifests []asset.WritableAsset) error {
 					for _, m := range manifests {
-						err = g.Resolve(m)
+						logrus.Infof("resolving asset %s from graph", m.Name())
+						err = g.Resolve(ctx, m)
 						if err != nil {
 							err = errors.Wrapf(err, "failed to fetch %s", m.Name())
 						}
@@ -70,12 +83,6 @@ var (
 						}
 					}
 					return nil
-				}
-
-				err = runner(rootOpts.dir, targetassets.Manifests)
-				if err != nil {
-					logrus.Error(err)
-					logrus.Exit(1)
 				}
 
 				err = runner(rootOpts.dir, targetassets.IgnitionConfigs)

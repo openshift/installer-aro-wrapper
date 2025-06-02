@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/x509"
-	"net"
 	"os"
 	"strings"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/clientauthorizer"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/instancemetadata"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/keyvault"
 )
 
@@ -55,40 +54,26 @@ const (
 	RPPrivateEndpointPrefix          = "rp-pe-"
 )
 
-// Interface is clunky and somewhat legacy and only used in the RP codebase (not
-// monitor/portal/gateway, etc.).  It is a grab-bag of items which modify RP
-// behaviour depending on where it is running (dev, prod, etc.)  Outside of the
-// RP codebase, use Core.  Ideally we might break Interface into smaller pieces,
-// either closer to their point of use, or maybe using dependency injection. Try
-// to remove methods, not add more.  A refactored approach to configuration is
-// generally necessary across all of the ARO services; dealing with Interface
-// should be part of that.
 type Interface interface {
-	Core
+	IsLocalDevelopmentMode() bool
+	NewMSIAuthorizer(MSIContext, ...string) (autorest.Authorizer, error)
+	instancemetadata.InstanceMetadata
 	proxy.Dialer
 
-	InitializeAuthorizers() error
-	ArmClientAuthorizer() clientauthorizer.ClientAuthorizer
-	AdminClientAuthorizer() clientauthorizer.ClientAuthorizer
 	ClusterGenevaLoggingAccount() string
 	ClusterGenevaLoggingConfigVersion() string
 	ClusterGenevaLoggingEnvironment() string
 	ClusterGenevaLoggingNamespace() string
 	ClusterGenevaLoggingSecret() (*rsa.PrivateKey, *x509.Certificate)
-	ClusterKeyvault() keyvault.Manager
 	Domain() string
 	FeatureIsSet(Feature) bool
 	FPAuthorizer(string, ...string) (autorest.Authorizer, error)
 	FPCertificates() (*rsa.PrivateKey, []*x509.Certificate)
 	FPNewClientCertificateCredential(string) (*azidentity.ClientCertificateCredential, error)
 	FPClientID() string
-	Listen() (net.Listener, error)
 	GatewayDomains() []string
-	GatewayResourceGroup() string
 	ServiceKeyvault() keyvault.Manager
-	ACRResourceID() string
 	ACRDomain() string
-	AROOperatorImage() string
 
 	// VMSku returns SKU for a given vm size. Note that this
 	// returns a pointer to partly populated object.

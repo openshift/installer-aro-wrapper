@@ -4,6 +4,7 @@ package graph
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/openshift/installer/pkg/asset"
@@ -24,13 +25,13 @@ func (g Graph) Set(as ...asset.Asset) {
 	}
 }
 
-func (g Graph) Resolve(a asset.Asset) error {
+func (g Graph) Resolve(ctx context.Context, a asset.Asset) error {
 	if g.Get(a) != nil {
 		return nil
 	}
 
 	for _, dep := range a.Dependencies() {
-		err := g.Resolve(dep)
+		err := g.Resolve(ctx, dep)
 		if err != nil {
 			return err
 		}
@@ -41,7 +42,7 @@ func (g Graph) Resolve(a asset.Asset) error {
 		parents[reflect.TypeOf(v)] = v
 	}
 
-	err := a.Generate(parents)
+	err := a.Generate(ctx, parents)
 	if err != nil {
 		return err
 	}
