@@ -13,36 +13,50 @@ else
 	VERSION = $(TAG)
 endif
 
+REGISTRY ?= ${REGISTRY}
+BUILDER_REGISTRY ?= ${BUILDER_REGISTRY}
 # default to registry.access.redhat.com for build images on local builds and CI builds without $RP_IMAGE_ACR set.
 ifeq ($(RP_IMAGE_ACR),arointsvc)
 	REGISTRY = arointsvc.azurecr.io
+	BUILDER_REGISTRY = arointsvc.azurecr.io
 else ifeq ($(RP_IMAGE_ACR),arosvc)
 	REGISTRY = arosvc.azurecr.io
+	BUILDER_REGISTRY = arosvc.azurecr.io
+else ifeq ($(RP_IMAGE_ACR),)
+	REGISTRY ?= registry.access.redhat.com
+	BUILDER_REGISTRY ?= quay.io/openshift-release-dev
 else
-	REGISTRY = registry.access.redhat.com
+	REGISTRY = $(RP_IMAGE_ACR)
+	BUILDER_REGISTRY = quay.io/openshift-release-dev
 endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
 
 include .bingo/Variables.mk
 
+.PHONY: build-all
 build-all:
 	go build -tags altinfra,fipscapable,aro,containers_image_openpgp ./...
 
+.PHONY: aro
 aro: generate
 	go build -tags altinfra,fipscapable,aro,containers_image_openpgp,codec.safe ./cmd/aro
 
+.PHONY: clean
 clean:
 	rm -rf aro
 	find -type d -name 'gomock_reflect_[0-9]*' -exec rm -rf {} \+ 2>/dev/null
 
+.PHONY: generate
 generate: install-tools
 	go generate ./...
 
+.PHONY: image-aro
 image-aro:
-	docker pull $(REGISTRY)/ubi8/ubi-minimal
-	docker build --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) .
+	docker pull $(BUILDER_REGISTRY)/ubi9/ubi-minimal
+	docker build --platform=linux/amd64 --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) --build-arg BUILDER_REGISTRY=$(BUILDER_REGISTRY) .
 
+.PHONY: publish-image-aro
 publish-image-aro: image-aro
 	docker push $(ARO_IMAGE)
 ifeq ("${RP_IMAGE_ACR}-$(BRANCH)","arointsvc-master")
@@ -50,8 +64,10 @@ ifeq ("${RP_IMAGE_ACR}-$(BRANCH)","arointsvc-master")
 		docker push arointsvc.azurecr.io/aroinstaller:latest
 endif
 
+.PHONY: test-go
 test-go: generate build-all validate-go lint-go unit-test-go
 
+.PHONY: validate-go
 validate-go: $(GOIMPORTS)
 	gofmt -s -w cmd hack pkg test
 	$(GOIMPORTS) -w -local=github.com/openshift/installer-aro-wrapper cmd hack pkg test
@@ -61,6 +77,7 @@ validate-go: $(GOIMPORTS)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 	go vet -tags containers_image_openpgp ./...
 
+.PHONY: validate-go-action
 validate-go-action:
 	go run ./hack/licenses -validate -ignored-go vendor,pkg/client,.git -ignored-python python/client,vendor,.git
 	go run ./hack/validate-imports cmd hack pkg test
@@ -73,12 +90,15 @@ validate-fips: $(BINGO)
 	GOFLAGS="-mod=mod" $(BINGO) get -l gojq
 	hack/fips/validate-fips.sh ./aro
 
+.PHONY: unit-test-go
 unit-test-go: $(GOTESTSUM)
 	$(GOTESTSUM) --format pkgname --junitfile report.xml -- -tags=altinfra,aro,containers_image_openpgp -coverprofile=cover.out ./...
 
+.PHONY: lint-go
 lint-go: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run --verbose
 
+.PHONY: vendor
 vendor:
 	# See comments in the script for background on why we need it
 	hack/update-go-module-dependencies.sh
