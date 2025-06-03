@@ -10,8 +10,6 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/machines"
-	"github.com/openshift/installer/pkg/asset/manifests"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -26,16 +24,6 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/refreshable"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/storage"
 )
-
-// Custom manifest list here, since we're not deploying the initial nodes with
-// CAPI (yet)
-var targetedManifests = []asset.WritableAsset{
-	&machines.Master{},
-	&machines.Worker{},
-	&machines.ClusterAPI{},
-	&manifests.Manifests{},
-	&manifests.Openshift{},
-}
 
 type target struct {
 	name    string
