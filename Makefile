@@ -50,7 +50,7 @@ generate: install-tools
 
 .PHONY: image-aro
 image-aro:
-	docker pull $(BUILDER_REGISTRY)/ubi9/ubi-minimal
+	docker pull $(REGISTRY)/ubi9/ubi-minimal
 	docker build --platform=linux/amd64 --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) --build-arg BUILDER_REGISTRY=$(BUILDER_REGISTRY) .
 
 .PHONY: publish-image-aro
