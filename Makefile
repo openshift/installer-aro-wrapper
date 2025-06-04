@@ -13,18 +13,16 @@ else
 	VERSION = $(TAG)
 endif
 
-REGISTRY ?= ${REGISTRY}
-BUILDER_REGISTRY ?= ${BUILDER_REGISTRY}
 # default to registry.access.redhat.com for build images on local builds and CI builds without $RP_IMAGE_ACR set.
 ifeq ($(RP_IMAGE_ACR),arointsvc)
 	REGISTRY = arointsvc.azurecr.io
-	BUILDER_REGISTRY = arointsvc.azurecr.io
+	BUILDER_REGISTRY = arointsvc.azurecr.io/openshift-release-dev/golang-builder--partner-share
 else ifeq ($(RP_IMAGE_ACR),arosvc)
 	REGISTRY = arosvc.azurecr.io
-	BUILDER_REGISTRY = arosvc.azurecr.io
-else ifeq ($(RP_IMAGE_ACR),)
+	BUILDER_REGISTRY = arosvc.azurecr.io/openshift-release-dev/golang-builder--partner-share
+else
 	REGISTRY ?= registry.access.redhat.com
-	BUILDER_REGISTRY ?= quay.io
+	BUILDER_REGISTRY ?= quay.io/openshift-release-dev/golang-builder--partner-share
 endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
