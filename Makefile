@@ -24,7 +24,7 @@ else ifeq ($(RP_IMAGE_ACR),arosvc)
 	BUILDER_REGISTRY = arosvc.azurecr.io
 else ifeq ($(RP_IMAGE_ACR),)
 	REGISTRY ?= registry.access.redhat.com
-	BUILDER_REGISTRY ?= quay.io/openshift-release-dev
+	BUILDER_REGISTRY ?= quay.io
 endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
