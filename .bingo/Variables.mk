@@ -29,11 +29,23 @@ $(ENUMER): $(BINGO_DIR)/enumer.mod
 	@echo "(re)installing $(GOBIN)/enumer-v1.5.10"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=enumer.mod -o=$(GOBIN)/enumer-v1.5.10 "github.com/dmarkham/enumer"
 
+FIPS_DETECT := $(GOBIN)/fips-detect-v0.0.0-20230309083406-7157dae5bafd
+$(FIPS_DETECT): $(BINGO_DIR)/fips-detect.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/fips-detect-v0.0.0-20230309083406-7157dae5bafd"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=fips-detect.mod -o=$(GOBIN)/fips-detect-v0.0.0-20230309083406-7157dae5bafd "github.com/acardace/fips-detect"
+
 GOIMPORTS := $(GOBIN)/goimports-v0.29.0
 $(GOIMPORTS): $(BINGO_DIR)/goimports.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
 	@echo "(re)installing $(GOBIN)/goimports-v0.29.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goimports.mod -o=$(GOBIN)/goimports-v0.29.0 "golang.org/x/tools/cmd/goimports"
+
+GOJQ := $(GOBIN)/gojq-v0.12.17
+$(GOJQ): $(BINGO_DIR)/gojq.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/gojq-v0.12.17"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gojq.mod -o=$(GOBIN)/gojq-v0.12.17 "github.com/itchyny/gojq/cmd/gojq"
 
 GOLANGCI_LINT := $(GOBIN)/golangci-lint-v1.59.1
 $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
