@@ -1,27 +1,24 @@
 # Uses a multi-stage container build to build installer-aro-wrapper.
+#
 ARG REGISTRY=registry.access.redhat.com
-ARG GO_VERSION=1.22
-FROM ${REGISTRY}/ubi8/go-toolset:${GO_VERSION} AS builder
-ENV GOOS=linux \
-    GOPATH=/go/
-WORKDIR ${GOPATH}/src/github.com/openshift/installer-aro-wrapper
-USER root
-RUN yum update -y
-COPY . ${GOPATH}/src/github.com/openshift/installer-aro-wrapper/
-RUN git config --system --add safe.directory '*'
-RUN pwd
-RUN ls -lrta
-RUN ls -lrta .bingo
-RUN source .bingo/variables.env \
-    # install bingo itself
-    && make -f .bingo/Variables.mk ${BINGO} \
-    # and all the tools it manages
-    && ${BINGO} get -l
-ENV PATH=$PATH:${GOPATH}/bin/
-RUN make aro
+ARG BUILDER_REGISTRY=registry.ci.openshift.org/ocp/builder
+FROM ${BUILDER_REGISTRY}:rhel-9-golang-1.22-openshift-4.19 AS builder
 
-FROM ${REGISTRY}/ubi8/ubi-minimal
-RUN microdnf update && microdnf clean all
-COPY --from=builder /go/src/github.com/openshift/installer-aro-wrapper/aro /bin/openshift-install
+ENV GO_COMPLIANCE_INFO=0
+USER root
+ENV GOPATH=/root/go
+ENV PATH=$PATH:${GOPATH}/bin/
+
+RUN mkdir -p /app
+WORKDIR /app
+COPY . /app
+
+RUN git config --system --add safe.directory '*'
+RUN make aro RELEASE=${IS_OFFICIAL_RELEASE} -o generate && make validate-fips
+
+FROM ${REGISTRY}/ubi9/ubi-minimal
+RUN microdnf update -y && microdnf clean all -y
+COPY --from=builder /app/aro /bin/openshift-install
 ENTRYPOINT ["/bin/openshift-install"]
 USER 1000
+ENV HOME=/tmp
