@@ -5,6 +5,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // NewMachineConfigPoolCondition creates a new MachineConfigPool condition.
@@ -198,4 +200,49 @@ func IsControllerConfigCompleted(ccName string, ccGetter func(string) (*Controll
 		return nil
 	}
 	return fmt.Errorf("ControllerConfig has not completed: completed(%v) running(%v) failing(%v)", completed, running, failing)
+}
+
+// AreMCGeneratingSubControllersCompleted checks whether all MC producing sub-controllers are completed
+func AreMCGeneratingSubControllersCompletedForPool(crcLister func(labels.Selector) ([]*ContainerRuntimeConfig, error), mckLister func(labels.Selector) ([]*KubeletConfig, error), poolLabels map[string]string) error {
+
+	containerConfigs, err := crcLister(labels.Everything())
+	if err != nil {
+		return err
+	}
+	for _, crc := range containerConfigs {
+		selector, err := metav1.LabelSelectorAsSelector(crc.Spec.MachineConfigPoolSelector)
+		if err != nil {
+			return fmt.Errorf("invalid label selector: %w", err)
+		}
+		if selector.Matches(labels.Set(poolLabels)) {
+			if crc.Generation != crc.Status.ObservedGeneration {
+				return fmt.Errorf("status for ContainerRuntimeConfig %s is being reported for %d, expecting it for %d", crc.ObjectMeta.Name, crc.Status.ObservedGeneration, crc.Generation)
+			}
+
+			if crc.Status.Conditions[len(crc.Status.Conditions)-1].Type != ContainerRuntimeConfigSuccess {
+				return fmt.Errorf("ContainerRuntimeConfig has not completed")
+			}
+		}
+	}
+
+	kubeletConfigs, err := mckLister(labels.Everything())
+	if err != nil {
+		return err
+	}
+	for _, mck := range kubeletConfigs {
+		selector, err := metav1.LabelSelectorAsSelector(mck.Spec.MachineConfigPoolSelector)
+		if err != nil {
+			return fmt.Errorf("invalid label selector: %w", err)
+		}
+		if selector.Matches(labels.Set(poolLabels)) {
+			if mck.Generation != mck.Status.ObservedGeneration {
+				return fmt.Errorf("status for KubeletConfig %s is being reported for %d, expecting it for %d", mck.ObjectMeta.Name, mck.Status.ObservedGeneration, mck.Generation)
+			}
+
+			if mck.Status.Conditions[len(mck.Status.Conditions)-1].Type != KubeletConfigSuccess {
+				return fmt.Errorf("KubeletConfig has not completed")
+			}
+		}
+	}
+	return nil
 }

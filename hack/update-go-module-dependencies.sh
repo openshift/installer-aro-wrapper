@@ -26,7 +26,7 @@
 # with github.com/openshift/cluster-api-provider-azure (just an example, there are more).
 
 RELEASE=release-4.14
-GO_VERSION=1.20
+GO_VERSION=1.23
 
 for x in vendor/github.com/openshift/*; do
 	case $x in
