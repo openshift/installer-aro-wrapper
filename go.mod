@@ -294,7 +294,6 @@ exclude k8s.io/client-go v12.0.0+incompatible
 
 // Dependency pins
 replace github.com/imdario/mergo => dario.cat/mergo v0.3.16
-
 // Installer forks/tags
 replace (
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20231128154154-6736c9b9c6c8
