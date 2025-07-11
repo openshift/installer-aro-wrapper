@@ -1,6 +1,6 @@
 # Uses a multi-stage container build to build ARO-Installer.
 ARG REGISTRY=registry.access.redhat.com
-ARG GO_VERSION=1.20.10
+ARG GO_VERSION=1.23
 FROM --platform=linux/amd64 ${REGISTRY}/ubi8/go-toolset:${GO_VERSION} AS builder
 ENV GOOS=linux \
     GOPATH=/go/
