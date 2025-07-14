@@ -7,14 +7,9 @@ package main
 
 import (
 	"io"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/openshift/installer/pkg/version"
 )
 
 type fileHook struct {
@@ -76,41 +71,4 @@ func (h *fileHook) Fire(entry *logrus.Entry) error {
 	}
 
 	return nil
-}
-
-//nolint:unused
-func setupFileHook(baseDir string) func() {
-	if err := os.MkdirAll(baseDir, 0755); err != nil {
-		logrus.Fatal(errors.Wrap(err, "failed to create base directory for logs"))
-	}
-
-	logfile, err := os.OpenFile(filepath.Join(baseDir, ".openshift_install.log"), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		logrus.Fatal(errors.Wrap(err, "failed to open log file"))
-	}
-
-	originalHooks := logrus.LevelHooks{}
-	for k, v := range logrus.StandardLogger().Hooks {
-		originalHooks[k] = v
-	}
-	logrus.AddHook(newFileHook(logfile, logrus.TraceLevel, &logrus.TextFormatter{
-		DisableColors:          true,
-		DisableTimestamp:       false,
-		FullTimestamp:          true,
-		DisableLevelTruncation: false,
-	}))
-
-	versionString, err := version.String()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	logrus.Debugf("%s", versionString)
-	if version.Commit != "" {
-		logrus.Debugf("Built from commit %s", version.Commit)
-	}
-
-	return func() {
-		logfile.Close()
-		logrus.StandardLogger().ReplaceHooks(originalHooks)
-	}
 }
