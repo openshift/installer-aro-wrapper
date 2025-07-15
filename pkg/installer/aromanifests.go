@@ -7,8 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/openshift/installer/pkg/asset"
 	"github.com/pkg/errors"
+
+	"github.com/openshift/installer/pkg/asset"
 )
 
 const (

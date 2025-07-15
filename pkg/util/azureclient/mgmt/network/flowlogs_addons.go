@@ -16,7 +16,7 @@ type FlowLogsClientAddons interface {
 }
 
 func (c *flowLogsClient) CreateOrUpdateAndWait(ctx context.Context, resourceGroupName string, networkWatcherName string, flowLogName string, parameters mgmtnetwork.FlowLog) error {
-	future, err := c.FlowLogsClient.CreateOrUpdate(ctx, resourceGroupName, networkWatcherName, flowLogName, parameters)
+	future, err := c.CreateOrUpdate(ctx, resourceGroupName, networkWatcherName, flowLogName, parameters)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func (c *flowLogsClient) CreateOrUpdateAndWait(ctx context.Context, resourceGrou
 }
 
 func (c *flowLogsClient) DeleteAndWait(ctx context.Context, resourceGroupName string, networkWatcherName string, flowLogName string) error {
-	future, err := c.FlowLogsClient.Delete(ctx, resourceGroupName, networkWatcherName, flowLogName)
+	future, err := c.Delete(ctx, resourceGroupName, networkWatcherName, flowLogName)
 	if err != nil {
 		return err
 	}

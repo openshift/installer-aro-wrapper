@@ -10,6 +10,7 @@ import (
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	mgmtnetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-08-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
+
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
@@ -160,7 +161,7 @@ func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig)
 	}
 
 	if installConfig.Config.ControlPlane.Platform.Azure.DiskEncryptionSet != nil {
-		var diskEncryptionSetId = installConfig.Config.ControlPlane.Platform.Azure.DiskEncryptionSet.ToID()
+		var diskEncryptionSetId = installConfig.Config.ControlPlane.Platform.Azure.ToID()
 		vm.StorageProfile.OsDisk.ManagedDisk.DiskEncryptionSet = &mgmtcompute.DiskEncryptionSetParameters{
 			ID: &diskEncryptionSetId,
 		}
@@ -197,7 +198,7 @@ func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, z
 					Name:         to.StringPtr("[concat('" + m.oc.Properties.InfraID + "-master-', copyIndex(), '_OSDisk')]"),
 					Caching:      mgmtcompute.CachingTypesReadOnly,
 					CreateOption: mgmtcompute.DiskCreateOptionTypesFromImage,
-					DiskSizeGB:   &installConfig.Config.ControlPlane.Platform.Azure.OSDisk.DiskSizeGB,
+					DiskSizeGB:   &installConfig.Config.ControlPlane.Platform.Azure.DiskSizeGB,
 					ManagedDisk: &mgmtcompute.ManagedDiskParameters{
 						StorageAccountType: mgmtcompute.StorageAccountTypesPremiumLRS,
 					},
@@ -232,7 +233,7 @@ func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, z
 	}
 
 	if installConfig.Config.ControlPlane.Platform.Azure.DiskEncryptionSet != nil {
-		var diskEncryptionSetId = installConfig.Config.ControlPlane.Platform.Azure.DiskEncryptionSet.ToID()
+		var diskEncryptionSetId = installConfig.Config.ControlPlane.Platform.Azure.ToID()
 		vm.StorageProfile.OsDisk.ManagedDisk.DiskEncryptionSet = &mgmtcompute.DiskEncryptionSetParameters{
 			ID: &diskEncryptionSetId,
 		}
