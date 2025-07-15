@@ -17,7 +17,7 @@ type SecurityGroupsClientAddons interface {
 }
 
 func (c *securityGroupsClient) CreateOrUpdateAndWait(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, parameters mgmtnetwork.SecurityGroup) (err error) {
-	future, err := c.SecurityGroupsClient.CreateOrUpdate(ctx, resourceGroupName, networkSecurityGroupName, parameters)
+	future, err := c.CreateOrUpdate(ctx, resourceGroupName, networkSecurityGroupName, parameters)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func (c *securityGroupsClient) CreateOrUpdateAndWait(ctx context.Context, resour
 }
 
 func (c *securityGroupsClient) DeleteAndWait(ctx context.Context, resourceGroupName string, networkSecurityGroupName string) (err error) {
-	future, err := c.SecurityGroupsClient.Delete(ctx, resourceGroupName, networkSecurityGroupName)
+	future, err := c.Delete(ctx, resourceGroupName, networkSecurityGroupName)
 	if err != nil {
 		return err
 	}

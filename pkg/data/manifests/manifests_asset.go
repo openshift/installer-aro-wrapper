@@ -8,9 +8,10 @@ import (
 	"embed"
 	"fmt"
 
+	"github.com/vincent-petithory/dataurl"
+
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/types"
-	"github.com/vincent-petithory/dataurl"
 
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
 )
