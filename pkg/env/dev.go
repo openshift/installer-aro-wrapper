@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/go-autorest/autorest"
 	"github.com/jongio/azidext/go/azidext"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/go-autorest/autorest"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/version"
 )
@@ -46,10 +47,10 @@ func newDev(ctx context.Context, log *logrus.Entry) (Interface, error) {
 		d.features[feature] = true
 	}
 
-	d.prod.clusterGenevaLoggingAccount = version.DevClusterGenevaLoggingAccount
-	d.prod.clusterGenevaLoggingConfigVersion = version.DevClusterGenevaLoggingConfigVersion
-	d.prod.clusterGenevaLoggingEnvironment = version.DevGenevaLoggingEnvironment
-	d.prod.clusterGenevaLoggingNamespace = version.DevClusterGenevaLoggingNamespace
+	d.clusterGenevaLoggingAccount = version.DevClusterGenevaLoggingAccount
+	d.clusterGenevaLoggingConfigVersion = version.DevClusterGenevaLoggingConfigVersion
+	d.clusterGenevaLoggingEnvironment = version.DevGenevaLoggingEnvironment
+	d.clusterGenevaLoggingNamespace = version.DevClusterGenevaLoggingNamespace
 
 	return d, nil
 }

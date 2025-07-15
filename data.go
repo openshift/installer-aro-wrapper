@@ -8,8 +8,9 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/openshift/installer/data"
 	_ "github.com/openshift/installer/data/data"
+
+	"github.com/openshift/installer/data"
 )
 
 //go:embed all:vendor/github.com/openshift/installer/data/data

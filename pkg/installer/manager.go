@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
+
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
