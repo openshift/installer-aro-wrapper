@@ -1,7 +1,7 @@
 # Uses a multi-stage container build to build ARO-Installer.
 ARG REGISTRY=registry.access.redhat.com
-ARG GO_VERSION=1.20.10
-FROM ${REGISTRY}/ubi8/go-toolset:${GO_VERSION} AS builder
+ARG GO_VERSION=1.23
+FROM --platform=linux/amd64 ${REGISTRY}/ubi8/go-toolset:${GO_VERSION} AS builder
 ENV GOOS=linux \
     GOPATH=/go/
 WORKDIR ${GOPATH}/src/github.com/openshift/ARO-Installer
@@ -11,7 +11,7 @@ COPY . ${GOPATH}/src/github.com/openshift/ARO-Installer/
 RUN git config --system --add safe.directory '*'
 RUN make aro
 
-FROM ${REGISTRY}/ubi8/ubi-minimal
+FROM --platform=linux/amd64 ${REGISTRY}/ubi8/ubi-minimal
 RUN microdnf update && microdnf clean all
 COPY --from=builder /go/src/github.com/openshift/ARO-Installer/aro /bin/openshift-install
 ENTRYPOINT ["/bin/openshift-install"]
