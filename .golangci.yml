@@ -1,12 +1,21 @@
 version: "2"
 run:
   modules-download-mode: vendor
+  build-tags:
+    - altinfra
+    - containers_image_openpgp
+    - exclude_graphdriver_devicemapper
+    - exclude_graphdriver_btrfs
 linters:
   default: none
   enable:
     - govet
+    - musttag
     - staticcheck
+    - testifylint
+    - unconvert
     - unused
+    - usestdlibvars
     - whitespace
   settings:
     staticcheck:
@@ -22,7 +31,7 @@ linters:
         - github.com/onsi/ginkgo
         - github.com/onsi/gomega
   exclusions:
-    generated: lax
+    generated: disable
     rules:
       - linters:
           - staticcheck
@@ -30,16 +39,27 @@ linters:
       - linters:
           - staticcheck
         text: 'SA1019: "github.com/Azure/azure-sdk-for-go'
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
 formatters:
   enable:
+    - gci
     - gofmt
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - blank
+        - dot
+        - default
+        - prefix(k8s.io)
+        - prefix(sigs.k8s.io)
+        - prefix(github.com/Azure)
+        - prefix(github.com/openshift)
+        - localmodule
   exclusions:
     generated: lax
     paths:
+      - vendor
       - third_party$
       - builtin$
       - examples$
