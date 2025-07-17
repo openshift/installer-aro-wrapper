@@ -38,7 +38,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.36.0
-	golang.org/x/tools v0.24.0
+	golang.org/x/tools v0.31.0
 	gotest.tools/gotestsum v1.6.4
 	k8s.io/api v0.28.4
 	k8s.io/apimachinery v0.28.4
@@ -357,7 +357,7 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
-	golang.org/x/mod v0.20.0 // indirect
+	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
@@ -600,7 +600,7 @@ replace (
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20221018134251-bdb4fc834221
 	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20220124104622-668c5b52b104
 	github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20241212022420-6846b9a79e2f
-	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20250402191217-555364e98951
+	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20250623121220-00b2e0b1cc83
 	github.com/oras-project/oras-go => oras.land/oras-go v0.4.0
 	github.com/ovirt/go-ovirt => github.com/ovirt/go-ovirt v0.0.0-20210112072624-e4d3b104de71
 	github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20210421143221-52df5ef7a3be
