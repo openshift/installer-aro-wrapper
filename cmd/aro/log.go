@@ -103,7 +103,7 @@ func setupFileHook(baseDir string) func() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	logrus.Debugf(versionString)
+	logrus.Debugf("%s", versionString)
 	if version.Commit != "" {
 		logrus.Debugf("Built from commit %s", version.Commit)
 	}
