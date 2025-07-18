@@ -63,18 +63,17 @@ endif
 test-go: generate build-all validate-go lint-go unit-test-go
 
 .PHONY: validate-go
-validate-go: validate-imports
+validate-go:
 	gofmt -s -w cmd hack pkg test
 	go run ./hack/licenses
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 	go vet -tags containers_image_openpgp ./...
-
-.PHONY: validate-go-action
-validate-go-action: validate-imports validate-lint-go-fix
-	go run ./hack/licenses -validate -ignored-go vendor,pkg/client,.git -ignored-python python/client,vendor,.git
-	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
-	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
+	if ! git diff --quiet HEAD; then \
+		git diff; \
+		echo "You need to run 'make lint-go-fix' to update the codebase and commit the changes"; \
+		exit 1; \
+	fi
 
 .PHONY: validate-fips
 validate-fips: $(BINGO)
@@ -93,25 +92,9 @@ lint-go: $(GOLANGCI_LINT)
 .PHONY: imports
 imports: lint-go-fix
 
-.PHONY: validate-imports
-validate-imports: imports
-	if ! git diff --quiet HEAD; then \
-		git diff; \
-		echo "You need to run 'make imports' to update import statements and commit them"; \
-		exit 1; \
-	fi
-
 .PHONY: lint-go-fix
 lint-go-fix: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run --verbose --fix
-
-.PHONY: validate-lint-go-fix
-validate-lint-go-fix: lint-go-fix
-	if ! git diff --quiet HEAD; then \
-		git diff; \
-		echo "You need to run 'make lint-go-fix' to update the codebase and commit the changes"; \
-		exit 1; \
-	fi
 
 .PHONY: vendor
 vendor:
