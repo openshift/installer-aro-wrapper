@@ -4,19 +4,28 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/resources"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
-	"github.com/Azure/go-autorest/autorest/to"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"sigs.k8s.io/yaml"
+
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
+	"github.com/Azure/go-autorest/autorest/to"
+
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
@@ -28,11 +37,6 @@ import (
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
@@ -156,8 +160,8 @@ func makeInstallConfig() *installconfig.InstallConfig {
 			OSImage: azuretypes.OSImage{
 				Publisher: "azureopenshift",
 				Offer:     "aro4",
-				SKU:       "aro_416",
-				Version:   "416.00.20240517",
+				SKU:       "aro_417",
+				Version:   "417.00.20240517",
 				Plan:      azuretypes.ImageNoPurchasePlan,
 			},
 		},
@@ -276,7 +280,7 @@ func makeInstallConfig() *installconfig.InstallConfig {
 
 func makeImage() *releaseimage.Image {
 	return &releaseimage.Image{
-		PullSpec: "quay.io/openshift-release-dev/ocp-release:4.16.0-x86_64",
+		PullSpec: "quay.io/openshift-release-dev/ocp-release:4.17.0-x86_64",
 	}
 }
 
@@ -291,25 +295,19 @@ func mockClientCalls(client *mock.MockAPI) {
 			"CPUArchitectureType":          "x64",
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_416", "416.00.20240517").
+	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_417", "417.00.20240517").
 		Return(compute.VirtualMachineImage{
 			VirtualMachineImageProperties: &compute.VirtualMachineImageProperties{
 				HyperVGeneration: compute.HyperVGenerationTypesV2,
 			},
-			Name:     to.StringPtr("aro_416"),
+			Name:     to.StringPtr("aro_417"),
 			Location: to.StringPtr("centralus"),
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetGroup(gomock.Any(), "test-resource-group").
-		Return(&resources.Group{
-			ID:       to.StringPtr("test-resource-group"),
-			Location: to.StringPtr("centralus"),
-		}, nil)
-	client.EXPECT().GetHyperVGenerationVersion(gomock.Any(), "Standard_D2s_v3", "centralus", "").
-		Return("V2", nil)
 }
 
 func TestApplyInstallConfigCustomisations(t *testing.T) {
+	ctx := context.Background()
 	m := fakeManager()
 	inInstallConfig := makeInstallConfig()
 
@@ -319,7 +317,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	inInstallConfig.Azure.UseMockClient(mockClient)
 	mockClientCalls(mockClient)
 
-	graph, err := m.applyInstallConfigCustomisations(inInstallConfig, makeImage())
+	graph, err := m.applyInstallConfigCustomisations(ctx, inInstallConfig, makeImage())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +359,7 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 	}
 	for _, file := range storageFiles {
 		content, isFound := storageFileList[file]
-		assert.True(t, isFound, fmt.Sprintf("file %v missing in storage file list in ignition file %s", file, fileName))
+		assert.True(t, isFound, "file %v missing in storage file list in ignition file %s", file, fileName)
 		if isFound {
 			fileContents, err := base64.StdEncoding.DecodeString(strings.Split(content, "base64")[1][1:])
 			if err != nil {
@@ -384,14 +382,14 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 				assert.Contains(t, string(innerContent), "https://203.0.113.1:22623/config/")
 				fileContents = []byte(re.ReplaceAllString(content, `userData: test`))
 			}
-			assert.EqualValues(t, expectedIgnitionFileContents[file], string(fileContents), fmt.Sprintf("missing storage data in file %v", file))
+			assert.Equal(t, expectedIgnitionFileContents[file], string(fileContents), "missing storage data in file %v", file)
 		}
 	}
 	for _, file := range systemdFiles {
 		content, isFound := systemdFileList[file]
-		assert.True(t, isFound, fmt.Sprintf("file %v missing from systemd file list in ignition file %s", file, fileName))
+		assert.True(t, isFound, "file %v missing from systemd file list in ignition file %s", file, fileName)
 		if isFound {
-			assert.EqualValues(t, expectedIgnitionServiceContents[file], content, fmt.Sprintf("missing systemd data in file %v", file))
+			assert.Equal(t, expectedIgnitionServiceContents[file], content, "missing systemd data in file %v", file)
 		}
 	}
 	installConfigMap, err := base64.StdEncoding.DecodeString(strings.Split(storageFileList["/opt/openshift/openshift/openshift-install-manifests.yaml"], ",")[1])
@@ -403,7 +401,7 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.EqualValues(t, "ARO", config.Data["invoker"])
+	assert.Equal(t, "ARO", config.Data["invoker"])
 }
 
 func verifyMasterPointerIgnition(t *testing.T, ignData []byte) {
@@ -414,7 +412,7 @@ func verifyMasterPointerIgnition(t *testing.T, ignData []byte) {
 	}
 
 	actualSource := *ignContents.Ignition.Config.Merge[0].Source
-	assert.EqualValues(t, expectedMasterIgnitionSource, actualSource, fmt.Sprintf("expected master pointer ignition to be %s but found %s", expectedMasterIgnitionSource, actualSource))
+	assert.Equal(t, expectedMasterIgnitionSource, actualSource, "expected master pointer ignition to be %s but found %s", expectedMasterIgnitionSource, actualSource)
 }
 
 func verifyWorkerPointerIgnition(t *testing.T, ignData []byte) {
@@ -425,7 +423,7 @@ func verifyWorkerPointerIgnition(t *testing.T, ignData []byte) {
 	}
 
 	actualSource := *ignContents.Ignition.Config.Merge[0].Source
-	assert.EqualValues(t, expectedWorkerIgnitionSource, actualSource, fmt.Sprintf("expected worker pointer ignition to be %s but found %s", expectedWorkerIgnitionSource, actualSource))
+	assert.Equal(t, expectedWorkerIgnitionSource, actualSource, "expected worker pointer ignition to be %s but found %s", expectedWorkerIgnitionSource, actualSource)
 }
 
 func verifyDNSPointerIgnition(t *testing.T, bootstrap *bootstrap.Bootstrap) {
@@ -454,7 +452,7 @@ func verifyDNSPointerIgnition(t *testing.T, bootstrap *bootstrap.Bootstrap) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.EqualValues(t, expectedDNSConfigSource, string(b), fmt.Sprintf("expected dns config to be %s but found %s", expectedDNSConfigSource, string(b)))
+	assert.Equal(t, expectedDNSConfigSource, string(b), "expected dns config to be %s but found %s", expectedDNSConfigSource, string(b))
 }
 
 func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {
@@ -486,7 +484,7 @@ func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {
 				DNSName: apiIntIP,
 			}
 			_, err = cert.Verify(opts)
-			assert.NoError(t, err, "verifyUpdateMCSCertKey")
+			require.NoError(t, err, "verifyUpdateMCSCertKey")
 		}
 		if fileData.Path == mcsKeyFile {
 			contents := strings.Split(*config.Storage.Files[i].Contents.Source, ",")
@@ -509,8 +507,8 @@ func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {
 			if err := yaml.Unmarshal(rawDecodedText, mcsSecret); err != nil {
 				t.Fatal(err)
 			}
-			assert.EqualValues(t, rawCert, mcsSecret.Data[corev1.TLSCertKey], fmt.Sprintf("mismatched raw certs in %s and %s", mcsCertKeyFilepath, mcsCertFile))
-			assert.EqualValues(t, rawKey, mcsSecret.Data[corev1.TLSPrivateKeyKey], fmt.Sprintf("mismatched raw private key in %s and %s", mcsCertKeyFilepath, mcsKeyFile))
+			assert.Equal(t, rawCert, mcsSecret.Data[corev1.TLSCertKey], "mismatched raw certs in %s and %s", mcsCertKeyFilepath, mcsCertFile)
+			assert.Equal(t, rawKey, mcsSecret.Data[corev1.TLSPrivateKeyKey], "mismatched raw private key in %s and %s", mcsCertKeyFilepath, mcsKeyFile)
 		}
 	}
 }

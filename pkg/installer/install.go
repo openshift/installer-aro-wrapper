@@ -7,12 +7,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/restconfig"
@@ -37,7 +39,7 @@ func (m *manager) Manifests(ctx context.Context) (graph.Graph, error) {
 		steps.Action(func(ctx context.Context) error {
 			var err error
 			// Applies ARO-specific customisations to the InstallConfig
-			g, err = m.applyInstallConfigCustomisations(installConfig, image)
+			g, err = m.applyInstallConfigCustomisations(ctx, installConfig, image)
 			return err
 		}),
 		steps.Action(func(ctx context.Context) error {

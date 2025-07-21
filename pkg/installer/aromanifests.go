@@ -4,11 +4,13 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
-	"github.com/openshift/installer/pkg/asset"
 	"github.com/pkg/errors"
+
+	"github.com/openshift/installer/pkg/asset"
 )
 
 const (
@@ -39,7 +41,7 @@ func (am *AROManifests) Dependencies() []asset.Asset {
 	return []asset.Asset{}
 }
 
-func (am *AROManifests) Generate(dependencies asset.Parents) error {
+func (am *AROManifests) Generate(ctx context.Context, dependencies asset.Parents) error {
 	return nil
 }
 

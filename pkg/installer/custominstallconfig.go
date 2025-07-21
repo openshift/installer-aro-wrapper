@@ -5,32 +5,34 @@ package installer
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"path/filepath"
 	"text/template"
 
 	"github.com/coreos/ignition/v2/config/util"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
+	"github.com/pkg/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"sigs.k8s.io/yaml"
+
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/cluster"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/kubeconfig"
-	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/openshift/installer/pkg/asset/tls"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/yaml"
+	targetassets "github.com/openshift/installer/pkg/asset/targets"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
@@ -42,20 +44,11 @@ import (
 )
 
 const (
+	outputManifestDir    = "/output/manifests"
 	cvoOverridesFilename = "manifests/cvo-overrides.yaml"
 )
 
 var (
-	targetAssets = []asset.WritableAsset{
-		&cluster.Metadata{},
-		&machine.MasterIgnitionCustomizations{},
-		&machine.WorkerIgnitionCustomizations{},
-		&cluster.TerraformVariables{},
-		&kubeconfig.AdminClient{},
-		&password.KubeadminPassword{},
-		&tls.JournalCertKey{},
-		&tls.RootCA{},
-	}
 	userDataTmpl = template.Must(template.New("user-data").Parse(`apiVersion: v1
 kind: Secret
 metadata:
@@ -72,7 +65,7 @@ data:
 // applyInstallConfigCustomisations modifies the InstallConfig and creates
 // parent assets, then regenerates the InstallConfig for use for Ignition
 // generation, etc.
-func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
+func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installConfig *installconfig.InstallConfig, image *releaseimage.Image) (graph.Graph, error) {
 	clusterID := &installconfig.ClusterID{
 		UUID:    m.clusterUUID,
 		InfraID: m.oc.Properties.InfraID,
@@ -131,8 +124,8 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 	g.Set(installConfig, image, clusterID, &boundSaSigningKey.BoundSASigningKey)
 
 	m.log.Print("resolving graph")
-	for _, a := range targetAssets {
-		err = g.Resolve(a)
+	for _, a := range targetassets.IgnitionConfigs {
+		err = g.Resolve(ctx, a)
 		if err != nil {
 			return nil, err
 		}
@@ -204,6 +197,13 @@ func (m *manager) applyInstallConfigCustomisations(installConfig *installconfig.
 }
 
 func appendFilesToBootstrap(a asset.WritableAsset, g graph.Graph) error {
+	// Hack: Since https://github.com/openshift/installer-aro-wrapper/commit/d7faee68ae29682f82938ea42dbdc641fa150c28#diff-f63cf295ca563cf25cc0b5abf73b229858b2a389b4afa5bd9a82e05cfda47836
+	// removed the creation of this directory, we need to create it here; the Hive install
+	// manager depends on it and assumes that it exists.
+	if err := os.MkdirAll(outputManifestDir, 0755); err != nil {
+		return errors.Wrapf(err, "failed to create directory %s", outputManifestDir)
+	}
+
 	bootstrap := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 	for _, file := range a.Files() {
 		manifest := ignition.FileFromBytes(filepath.Join(rootPath, file.Filename), "root", 0644, file.Data)

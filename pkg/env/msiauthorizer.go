@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jongio/azidext/go/azidext"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/jongio/azidext/go/azidext"
 )
 
 type MSIContext string
@@ -20,7 +21,7 @@ const (
 	MSIContextGateway MSIContext = "GATEWAY"
 )
 
-func (c *core) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autorest.Authorizer, error) {
+func (c *prod) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autorest.Authorizer, error) {
 	var tokenCredential azcore.TokenCredential
 	var err error
 

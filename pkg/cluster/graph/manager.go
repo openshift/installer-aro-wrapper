@@ -10,12 +10,14 @@ import (
 	"io"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
+
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
-	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/encryption"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/storage"

@@ -18,14 +18,12 @@ import (
 	icibmcloud "github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
 	icpowervs "github.com/openshift/installer/pkg/asset/installconfig/powervs"
 	"github.com/openshift/installer/pkg/types"
-	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
 	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
-	libvirttypes "github.com/openshift/installer/pkg/types/libvirt"
 	nonetypes "github.com/openshift/installer/pkg/types/none"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
@@ -68,7 +66,7 @@ func (*DNS) Dependencies() []asset.Asset {
 }
 
 // Generate generates the DNS config and its CRD.
-func (d *DNS) Generate(dependencies asset.Parents) error {
+func (d *DNS) Generate(ctx context.Context, dependencies asset.Parents) error {
 	installConfig := &installconfig.InstallConfig{}
 	clusterID := &installconfig.ClusterID{}
 	dependencies.Get(installConfig, clusterID)
@@ -88,21 +86,9 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 	}
 
 	switch installConfig.Config.Platform.Name() {
-	case alibabacloudtypes.Name:
-		if installConfig.Config.Publish == types.ExternalPublishingStrategy {
-			config.Spec.PublicZone = &configv1.DNSZone{
-				ID:   installConfig.Config.BaseDomain,
-				Tags: map[string]string{"type": "public"},
-			}
-		}
-		// On Alibaba Cloud can be fetched using `ID` as a pre-determined private zone name
-		config.Spec.PrivateZone = &configv1.DNSZone{
-			ID:   installConfig.Config.ClusterDomain(),
-			Tags: map[string]string{"type": "private"},
-		}
 	case awstypes.Name:
 		if installConfig.Config.Publish == types.ExternalPublishingStrategy {
-			sess, err := installConfig.AWS.Session(context.TODO())
+			sess, err := installConfig.AWS.Session(ctx)
 			if err != nil {
 				return errors.Wrap(err, "failed to initialize session")
 			}
@@ -166,7 +152,7 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 			// Do not use a public zone when not publishing externally.
 		default:
 			// Search the project for a zone with the specified base domain.
-			zone, err := client.GetDNSZone(context.TODO(), installConfig.Config.GCP.ProjectID, installConfig.Config.BaseDomain, true)
+			zone, err := client.GetDNSZone(ctx, installConfig.Config.GCP.ProjectID, installConfig.Config.BaseDomain, true)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get public zone for %q", installConfig.Config.BaseDomain)
 			}
@@ -175,7 +161,7 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 
 		// Set the private zone
 		privateZoneID := fmt.Sprintf("%s-private-zone", clusterID.InfraID)
-		zone, err := client.GetDNSZone(context.TODO(), installConfig.Config.GCP.ProjectID, installConfig.Config.ClusterDomain(), false)
+		zone, err := client.GetDNSZone(ctx, installConfig.Config.GCP.ProjectID, installConfig.Config.ClusterDomain(), false)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get private zone for %q", installConfig.Config.BaseDomain)
 		}
@@ -190,7 +176,7 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 			return errors.Wrap(err, "failed to get IBM Cloud client")
 		}
 
-		zoneID, err := client.GetDNSZoneIDByName(context.TODO(), installConfig.Config.BaseDomain, installConfig.Config.Publish)
+		zoneID, err := client.GetDNSZoneIDByName(ctx, installConfig.Config.BaseDomain, installConfig.Config.Publish)
 		if err != nil {
 			return errors.Wrap(err, "failed to get DNS zone ID")
 		}
@@ -209,7 +195,7 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 			return errors.Wrap(err, "failed to get IBM PowerVS client")
 		}
 
-		zoneID, err := client.GetDNSZoneIDByName(context.TODO(), installConfig.Config.BaseDomain, installConfig.Config.Publish)
+		zoneID, err := client.GetDNSZoneIDByName(ctx, installConfig.Config.BaseDomain, installConfig.Config.Publish)
 		if err != nil {
 			return errors.Wrap(err, "failed to get DNS zone ID")
 		}
@@ -222,7 +208,7 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 		config.Spec.PrivateZone = &configv1.DNSZone{
 			ID: zoneID,
 		}
-	case libvirttypes.Name, openstacktypes.Name, baremetaltypes.Name, externaltypes.Name, nonetypes.Name, vspheretypes.Name, ovirttypes.Name, nutanixtypes.Name:
+	case openstacktypes.Name, baremetaltypes.Name, externaltypes.Name, nonetypes.Name, vspheretypes.Name, ovirttypes.Name, nutanixtypes.Name:
 	default:
 		return errors.New("invalid Platform")
 	}

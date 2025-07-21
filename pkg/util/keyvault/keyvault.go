@@ -14,11 +14,12 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	azkeyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/keyvault"
 	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
@@ -118,7 +119,7 @@ func (m *manager) CreateSignedCertificate(ctx context.Context, issuer string, ce
 				},
 			},
 			IssuerParameters: &azkeyvault.IssuerParameters{
-				Name: to.StringPtr(string(issuer)),
+				Name: to.StringPtr(issuer),
 			},
 		},
 	})

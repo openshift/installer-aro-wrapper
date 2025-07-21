@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/openshift/installer/pkg/asset"
-	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/Azure/go-autorest/autorest/azure"
+
+	"github.com/openshift/installer/pkg/asset"
+	targetassets "github.com/openshift/installer/pkg/asset/targets"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
@@ -54,7 +56,8 @@ var (
 
 				runner := func(directory string, manifests []asset.WritableAsset) error {
 					for _, m := range manifests {
-						err = g.Resolve(m)
+						logrus.Infof("resolving asset %s from graph", m.Name())
+						err = g.Resolve(ctx, m)
 						if err != nil {
 							err = errors.Wrapf(err, "failed to fetch %s", m.Name())
 						}
@@ -70,12 +73,6 @@ var (
 						}
 					}
 					return nil
-				}
-
-				err = runner(rootOpts.dir, targetassets.Manifests)
-				if err != nil {
-					logrus.Error(err)
-					logrus.Exit(1)
 				}
 
 				err = runner(rootOpts.dir, targetassets.IgnitionConfigs)

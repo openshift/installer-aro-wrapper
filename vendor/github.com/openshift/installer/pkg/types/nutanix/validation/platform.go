@@ -73,16 +73,16 @@ func ValidatePlatform(p *nutanix.Platform, fldPath *field.Path, c *types.Install
 		allErrs = append(allErrs, field.Required(fldPath.Child("subnet"), "must specify the subnet"))
 	}
 
-	// Platform fields only allowed in TechPreviewNoUpgrade
-	if c.FeatureSet != configv1.TechPreviewNoUpgrade {
-		if c.Nutanix.LoadBalancer != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPath.Child("loadBalancer"), "load balancer is not supported in this feature set"))
-		}
-	}
-
 	if c.Nutanix.LoadBalancer != nil {
 		if !validateLoadBalancer(c.Nutanix.LoadBalancer.Type) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("loadBalancer", "type"), c.Nutanix.LoadBalancer.Type, "invalid load balancer type"))
+		}
+	}
+
+	// validate prismAPICallTimeout if configured
+	if p.PrismAPICallTimeout != nil {
+		if *p.PrismAPICallTimeout <= 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("prismAPICallTimeout"), *p.PrismAPICallTimeout, "must be a positive integer value"))
 		}
 	}
 
@@ -104,6 +104,26 @@ func ValidatePlatform(p *nutanix.Platform, fldPath *field.Path, c *types.Install
 
 				if len(fd.SubnetUUIDs) != 1 || p.SubnetUUIDs[0] == "" {
 					allErrs = append(allErrs, field.Invalid(fldPath.Child("failureDomain", "subnetUUIDs"), "", "must specify one failure domain subnet uuid"))
+				}
+
+				for _, sc := range fd.StorageContainers {
+					if sc.ReferenceName == "" {
+						allErrs = append(allErrs, field.Required(fldPath.Child("failureDomain", "storageContainers", "referenceName"), fmt.Sprintf("failureDomain %q: missing storageContainer referenceName", fd.Name)))
+					}
+
+					if sc.UUID == "" {
+						allErrs = append(allErrs, field.Required(fldPath.Child("failureDomain", "storageContainers", "uuid"), fmt.Sprintf("failureDomain %q: missing storageContainer uuid", fd.Name)))
+					}
+				}
+
+				for _, dsImg := range fd.DataSourceImages {
+					if dsImg.ReferenceName == "" {
+						allErrs = append(allErrs, field.Required(fldPath.Child("failureDomain", "dataSourceImages", "referenceName"), fmt.Sprintf("failureDomain %q: missing dataSourceImage referenceName", fd.Name)))
+					}
+
+					if dsImg.UUID == "" && dsImg.Name == "" {
+						allErrs = append(allErrs, field.Required(fldPath.Child("failureDomain", "dataSourceImages"), fmt.Sprintf("failureDomain %q: both the dataSourceImage's uuid and name are empty, you need to configure one.", fd.Name)))
+					}
 				}
 			}
 		}

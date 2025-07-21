@@ -9,11 +9,18 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
+
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
+
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
@@ -22,9 +29,6 @@ import (
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/validation"
-	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
@@ -33,6 +37,9 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
+
+const ALLOW_EXPANDED_AZ_ENV = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
+const CONTROL_PLANE_MACHINE_COUNT = 3
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
@@ -88,26 +95,25 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	masterZones := computeskus.Zones(masterSKU)
-	if len(masterZones) == 0 {
-		masterZones = []string{""}
-	}
+
 	masterVMNetworkingType := determineVMNetworkingType(masterSKU)
 
 	workerSKU, err := m.env.VMSku(string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	workerZones := computeskus.Zones(workerSKU)
-	if len(workerZones) == 0 {
-		workerZones = []string{""}
-	}
+
 	workerVMNetworkingType := determineVMNetworkingType(workerSKU)
 
-	// Standard_D8s_v3 is only available in one zone in centraluseuap, so we need a non-zonal install in that region
+	controlPlaneZones, workerZones, err := determineAvailabilityZones(masterSKU, workerSKU)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	// centraluseuap reports one zone, so we need to perform a non-zonal install in that region
 	if strings.EqualFold(m.oc.Location, "centraluseuap") {
 		workerZones = []string{""}
-		masterZones = []string{""}
+		controlPlaneZones = []string{""}
 	}
 
 	// Set NetworkType to OVNKubernetes by default
@@ -155,8 +161,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_415",         // "aro_4x"
-		Version:   "415.92.20240220", // "4x.yy.2020zzzz"
+		SKU:       "aro_417",         // "aro_4x"
+		Version:   "417.94.20240701", // "4x.yy.2020zzzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
@@ -190,10 +196,10 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 				ControlPlane: &types.MachinePool{
 					Name:     "master",
-					Replicas: to.Int64Ptr(3),
+					Replicas: to.Int64Ptr(CONTROL_PLANE_MACHINE_COUNT),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
-							Zones:            masterZones,
+							Zones:            controlPlaneZones,
 							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
 							VMNetworkingType: masterVMNetworkingType,
@@ -238,6 +244,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
 						OutboundType:             outboundType,
 						ResourceGroupName:        resourceGroup,
+						// We specify BaseDomainResourceGroupName even though we
+						// do not create Public DNS zones to pass validation.
+						// See https://issues.redhat.com/browse/OCPSTRAT-991 for
+						// a more permanent fix (disabling public DNS
+						// provisioning).
+						BaseDomainResourceGroupName: resourceGroup,
 					},
 				},
 				PullSecret: pullSecret,
@@ -268,11 +280,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
 					AdditionalEnabledCapabilities: []configv1.ClusterVersionCapability{
 						configv1.ClusterVersionCapabilityBuild,
+						configv1.ClusterVersionCapabilityCloudControllerManager,
 						configv1.ClusterVersionCapabilityCloudCredential,
 						configv1.ClusterVersionCapabilityConsole,
 						configv1.ClusterVersionCapabilityCSISnapshot,
 						configv1.ClusterVersionCapabilityDeploymentConfig,
 						configv1.ClusterVersionCapabilityImageRegistry,
+						configv1.ClusterVersionCapabilityIngress,
 						configv1.ClusterVersionCapabilityInsights,
 						configv1.ClusterVersionCapabilityMachineAPI,
 						configv1.ClusterVersionCapabilityMarketplace,
@@ -364,4 +378,63 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 		ClientID:              m.env.FPClientID(),
 		ClientCertificatePath: clientCertificateFile.Name(),
 	}, nil
+}
+
+func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.ResourceSku) ([]string, []string, error) {
+	controlPlaneZones := computeskus.Zones(controlPlaneSKU)
+	workerZones := computeskus.Zones(workerSKU)
+
+	// We sort the zones so that we will pick them in numerical order if we need
+	// less replicas than zones. With non-basic AZs, this means that control
+	// plane nodes will not go onto the 4th AZ by default. For workers, if more
+	// than 3 are specified on cluster creation, they will be spread across all
+	// available zones, but will pick 1,2,3 in the normal 3-node configuration.
+	// This is likely less surprising for setups where a 4th AZ might cause
+	// automation to fail by picking, e.g. zones 1, 2, 4. We may wish to be
+	// smarter about this in future. Note: If expanded AZs are available (see
+	// the env var) and a SKU is available in e.g. zones 1, 2, 4, we will deploy
+	// control planes there.
+	slices.Sort(controlPlaneZones)
+	slices.Sort(workerZones)
+
+	// Gate allowing expanded AZs behind
+	if os.Getenv(ALLOW_EXPANDED_AZ_ENV) == "" {
+		basicAZs := []string{"1", "2", "3"}
+		onlyBasicAZs := func(s string) bool {
+			return !slices.Contains(basicAZs, s)
+		}
+		controlPlaneZones = slices.DeleteFunc(controlPlaneZones, onlyBasicAZs)
+		workerZones = slices.DeleteFunc(workerZones, onlyBasicAZs)
+	}
+
+	// We handle the case where regions have no zones or >= zones than replicas,
+	// but not when replicas > zones. We (currently) only support 3 control
+	// plane replicas and Azure AZs will always be a minimum of 3, see
+	// https://azure.microsoft.com/en-us/blog/our-commitment-to-expand-azure-availability-zones-to-more-regions/
+	if len(controlPlaneZones) == 0 {
+		controlPlaneZones = []string{""}
+	} else if len(controlPlaneZones) < CONTROL_PLANE_MACHINE_COUNT {
+		return nil, nil, fmt.Errorf("cluster creation with %d zones and %d control plane replicas is unsupported", len(controlPlaneZones), CONTROL_PLANE_MACHINE_COUNT)
+	} else if len(controlPlaneZones) >= CONTROL_PLANE_MACHINE_COUNT {
+		// Pick lower zones first
+		controlPlaneZones = controlPlaneZones[:CONTROL_PLANE_MACHINE_COUNT]
+	}
+
+	// Unlike above, we don't particularly mind if we pass the Installer more
+	// zones than the usual 3 in a zonal region, since it automatically balances
+	// them across the available zones. However, if a SKU is available in less
+	// than 3 regions we will fail, since taints on cluster components like
+	// Prometheus may prevent the eventual install from turning healthy. As
+	// such, prevent situations where 2 workers may be deployed on one zone and
+	// 1 on another, even though OpenShift treats that as a theoretically valid
+	// configuration.
+	if len(workerZones) == 0 {
+		workerZones = []string{""}
+	} else if len(workerZones) < 3 {
+		return nil, nil, fmt.Errorf("cluster creation with a worker SKU available on less than 3 zones is unsupported (available: %d)", len(workerZones))
+	}
+
+	slices.Sort(workerZones)
+
+	return controlPlaneZones, workerZones, nil
 }

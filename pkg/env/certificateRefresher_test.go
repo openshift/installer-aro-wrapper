@@ -124,7 +124,7 @@ func equalPrivKey(one, other *rsa.PrivateKey) bool {
 		return true
 	}
 
-	pubEqual := one.PublicKey.N.Cmp(other.PublicKey.N) == 0 && one.PublicKey.E == other.PublicKey.E
+	pubEqual := one.N.Cmp(other.N) == 0 && one.E == other.E
 	expEqual := one.D.Cmp(other.D) == 0
 	if !pubEqual || !expEqual {
 		return false

@@ -56,7 +56,7 @@ func (p *prod) getServicePrincipalTokenAndClientIdFromMSI() (string, string, err
 
 	msi_parameters := msi_endpoint.Query()
 	msi_parameters.Add("api-version", "2018-02-01")
-	msi_parameters.Add("resource", p.instanceMetadata.environment.ResourceManagerEndpoint)
+	msi_parameters.Add("resource", p.environment.ResourceManagerEndpoint)
 	msi_parameters.Add("mi_res_id", fmt.Sprintf(
 		"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/aro-aks-cluster-%03d-agentpool",
 		p.SubscriptionID(),
@@ -65,7 +65,7 @@ func (p *prod) getServicePrincipalTokenAndClientIdFromMSI() (string, string, err
 	))
 
 	msi_endpoint.RawQuery = msi_parameters.Encode()
-	req, err := http.NewRequest("GET", msi_endpoint.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, msi_endpoint.String(), nil)
 	if err != nil {
 		return "", "", err
 	}
