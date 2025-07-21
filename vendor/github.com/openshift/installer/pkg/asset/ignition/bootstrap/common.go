@@ -28,7 +28,9 @@ import (
 	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/aws"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/baremetal"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/gcp"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/vsphere"
 	mcign "github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -39,8 +41,10 @@ import (
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
+	awstypes "github.com/openshift/installer/pkg/types/aws"
 	aztypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 )
@@ -98,8 +102,10 @@ type bootstrapTemplateData struct {
 // platformTemplateData is the data to use to replace values in bootstrap
 // template files that are specific to one platform.
 type platformTemplateData struct {
+	AWS       *aws.TemplateData
 	BareMetal *baremetal.TemplateData
 	VSphere   *vsphere.TemplateData
+	GCP       *gcp.TemplateData
 }
 
 // Common is an asset that generates the ignition config for bootstrap nodes.
@@ -310,6 +316,8 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	var platformData platformTemplateData
 
 	switch installConfig.Config.Platform.Name() {
+	case awstypes.Name:
+		platformData.AWS = aws.GetTemplateData(installConfig.Config.Platform.AWS)
 	case baremetaltypes.Name:
 		platformData.BareMetal = baremetal.GetTemplateData(
 			installConfig.Config.Platform.BareMetal,
@@ -319,6 +327,8 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 			ironicCreds.Password,
 			dependencies,
 		)
+	case gcptypes.Name:
+		platformData.GCP = gcp.GetTemplateData(installConfig.Config.Platform.GCP)
 	case vspheretypes.Name:
 		platformData.VSphere = vsphere.GetTemplateData(installConfig.Config.Platform.VSphere)
 	}
@@ -428,6 +438,7 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	}
 
 	filename := path.Base(uri)
+	filename = strings.TrimSuffix(filename, ".template")
 	parentDir := path.Base(path.Dir(uri))
 
 	var mode int

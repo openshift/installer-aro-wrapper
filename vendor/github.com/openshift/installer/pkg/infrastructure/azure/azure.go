@@ -359,6 +359,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		StorageAccountName: storageAccountName,
 		CloudName:          platform.CloudName,
 		Region:             platform.Region,
+		AuthType:           session.AuthType,
 		Tags:               tags,
 		CustomerManagedKey: platform.CustomerManagedKey,
 		TokenCredential:    tokenCredential,
@@ -444,7 +445,6 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		if err != nil {
 			return err
 		}
-
 		// If Control Plane Security Type is provided, then pass that along
 		// during Gen V2 Gallery Image creation. It will be added as a
 		// supported feature of the image.
@@ -452,6 +452,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		if err != nil {
 			return err
 		}
+
 		_, err = CreateGalleryImage(ctx, &CreateGalleryImageInput{
 			ResourceGroupName:    resourceGroupName,
 			GalleryName:          galleryName,
@@ -834,7 +835,6 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 	ignitionContainerName := "ignition"
 	blobName := "bootstrap.ign"
 	blobURL := fmt.Sprintf("%s/%s/%s", p.StorageURL, ignitionContainerName, blobName)
-
 	publicAccess := armstorage.PublicAccessNone
 	// Create ignition blob storage container
 	createBlobContainerOutput, err := CreateBlobContainer(ctx, &CreateBlobContainerInput{

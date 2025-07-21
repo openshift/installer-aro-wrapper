@@ -86,13 +86,20 @@ type TemplateData struct {
 
 	// DisableIronicVirtualMediaTLS enables or disables TLS in ironic virtual media deployments
 	DisableIronicVirtualMediaTLS bool
+
+	// AdditionalNTPServers holds a list of additional NTP servers to be used for provisioning
+	AdditionalNTPServers []string
 }
 
 func externalURLs(apiVIPs []string, protocol string) (externalURLv4 string, externalURLv6 string) {
 	if len(apiVIPs) > 1 {
 		// IPv6 BMCs may not be able to reach IPv4 servers, use the right callback URL for them.
 		// Warning: when backporting to 4.12 or earlier, change the port to 80!
-		externalURL := fmt.Sprintf("%s://%s/", protocol, net.JoinHostPort(apiVIPs[1], "6180"))
+		port := "6180"
+		if protocol == "https" {
+			port = "6183"
+		}
+		externalURL := fmt.Sprintf("%s://%s/", protocol, net.JoinHostPort(apiVIPs[1], port))
 		if utilsnet.IsIPv6String(apiVIPs[1]) {
 			externalURLv6 = externalURL
 		}
@@ -118,10 +125,14 @@ func GetTemplateData(config *baremetal.Platform, networks []types.MachineNetwork
 	templateData.ExternalStaticDNS = config.BootstrapExternalStaticDNS
 	templateData.ExternalMACAddress = config.ExternalMACAddress
 
+	if len(config.AdditionalNTPServers) > 0 {
+		templateData.AdditionalNTPServers = config.AdditionalNTPServers
+	}
+
 	// If the user has manually set disableVirtualMediaTLS to False in the Provisioning CR, then enable TLS in ironic.
-	// The default value of 'true' is temporary (for backporting to older releases), which will be changed to 'false' in the future.
-	templateData.DisableIronicVirtualMediaTLS = true
-	protocol := "http"
+	// The default value is 'false'.
+	templateData.DisableIronicVirtualMediaTLS = false
+	protocol := "https"
 
 	type provisioningCRTemplate struct {
 		Spec struct {
@@ -146,12 +157,10 @@ func GetTemplateData(config *baremetal.Platform, networks []types.MachineNetwork
 	} else {
 		logrus.Errorf("No Provisioning CR data found while generating TLS certificate for ironic virtual media")
 	}
-	if provisioningCR.Spec.DisableVirtualMediaTLS != nil {
+	if provisioningCR.Spec.DisableVirtualMediaTLS != nil && *provisioningCR.Spec.DisableVirtualMediaTLS {
 		templateData.DisableIronicVirtualMediaTLS = *provisioningCR.Spec.DisableVirtualMediaTLS
-		if !*provisioningCR.Spec.DisableVirtualMediaTLS {
-			logrus.Debugf("TLS is enabled for ironic virtual media")
-			protocol = "https"
-		}
+		logrus.Debugf("TLS is disabled for ironic virtual media")
+		protocol = "http"
 	}
 	_, externalURLv6 := externalURLs(config.APIVIPs, protocol)
 	templateData.ExternalURLv6 = externalURLv6

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -17,12 +18,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/cmd/openshift-install/command"
 	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/asset/cluster/metadata"
 	azic "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	gcpic "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	powervsic "github.com/openshift/installer/pkg/asset/installconfig/powervs"
+	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/clusterapi/internal/process"
 	"github.com/openshift/installer/pkg/clusterapi/internal/process/addr"
 	"github.com/openshift/installer/pkg/types/aws"
@@ -84,8 +87,32 @@ type system struct {
 	logWriter *io.PipeWriter
 }
 
+// hostHasIPv4Address verifies if the host that launches the host control plane has IPv4 address.
+func hostHasIPv4Address() (bool, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return false, err
+	}
+	for _, intf := range interfaces {
+		if intf.Flags&net.FlagUp == 0 || intf.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := intf.Addrs()
+		if err != nil {
+			return false, err
+		}
+		for _, addr := range addrs {
+			ipNet, ok := addr.(*net.IPNet)
+			if ok && ipNet.IP.To4() != nil {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
 // Run launches the cluster-api system.
-func (c *system) Run(ctx context.Context) error {
+func (c *system) Run(ctx context.Context) error { //nolint:gocyclo
 	c.Lock()
 	defer c.Unlock()
 
@@ -95,6 +122,18 @@ func (c *system) Run(ctx context.Context) error {
 
 	// Create the local control plane.
 	lcp := &localControlPlane{}
+
+	ipv4, err := hostHasIPv4Address()
+	if err != nil {
+		return err
+	}
+	// If the host has no IPv4 available, the default value of service network should be modified to IPv6 CIDR.
+	if !ipv4 {
+		lcp.APIServerArgs = map[string]string{
+			"service-cluster-ip-range": "fd02::/112",
+		}
+	}
+
 	if err := lcp.Run(ctx); err != nil {
 		return fmt.Errorf("failed to run local control plane: %w", err)
 	}
@@ -238,15 +277,48 @@ func (c *system) Run(ctx context.Context) error {
 			),
 		)
 	case ibmcloud.Name:
-		// TODO
+		ibmcloudFlags := []string{
+			"--provider-id-fmt=v2",
+			"-v=2",
+			"--metrics-bind-addr=0",
+			"--health-addr={{suggestHealthHostPort}}",
+			"--leader-elect=false",
+			"--webhook-port={{.WebhookPort}}",
+			"--webhook-cert-dir={{.WebhookCertDir}}",
+			fmt.Sprintf("--namespace=%s", capiutils.Namespace),
+		}
+
+		// Get the ServiceEndpoint overrides, along with Region, to pass on to CAPI, if any.
+		if serviceEndpoints := metadata.IBMCloud.GetRegionAndEndpointsFlag(); serviceEndpoints != "" {
+			ibmcloudFlags = append(ibmcloudFlags, fmt.Sprintf("--service-endpoint=%s", serviceEndpoints))
+		}
+
+		iamEndpoint := "https://iam.cloud.ibm.com"
+		// Override IAM endpoint if an override was provided.
+		if overrideURL := ibmcloud.CheckServiceEndpointOverride(configv1.IBMCloudServiceIAM, metadata.IBMCloud.ServiceEndpoints); overrideURL != "" {
+			iamEndpoint = overrideURL
+		}
+
+		controllers = append(controllers,
+			c.getInfrastructureController(
+				&IBMCloud,
+				ibmcloudFlags,
+				map[string]string{
+					"IBMCLOUD_AUTH_TYPE": "iam",
+					"IBMCLOUD_APIKEY":    os.Getenv("IC_API_KEY"),
+					"IBMCLOUD_AUTH_URL":  iamEndpoint,
+					"LOGLEVEL":           "5",
+				},
+			),
+		)
 	case nutanix.Name:
 		controllers = append(controllers,
 			c.getInfrastructureController(
 				&Nutanix,
 				[]string{
-					"-metrics-bind-address=0",
-					"-health-probe-bind-address={{suggestHealthHostPort}}",
-					"-leader-elect=false",
+					"--diagnostics-address=0",
+					"--health-probe-bind-address={{suggestHealthHostPort}}",
+					"--leader-elect=false",
 				},
 				map[string]string{},
 			),
@@ -278,7 +350,6 @@ func (c *system) Run(ctx context.Context) error {
 					"--webhook-port={{.WebhookPort}}",
 					"--webhook-cert-dir={{.WebhookCertDir}}",
 					"--leader-elect=false",
-					"--enable-keep-alive=false",
 				},
 				map[string]string{
 					"EXP_KUBEADM_BOOTSTRAP_FORMAT_IGNITION": "true",
@@ -310,8 +381,8 @@ func (c *system) Run(ctx context.Context) error {
 				"LOGLEVEL":           "2",
 			},
 		)
-		if cfg := metadata.PowerVS; cfg != nil && len(cfg.ServiceEndpoints) > 0 {
-			overrides := bxClient.FilterServiceEndpoints(cfg)
+		if cfg := metadata.PowerVS; cfg != nil {
+			overrides := bxClient.MapServiceEndpointsForCAPI(cfg)
 			if len(overrides) > 0 {
 				controller.Args = append(controller.Args, fmt.Sprintf("--service-endpoint=%s:%s", cfg.Region, strings.Join(overrides, ",")))
 			}

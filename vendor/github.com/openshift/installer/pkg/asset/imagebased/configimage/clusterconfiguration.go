@@ -2,7 +2,9 @@ package configimage
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -90,6 +92,12 @@ func (cc *ClusterConfiguration) Generate(_ context.Context, dependencies asset.P
 	if installConfig.Config == nil || imageBasedConfig.Config == nil {
 		return cc.finish()
 	}
+	if imageBasedConfig.Config.ClusterID != "" {
+		clusterID.UUID = imageBasedConfig.Config.ClusterID
+	}
+	if imageBasedConfig.Config.InfraID != "" {
+		clusterID.InfraID = imageBasedConfig.Config.InfraID
+	}
 
 	cc.Config = &imagebased.SeedReconfiguration{
 		APIVersion:            imagebased.SeedReconfigurationVersion,
@@ -101,9 +109,13 @@ func (cc *ClusterConfiguration) Generate(_ context.Context, dependencies asset.P
 		KubeadminPasswordHash: pwdHash,
 		Proxy:                 installConfig.Config.Proxy,
 		PullSecret:            installConfig.Config.PullSecret,
-		RawNMStateConfig:      imageBasedConfig.Config.NetworkConfig.String(),
 		ReleaseRegistry:       imageBasedConfig.Config.ReleaseRegistry,
 		SSHKey:                installConfig.Config.SSHKey,
+		NodeLabels:            imageBasedConfig.Config.NodeLabels,
+	}
+
+	if imageBasedConfig.Config.NetworkConfig != nil {
+		cc.Config.RawNMStateConfig = imageBasedConfig.Config.NetworkConfig.String()
 	}
 
 	if len(imageBasedConfig.Config.AdditionalNTPSources) > 0 {
@@ -122,6 +134,11 @@ func (cc *ClusterConfiguration) Generate(_ context.Context, dependencies asset.P
 		}
 	}
 
+	ingressCertificateCN, err := getCommonNameFromCertificate(ingressOperatorSignerCertKey.Cert())
+	if err != nil {
+		return fmt.Errorf("failed to get CN from ingress CA certificate: %w", err)
+	}
+
 	cc.Config.KubeconfigCryptoRetention = imagebased.KubeConfigCryptoRetention{
 		KubeAPICrypto: imagebased.KubeAPICrypto{
 			ServingCrypto: imagebased.ServingCrypto{
@@ -134,12 +151,15 @@ func (cc *ClusterConfiguration) Generate(_ context.Context, dependencies asset.P
 			},
 		},
 		IngresssCrypto: imagebased.IngresssCrypto{
-			IngressCA: string(ingressOperatorSignerCertKey.Key()),
+			IngressCAPrivateKey:  string(ingressOperatorSignerCertKey.Key()),
+			IngressCertificateCN: ingressCertificateCN,
 		},
 	}
 
 	// validation for the length of the MachineNetwork is performed in the InstallConfig
-	cc.Config.MachineNetwork = installConfig.Config.Networking.MachineNetwork[0].CIDR.String()
+	if len(installConfig.Config.Networking.MachineNetwork) > 0 {
+		cc.Config.MachineNetwork = installConfig.Config.Networking.MachineNetwork[0].CIDR.String()
+	}
 
 	clusterConfigurationData, err := json.Marshal(cc.Config)
 	if err != nil {
@@ -202,4 +222,18 @@ func chronyConfWithAdditionalNTPSources(sources []string) string {
 		content += fmt.Sprintf("\nserver %s iburst", source)
 	}
 	return content
+}
+
+func getCommonNameFromCertificate(certPEM []byte) (string, error) {
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return "", fmt.Errorf("failed to decode PEM block")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse certificate: %w", err)
+	}
+
+	return cert.Subject.CommonName, nil
 }

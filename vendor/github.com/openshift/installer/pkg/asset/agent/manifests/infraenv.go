@@ -58,10 +58,14 @@ func (i *InfraEnv) Generate(_ context.Context, dependencies asset.Parents) error
 	agentConfig := &agentconfig.AgentConfig{}
 	dependencies.Get(installConfig, agentConfig, agentWorkflow, clusterInfo)
 
+	rendezvousIP := ""
+	if agentConfig.Config != nil {
+		rendezvousIP = agentConfig.Config.RendezvousIP
+	}
 	switch agentWorkflow.Workflow {
 	case workflow.AgentWorkflowTypeInstall:
 		if installConfig.Config != nil {
-			err := i.generateManifest(installConfig.ClusterName(), installConfig.ClusterNamespace(), installConfig.Config.SSHKey, installConfig.Config.AdditionalTrustBundle, installConfig.Config.Proxy, string(installConfig.Config.ControlPlane.Architecture))
+			err := i.generateManifest(installConfig.ClusterName(), installConfig.ClusterNamespace(), installConfig.Config.SSHKey, installConfig.Config.AdditionalTrustBundle, installConfig.Config.Proxy, string(installConfig.Config.ControlPlane.Architecture), &installConfig.Config.Networking.MachineNetwork, rendezvousIP)
 			if err != nil {
 				return err
 			}
@@ -70,10 +74,16 @@ func (i *InfraEnv) Generate(_ context.Context, dependencies asset.Parents) error
 				i.Config.Spec.AdditionalNTPSources = agentConfig.Config.AdditionalNTPSources
 			}
 
+			if installConfig.Config.BareMetal != nil {
+				if i.Config.Spec.AdditionalNTPSources == nil && installConfig.Config.BareMetal.AdditionalNTPServers != nil {
+					i.Config.Spec.AdditionalNTPSources = installConfig.Config.BareMetal.AdditionalNTPServers
+				}
+			}
+
 		}
 
 	case workflow.AgentWorkflowTypeAddNodes:
-		err := i.generateManifest(clusterInfo.ClusterName, clusterInfo.Namespace, clusterInfo.SSHKey, clusterInfo.UserCaBundle, clusterInfo.Proxy, clusterInfo.Architecture)
+		err := i.generateManifest(clusterInfo.ClusterName, clusterInfo.Namespace, clusterInfo.SSHKey, clusterInfo.UserCaBundle, clusterInfo.Proxy, clusterInfo.Architecture, nil, rendezvousIP)
 		if err != nil {
 			return err
 		}
@@ -85,7 +95,7 @@ func (i *InfraEnv) Generate(_ context.Context, dependencies asset.Parents) error
 	return i.finish()
 }
 
-func (i *InfraEnv) generateManifest(clusterName, clusterNamespace, sshKey, additionalTrustBundle string, proxy *types.Proxy, architecture string) error {
+func (i *InfraEnv) generateManifest(clusterName, clusterNamespace, sshKey, additionalTrustBundle string, proxy *types.Proxy, architecture string, machineNetwork *[]types.MachineNetworkEntry, rendezvousIP string) error {
 	infraEnv := &aiv1beta1.InfraEnv{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "InfraEnv",
@@ -118,7 +128,7 @@ func (i *InfraEnv) generateManifest(clusterName, clusterNamespace, sshKey, addit
 		infraEnv.Spec.AdditionalTrustBundle = additionalTrustBundle
 	}
 	if proxy != nil {
-		infraEnv.Spec.Proxy = getProxy(proxy)
+		infraEnv.Spec.Proxy = getProxy(proxy, machineNetwork, rendezvousIP)
 	}
 
 	i.Config = infraEnv

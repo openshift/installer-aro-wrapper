@@ -269,6 +269,99 @@ func (s AdminQuotaPolicy) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
+// Analysis: A message to group the analysis information.
+type Analysis struct {
+	// Analysis: Output only. Analysis result of updating a policy.
+	Analysis *AnalysisResult `json:"analysis,omitempty"`
+	// AnalysisType: Output only. The type of analysis.
+	//
+	// Possible values:
+	//   "ANALYSIS_TYPE_UNSPECIFIED" - Unspecified analysis type. Do not use.
+	//   "ANALYSIS_TYPE_DEPENDENCY" - The analysis of service dependencies.
+	//   "ANALYSIS_TYPE_RESOURCE_USAGE" - The analysis of service resource usage.
+	AnalysisType string `json:"analysisType,omitempty"`
+	// DisplayName: Output only. The user friendly display name of the analysis
+	// type. E.g. service dependency analysis, service resource usage analysis,
+	// etc.
+	DisplayName string `json:"displayName,omitempty"`
+	// Service: The names of the service that has analysis result of warnings or
+	// blockers. Example: `services/storage.googleapis.com`.
+	Service string `json:"service,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Analysis") to
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
+	ForceSendFields []string `json:"-"`
+	// NullFields is a list of field names (e.g. "Analysis") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
+	NullFields []string `json:"-"`
+}
+
+func (s Analysis) MarshalJSON() ([]byte, error) {
+	type NoMethod Analysis
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
+}
+
+// AnalysisResult: An analysis result including blockers and warnings.
+type AnalysisResult struct {
+	// Blockers: Blocking information that would prevent the policy changes at
+	// runtime.
+	Blockers []*Impact `json:"blockers,omitempty"`
+	// Warnings: Warning information indicating that the policy changes might be
+	// unsafe, but will not block the changes at runtime.
+	Warnings []*Impact `json:"warnings,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Blockers") to
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
+	ForceSendFields []string `json:"-"`
+	// NullFields is a list of field names (e.g. "Blockers") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
+	NullFields []string `json:"-"`
+}
+
+func (s AnalysisResult) MarshalJSON() ([]byte, error) {
+	type NoMethod AnalysisResult
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
+}
+
+// AnalyzeConsumerPolicyMetadata: Metadata for the `AnalyzeConsumerPolicy`
+// method.
+type AnalyzeConsumerPolicyMetadata struct {
+}
+
+// AnalyzeConsumerPolicyResponse: The response of analyzing a consumer policy
+// update.
+type AnalyzeConsumerPolicyResponse struct {
+	// Analysis: The list of analyses returned from performing the intended policy
+	// update analysis. The analysis is grouped by service name and different
+	// analysis types. The empty analysis list means that the consumer policy can
+	// be updated without any warnings or blockers.
+	Analysis []*Analysis `json:"analysis,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Analysis") to
+	// unconditionally include in API requests. By default, fields with empty or
+	// default values are omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
+	ForceSendFields []string `json:"-"`
+	// NullFields is a list of field names (e.g. "Analysis") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
+	NullFields []string `json:"-"`
+}
+
+func (s AnalyzeConsumerPolicyResponse) MarshalJSON() ([]byte, error) {
+	type NoMethod AnalyzeConsumerPolicyResponse
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
+}
+
 // Api: Api is a light-weight descriptor for an API Interface. Interfaces are
 // also described as "protocol buffer services" in some contexts, such as by
 // the "service" keyword in a .proto file, but they are different from API
@@ -1023,9 +1116,11 @@ type ContextRule struct {
 	// AllowedResponseExtensions: A list of full type names or extension IDs of
 	// extensions allowed in grpc side channel from backend to client.
 	AllowedResponseExtensions []string `json:"allowedResponseExtensions,omitempty"`
-	// Provided: A list of full type names of provided contexts.
+	// Provided: A list of full type names of provided contexts. It is used to
+	// support propagating HTTP headers and ETags from the response extension.
 	Provided []string `json:"provided,omitempty"`
-	// Requested: A list of full type names of requested contexts.
+	// Requested: A list of full type names of requested contexts, only the
+	// requested context will be made available to the backend.
 	Requested []string `json:"requested,omitempty"`
 	// Selector: Selects the methods to which this rule applies. Refer to selector
 	// for syntax details.
@@ -1257,20 +1352,17 @@ func (s DisableServiceResponse) MarshalJSON() ([]byte, error) {
 // google/foo/tutorial.md ==) subpages: - name: Java content: (== include
 // google/foo/tutorial_java.md ==) rules: - selector:
 // google.calendar.Calendar.Get description: > ... - selector:
-// google.calendar.Calendar.Put description: > ... code_snippet_rules: -
-// selector: google.calendar.Calendar.Delete code_snippets: - includes: -
-// github_include: region_tag: calendar_delete code_language: JAVA account:
-// GoogleCloudPlatform project: java-docs-samples file: calendar/delete.java
-// Documentation is provided in markdown syntax. In addition to standard
-// markdown features, definition lists, tables and fenced code blocks are
-// supported. Section headers can be provided and are interpreted relative to
-// the section nesting of the context where a documentation fragment is
-// embedded. Documentation from the IDL is merged with documentation defined
-// via the config at normalization time, where documentation provided by config
-// rules overrides IDL provided. A number of constructs specific to the API
-// platform are supported in documentation text. In order to reference a proto
-// element, the following notation can be used: [fully.qualified.proto.name][]
-// To override the display text used for the link, this can be used: [display
+// google.calendar.Calendar.Put description: > ... Documentation is provided in
+// markdown syntax. In addition to standard markdown features, definition
+// lists, tables and fenced code blocks are supported. Section headers can be
+// provided and are interpreted relative to the section nesting of the context
+// where a documentation fragment is embedded. Documentation from the IDL is
+// merged with documentation defined via the config at normalization time,
+// where documentation provided by config rules overrides IDL provided. A
+// number of constructs specific to the API platform are supported in
+// documentation text. In order to reference a proto element, the following
+// notation can be used: [fully.qualified.proto.name][] To override the display
+// text used for the link, this can be used: [display
 // text][fully.qualified.proto.name] Text can be excluded from doc using the
 // following notation: (-- internal comment --) A few directives are available
 // in documentation. Note that directives must appear on a single line to be
@@ -2317,9 +2409,9 @@ func (s Http) MarshalJSON() ([]byte, error) {
 // to a REST endpoint, achieving the same effect as the proto annotation. This
 // can be particularly useful if you have a proto that is reused in multiple
 // services. Note that any transcoding specified in the service config will
-// override any matching transcoding configuration in the proto. Example below
-// selects a gRPC method and applies HttpRule to it. http: rules: - selector:
-// example.v1.Messaging.GetMessage get:
+// override any matching transcoding configuration in the proto. The following
+// example selects a gRPC method and applies an `HttpRule` to it: http: rules:
+// - selector: example.v1.Messaging.GetMessage get:
 // /v1/messages/{message_id}/{sub.subfield} Special notes When gRPC Transcoding
 // is used to map a gRPC to JSON REST endpoints, the proto to JSON conversion
 // must follow the proto3 specification
@@ -2391,6 +2483,38 @@ type HttpRule struct {
 
 func (s HttpRule) MarshalJSON() ([]byte, error) {
 	type NoMethod HttpRule
+	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
+}
+
+// Impact: A message to group impacts of updating a policy.
+type Impact struct {
+	// Detail: Output only. User friendly impact detail in a free form message.
+	Detail string `json:"detail,omitempty"`
+	// ImpactType: Output only. The type of impact.
+	//
+	// Possible values:
+	//   "IMPACT_TYPE_UNSPECIFIED" - Reserved Blocks (Block n contains codes from
+	// 100n to 100(n+1) -1 Block 0 - Special/Admin codes Block 1 - Impact Type of
+	// ANALYSIS_TYPE_DEPENDENCY Block 2 - Impact Type of
+	// ANALYSIS_TYPE_RESOURCE_USAGE ...
+	//   "DEPENDENCY_MISSING_DEPENDENCIES" - Block 1 - Impact Type of
+	// ANALYSIS_TYPE_DEPENDENCY
+	ImpactType string `json:"impactType,omitempty"`
+	// ForceSendFields is a list of field names (e.g. "Detail") to unconditionally
+	// include in API requests. By default, fields with empty or default values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-ForceSendFields for more
+	// details.
+	ForceSendFields []string `json:"-"`
+	// NullFields is a list of field names (e.g. "Detail") to include in API
+	// requests with the JSON null value. By default, fields with empty values are
+	// omitted from API requests. See
+	// https://pkg.go.dev/google.golang.org/api#hdr-NullFields for more details.
+	NullFields []string `json:"-"`
+}
+
+func (s Impact) MarshalJSON() ([]byte, error) {
+	type NoMethod Impact
 	return gensupport.MarshalJSON(NoMethod(s), s.ForceSendFields, s.NullFields)
 }
 
