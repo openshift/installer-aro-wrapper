@@ -13,12 +13,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jongio/azidext/go/azidext"
+	"github.com/sirupsen/logrus"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/jongio/azidext/go/azidext"
-	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/compute"

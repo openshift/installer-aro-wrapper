@@ -7,11 +7,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
+
 	mgmtfeatures "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/golang/mock/gomock"
-	"github.com/sirupsen/logrus"
 
 	mock_features "github.com/openshift/installer-aro-wrapper/pkg/util/mocks/azureclient/mgmt/features"
 )

@@ -7,12 +7,14 @@ import (
 	"fmt"
 
 	"github.com/coreos/ignition/v2/config/v3_2/types"
+	"github.com/pkg/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/machines/machineconfig"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 )
