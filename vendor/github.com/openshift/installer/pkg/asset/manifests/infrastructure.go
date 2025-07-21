@@ -21,6 +21,7 @@ import (
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	"github.com/openshift/installer/pkg/types/dns"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
@@ -128,6 +129,15 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 					config.Status.PlatformStatus.AWS.ServiceEndpoints[j].Name
 			})
 		}
+		// If the user has requested the use of a DNS provisioned by them, then OpenShift needs to
+		// start an in-cluster DNS for the installation to succeed. The user can then configure their
+		// DNS post-install.
+		config.Status.PlatformStatus.AWS.CloudLoadBalancerConfig = &configv1.CloudLoadBalancerConfig{
+			DNSType: configv1.PlatformDefaultDNSType,
+		}
+		if installConfig.Config.AWS.UserProvisionedDNS == dns.UserProvisionedDNSEnabled {
+			config.Status.PlatformStatus.AWS.CloudLoadBalancerConfig.DNSType = configv1.ClusterHostedDNSType
+		}
 	case azure.Name:
 		config.Spec.PlatformSpec.Type = configv1.AzurePlatformType
 
@@ -196,9 +206,10 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 		// If the user has requested the use of a DNS provisioned by them, then OpenShift needs to
 		// start an in-cluster DNS for the installation to succeed. The user can then configure their
 		// DNS post-install.
-		config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig = &configv1.CloudLoadBalancerConfig{}
-		config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig.DNSType = configv1.PlatformDefaultDNSType
-		if installConfig.Config.GCP.UserProvisionedDNS == gcp.UserProvisionedDNSEnabled {
+		config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig = &configv1.CloudLoadBalancerConfig{
+			DNSType: configv1.PlatformDefaultDNSType,
+		}
+		if installConfig.Config.GCP.UserProvisionedDNS == dns.UserProvisionedDNSEnabled {
 			config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig.DNSType = configv1.ClusterHostedDNSType
 		}
 	case ibmcloud.Name:
@@ -299,6 +310,19 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 				Name: service.Name,
 				URL:  service.URL,
 			})
+		}
+		if installConfig.Config.Publish == types.InternalPublishingStrategy &&
+			(len(installConfig.Config.ImageDigestSources) > 0 || len(installConfig.Config.DeprecatedImageContentSources) > 0) {
+			piRegion := installConfig.Config.PowerVS.Region
+			vpcRegion, err := powervs.VPCRegionForPowerVSRegion(piRegion)
+			if err != nil {
+				return fmt.Errorf("failed to determine VPC region: %w", err)
+			}
+			cosRegion, err := powervs.COSRegionForPowerVSRegion(piRegion)
+			if err != nil {
+				return fmt.Errorf("failed to determine COS region: %w", err)
+			}
+			config.Spec.PlatformSpec.PowerVS.ServiceEndpoints = installConfig.PowerVS.SetDefaultPrivateServiceEndpoints(ctx, config.Spec.PlatformSpec.PowerVS.ServiceEndpoints, cosRegion, vpcRegion)
 		}
 		config.Status.PlatformStatus.PowerVS = &configv1.PowerVSPlatformStatus{
 			Region:           installConfig.Config.Platform.PowerVS.Region,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,9 +22,11 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
+	ibmcloudic "github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
 	"github.com/openshift/installer/pkg/asset/machines/aws"
 	"github.com/openshift/installer/pkg/asset/machines/azure"
 	"github.com/openshift/installer/pkg/asset/machines/gcp"
+	"github.com/openshift/installer/pkg/asset/machines/ibmcloud"
 	nutanixcapi "github.com/openshift/installer/pkg/asset/machines/nutanix"
 	"github.com/openshift/installer/pkg/asset/machines/openstack"
 	"github.com/openshift/installer/pkg/asset/machines/powervs"
@@ -38,6 +41,7 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	azuredefaults "github.com/openshift/installer/pkg/types/azure/defaults"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
+	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
@@ -132,6 +136,10 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 				for zone := range subnets {
 					mpool.Zones = append(mpool.Zones, zone)
 				}
+				// Since zones are extracted from map keys, order is not guaranteed.
+				// Thus, sort the zones by lexical order to ensure CAPI and MAPI machines
+				// are distributed to zones in the same order.
+				slices.Sort(mpool.Zones)
 			} else {
 				mpool.Zones, err = installConfig.AWS.AvailabilityZones(ctx)
 				if err != nil {
@@ -454,11 +462,48 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 			return fmt.Errorf("failed to generate Cluster API machine manifests for control-plane: %w", err)
 		}
 		pool.Platform.Nutanix = &mpool
-		templateName := nutanixtypes.RHCOSImageName(clusterID.InfraID)
+		templateName := nutanixtypes.RHCOSImageName(ic.Platform.Nutanix, clusterID.InfraID)
 
 		c.FileList, err = nutanixcapi.GenerateMachines(clusterID.InfraID, ic, &pool, templateName, "master")
 		if err != nil {
 			return fmt.Errorf("unable to generate CAPI machines for Nutanix %w", err)
+		}
+	case ibmcloudtypes.Name:
+		mpool := defaultIBMCloudMachinePoolPlatform()
+		mpool.Set(ic.Platform.IBMCloud.DefaultMachinePlatform)
+		mpool.Set(pool.Platform.IBMCloud)
+		if len(mpool.Zones) == 0 {
+			azs, err := ibmcloud.AvailabilityZones(ic.Platform.IBMCloud.Region, ic.Platform.IBMCloud.ServiceEndpoints)
+			if err != nil {
+				return fmt.Errorf("failed to fetch availability zones: %w", err)
+			}
+			mpool.Zones = azs
+		}
+
+		subnets := make(map[string]string)
+		if len(ic.Platform.IBMCloud.ControlPlaneSubnets) > 0 {
+			subnetMetas, err := installConfig.IBMCloud.ControlPlaneSubnets(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to collect subnets for machines: %w", err)
+			}
+			for _, subnet := range subnetMetas {
+				subnets[subnet.Zone] = subnet.Name
+			}
+		}
+		pool.Platform.IBMCloud = &mpool
+		imageName := ibmcloudic.VSIImageName(clusterID.InfraID)
+
+		c.FileList, err = ibmcloud.GenerateMachines(
+			ctx,
+			clusterID.InfraID,
+			ic,
+			subnets,
+			&pool,
+			imageName,
+			"master",
+		)
+		if err != nil {
+			return fmt.Errorf("failed to generate IBM Cloud VPC machine manifests: %w", err)
 		}
 	default:
 		// TODO: support other platforms

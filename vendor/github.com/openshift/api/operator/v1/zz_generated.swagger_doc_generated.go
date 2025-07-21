@@ -37,8 +37,8 @@ func (MyOperatorResource) SwaggerDoc() map[string]string {
 var map_NodeStatus = map[string]string{
 	"":                         "NodeStatus provides information about the current state of a particular node managed by this operator.",
 	"nodeName":                 "nodeName is the name of the node",
-	"currentRevision":          "currentRevision is the generation of the most recently successful deployment",
-	"targetRevision":           "targetRevision is the generation of the deployment we're trying to apply",
+	"currentRevision":          "currentRevision is the generation of the most recently successful deployment. Can not be set on creation of a nodeStatus. Updates must only increase the value.",
+	"targetRevision":           "targetRevision is the generation of the deployment we're trying to apply. Can not be set on creation of a nodeStatus.",
 	"lastFailedRevision":       "lastFailedRevision is the generation of the deployment we tried and failed to deploy.",
 	"lastFailedTime":           "lastFailedTime is the time the last failed revision failed the last time.",
 	"lastFailedReason":         "lastFailedReason is a machine readable failure reason string.",
@@ -52,7 +52,10 @@ func (NodeStatus) SwaggerDoc() map[string]string {
 }
 
 var map_OperatorCondition = map[string]string{
-	"": "OperatorCondition is just the standard condition fields.",
+	"":                   "OperatorCondition is just the standard condition fields.",
+	"type":               "type of condition in CamelCase or in foo.example.com/CamelCase.",
+	"status":             "status of the condition, one of True, False, Unknown.",
+	"lastTransitionTime": "lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.",
 }
 
 func (OperatorCondition) SwaggerDoc() map[string]string {
@@ -73,11 +76,12 @@ func (OperatorSpec) SwaggerDoc() map[string]string {
 }
 
 var map_OperatorStatus = map[string]string{
-	"observedGeneration": "observedGeneration is the last generation change you've dealt with",
-	"conditions":         "conditions is a list of conditions and their status",
-	"version":            "version is the level this availability applies to",
-	"readyReplicas":      "readyReplicas indicates how many replicas are ready and at the desired state",
-	"generations":        "generations are used to determine when an item needs to be reconciled or has changed in a way that needs a reaction.",
+	"observedGeneration":      "observedGeneration is the last generation change you've dealt with",
+	"conditions":              "conditions is a list of conditions and their status",
+	"version":                 "version is the level this availability applies to",
+	"readyReplicas":           "readyReplicas indicates how many replicas are ready and at the desired state",
+	"latestAvailableRevision": "latestAvailableRevision is the deploymentID of the most recent deployment",
+	"generations":             "generations are used to determine when an item needs to be reconciled or has changed in a way that needs a reaction.",
 }
 
 func (OperatorStatus) SwaggerDoc() map[string]string {
@@ -97,7 +101,6 @@ func (StaticPodOperatorSpec) SwaggerDoc() map[string]string {
 
 var map_StaticPodOperatorStatus = map[string]string{
 	"":                              "StaticPodOperatorStatus is status for controllers that manage static pods.  There are different needs because individual node status must be tracked.",
-	"latestAvailableRevision":       "latestAvailableRevision is the deploymentID of the most recent deployment",
 	"latestAvailableRevisionReason": "latestAvailableRevisionReason describe the detailed reason for the most recent deployment",
 	"nodeStatuses":                  "nodeStatuses track the deployment values and errors across individual nodes",
 }
@@ -207,7 +210,7 @@ func (AddPage) SwaggerDoc() map[string]string {
 
 var map_Capability = map[string]string{
 	"":           "Capabilities contains set of UI capabilities and their state in the console UI.",
-	"name":       "name is the unique name of a capability. Available capabilities are LightspeedButton.",
+	"name":       "name is the unique name of a capability. Available capabilities are LightspeedButton and GettingStartedBanner.",
 	"visibility": "visibility defines the visibility state of the capability.",
 }
 
@@ -245,7 +248,7 @@ func (ConsoleConfigRoute) SwaggerDoc() map[string]string {
 
 var map_ConsoleCustomization = map[string]string{
 	"":                     "ConsoleCustomization defines a list of optional configuration for the console UI.",
-	"capabilities":         "capabilities defines an array of capabilities that can be interacted with in the console UI. Each capability defines a visual state that can be interacted with the console to render in the UI. Available capabilities are LightspeedButton. Each of the available capabilities may appear only once in the list.",
+	"capabilities":         "capabilities defines an array of capabilities that can be interacted with in the console UI. Each capability defines a visual state that can be interacted with the console to render in the UI. Available capabilities are LightspeedButton and GettingStartedBanner. Each of the available capabilities may appear only once in the list.",
 	"brand":                "brand is the default branding of the web console which can be overridden by providing the brand field.  There is a limited set of specific brand options. This field controls elements of the console such as the logo. Invalid value will prevent a console rollout.",
 	"documentationBaseURL": "documentationBaseURL links to external documentation are shown in various sections of the web console.  Providing documentationBaseURL will override the default documentation URL. Invalid value will prevent a console rollout.",
 	"customProductName":    "customProductName is the name that will be displayed in page titles, logo alt text, and the about dialog instead of the normal OpenShift product name.",
@@ -1017,24 +1020,25 @@ func (IngressControllerSetHTTPHeader) SwaggerDoc() map[string]string {
 }
 
 var map_IngressControllerSpec = map[string]string{
-	"":                           "IngressControllerSpec is the specification of the desired behavior of the IngressController.",
-	"domain":                     "domain is a DNS name serviced by the ingress controller and is used to configure multiple features:\n\n* For the LoadBalancerService endpoint publishing strategy, domain is\n  used to configure DNS records. See endpointPublishingStrategy.\n\n* When using a generated default certificate, the certificate will be valid\n  for domain and its subdomains. See defaultCertificate.\n\n* The value is published to individual Route statuses so that end-users\n  know where to target external DNS records.\n\ndomain must be unique among all IngressControllers, and cannot be updated.\n\nIf empty, defaults to ingress.config.openshift.io/cluster .spec.domain.",
-	"httpErrorCodePages":         "httpErrorCodePages specifies a configmap with custom error pages. The administrator must create this configmap in the openshift-config namespace. This configmap should have keys in the format \"error-page-<error code>.http\", where <error code> is an HTTP error code. For example, \"error-page-503.http\" defines an error page for HTTP 503 responses. Currently only error pages for 503 and 404 responses can be customized. Each value in the configmap should be the full response, including HTTP headers. Eg- https://raw.githubusercontent.com/openshift/router/fadab45747a9b30cc3f0a4b41ad2871f95827a93/images/router/haproxy/conf/error-page-503.http If this field is empty, the ingress controller uses the default error pages.",
-	"replicas":                   "replicas is the desired number of ingress controller replicas. If unset, the default depends on the value of the defaultPlacement field in the cluster config.openshift.io/v1/ingresses status.\n\nThe value of replicas is set based on the value of a chosen field in the Infrastructure CR. If defaultPlacement is set to ControlPlane, the chosen field will be controlPlaneTopology. If it is set to Workers the chosen field will be infrastructureTopology. Replicas will then be set to 1 or 2 based whether the chosen field's value is SingleReplica or HighlyAvailable, respectively.\n\nThese defaults are subject to change.",
-	"endpointPublishingStrategy": "endpointPublishingStrategy is used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc.\n\nIf unset, the default is based on infrastructure.config.openshift.io/cluster .status.platform:\n\n  AWS:          LoadBalancerService (with External scope)\n  Azure:        LoadBalancerService (with External scope)\n  GCP:          LoadBalancerService (with External scope)\n  IBMCloud:     LoadBalancerService (with External scope)\n  AlibabaCloud: LoadBalancerService (with External scope)\n  Libvirt:      HostNetwork\n\nAny other platform types (including None) default to HostNetwork.\n\nendpointPublishingStrategy cannot be updated.",
-	"defaultCertificate":         "defaultCertificate is a reference to a secret containing the default certificate served by the ingress controller. When Routes don't specify their own certificate, defaultCertificate is used.\n\nThe secret must contain the following keys and data:\n\n  tls.crt: certificate file contents\n  tls.key: key file contents\n\nIf unset, a wildcard certificate is automatically generated and used. The certificate is valid for the ingress controller domain (and subdomains) and the generated certificate's CA will be automatically integrated with the cluster's trust store.\n\nIf a wildcard certificate is used and shared by multiple HTTP/2 enabled routes (which implies ALPN) then clients (i.e., notably browsers) are at liberty to reuse open connections. This means a client can reuse a connection to another route and that is likely to fail. This behaviour is generally known as connection coalescing.\n\nThe in-use certificate (whether generated or user-specified) will be automatically integrated with OpenShift's built-in OAuth server.",
-	"namespaceSelector":          "namespaceSelector is used to filter the set of namespaces serviced by the ingress controller. This is useful for implementing shards.\n\nIf unset, the default is no filtering.",
-	"routeSelector":              "routeSelector is used to filter the set of Routes serviced by the ingress controller. This is useful for implementing shards.\n\nIf unset, the default is no filtering.",
-	"nodePlacement":              "nodePlacement enables explicit control over the scheduling of the ingress controller.\n\nIf unset, defaults are used. See NodePlacement for more details.",
-	"tlsSecurityProfile":         "tlsSecurityProfile specifies settings for TLS connections for ingresscontrollers.\n\nIf unset, the default is based on the apiservers.config.openshift.io/cluster resource.\n\nNote that when using the Old, Intermediate, and Modern profile types, the effective profile configuration is subject to change between releases. For example, given a specification to use the Intermediate profile deployed on release X.Y.Z, an upgrade to release X.Y.Z+1 may cause a new profile configuration to be applied to the ingress controller, resulting in a rollout.",
-	"clientTLS":                  "clientTLS specifies settings for requesting and verifying client certificates, which can be used to enable mutual TLS for edge-terminated and reencrypt routes.",
-	"routeAdmission":             "routeAdmission defines a policy for handling new route claims (for example, to allow or deny claims across namespaces).\n\nIf empty, defaults will be applied. See specific routeAdmission fields for details about their defaults.",
-	"logging":                    "logging defines parameters for what should be logged where.  If this field is empty, operational logs are enabled but access logs are disabled.",
-	"httpHeaders":                "httpHeaders defines policy for HTTP headers.\n\nIf this field is empty, the default values are used.",
-	"httpEmptyRequestsPolicy":    "httpEmptyRequestsPolicy describes how HTTP connections should be handled if the connection times out before a request is received. Allowed values for this field are \"Respond\" and \"Ignore\".  If the field is set to \"Respond\", the ingress controller sends an HTTP 400 or 408 response, logs the connection (if access logging is enabled), and counts the connection in the appropriate metrics.  If the field is set to \"Ignore\", the ingress controller closes the connection without sending a response, logging the connection, or incrementing metrics.  The default value is \"Respond\".\n\nTypically, these connections come from load balancers' health probes or Web browsers' speculative connections (\"preconnect\") and can be safely ignored.  However, these requests may also be caused by network errors, and so setting this field to \"Ignore\" may impede detection and diagnosis of problems.  In addition, these requests may be caused by port scans, in which case logging empty requests may aid in detecting intrusion attempts.",
-	"tuningOptions":              "tuningOptions defines parameters for adjusting the performance of ingress controller pods. All fields are optional and will use their respective defaults if not set. See specific tuningOptions fields for more details.\n\nSetting fields within tuningOptions is generally not recommended. The default values are suitable for most configurations.",
-	"unsupportedConfigOverrides": "unsupportedConfigOverrides allows specifying unsupported configuration options.  Its use is unsupported.",
-	"httpCompression":            "httpCompression defines a policy for HTTP traffic compression. By default, there is no HTTP compression.",
+	"":                                "IngressControllerSpec is the specification of the desired behavior of the IngressController.",
+	"domain":                          "domain is a DNS name serviced by the ingress controller and is used to configure multiple features:\n\n* For the LoadBalancerService endpoint publishing strategy, domain is\n  used to configure DNS records. See endpointPublishingStrategy.\n\n* When using a generated default certificate, the certificate will be valid\n  for domain and its subdomains. See defaultCertificate.\n\n* The value is published to individual Route statuses so that end-users\n  know where to target external DNS records.\n\ndomain must be unique among all IngressControllers, and cannot be updated.\n\nIf empty, defaults to ingress.config.openshift.io/cluster .spec.domain.",
+	"httpErrorCodePages":              "httpErrorCodePages specifies a configmap with custom error pages. The administrator must create this configmap in the openshift-config namespace. This configmap should have keys in the format \"error-page-<error code>.http\", where <error code> is an HTTP error code. For example, \"error-page-503.http\" defines an error page for HTTP 503 responses. Currently only error pages for 503 and 404 responses can be customized. Each value in the configmap should be the full response, including HTTP headers. Eg- https://raw.githubusercontent.com/openshift/router/fadab45747a9b30cc3f0a4b41ad2871f95827a93/images/router/haproxy/conf/error-page-503.http If this field is empty, the ingress controller uses the default error pages.",
+	"replicas":                        "replicas is the desired number of ingress controller replicas. If unset, the default depends on the value of the defaultPlacement field in the cluster config.openshift.io/v1/ingresses status.\n\nThe value of replicas is set based on the value of a chosen field in the Infrastructure CR. If defaultPlacement is set to ControlPlane, the chosen field will be controlPlaneTopology. If it is set to Workers the chosen field will be infrastructureTopology. Replicas will then be set to 1 or 2 based whether the chosen field's value is SingleReplica or HighlyAvailable, respectively.\n\nThese defaults are subject to change.",
+	"endpointPublishingStrategy":      "endpointPublishingStrategy is used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc.\n\nIf unset, the default is based on infrastructure.config.openshift.io/cluster .status.platform:\n\n  AWS:          LoadBalancerService (with External scope)\n  Azure:        LoadBalancerService (with External scope)\n  GCP:          LoadBalancerService (with External scope)\n  IBMCloud:     LoadBalancerService (with External scope)\n  AlibabaCloud: LoadBalancerService (with External scope)\n  Libvirt:      HostNetwork\n\nAny other platform types (including None) default to HostNetwork.\n\nendpointPublishingStrategy cannot be updated.",
+	"defaultCertificate":              "defaultCertificate is a reference to a secret containing the default certificate served by the ingress controller. When Routes don't specify their own certificate, defaultCertificate is used.\n\nThe secret must contain the following keys and data:\n\n  tls.crt: certificate file contents\n  tls.key: key file contents\n\nIf unset, a wildcard certificate is automatically generated and used. The certificate is valid for the ingress controller domain (and subdomains) and the generated certificate's CA will be automatically integrated with the cluster's trust store.\n\nIf a wildcard certificate is used and shared by multiple HTTP/2 enabled routes (which implies ALPN) then clients (i.e., notably browsers) are at liberty to reuse open connections. This means a client can reuse a connection to another route and that is likely to fail. This behaviour is generally known as connection coalescing.\n\nThe in-use certificate (whether generated or user-specified) will be automatically integrated with OpenShift's built-in OAuth server.",
+	"namespaceSelector":               "namespaceSelector is used to filter the set of namespaces serviced by the ingress controller. This is useful for implementing shards.\n\nIf unset, the default is no filtering.",
+	"routeSelector":                   "routeSelector is used to filter the set of Routes serviced by the ingress controller. This is useful for implementing shards.\n\nIf unset, the default is no filtering.",
+	"nodePlacement":                   "nodePlacement enables explicit control over the scheduling of the ingress controller.\n\nIf unset, defaults are used. See NodePlacement for more details.",
+	"tlsSecurityProfile":              "tlsSecurityProfile specifies settings for TLS connections for ingresscontrollers.\n\nIf unset, the default is based on the apiservers.config.openshift.io/cluster resource.\n\nNote that when using the Old, Intermediate, and Modern profile types, the effective profile configuration is subject to change between releases. For example, given a specification to use the Intermediate profile deployed on release X.Y.Z, an upgrade to release X.Y.Z+1 may cause a new profile configuration to be applied to the ingress controller, resulting in a rollout.",
+	"clientTLS":                       "clientTLS specifies settings for requesting and verifying client certificates, which can be used to enable mutual TLS for edge-terminated and reencrypt routes.",
+	"routeAdmission":                  "routeAdmission defines a policy for handling new route claims (for example, to allow or deny claims across namespaces).\n\nIf empty, defaults will be applied. See specific routeAdmission fields for details about their defaults.",
+	"logging":                         "logging defines parameters for what should be logged where.  If this field is empty, operational logs are enabled but access logs are disabled.",
+	"httpHeaders":                     "httpHeaders defines policy for HTTP headers.\n\nIf this field is empty, the default values are used.",
+	"httpEmptyRequestsPolicy":         "httpEmptyRequestsPolicy describes how HTTP connections should be handled if the connection times out before a request is received. Allowed values for this field are \"Respond\" and \"Ignore\".  If the field is set to \"Respond\", the ingress controller sends an HTTP 400 or 408 response, logs the connection (if access logging is enabled), and counts the connection in the appropriate metrics.  If the field is set to \"Ignore\", the ingress controller closes the connection without sending a response, logging the connection, or incrementing metrics.  The default value is \"Respond\".\n\nTypically, these connections come from load balancers' health probes or Web browsers' speculative connections (\"preconnect\") and can be safely ignored.  However, these requests may also be caused by network errors, and so setting this field to \"Ignore\" may impede detection and diagnosis of problems.  In addition, these requests may be caused by port scans, in which case logging empty requests may aid in detecting intrusion attempts.",
+	"tuningOptions":                   "tuningOptions defines parameters for adjusting the performance of ingress controller pods. All fields are optional and will use their respective defaults if not set. See specific tuningOptions fields for more details.\n\nSetting fields within tuningOptions is generally not recommended. The default values are suitable for most configurations.",
+	"unsupportedConfigOverrides":      "unsupportedConfigOverrides allows specifying unsupported configuration options.  Its use is unsupported.",
+	"httpCompression":                 "httpCompression defines a policy for HTTP traffic compression. By default, there is no HTTP compression.",
+	"idleConnectionTerminationPolicy": "idleConnectionTerminationPolicy maps directly to HAProxy's idle-close-on-response option and controls whether HAProxy keeps idle frontend connections open during a soft stop (router reload).\n\nAllowed values for this field are \"Immediate\" and \"Deferred\". The default value is \"Deferred\".\n\nWhen set to \"Immediate\", idle connections are closed immediately during router reloads. This ensures immediate propagation of route changes but may impact clients sensitive to connection resets.\n\nWhen set to \"Deferred\", HAProxy will maintain idle connections during a soft reload instead of closing them immediately. These connections remain open until any of the following occurs:\n\n  - A new request is received on the connection, in which\n    case HAProxy handles it in the old process and closes\n    the connection after sending the response.\n\n  - HAProxy's `timeout http-keep-alive` duration expires\n    (300 seconds in OpenShift's configuration, not\n    configurable).\n\n  - The client's keep-alive timeout expires, causing the\n    client to close the connection.\n\nSetting Deferred can help prevent errors in clients or load balancers that do not properly handle connection resets. Additionally, this option allows you to retain the pre-2.4 HAProxy behaviour: in HAProxy version 2.2 (OpenShift versions < 4.14), maintaining idle connections during a soft reload was the default behaviour, but starting with HAProxy 2.4, the default changed to closing idle connections immediately.\n\nImportant Consideration:\n\n  - Using Deferred will result in temporary inconsistencies\n    for the first request on each persistent connection\n    after a route update and router reload. This request\n    will be processed by the old HAProxy process using its\n    old configuration. Subsequent requests will use the\n    updated configuration.\n\nOperational Considerations:\n\n  - Keeping idle connections open during reloads may lead\n    to an accumulation of old HAProxy processes if\n    connections remain idle for extended periods,\n    especially in environments where frequent reloads\n    occur.\n\n  - Consider monitoring the number of HAProxy processes in\n    the router pods when Deferred is set.\n\n  - You may need to enable or adjust the\n    `ingress.operator.openshift.io/hard-stop-after`\n    duration (configured via an annotation on the\n    IngressController resource) in environments with\n    frequent reloads to prevent resource exhaustion.",
 }
 
 func (IngressControllerSpec) SwaggerDoc() map[string]string {
@@ -1121,6 +1125,15 @@ func (NodePortStrategy) SwaggerDoc() map[string]string {
 	return map_NodePortStrategy
 }
 
+var map_OpenStackLoadBalancerParameters = map[string]string{
+	"":           "OpenStackLoadBalancerParameters provides configuration settings that are specific to OpenStack load balancers.",
+	"floatingIP": "floatingIP specifies the IP address that the load balancer will use. When not specified, an IP address will be assigned randomly by the OpenStack cloud provider. When specified, the floating IP has to be pre-created.  If the specified value is not a floating IP or is already claimed, the OpenStack cloud provider won't be able to provision the load balancer. This field may only be used if the IngressController has External scope. This value must be a valid IPv4 or IPv6 address. ",
+}
+
+func (OpenStackLoadBalancerParameters) SwaggerDoc() map[string]string {
+	return map_OpenStackLoadBalancerParameters
+}
+
 var map_PrivateStrategy = map[string]string{
 	"":         "PrivateStrategy holds parameters for the Private endpoint publishing strategy.",
 	"protocol": "protocol specifies whether the IngressController expects incoming connections to use plain TCP or whether the IngressController expects PROXY protocol.\n\nPROXY protocol can be used with load balancers that support it to communicate the source addresses of client connections when forwarding those connections to the IngressController.  Using PROXY protocol enables the IngressController to report those source addresses instead of reporting the load balancer's address in HTTP headers and logs.  Note that enabling PROXY protocol on the IngressController will cause connections to fail if you are not using a load balancer that uses PROXY protocol to forward connections to the IngressController.  See http://www.haproxy.org/download/2.2/doc/proxy-protocol.txt for information about PROXY protocol.\n\nThe following values are valid for this field:\n\n* The empty string. * \"TCP\". * \"PROXY\".\n\nThe empty string specifies the default, which is TCP without PROXY protocol.  Note that the default is subject to change.",
@@ -1131,11 +1144,12 @@ func (PrivateStrategy) SwaggerDoc() map[string]string {
 }
 
 var map_ProviderLoadBalancerParameters = map[string]string{
-	"":     "ProviderLoadBalancerParameters holds desired load balancer information specific to the underlying infrastructure provider.",
-	"type": "type is the underlying infrastructure provider for the load balancer. Allowed values are \"AWS\", \"Azure\", \"BareMetal\", \"GCP\", \"IBM\", \"Nutanix\", \"OpenStack\", and \"VSphere\".",
-	"aws":  "aws provides configuration settings that are specific to AWS load balancers.\n\nIf empty, defaults will be applied. See specific aws fields for details about their defaults.",
-	"gcp":  "gcp provides configuration settings that are specific to GCP load balancers.\n\nIf empty, defaults will be applied. See specific gcp fields for details about their defaults.",
-	"ibm":  "ibm provides configuration settings that are specific to IBM Cloud load balancers.\n\nIf empty, defaults will be applied. See specific ibm fields for details about their defaults.",
+	"":          "ProviderLoadBalancerParameters holds desired load balancer information specific to the underlying infrastructure provider.",
+	"type":      "type is the underlying infrastructure provider for the load balancer. Allowed values are \"AWS\", \"Azure\", \"BareMetal\", \"GCP\", \"IBM\", \"Nutanix\", \"OpenStack\", and \"VSphere\".",
+	"aws":       "aws provides configuration settings that are specific to AWS load balancers.\n\nIf empty, defaults will be applied. See specific aws fields for details about their defaults.",
+	"gcp":       "gcp provides configuration settings that are specific to GCP load balancers.\n\nIf empty, defaults will be applied. See specific gcp fields for details about their defaults.",
+	"ibm":       "ibm provides configuration settings that are specific to IBM Cloud load balancers.\n\nIf empty, defaults will be applied. See specific ibm fields for details about their defaults.",
+	"openstack": "openstack provides configuration settings that are specific to OpenStack load balancers.\n\nIf empty, defaults will be applied. See specific openstack fields for details about their defaults.",
 }
 
 func (ProviderLoadBalancerParameters) SwaggerDoc() map[string]string {
@@ -1637,10 +1651,20 @@ func (IPFIXConfig) SwaggerDoc() map[string]string {
 
 var map_IPsecConfig = map[string]string{
 	"mode": "mode defines the behaviour of the ipsec configuration within the platform. Valid values are `Disabled`, `External` and `Full`. When 'Disabled', ipsec will not be enabled at the node level. When 'External', ipsec is enabled on the node level but requires the user to configure the secure communication parameters. This mode is for external secure communications and the configuration can be done using the k8s-nmstate operator. When 'Full', ipsec is configured on the node level and inter-pod secure communication within the cluster is configured. Note with `Full`, if ipsec is desired for communication with external (to the cluster) entities (such as storage arrays), this is left to the user to configure.",
+	"full": "full defines configuration parameters for the IPsec `Full` mode. This is permitted only when mode is configured with `Full`, and forbidden otherwise.",
 }
 
 func (IPsecConfig) SwaggerDoc() map[string]string {
 	return map_IPsecConfig
+}
+
+var map_IPsecFullModeConfig = map[string]string{
+	"":              "IPsecFullModeConfig defines configuration parameters for the IPsec `Full` mode.",
+	"encapsulation": "encapsulation option to configure libreswan on how inter-pod traffic across nodes are encapsulated to handle NAT traversal. When configured it uses UDP port 4500 for the encapsulation. Valid values are Always, Auto and omitted. Always means enable UDP encapsulation regardless of whether NAT is detected. Auto means enable UDP encapsulation based on the detection of NAT. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The current default is Auto.",
+}
+
+func (IPsecFullModeConfig) SwaggerDoc() map[string]string {
+	return map_IPsecFullModeConfig
 }
 
 var map_IPv4GatewayConfig = map[string]string{
@@ -1883,6 +1907,27 @@ func (StaticIPAMRoutes) SwaggerDoc() map[string]string {
 	return map_StaticIPAMRoutes
 }
 
+var map_OLM = map[string]string{
+	"":         "OLM provides information to configure an operator to manage the OLM controllers\n\nCompatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).",
+	"metadata": "metadata is the standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
+	"spec":     "spec holds user settable values for configuration",
+	"status":   "status holds observed values from the cluster. They may not be overridden.",
+}
+
+func (OLM) SwaggerDoc() map[string]string {
+	return map_OLM
+}
+
+var map_OLMList = map[string]string{
+	"":         "OLMList is a collection of items\n\nCompatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).",
+	"metadata": "metadata is the standard list's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
+	"items":    "Items contains the items",
+}
+
+func (OLMList) SwaggerDoc() map[string]string {
+	return map_OLMList
+}
+
 var map_OpenShiftAPIServer = map[string]string{
 	"":         "OpenShiftAPIServer provides information to configure an operator to manage openshift-apiserver.\n\nCompatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).",
 	"metadata": "metadata is the standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
@@ -1902,14 +1947,6 @@ var map_OpenShiftAPIServerList = map[string]string{
 
 func (OpenShiftAPIServerList) SwaggerDoc() map[string]string {
 	return map_OpenShiftAPIServerList
-}
-
-var map_OpenShiftAPIServerStatus = map[string]string{
-	"latestAvailableRevision": "latestAvailableRevision is the latest revision used as suffix of revisioned secrets like encryption-config. A new revision causes a new deployment of pods.",
-}
-
-func (OpenShiftAPIServerStatus) SwaggerDoc() map[string]string {
-	return map_OpenShiftAPIServerStatus
 }
 
 var map_OpenShiftControllerManager = map[string]string{

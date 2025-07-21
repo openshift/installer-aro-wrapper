@@ -112,8 +112,44 @@ var Regions = map[string]Region{
 			"syd04": {
 				SysTypes: []string{"s922", "e980"},
 			},
+			"syd05": {
+				SysTypes: []string{"s922", "e980"},
+			},
 		},
 		VPCZones: []string{"au-syd-1", "au-syd-2", "au-syd-3"},
+	},
+	"tor": {
+		Description: "Toronto, Canada",
+		VPCRegion:   "ca-tor",
+		COSRegion:   "ca-tor",
+		Zones: map[string]Zone{
+			"tor01": {
+				SysTypes: []string{"s922", "e980"},
+			},
+		},
+		VPCZones: []string{"ca-tor-1", "ca-tor-2", "ca-tor-3"},
+	},
+	"us-east": {
+		Description: "Washington DC, USA",
+		VPCRegion:   "us-east",
+		COSRegion:   "us-east",
+		Zones: map[string]Zone{
+			"us-east": {
+				SysTypes: []string{"s922", "e980"},
+			},
+		},
+		VPCZones: []string{"us-east-1", "us-east-2", "us-east-3"},
+	},
+	"us-south": {
+		Description: "Dallas, USA",
+		VPCRegion:   "us-south",
+		COSRegion:   "us-south",
+		Zones: map[string]Zone{
+			"us-south": {
+				SysTypes: []string{"s922", "e980"},
+			},
+		},
+		VPCZones: []string{"us-south-1", "us-south-2", "us-south-3"},
 	},
 	"wdc": {
 		Description: "Washington DC, USA",

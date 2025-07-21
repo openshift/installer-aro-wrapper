@@ -33,7 +33,7 @@ func ValidatePlatform(p *openstack.Platform, n *types.Networking, ci *CloudInfo)
 	}
 
 	// validate the externalNetwork
-	allErrs = append(allErrs, validateExternalNetwork(p, ci, fldPath)...)
+	allErrs = append(allErrs, validateExternalNetwork(p, ci, n, fldPath)...)
 
 	// validate floating ips
 	allErrs = append(allErrs, validateFloatingIPs(p, ci, fldPath)...)
@@ -80,10 +80,10 @@ func validateControlPlanePort(p *openstack.Platform, n *types.Networking, ci *Cl
 			networkID = subnet.NetworkID
 		}
 	}
-	if !hasIPv4Subnet && hasIPv6Subnet {
-		allErrs = append(allErrs, field.InternalError(fldPath.Child("controlPlanePort").Child("fixedIPs"), fmt.Errorf("one IPv4 subnet must be specified")))
-	} else if hasIPv4Subnet && !hasIPv6Subnet && len(p.ControlPlanePort.FixedIPs) == 2 {
-		allErrs = append(allErrs, field.InternalError(fldPath.Child("controlPlanePort").Child("fixedIPs"), fmt.Errorf("multiple IPv4 subnets is not supported")))
+	if len(p.ControlPlanePort.FixedIPs) == 2 {
+		if (!hasIPv4Subnet && hasIPv6Subnet) || (hasIPv4Subnet && !hasIPv6Subnet) {
+			allErrs = append(allErrs, field.InternalError(fldPath.Child("controlPlanePort").Child("fixedIPs"), fmt.Errorf("one IPv4 subnet and one IPv6 subnet must be specified")))
+		}
 	}
 	controlPlaneNetwork := p.ControlPlanePort.Network
 	if controlPlaneNetwork.ID != "" || controlPlaneNetwork.Name != "" {
@@ -124,10 +124,13 @@ func getSubnet(controlPlaneSubnets []*subnets.Subnet, subnetID, subnetName strin
 }
 
 // validateExternalNetwork validates the user's input for the externalNetwork and returns a list of all validation errors
-func validateExternalNetwork(p *openstack.Platform, ci *CloudInfo, fldPath *field.Path) (allErrs field.ErrorList) {
+func validateExternalNetwork(p *openstack.Platform, ci *CloudInfo, n *types.Networking, fldPath *field.Path) (allErrs field.ErrorList) {
 	// Return an error if external network was specified in the install config, but hasn't been found
 	if p.ExternalNetwork != "" && ci.ExternalNetwork == nil {
 		allErrs = append(allErrs, field.NotFound(fldPath.Child("externalNetwork"), p.ExternalNetwork))
+	}
+	if p.ExternalNetwork != "" && len(n.MachineNetwork) == 1 && n.MachineNetwork[0].CIDR.IPNet.IP.To4() == nil {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalNetwork"), p.ExternalNetwork, "Cannot set external network on Single Stack IPv6 cluster"))
 	}
 	return allErrs
 }
@@ -163,8 +166,9 @@ func validateFloatingIPs(p *openstack.Platform, ci *CloudInfo, fldPath *field.Pa
 // validateAPIAndIngressVIPs().
 func validateVIPs(p *openstack.Platform, ci *CloudInfo, fldPath *field.Path) (allErrs field.ErrorList) {
 	// If the subnet is not found in the CloudInfo object, abandon validation.
-	// For dual-stack the user needs to pre-create the Port for API and Ingress, so no need for validation.
-	if len(ci.ControlPlanePortSubnets) == 1 {
+	// For dual-stack and single-stack IPv6 the user needs to pre-create the Port for API and Ingress, so no need for validation.
+
+	if len(ci.ControlPlanePortSubnets) == 1 && ci.ControlPlanePortSubnets[0].IPVersion == 4 {
 		for _, allocationPool := range ci.ControlPlanePortSubnets[0].AllocationPools {
 			start := net.ParseIP(allocationPool.Start)
 			end := net.ParseIP(allocationPool.End)

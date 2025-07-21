@@ -84,6 +84,9 @@ type SeedReconfiguration struct {
 
 	// PullSecret is the secret to use when pulling images.
 	PullSecret string `json:"pull_secret,omitempty"`
+
+	// NodeLabels The desired node labels for the SNO node.
+	NodeLabels map[string]string `json:"node_labels,omitempty"`
 }
 
 // KubeConfigCryptoRetention contains all the crypto material that is required
@@ -106,13 +109,13 @@ type KubeAPICrypto struct {
 // ServingCrypto contains the kubernetes API private keys that are used to
 // generate the cluster's certificates.
 type ServingCrypto struct {
-	// LocalhostSignerPrivateKey is a PEM-encoded X.509 key.
+	// LocalhostSignerPrivateKey is a PEM-encoded private key.
 	LocalhostSignerPrivateKey string `json:"localhost_signer_private_key,omitempty"`
 
-	// ServiceNetworkSignerPrivateKey is a PEM-encoded X.509 key.
+	// ServiceNetworkSignerPrivateKey is a PEM-encoded private key.
 	ServiceNetworkSignerPrivateKey string `json:"service_network_signer_private_key,omitempty"`
 
-	// LoadbalancerSignerPrivateKey is a PEM-encoded X.509 key.
+	// LoadbalancerSignerPrivateKey is a PEM-encoded private key.
 	LoadbalancerSignerPrivateKey string `json:"loadbalancer_external_signer_private_key,omitempty"`
 }
 
@@ -125,8 +128,11 @@ type ClientAuthCrypto struct {
 
 // IngresssCrypto contains the ingrees CA certificate.
 type IngresssCrypto struct {
-	// IngressCA is a PEM-encoded X.509 certificate.
-	IngressCA string `json:"ingress_ca,omitempty"`
+	// IngressCAPrivateKey is a PEM-encoded private key.
+	IngressCAPrivateKey string `json:"ingress_ca,omitempty"`
+
+	// IngressCertificateCN is the Subject.CN of the ingress CA certificate.
+	IngressCertificateCN string `json:"ingress_certificate_cn,omitempty"`
 }
 
 // AdditionalTrustBundle represents the PEM-encoded X.509 certificate bundle

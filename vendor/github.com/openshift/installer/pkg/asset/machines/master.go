@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	baremetalhost "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -171,6 +172,18 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 	var ipClaims []ipamv1.IPAddressClaim
 	var ipAddrs []ipamv1.IPAddress
 	var controlPlaneMachineSet *machinev1.ControlPlaneMachineSet
+
+	// Check if SNO topology is supported on this platform
+	if pool.Replicas != nil && *pool.Replicas == 1 {
+		bootstrapInPlace := false
+		if ic.BootstrapInPlace != nil {
+			bootstrapInPlace = true
+		}
+		if !supportedSingleNodePlatform(bootstrapInPlace, ic.Platform.Name()) {
+			return fmt.Errorf("this install method does not support Single Node installation on platform %s", ic.Platform.Name())
+		}
+	}
+
 	switch ic.Platform.Name() {
 	case awstypes.Name:
 		subnets := map[string]string{}
@@ -201,6 +214,10 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 				for zone := range subnets {
 					mpool.Zones = append(mpool.Zones, zone)
 				}
+				// Since zones are extracted from map keys, order is not guaranteed.
+				// Thus, sort the zones by lexical order to ensure CAPI and MAPI machines
+				// are distributed to zones in the same order.
+				slices.Sort(mpool.Zones)
 			} else {
 				mpool.Zones, err = installConfig.AWS.AvailabilityZones(ctx)
 				if err != nil {
@@ -500,7 +517,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
 		pool.Platform.Nutanix = &mpool
-		templateName := nutanixtypes.RHCOSImageName(clusterID.InfraID)
+		templateName := nutanixtypes.RHCOSImageName(ic.Platform.Nutanix, clusterID.InfraID)
 
 		machines, controlPlaneMachineSet, err = nutanix.Machines(clusterID.InfraID, ic, &pool, templateName, "master", masterUserDataSecretName)
 		if err != nil {
@@ -868,4 +885,19 @@ func createAssetFiles(objects []interface{}, fileName string) ([]*asset.File, er
 	}
 
 	return assetFiles, nil
+}
+
+// supportedSingleNodePlatform indicates if the IPI Installer can be used to install SNO on
+// a platform.
+func supportedSingleNodePlatform(bootstrapInPlace bool, platformName string) bool {
+	switch platformName {
+	case awstypes.Name, gcptypes.Name, azuretypes.Name, powervstypes.Name, nonetypes.Name:
+		// Single node OpenShift installations supported without `bootstrapInPlace`
+		return true
+	case externaltypes.Name:
+		// Single node OpenShift installations supported with `bootstrapInPlace`
+		return bootstrapInPlace
+	default:
+		return false
+	}
 }
