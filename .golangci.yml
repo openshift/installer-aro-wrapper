@@ -1,36 +1,65 @@
+version: "2"
 run:
-  timeout: 10m
   modules-download-mode: vendor
-
-issues:
-  exclude-rules:
-  - linters:
-    - staticcheck
-    text: "SA1019: codec.BasicHandle is deprecated"
-  - linters:
-      - staticcheck
-    text: "SA1019: \"github.com/Azure/azure-sdk-for-go"
-  # This is set to false to disregard the default EXC0011 exclusion
-  # which shadows all the ST* checks. Refer https://github.com/golangci/golangci-lint/issues/2281
-  exclude-use-default: false
-  exclude-dirs-use-default: true
-
-linters-settings:
-  stylecheck:
-    # added additional checks for comments in Go.
-    # Refer https://staticcheck.io/docs/options#checks for details
-    checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
-    dot-import-whitelist:
-      - github.com/onsi/ginkgo
-      - github.com/onsi/gomega
-
+  build-tags:
+    - altinfra
+    - containers_image_openpgp
+    - exclude_graphdriver_devicemapper
+    - exclude_graphdriver_btrfs
 linters:
-  disable-all: true
+  default: none
   enable:
-    - gofmt
-    - unused
-    - gosimple
     - govet
+    - musttag
     - staticcheck
+    - testifylint
+    - unconvert
+    - unused
+    - usestdlibvars
     - whitespace
-    - stylecheck
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - -ST1000
+        - -ST1003
+        - -ST1016
+        - -ST1020
+        - -ST1021
+        - -ST1022
+      dot-import-whitelist:
+        - github.com/onsi/ginkgo
+        - github.com/onsi/gomega
+  exclusions:
+    generated: disable
+    rules:
+      - linters:
+          - staticcheck
+        text: 'SA1019: codec.BasicHandle is deprecated'
+      - linters:
+          - staticcheck
+        text: 'SA1019: "github.com/Azure/azure-sdk-for-go'
+formatters:
+  enable:
+    - gci
+    - gofmt
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - blank
+        - dot
+        - default
+        - prefix(k8s.io)
+        - prefix(sigs.k8s.io)
+        - prefix(github.com/Azure)
+        - prefix(github.com/openshift)
+        - localmodule
+  exclusions:
+    generated: lax
+    paths:
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$

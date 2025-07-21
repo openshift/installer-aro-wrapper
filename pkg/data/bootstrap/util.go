@@ -14,10 +14,12 @@ import (
 
 	ignutil "github.com/coreos/ignition/v2/config/util"
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
+
+	"sigs.k8s.io/yaml"
+
 	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
-	"sigs.k8s.io/yaml"
 )
 
 func AddStorageFiles(config *igntypes.Config, base string, uri string, templateData interface{}, assets embed.FS) (err error) {
@@ -98,7 +100,7 @@ func ReplaceOrAppend(bootstrapFiles []igntypes.File, file []igntypes.File) []ign
 	for _, iff := range file {
 		flag := false
 		for i, f := range bootstrapFiles {
-			if f.Node.Path == iff.Node.Path {
+			if f.Path == iff.Path {
 				bootstrapFiles[i] = iff
 				flag = true
 				break
@@ -221,7 +223,7 @@ func AddSystemdUnits(config *igntypes.Config, uri string, templateData interface
 
 func replaceOrAppend(files []igntypes.File, file igntypes.File) []igntypes.File {
 	for i, f := range files {
-		if f.Node.Path == file.Node.Path {
+		if f.Path == file.Path {
 			files[i] = file
 			return files
 		}

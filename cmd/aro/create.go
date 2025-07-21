@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/openshift/installer/pkg/asset"
-	targetassets "github.com/openshift/installer/pkg/asset/targets"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/Azure/go-autorest/autorest/azure"
+
+	"github.com/openshift/installer/pkg/asset"
+	targetassets "github.com/openshift/installer/pkg/asset/targets"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"

@@ -14,13 +14,16 @@ import (
 	"strings"
 
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"sigs.k8s.io/yaml"
+
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/tls"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
