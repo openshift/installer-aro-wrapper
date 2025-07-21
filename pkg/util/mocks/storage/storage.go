@@ -8,8 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	armstorage "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 	gomock "github.com/golang/mock/gomock"
+
+	armstorage "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 
 	azblob "github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/azblob"
 )

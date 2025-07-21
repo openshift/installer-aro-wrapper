@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Azure/go-autorest/autorest/to"
+
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"

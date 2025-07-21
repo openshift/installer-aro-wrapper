@@ -63,21 +63,17 @@ endif
 test-go: generate build-all validate-go lint-go unit-test-go
 
 .PHONY: validate-go
-validate-go: $(GOIMPORTS)
+validate-go:
 	gofmt -s -w cmd hack pkg test
-	$(GOIMPORTS) -w -local=github.com/openshift/installer-aro-wrapper cmd hack pkg test
-	go run ./hack/validate-imports cmd hack pkg test
 	go run ./hack/licenses
 	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
 	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
 	go vet -tags containers_image_openpgp ./...
-
-.PHONY: validate-go-action
-validate-go-action:
-	go run ./hack/licenses -validate -ignored-go vendor,pkg/client,.git -ignored-python python/client,vendor,.git
-	go run ./hack/validate-imports cmd hack pkg test
-	@[ -z "$$(ls pkg/util/*.go 2>/dev/null)" ] || (echo error: go files are not allowed in pkg/util, use a subpackage; exit 1)
-	@[ -z "$$(find -name "*:*")" ] || (echo error: filenames with colons are not allowed on Windows, please rename; exit 1)
+	if ! git diff --quiet HEAD; then \
+		git diff; \
+		echo "You need to run 'make lint-go-fix' to update the codebase and commit the changes"; \
+		exit 1; \
+	fi
 
 .PHONY: validate-fips
 validate-fips: $(BINGO)
@@ -92,6 +88,13 @@ unit-test-go: $(GOTESTSUM)
 .PHONY: lint-go
 lint-go: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run --verbose
+
+.PHONY: imports
+imports: lint-go-fix
+
+.PHONY: lint-go-fix
+lint-go-fix: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run --verbose --fix
 
 .PHONY: vendor
 vendor:

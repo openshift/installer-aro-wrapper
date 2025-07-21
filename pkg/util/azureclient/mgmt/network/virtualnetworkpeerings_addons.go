@@ -12,7 +12,7 @@ type VirtualNetworkPeeringsAddons interface {
 }
 
 func (c *virtualNetworkPeeringsClient) DeleteAndWait(ctx context.Context, resourceGroupName string, virtualNetworkName string, virtualNetworkPeeringName string) (err error) {
-	future, err := c.VirtualNetworkPeeringsClient.Delete(ctx, resourceGroupName, virtualNetworkName, virtualNetworkPeeringName)
+	future, err := c.Delete(ctx, resourceGroupName, virtualNetworkName, virtualNetworkPeeringName)
 	if err != nil {
 		return err
 	}
