@@ -20,17 +20,17 @@ require (
 	github.com/jongio/azidext/go/azidext v0.5.0
 	github.com/onsi/gomega v1.33.0
 	github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094
-	github.com/openshift/installer v1.4.17-0.20250214172026-ed196179749c
+	github.com/openshift/installer v1.4.17-0.20250710180304-70645a698c98
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/vincent-petithory/dataurl v1.0.0
-	golang.org/x/crypto v0.31.0
-	k8s.io/api v0.29.3
-	k8s.io/apimachinery v0.29.3
-	k8s.io/client-go v0.29.3
+	golang.org/x/crypto v0.36.0
+	k8s.io/api v0.29.5
+	k8s.io/apimachinery v0.29.5
+	k8s.io/client-go v0.29.5
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -119,8 +119,8 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
@@ -134,7 +134,7 @@ require (
 	github.com/gophercloud/gophercloud v1.7.0 // indirect
 	github.com/gophercloud/utils v0.0.0-20231010081019-80377eca5d56 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/h2non/filetype v1.0.12 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -161,7 +161,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/metal3-io/baremetal-operator/apis v0.4.0 // indirect
-	github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.4.0 // indirect
+	github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.5.1 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microsoft/kiota-abstractions-go v1.5.0 // indirect
 	github.com/microsoft/kiota-authentication-azure-go v1.0.1 // indirect
@@ -186,7 +186,7 @@ require (
 	github.com/openshift/assisted-service v1.0.10-0.20230830164851-6573b5d7021d // indirect
 	github.com/openshift/assisted-service/api v0.0.0 // indirect
 	github.com/openshift/assisted-service/models v0.0.0 // indirect
-	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250 // indirect
+	github.com/openshift/client-go v0.0.0-20240405120947-c67c8325cdd8 // indirect
 	github.com/openshift/cloud-credential-operator v0.0.0-20240422222427-55199c9b5870 // indirect
 	github.com/openshift/cluster-api-provider-baremetal v0.0.0-20240326141158-73a72cc82122 // indirect
 	github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20240104073218-1e096cdf1bfd // indirect
@@ -194,7 +194,7 @@ require (
 	github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 // indirect
 	github.com/openshift/hive/apis v0.0.0-20231114185751-51a8b107360f // indirect
 	github.com/openshift/library-go v0.0.0-20240207105404-126b47137408 // indirect
-	github.com/openshift/machine-api-operator v0.2.1-0.20230929171041-2cc7fcf262f3 // indirect
+	github.com/openshift/machine-api-operator v0.2.1-0.20240125175440-c9de8bda0dd1 // indirect
 	github.com/openshift/machine-api-provider-gcp v0.0.1-0.20231014045125-6096cc86f3ba // indirect
 	github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20231207164151-6b0b8ea7b16d // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
@@ -213,7 +213,7 @@ require (
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.46 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
-	github.com/thedevsaddam/retry v0.0.0-20200324223450-9769a859cc6d // indirect
+	github.com/thedevsaddam/retry v1.2.1 // indirect
 	github.com/thoas/go-funk v0.9.3 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	github.com/vmware/govmomi v0.34.2 // indirect
@@ -231,12 +231,12 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/api v0.176.0 // indirect
@@ -252,20 +252,20 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/gorm v1.25.5 // indirect
-	k8s.io/apiextensions-apiserver v0.29.3 // indirect
-	k8s.io/cli-runtime v0.29.3 // indirect
+	gorm.io/gorm v1.25.7 // indirect
+	k8s.io/apiextensions-apiserver v0.29.5 // indirect
+	k8s.io/cli-runtime v0.29.5 // indirect
 	k8s.io/cloud-provider-vsphere v0.0.0 // indirect
 	k8s.io/cluster-bootstrap v0.29.3 // indirect
-	k8s.io/component-base v0.29.3 // indirect
+	k8s.io/component-base v0.29.5 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	k8s.io/kubectl v0.29.3 // indirect
+	k8s.io/kubectl v0.29.5 // indirect
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57 // indirect
 	libvirt.org/go/libvirtxml v1.10002.0 // indirect
 	sigs.k8s.io/cluster-api v1.7.1 // indirect
-	sigs.k8s.io/cluster-api-provider-aws/v2 v2.6.1 // indirect
+	sigs.k8s.io/cluster-api-provider-aws/v2 v2.6.2-0.20250307190545-2361956824d0 // indirect
 	sigs.k8s.io/cluster-api-provider-azure v1.14.2 // indirect
 	sigs.k8s.io/cluster-api-provider-gcp v1.6.1-0.20240425114559-a1994e55ab7a // indirect
 	sigs.k8s.io/cluster-api-provider-ibmcloud v0.8.0 // indirect
@@ -294,9 +294,9 @@ replace (
 
 // Installer forks/tags
 replace (
-	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20231128154154-6736c9b9c6c8
-	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20231128154154-6736c9b9c6c8
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094
+	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20250410104337-84aeac37bd09
+	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20250410104337-84aeac37bd09
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20250707132008-5f9522bd5e3e
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	k8s.io/cloud-provider-vsphere => github.com/openshift/cloud-provider-vsphere v1.19.1-0.20250110084716-023a3655c181
 )
@@ -312,3 +312,41 @@ replace (
 	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20231215152050-d41f53691d6e
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20220719141355-c63c9b0281d8
 )
+
+replace github.com/openshift/assisted-service => github.com/openshift/assisted-service v1.0.10-0.20250731131251-5c16119aeedc
+
+replace github.com/openshift/cloud-credential-operator => github.com/openshift/cloud-credential-operator v0.0.0-20240422222427-55199c9b5870
+
+replace github.com/openshift/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20250120164714-2b396e06c0a9
+
+replace github.com/openshift/cluster-api-provider-libvirt => github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20250728004539-4bd420eb2a0c
+
+replace github.com/openshift/cluster-api-provider-ovirt => github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20240507153406-abb91c84083d
+
+replace github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20240711192904-190fec8c3f09
+
+replace github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20250728084715-0f08bd6aceac
+
+replace github.com/openshift/machine-api-provider-gcp => github.com/openshift/machine-api-provider-gcp v0.0.1-0.20250507111232-8851888abd5f
+
+replace github.com/openshift/machine-api-provider-ibmcloud => github.com/openshift/machine-api-provider-ibmcloud v0.0.0-20241202182242-d29506e7fea6
+
+replace k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.29.3
+
+replace k8s.io/kubectl => k8s.io/kubectl v0.29.3
+
+replace sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.7.1
+
+replace sigs.k8s.io/cluster-api-provider-aws/v2 => sigs.k8s.io/cluster-api-provider-aws/v2 v2.6.1
+
+replace sigs.k8s.io/cluster-api-provider-azure => sigs.k8s.io/cluster-api-provider-azure v1.14.2
+
+replace github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20250410104337-84aeac37bd09
+
+replace github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20250120164714-2b396e06c0a9
+
+replace github.com/metal3-io/cluster-api-provider-metal3 => github.com/openshift/cluster-api-provider-metal3 v0.0.0-20250120154957-c56dbc5889f6
+
+replace github.com/metal3-io/cluster-api-provider-metal3/api => github.com/openshift/cluster-api-provider-metal3/api v0.0.0-20250120154957-c56dbc5889f6
+
+replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.29.3
