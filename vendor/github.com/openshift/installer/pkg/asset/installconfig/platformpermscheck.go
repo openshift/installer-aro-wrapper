@@ -10,12 +10,15 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
+	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
+	"github.com/openshift/installer/pkg/types/libvirt"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -54,7 +57,47 @@ func (a *PlatformPermsCheck) Generate(dependencies asset.Parents) error {
 	platform := ic.Config.Platform.Name()
 	switch platform {
 	case aws.Name:
-		permissionGroups := awsconfig.RequiredPermissionGroups(ic.Config)
+		permissionGroups := []awsconfig.PermissionGroup{awsconfig.PermissionCreateBase}
+		usingExistingVPC := len(ic.Config.AWS.Subnets) != 0
+		usingExistingPrivateZone := len(ic.Config.AWS.HostedZone) != 0
+
+		if !usingExistingVPC {
+			permissionGroups = append(permissionGroups, awsconfig.PermissionCreateNetworking)
+		}
+
+		if !usingExistingPrivateZone {
+			permissionGroups = append(permissionGroups, awsconfig.PermissionCreateHostedZone)
+		}
+
+		var ec2RootVolume = aws.EC2RootVolume{}
+		var awsMachinePoolUsingKMS, masterMachinePoolUsingKMS bool
+		if ic.Config.AWS.DefaultMachinePlatform != nil && ic.Config.AWS.DefaultMachinePlatform.EC2RootVolume != ec2RootVolume {
+			awsMachinePoolUsingKMS = len(ic.Config.AWS.DefaultMachinePlatform.EC2RootVolume.KMSKeyARN) != 0
+		}
+		if ic.Config.ControlPlane != nil &&
+			ic.Config.ControlPlane.Name == types.MachinePoolControlPlaneRoleName &&
+			ic.Config.ControlPlane.Platform.AWS != nil &&
+			ic.Config.ControlPlane.Platform.AWS.EC2RootVolume != ec2RootVolume {
+			masterMachinePoolUsingKMS = len(ic.Config.ControlPlane.Platform.AWS.EC2RootVolume.KMSKeyARN) != 0
+		}
+		// Add KMS encryption keys, if provided.
+		if awsMachinePoolUsingKMS || masterMachinePoolUsingKMS {
+			logrus.Debugf("Adding %s to the group of permissions to validate", awsconfig.PermissionKMSEncryptionKeys)
+			permissionGroups = append(permissionGroups, awsconfig.PermissionKMSEncryptionKeys)
+		}
+
+		// Add delete permissions for non-C2S installs.
+		if !aws.IsSecretRegion(ic.Config.AWS.Region) {
+			permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteBase)
+			if usingExistingVPC {
+				permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteSharedNetworking)
+			} else {
+				permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteNetworking)
+			}
+			if !usingExistingPrivateZone {
+				permissionGroups = append(permissionGroups, awsconfig.PermissionDeleteHostedZone)
+			}
+		}
 
 		ssn, err := ic.AWS.Session(ctx)
 		if err != nil {
@@ -78,7 +121,7 @@ func (a *PlatformPermsCheck) Generate(dependencies asset.Parents) error {
 		// TODO: IBM[#90]: platformpermscheck
 	case powervs.Name:
 		// Nothing needs to be done here
-	case azure.Name, baremetal.Name, external.Name, none.Name, openstack.Name, ovirt.Name, vsphere.Name, nutanix.Name:
+	case azure.Name, baremetal.Name, libvirt.Name, external.Name, none.Name, openstack.Name, ovirt.Name, vsphere.Name, alibabacloud.Name, nutanix.Name:
 		// no permissions to check
 	default:
 		err = fmt.Errorf("unknown platform type %q", platform)

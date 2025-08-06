@@ -1,9 +1,11 @@
+
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
   name: installconfigs.install.openshift.io
 spec:
   group: install.openshift.io
@@ -79,8 +81,6 @@ spec:
                   - ImageRegistry
                   - OperatorLifecycleManager
                   - CloudCredential
-                  - Ingress
-                  - CloudControllerManager
                   type: string
                 type: array
               baselineCapabilitySet:
@@ -94,7 +94,6 @@ spec:
                 - v4.13
                 - v4.14
                 - v4.15
-                - v4.16
                 - vCurrent
                 type: string
             type: object
@@ -131,6 +130,39 @@ spec:
                   description: Platform is configuration for machine pool specific
                     to the platform.
                   properties:
+                    alibabacloud:
+                      description: AlibabaCloud is the configuration used when installing
+                        on Alibaba Cloud.
+                      properties:
+                        imageID:
+                          description: ImageID is the Image ID that should be used
+                            to create ECS instance. If set, the ImageID should belong
+                            to the same region as the cluster.
+                          type: string
+                        instanceType:
+                          description: InstanceType defines the ECS instance type.
+                            eg. ecs.g6.large
+                          type: string
+                        systemDiskCategory:
+                          description: SystemDiskCategory defines the category of
+                            the system disk.
+                          enum:
+                          - ""
+                          - cloud_efficiency
+                          - cloud_essd
+                          type: string
+                        systemDiskSize:
+                          description: SystemDiskSize defines the size of the system
+                            disk in gibibytes (GiB).
+                          minimum: 120
+                          type: integer
+                        zones:
+                          description: Zones is list of availability zones that can
+                            be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
+                          items:
+                            type: string
+                          type: array
+                      type: object
                     aws:
                       description: AWS is the configuration used when installing on
                         AWS.
@@ -141,7 +173,6 @@ spec:
                             is presented in the format sg-xxxx.
                           items:
                             type: string
-                          maxItems: 10
                           type: array
                         amiID:
                           description: AMIID is the AMI that should be used to boot
@@ -474,7 +505,6 @@ spec:
                         GCP
                       properties:
                         confidentialCompute:
-                          default: Disabled
                           description: ConfidentialCompute Defines whether the instance
                             should have confidential compute enabled. If enabled OnHostMaintenance
                             is required to be set to "Terminate". If omitted, the
@@ -485,7 +515,6 @@ spec:
                           - Disabled
                           type: string
                         onHostMaintenance:
-                          default: Migrate
                           description: OnHostMaintenance determines the behavior when
                             a maintenance event occurs that might cause the instance
                             to reboot. Allowed values are "Migrate" and "Terminate".
@@ -507,13 +536,11 @@ spec:
                               type: integer
                             diskType:
                               description: DiskType defines the type of disk. For
-                                control plane nodes, the valid values are pd-balanced,
-                                pd-ssd, and hyperdisk-balanced.
+                                control plane nodes, the valid value is pd-ssd.
                               enum:
                               - pd-balanced
                               - pd-ssd
                               - pd-standard
-                              - hyperdisk-balanced
                               type: string
                             encryptionKey:
                               description: EncryptionKey defines the KMS key to be
@@ -650,6 +677,10 @@ spec:
                           items:
                             type: string
                           type: array
+                      type: object
+                    libvirt:
+                      description: Libvirt is the configuration used when installing
+                        on libvirt.
                       type: object
                     nutanix:
                       description: Nutanix is the configuration used when installing
@@ -1046,6 +1077,39 @@ spec:
                 description: Platform is configuration for machine pool specific to
                   the platform.
                 properties:
+                  alibabacloud:
+                    description: AlibabaCloud is the configuration used when installing
+                      on Alibaba Cloud.
+                    properties:
+                      imageID:
+                        description: ImageID is the Image ID that should be used to
+                          create ECS instance. If set, the ImageID should belong to
+                          the same region as the cluster.
+                        type: string
+                      instanceType:
+                        description: InstanceType defines the ECS instance type. eg.
+                          ecs.g6.large
+                        type: string
+                      systemDiskCategory:
+                        description: SystemDiskCategory defines the category of the
+                          system disk.
+                        enum:
+                        - ""
+                        - cloud_efficiency
+                        - cloud_essd
+                        type: string
+                      systemDiskSize:
+                        description: SystemDiskSize defines the size of the system
+                          disk in gibibytes (GiB).
+                        minimum: 120
+                        type: integer
+                      zones:
+                        description: Zones is list of availability zones that can
+                          be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
+                        items:
+                          type: string
+                        type: array
+                    type: object
                   aws:
                     description: AWS is the configuration used when installing on
                       AWS.
@@ -1056,7 +1120,6 @@ spec:
                           in the format sg-xxxx.
                         items:
                           type: string
-                        maxItems: 10
                         type: array
                       amiID:
                         description: AMIID is the AMI that should be used to boot
@@ -1385,7 +1448,6 @@ spec:
                       GCP
                     properties:
                       confidentialCompute:
-                        default: Disabled
                         description: ConfidentialCompute Defines whether the instance
                           should have confidential compute enabled. If enabled OnHostMaintenance
                           is required to be set to "Terminate". If omitted, the platform
@@ -1396,7 +1458,6 @@ spec:
                         - Disabled
                         type: string
                       onHostMaintenance:
-                        default: Migrate
                         description: OnHostMaintenance determines the behavior when
                           a maintenance event occurs that might cause the instance
                           to reboot. Allowed values are "Migrate" and "Terminate".
@@ -1417,13 +1478,11 @@ spec:
                             type: integer
                           diskType:
                             description: DiskType defines the type of disk. For control
-                              plane nodes, the valid values are pd-balanced, pd-ssd,
-                              and hyperdisk-balanced.
+                              plane nodes, the valid value is pd-ssd.
                             enum:
                             - pd-balanced
                             - pd-ssd
                             - pd-standard
-                            - hyperdisk-balanced
                             type: string
                           encryptionKey:
                             description: EncryptionKey defines the KMS key to be used
@@ -1560,6 +1619,10 @@ spec:
                         items:
                           type: string
                         type: array
+                    type: object
+                  libvirt:
+                    description: Libvirt is the configuration used when installing
+                      on libvirt.
                     type: object
                   nutanix:
                     description: Nutanix is the configuration used when installing
@@ -1947,7 +2010,7 @@ spec:
               values. For all other platforms, the field must not be set. AWS: \"Mint\",
               \"Passthrough\", \"Manual\" Azure: \"Passthrough\", \"Manual\" AzureStack:
               \"Manual\" GCP: \"Mint\", \"Passthrough\", \"Manual\" IBMCloud: \"Manual\"
-              PowerVS: \"Manual\" Nutanix: \"Manual\""
+              AlibabaCloud: \"Manual\" PowerVS: \"Manual\" Nutanix: \"Manual\""
             enum:
             - ""
             - Mint
@@ -2034,7 +2097,7 @@ spec:
                   properties:
                     cidr:
                       description: CIDR is the IP block address pool.
-                      type: string
+                      type: Any
                     hostPrefix:
                       description: HostPrefix is the prefix size to allocate to each
                         node from the CIDR. For example, 24 would allocate 2^8=256
@@ -2069,7 +2132,7 @@ spec:
                   properties:
                     cidr:
                       description: CIDR is the IP block address pool.
-                      type: string
+                      type: Any
                     hostPrefix:
                       description: HostPrefix is the prefix size to allocate to each
                         node from the CIDR. For example, 24 would allocate 2^8=256
@@ -2090,13 +2153,13 @@ spec:
               machineCIDR:
                 description: Deprecated way to configure an IP address pool for machines.
                   Replaced by MachineNetwork which allows for multiple pools.
-                type: string
+                type: Any
               machineNetwork:
                 description: MachineNetwork is the list of IP address pools for machines.
                   This field replaces MachineCIDR, and if set MachineCIDR must be
                   empty or match the first entry in the list. Default is 10.0.0.0/16
-                  for all platforms other than Power VS. For Power VS, the default
-                  is 192.168.0.0/24.
+                  for all platforms other than libvirt and Power VS. For libvirt,
+                  the default is 192.168.126.0/24. For Power VS, the default is 192.168.0.0/24.
                 items:
                   description: MachineNetworkEntry is a single IP address block for
                     node IP blocks.
@@ -2104,7 +2167,7 @@ spec:
                     cidr:
                       description: CIDR is the IP block address pool for machines
                         within the cluster.
-                      type: string
+                      type: Any
                   required:
                   - cidr
                   type: object
@@ -2117,12 +2180,12 @@ spec:
               serviceCIDR:
                 description: Deprecated way to configure an IP address pool for services.
                   Replaced by ServiceNetwork which allows for multiple pools.
-                type: string
+                type: Any
               serviceNetwork:
                 description: 'ServiceNetwork is the list of IP address pools for services.
                   Default is 172.30.0.0/16. NOTE: currently only one entry is supported.'
                 items:
-                  type: string
+                  type: Any
                 maxItems: 1
                 type: array
               type:
@@ -2155,6 +2218,84 @@ spec:
             description: Platform is the configuration for the specific platform upon
               which to perform the installation.
             properties:
+              alibabacloud:
+                description: AlibabaCloud is the configuration used when installing
+                  on Alibaba Cloud.
+                properties:
+                  defaultMachinePlatform:
+                    description: DefaultMachinePlatform is the default configuration
+                      used when installing on Alibaba Cloud for machine pools which
+                      do not define their own platform configuration.
+                    properties:
+                      imageID:
+                        description: ImageID is the Image ID that should be used to
+                          create ECS instance. If set, the ImageID should belong to
+                          the same region as the cluster.
+                        type: string
+                      instanceType:
+                        description: InstanceType defines the ECS instance type. eg.
+                          ecs.g6.large
+                        type: string
+                      systemDiskCategory:
+                        description: SystemDiskCategory defines the category of the
+                          system disk.
+                        enum:
+                        - ""
+                        - cloud_efficiency
+                        - cloud_essd
+                        type: string
+                      systemDiskSize:
+                        description: SystemDiskSize defines the size of the system
+                          disk in gibibytes (GiB).
+                        minimum: 120
+                        type: integer
+                      zones:
+                        description: Zones is list of availability zones that can
+                          be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  privateZoneID:
+                    description: PrivateZoneID is the ID of an existing private zone
+                      into which to add DNS records for the cluster's internal API.
+                      An existing private zone can only be used when also using existing
+                      VPC. The private zone must be associated with the VPC containing
+                      the subnets. Leave the private zone unset to have the installer
+                      create the private zone on your behalf.
+                    type: string
+                  region:
+                    description: Region specifies the Alibaba Cloud region where the
+                      cluster will be created.
+                    type: string
+                  resourceGroupID:
+                    description: ResourceGroupID is the ID of an already existing
+                      resource group where the cluster should be installed. If empty,
+                      the installer will create a new resource group for the cluster.
+                    type: string
+                  tags:
+                    additionalProperties:
+                      type: string
+                    description: Tags additional keys and values that the installer
+                      will add as tags to all resources that it creates. Resources
+                      created by the cluster itself may not include these tags.
+                    type: object
+                  vpcID:
+                    description: VpcID is the ID of an already existing VPC where
+                      the cluster should be installed. If empty, the installer will
+                      create a new VPC for the cluster.
+                    type: string
+                  vswitchIDs:
+                    description: VSwitchIDs is the ID list of already existing VSwitches
+                      where cluster resources will be created. The existing VSwitches
+                      can only be used when also using existing VPC. If empty, the
+                      installer will create new VSwitches for the cluster.
+                    items:
+                      type: string
+                    type: array
+                required:
+                - region
+                type: object
               aws:
                 description: AWS is the configuration used when installing on AWS.
                 properties:
@@ -2163,14 +2304,6 @@ spec:
                       for the cluster. If set, the AMI should belong to the same region
                       as the cluster.
                     type: string
-                  bestEffortDeleteIgnition:
-                    description: BestEffortDeleteIgnition is an optional field that
-                      can be used to ignore errors from S3 deletion of ignition objects
-                      during cluster bootstrap. The default behavior is to fail the
-                      installation if ignition objects cannot be deleted. Enable this
-                      functionality when there are known reasons disallowing their
-                      deletion.
-                    type: boolean
                   defaultMachinePlatform:
                     description: DefaultMachinePlatform is the default configuration
                       used when installing on AWS for machine pools which do not define
@@ -2182,7 +2315,6 @@ spec:
                           in the format sg-xxxx.
                         items:
                           type: string
-                        maxItems: 10
                         type: array
                       amiID:
                         description: AMIID is the AMI that should be used to boot
@@ -2277,13 +2409,12 @@ spec:
                     type: string
                   lbType:
                     description: "LBType is an optional field to specify a load balancer
-                      type. When this field is specified, all ingresscontrollers (including
-                      the default ingresscontroller) will be created using the specified
-                      load-balancer type by default. \n Following are the accepted
-                      values: \n * \"Classic\": A Classic Load Balancer that makes
-                      routing decisions at either the transport layer (TCP/SSL) or
-                      the application layer (HTTP/HTTPS). See the following for additional
-                      details: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/load-balancer-types.html#clb
+                      type. \n When this field is specified, the default ingresscontroller
+                      will be created using the specified load-balancer type. \n Following
+                      are the accepted values: \n * \"Classic\": A Classic Load Balancer
+                      that makes routing decisions at either the transport layer (TCP/SSL)
+                      or the application layer (HTTP/HTTPS). See the following for
+                      additional details: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/load-balancer-types.html#clb
                       \n * \"NLB\": A Network Load Balancer that makes routing decisions
                       at the transport layer (TCP/SSL). See the following for additional
                       details: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/load-balancer-types.html#nlb
@@ -2291,19 +2422,15 @@ spec:
                       \ This default is subject to change over time."
                     type: string
                   preserveBootstrapIgnition:
-                    description: PreserveBootstrapIgnition is deprecated. Use bestEffortDeleteIgnition
-                      instead.
+                    description: PreserveBootstrapIgnition is an optional field that
+                      can be used to make the S3 deletion optional during bootstrap
+                      destroy.
                     type: boolean
                   propagateUserTags:
                     description: PropagateUserTags is a flag that directs in-cluster
                       operators to include the specified user tags in the tags of
                       the AWS resources that the operators create.
                     type: boolean
-                  publicIpv4Pool:
-                    description: PublicIpv4Pool is an optional field that can be used
-                      to tell the installation process to use Public IPv4 address
-                      that you bring to your AWS account with BYOIP.
-                    type: string
                   region:
                     description: Region specifies the AWS region where the cluster
                       will be created.
@@ -2924,9 +3051,6 @@ spec:
                         - OpenShiftManagedDefault
                         - UserManaged
                         type: string
-                        x-kubernetes-validations:
-                        - message: type is immutable once set
-                          rule: oldSelf == '' || self == oldSelf
                     type: object
                   provisioningBridge:
                     description: Provisioning bridge is used for provisioning nodes,
@@ -2967,7 +3091,7 @@ spec:
                   provisioningNetworkCIDR:
                     description: ProvisioningNetworkCIDR defines the network to use
                       for provisioning.
-                    type: string
+                    type: Any
                   provisioningNetworkInterface:
                     description: ProvisioningNetworkInterface is the name of the network
                       interface on a control plane baremetal host that is connected
@@ -2995,9 +3119,6 @@ spec:
                       installation time. This field is solely for informational and
                       reporting purposes and is not expected to be used for decision-making.
                     type: string
-                    x-kubernetes-validations:
-                    - message: platform name cannot be changed once set
-                      rule: oldSelf == 'Unknown' || self == oldSelf
                 type: object
               gcp:
                 description: GCP is the configuration used when installing on Google
@@ -3019,7 +3140,6 @@ spec:
                       their own platform configuration.
                     properties:
                       confidentialCompute:
-                        default: Disabled
                         description: ConfidentialCompute Defines whether the instance
                           should have confidential compute enabled. If enabled OnHostMaintenance
                           is required to be set to "Terminate". If omitted, the platform
@@ -3030,7 +3150,6 @@ spec:
                         - Disabled
                         type: string
                       onHostMaintenance:
-                        default: Migrate
                         description: OnHostMaintenance determines the behavior when
                           a maintenance event occurs that might cause the instance
                           to reboot. Allowed values are "Migrate" and "Terminate".
@@ -3051,13 +3170,11 @@ spec:
                             type: integer
                           diskType:
                             description: DiskType defines the type of disk. For control
-                              plane nodes, the valid values are pd-balanced, pd-ssd,
-                              and hyperdisk-balanced.
+                              plane nodes, the valid value is pd-ssd.
                             enum:
                             - pd-balanced
                             - pd-ssd
                             - pd-standard
-                            - hyperdisk-balanced
                             type: string
                           encryptionKey:
                             description: EncryptionKey defines the KMS key to be used
@@ -3368,9 +3485,6 @@ spec:
                             that overrides the default generated endpoint for a client.
                             This must be provided and cannot be empty.
                           type: string
-                          x-kubernetes-validations:
-                          - message: url must be a valid absolute URL
-                            rule: isURL(self)
                       required:
                       - name
                       - url
@@ -3382,6 +3496,51 @@ spec:
                     type: string
                 required:
                 - region
+                type: object
+              libvirt:
+                description: Libvirt is the configuration used when installing on
+                  libvirt.
+                properties:
+                  URI:
+                    default: qemu+tcp://192.168.122.1/system
+                    description: URI is the identifier for the libvirtd connection.  It
+                      must be reachable from both the host (where the installer is
+                      run) and the cluster (where the cluster-API controller pod will
+                      be running). Default is qemu+tcp://192.168.122.1/system
+                    type: string
+                  defaultMachinePlatform:
+                    description: DefaultMachinePlatform is the default configuration
+                      used when installing on libvirt for machine pools which do not
+                      define their own platform configuration. Default will set the
+                      image field to the latest RHCOS image.
+                    type: object
+                  network:
+                    description: Network
+                    properties:
+                      dnsmasqOptions:
+                        description: DnsmasqOptions is the dnsmasq options to be used
+                          when installing on libvirt.
+                        items:
+                          description: DnsmasqOption contains the name and value of
+                            the option to configure in the libvirt network.
+                          properties:
+                            name:
+                              description: The dnsmasq option name. A full list of
+                                options and an explanation for each can be found in
+                                /etc/dnsmasq.conf
+                              type: string
+                            value:
+                              description: The value that is being set for the particular
+                                option.
+                              type: string
+                          type: object
+                        type: array
+                      if:
+                        default: tt0
+                        description: The interface make used for the network. Default
+                          is tt0.
+                        type: string
+                    type: object
                 type: object
               none:
                 description: None is the empty configuration used when installing
@@ -3607,15 +3766,7 @@ spec:
                         - OpenShiftManagedDefault
                         - UserManaged
                         type: string
-                        x-kubernetes-validations:
-                        - message: type is immutable once set
-                          rule: oldSelf == '' || self == oldSelf
                     type: object
-                  prismAPICallTimeout:
-                    description: PrismAPICallTimeout sets the timeout (in minutes)
-                      for the prism-api calls. If not configured, the default value
-                      of 10 minutes will be used as the prism-api call timeout.
-                    type: integer
                   prismCentral:
                     description: PrismCentral is the endpoint (address and port) and
                       credentials to connect to the Prism Central. This serves as
@@ -3930,9 +4081,6 @@ spec:
                         - OpenShiftManagedDefault
                         - UserManaged
                         type: string
-                        x-kubernetes-validations:
-                        - message: type is immutable once set
-                          rule: oldSelf == '' || self == oldSelf
                     type: object
                   machinesSubnet:
                     description: 'DeprecatedMachinesSubnet is a string of the UUIDv4
@@ -4150,9 +4298,6 @@ spec:
                         - OpenShiftManagedDefault
                         - UserManaged
                         type: string
-                        x-kubernetes-validations:
-                        - message: type is immutable once set
-                          rule: oldSelf == '' || self == oldSelf
                     type: object
                   ovirt_cluster_id:
                     description: The target cluster under which all VMs will run
@@ -4234,34 +4379,6 @@ spec:
                     description: Region specifies the IBM Cloud colo region where
                       the cluster will be created.
                     type: string
-                  serviceEndpoints:
-                    description: ServiceEndpoints is a list which contains custom
-                      endpoints to override default service endpoints of IBM Cloud
-                      Services. There must only be one ServiceEndpoint for a service
-                      (no duplicates).
-                    items:
-                      description: PowervsServiceEndpoint stores the configuration
-                        of a custom url to override existing defaults of PowerVS Services.
-                      properties:
-                        name:
-                          description: name is the name of the Power VS service. Few
-                            of the services are IAM - https://cloud.ibm.com/apidocs/iam-identity-token-api
-                            ResourceController - https://cloud.ibm.com/apidocs/resource-controller/resource-controller
-                            Power Cloud - https://cloud.ibm.com/apidocs/power-cloud
-                          pattern: ^[a-z0-9-]+$
-                          type: string
-                        url:
-                          description: url is fully qualified URI with scheme https,
-                            that overrides the default generated endpoint for a client.
-                            This must be provided and cannot be empty.
-                          format: uri
-                          pattern: ^https://
-                          type: string
-                      required:
-                      - name
-                      - url
-                      type: object
-                    type: array
                   serviceInstanceGUID:
                     description: ServiceInstanceGUID is the GUID of the Power IAAS
                       instance created from the IBM Cloud Catalog before the cluster
@@ -4447,15 +4564,6 @@ spec:
                               minLength: 1
                               pattern: ^/.*?/host/.*?/Resources.*
                               type: string
-                            tagIDs:
-                              description: tagIDs is an optional set of tags to add
-                                to an instance. Specified tagIDs must use URN-notation
-                                instead of display names. A maximum of 10 tag IDs
-                                may be specified.
-                              example: urn:vmomi:InventoryServiceTag:5736bf56-49f5-4667-b38c-b97e09dc9578:GLOBAL
-                              items:
-                                type: string
-                              type: array
                             template:
                               description: template is the inventory path of the virtual
                                 machine or template that will be used for cloning.
@@ -4513,7 +4621,6 @@ spec:
                                 for example, 192.168.1.100/24. IP addresses provided
                                 via ipAddrs are intended to allow explicit assignment
                                 of a machine's IP address.
-                              example: 2001:DB8:0000:0000:244:17FF:FEB6:D37D/64
                               format: ipv6
                               items:
                                 type: string
@@ -4525,7 +4632,6 @@ spec:
                                 If DHCP is not the source of IP addresses for this
                                 network device, nameservers should include a valid
                                 nameserver.
-                              example: 8.8.8.8
                               format: ipv6
                               items:
                                 type: string
@@ -4581,9 +4687,6 @@ spec:
                         - OpenShiftManagedDefault
                         - UserManaged
                         type: string
-                        x-kubernetes-validations:
-                        - message: type is immutable once set
-                          rule: oldSelf == '' || self == oldSelf
                     type: object
                   network:
                     description: 'Network specifies the name of the network to be
@@ -4693,3 +4796,9 @@ spec:
         type: object
     served: true
     storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

@@ -6,6 +6,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+// Zone holds the sysTypes for a zone in a IBM Power VS region.
+type Zone struct {
+	SysTypes []string
+}
+
 // Since there is no API to query these, we have to hard-code them here.
 
 // Region describes resources associated with a region in Power VS.
@@ -16,12 +21,6 @@ type Region struct {
 	VPCRegion   string
 	COSRegion   string
 	Zones       map[string]Zone
-	VPCZones    []string
-}
-
-// Zone holds the sysTypes for a zone in a IBM Power VS region.
-type Zone struct {
-	SysTypes []string
 }
 
 // Regions holds the regions for IBM Power VS, and descriptions used during the survey.
@@ -38,7 +37,6 @@ var Regions = map[string]Region{
 				SysTypes: []string{"s922", "e980"},
 			},
 		},
-		VPCZones: []string{"us-south-1", "us-south-2", "us-south-3"},
 	},
 	"eu-de": {
 		Description: "Frankfurt, Germany",
@@ -52,18 +50,6 @@ var Regions = map[string]Region{
 				SysTypes: []string{"s922", "e980"},
 			},
 		},
-		VPCZones: []string{"eu-de-1", "eu-de-2", "eu-de-3"},
-	},
-	"lon": {
-		Description: "London, UK",
-		VPCRegion:   "eu-gb",
-		COSRegion:   "eu-gb",
-		Zones: map[string]Zone{
-			"lon06": {
-				SysTypes: []string{"s922", "e980"},
-			},
-		},
-		VPCZones: []string{"eu-gb-1", "eu-gb-2", "eu-gb-3"},
 	},
 	"mad": {
 		Description: "Madrid, Spain",
@@ -77,43 +63,15 @@ var Regions = map[string]Region{
 				SysTypes: []string{"s1022", "e980", "e1080"},
 			},
 		},
-		VPCZones: []string{"eu-es-1", "eu-es-2"},
-	},
-	"osa": {
-		Description: "Osaka, Japan",
-		VPCRegion:   "jp-osa",
-		COSRegion:   "jp-osa",
-		Zones: map[string]Zone{
-			"osa21": {
-				SysTypes: []string{"s922", "s1022", "e980"},
-			},
-		},
-		VPCZones: []string{"jp-osa-1", "jp-osa-2", "jp-osa-3"},
 	},
 	"sao": {
 		Description: "São Paulo, Brazil",
 		VPCRegion:   "br-sao",
-		COSRegion:   "br-sao",
 		Zones: map[string]Zone{
 			"sao01": {
 				SysTypes: []string{"s922", "e980"},
 			},
-			"sao04": {
-				SysTypes: []string{"s922", "e980"},
-			},
 		},
-		VPCZones: []string{"br-sao-1", "br-sao-2", "br-sao-3"},
-	},
-	"syd": {
-		Description: "Sydney, Australia",
-		VPCRegion:   "au-syd",
-		COSRegion:   "au-syd",
-		Zones: map[string]Zone{
-			"syd04": {
-				SysTypes: []string{"s922", "e980"},
-			},
-		},
-		VPCZones: []string{"au-syd-1", "au-syd-2", "au-syd-3"},
 	},
 	"wdc": {
 		Description: "Washington DC, USA",
@@ -127,7 +85,6 @@ var Regions = map[string]Region{
 				SysTypes: []string{"s922", "s1022", "e980", "e1080"},
 			},
 		},
-		VPCZones: []string{"us-east-1", "us-east-2", "us-east-3"},
 	},
 }
 
@@ -221,15 +178,6 @@ func AllKnownSysTypes() sets.Set[string] {
 		}
 	}
 	return sysTypes
-}
-
-// AvailableVPCZones returns the known VPC zones for a specified region.
-func AvailableVPCZones(region string) ([]string, error) {
-	knownRegion, ok := Regions[region]
-	if !ok {
-		return nil, fmt.Errorf("unknown region name provided")
-	}
-	return knownRegion.VPCZones, nil
 }
 
 // COSRegionForVPCRegion returns the corresponding COS region for the given VPC region.

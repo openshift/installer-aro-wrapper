@@ -285,9 +285,5 @@ func convertAWS(config *types.InstallConfig) error {
 	if config.Platform.AWS.ExperimentalPropagateUserTag != nil {
 		config.Platform.AWS.PropagateUserTag = *config.Platform.AWS.ExperimentalPropagateUserTag
 	}
-	// BestEffortDeleteIgnition takes precedence when set
-	if !config.AWS.BestEffortDeleteIgnition {
-		config.AWS.BestEffortDeleteIgnition = config.AWS.PreserveBootstrapIgnition
-	}
 	return nil
 }

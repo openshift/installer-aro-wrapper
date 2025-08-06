@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# shellcheck disable=SC1091  # using path on bootstrap machine
-. /usr/local/bin/wait-for-ha-api.sh
-
 KUBECONFIG="${1}"
 
 wait_for_existance() {
@@ -20,9 +17,6 @@ systemctl stop gcp-routes.service
 
 echo "Waiting for bootstrap to complete..."
 wait_for_existance /opt/openshift/.bootkube.done
-
-## wait for API to be available
-wait_for_ha_api
 
 echo "Reporting install progress..."
 while ! oc --kubeconfig="$KUBECONFIG" create -f - <<-EOF

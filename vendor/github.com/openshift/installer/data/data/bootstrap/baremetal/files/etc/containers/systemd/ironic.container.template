@@ -8,7 +8,7 @@ Requires=provisioning-interface.service
 {{ if .PlatformData.BareMetal.ProvisioningDNSMasq }}
 Wants=ironic-dnsmasq.service
 {{ end }}
-Wants=network-online.target ironic-httpd.service ironic-ramdisk-logs.service
+Wants=network-online.target ironic-httpd.service ironic-inspector.service ironic-ramdisk-logs.service
 After=network-online.target ironic-volume.service build-ironic-env.service wait-iptables-init.service provisioning-interface.service ironic-dnsmasq.service image-customization.service
 
 [Container]
@@ -18,18 +18,13 @@ Exec=/bin/runironic
 Network=host
 Volume=${AUTH_DIR}:/auth:z,ro
 Volume=ironic.volume:/shared:z
-{{ if not .PlatformData.BareMetal.DisableIronicVirtualMediaTLS }}
-Volume=/opt/openshift/tls/ironic/:/certs/vmedia/:z
-{{ end }}
 Environment="IRONIC_RAMDISK_SSH_KEY=${IRONIC_RAMDISK_SSH_KEY}"
 Environment="PROVISIONING_INTERFACE=${PROVISIONING_INTERFACE}"
 Environment="OS_CONDUCTOR__HEARTBEAT_TIMEOUT=120"
 Environment="IRONIC_HTPASSWD=${IRONIC_HTPASSWD}"
+Environment="INSPECTOR_HTPASSWD=${IRONIC_HTPASSWD}"
 Environment="IRONIC_KERNEL_PARAMS=${IRONIC_KERNEL_PARAMS}"
 Environment="HTTP_PORT=${HTTP_PORT}"
-Environment="OS_DEFAULT__FORCE_RAW_IMAGES=False"
-Environment="USE_IRONIC_INSPECTOR=false"
-Environment="VMEDIA_TLS_PORT=6183"
 
 [Service]
 EnvironmentFile=/etc/ironic.env

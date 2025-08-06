@@ -21,9 +21,7 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
 	"github.com/openshift/installer/pkg/asset/agent/agentconfig"
-	"github.com/openshift/installer/pkg/asset/agent/joiner"
 	"github.com/openshift/installer/pkg/asset/agent/manifests/staticnetworkconfig"
-	"github.com/openshift/installer/pkg/asset/agent/workflow"
 	"github.com/openshift/installer/pkg/types"
 	agenttype "github.com/openshift/installer/pkg/types/agent"
 )
@@ -39,6 +37,21 @@ type NMStateConfig struct {
 	Config              []*aiv1beta1.NMStateConfig
 }
 
+type nmStateConfig struct {
+	Interfaces []struct {
+		IPV4 struct {
+			Address []struct {
+				IP string `yaml:"ip,omitempty"`
+			} `yaml:"address,omitempty"`
+		} `yaml:"ipv4,omitempty"`
+		IPV6 struct {
+			Address []struct {
+				IP string `yaml:"ip,omitempty"`
+			} `yaml:"address,omitempty"`
+		} `yaml:"ipv6,omitempty"`
+	} `yaml:"interfaces,omitempty"`
+}
+
 var _ asset.WritableAsset = (*NMStateConfig)(nil)
 
 // Name returns a human friendly name for the asset.
@@ -50,8 +63,6 @@ func (*NMStateConfig) Name() string {
 // the asset.
 func (*NMStateConfig) Dependencies() []asset.Asset {
 	return []asset.Asset{
-		&workflow.AgentWorkflow{},
-		&joiner.ClusterInfo{},
 		&agentconfig.AgentHosts{},
 		&agent.OptionalInstallConfig{},
 	}
@@ -59,36 +70,21 @@ func (*NMStateConfig) Dependencies() []asset.Asset {
 
 // Generate generates the NMStateConfig manifest.
 func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
-	agentWorkflow := &workflow.AgentWorkflow{}
-	clusterInfo := &joiner.ClusterInfo{}
+
 	agentHosts := &agentconfig.AgentHosts{}
 	installConfig := &agent.OptionalInstallConfig{}
-	dependencies.Get(agentHosts, installConfig, agentWorkflow, clusterInfo)
+	dependencies.Get(agentHosts, installConfig)
 
 	staticNetworkConfig := []*models.HostStaticNetworkConfig{}
 	nmStateConfigs := []*aiv1beta1.NMStateConfig{}
 	var data string
 	var isNetworkConfigAvailable bool
-	var clusterName, clusterNamespace string
 
 	if len(agentHosts.Hosts) == 0 {
 		return nil
 	}
-
-	switch agentWorkflow.Workflow {
-	case workflow.AgentWorkflowTypeInstall:
-		if err := validateHostCount(installConfig.Config, agentHosts); err != nil {
-			return err
-		}
-		clusterName = installConfig.ClusterName()
-		clusterNamespace = installConfig.ClusterNamespace()
-
-	case workflow.AgentWorkflowTypeAddNodes:
-		clusterName = clusterInfo.ClusterName
-		clusterNamespace = clusterInfo.Namespace
-
-	default:
-		return fmt.Errorf("AgentWorkflowType value not supported: %s", agentWorkflow.Workflow)
+	if err := validateHostCount(installConfig.Config, agentHosts); err != nil {
+		return err
 	}
 
 	for i, host := range agentHosts.Hosts {
@@ -98,12 +94,12 @@ func (n *NMStateConfig) Generate(dependencies asset.Parents) error {
 			nmStateConfig := aiv1beta1.NMStateConfig{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "NMStateConfig",
-					APIVersion: aiv1beta1.GroupVersion.String(),
+					APIVersion: "agent-install.openshift.io/v1beta1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s-%d", clusterName, i),
-					Namespace: clusterNamespace,
-					Labels:    getNMStateConfigLabels(clusterName),
+					Name:      fmt.Sprintf(getNMStateConfigName(installConfig)+"-%d", i),
+					Namespace: getObjectMetaNamespace(installConfig),
+					Labels:    getNMStateConfigLabels(installConfig),
 				},
 				Spec: aiv1beta1.NMStateConfigSpec{
 					NetConfig: aiv1beta1.NetConfig{
@@ -245,6 +241,29 @@ func (n *NMStateConfig) validateNMStateLabels() field.ErrorList {
 	return allErrs
 }
 
+func getFirstIP(nmstateRaw []byte) (string, error) {
+	var nmStateConfig nmStateConfig
+	err := yaml.Unmarshal(nmstateRaw, &nmStateConfig)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling NMStateConfig: %w", err)
+	}
+
+	for _, intf := range nmStateConfig.Interfaces {
+		for _, addr4 := range intf.IPV4.Address {
+			if addr4.IP != "" {
+				return addr4.IP, nil
+			}
+		}
+		for _, addr6 := range intf.IPV6.Address {
+			if addr6.IP != "" {
+				return addr6.IP, nil
+			}
+		}
+	}
+
+	return "", nil
+}
+
 // GetNodeZeroIP retrieves the first IP to be set as the node0 IP.
 // The method prioritizes the search by trying to scan first the NMState configs defined
 // in the agent-config hosts - so that it would be possible to skip the worker nodes - and then
@@ -277,7 +296,7 @@ func GetNodeZeroIP(hosts []agenttype.Host, nmStateConfigs []*aiv1beta1.NMStateCo
 
 	// Try to look for an eligible IP
 	for _, raw := range rawConfigs {
-		nodeZeroIP, err := agent.GetFirstIP(raw)
+		nodeZeroIP, err := getFirstIP(raw)
 		if err != nil {
 			return "", fmt.Errorf("error unmarshalling NMStateConfig: %w", err)
 		}

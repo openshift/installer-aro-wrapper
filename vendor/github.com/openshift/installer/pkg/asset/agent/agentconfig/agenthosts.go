@@ -13,8 +13,6 @@ import (
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
 	"github.com/openshift/installer/pkg/asset"
 	agentAsset "github.com/openshift/installer/pkg/asset/agent"
-	"github.com/openshift/installer/pkg/asset/agent/joiner"
-	"github.com/openshift/installer/pkg/asset/agent/workflow"
 	"github.com/openshift/installer/pkg/types/agent"
 	"github.com/openshift/installer/pkg/types/baremetal/validation"
 	"github.com/openshift/installer/pkg/validate"
@@ -40,7 +38,7 @@ type nmStateInterface struct {
 // OptionalInstallConfig assets.
 type AgentHosts struct {
 	Hosts        []agent.Host
-	rendezvousIP string
+	RendezvousIP string
 }
 
 // Name returns a human friendly name.
@@ -51,8 +49,6 @@ func (a *AgentHosts) Name() string {
 // Dependencies returns all of the dependencies directly needed the asset.
 func (a *AgentHosts) Dependencies() []asset.Asset {
 	return []asset.Asset{
-		&workflow.AgentWorkflow{},
-		&joiner.AddNodesConfig{},
 		&agentAsset.OptionalInstallConfig{},
 		&AgentConfig{},
 	}
@@ -60,42 +56,31 @@ func (a *AgentHosts) Dependencies() []asset.Asset {
 
 // Generate generates the Hosts data.
 func (a *AgentHosts) Generate(dependencies asset.Parents) error {
-	agentWorkflow := &workflow.AgentWorkflow{}
-	addNodesConfig := &joiner.AddNodesConfig{}
 	agentConfig := &AgentConfig{}
 	installConfig := &agentAsset.OptionalInstallConfig{}
-	dependencies.Get(agentConfig, installConfig, agentWorkflow, addNodesConfig)
+	dependencies.Get(agentConfig, installConfig)
 
-	switch agentWorkflow.Workflow {
-	case workflow.AgentWorkflowTypeInstall:
-		if agentConfig.Config != nil {
-			a.rendezvousIP = agentConfig.Config.RendezvousIP
-			a.Hosts = append(a.Hosts, agentConfig.Config.Hosts...)
-			if len(a.Hosts) > 0 {
-				// Hosts defined in agent-config take precedence
-				logrus.Debugf("Using hosts from %s", agentConfigFilename)
-			}
+	if agentConfig.Config != nil {
+		a.RendezvousIP = agentConfig.Config.RendezvousIP
+		a.Hosts = append(a.Hosts, agentConfig.Config.Hosts...)
+		if len(a.Hosts) > 0 {
+			// Hosts defined in agent-config take precedence
+			logrus.Debugf("Using hosts from %s", agentConfigFilename)
 		}
-
-		if installConfig != nil && installConfig.GetBaremetalHosts() != nil {
-			// Only use hosts from install-config if they are not defined in agent-config
-			if len(a.Hosts) == 0 {
-				if err := a.getInstallConfigDefaults(installConfig); err != nil {
-					return errors.Wrapf(err, "invalid host definition in %s", agentAsset.InstallConfigFilename)
-				}
-			} else {
-				logrus.Warnf(fmt.Sprintf("hosts from %s are ignored", agentAsset.InstallConfigFilename))
-			}
-		}
-
-	case workflow.AgentWorkflowTypeAddNodes:
-		a.Hosts = append(a.Hosts, addNodesConfig.Config.Hosts...)
-
-	default:
-		return fmt.Errorf("AgentWorkflowType value not supported: %s", agentWorkflow.Workflow)
 	}
 
-	if err := a.validateAgentHosts().ToAggregate(); err != nil {
+	if installConfig != nil && installConfig.GetBaremetalHosts() != nil {
+		// Only use hosts from install-config if they are not defined in agent-config
+		if len(a.Hosts) == 0 {
+			if err := a.getInstallConfigDefaults(installConfig); err != nil {
+				return errors.Wrapf(err, "invalid host definition in %s", agentAsset.InstallConfigFilename)
+			}
+		} else {
+			logrus.Warnf(fmt.Sprintf("hosts from %s are ignored", agentAsset.InstallConfigFilename))
+		}
+	}
+
+	if err := a.validateAgentHosts(installConfig).ToAggregate(); err != nil {
 		return errors.Wrapf(err, "invalid Hosts configuration")
 	}
 
@@ -112,7 +97,7 @@ func (a *AgentHosts) Load(f asset.FileFetcher) (bool, error) {
 	return false, nil
 }
 
-func (a *AgentHosts) validateAgentHosts() field.ErrorList {
+func (a *AgentHosts) validateAgentHosts(installConfig *agentAsset.OptionalInstallConfig) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	macs := make(map[string]bool)
@@ -132,7 +117,7 @@ func (a *AgentHosts) validateAgentHosts() field.ErrorList {
 		}
 	}
 
-	if err := a.validateRendezvousIPNotWorker(a.rendezvousIP, a.Hosts); err != nil {
+	if err := a.validateRendezvousIPNotWorker(a.RendezvousIP, a.Hosts); err != nil {
 		allErrs = append(allErrs, err...)
 	}
 
@@ -200,17 +185,8 @@ func (a *AgentHosts) validateRendezvousIPNotWorker(rendezvousIP string, hosts []
 
 	if rendezvousIP != "" {
 		for i, host := range hosts {
-			if host.Role != workerRole {
-				continue
-			}
 			hostPath := field.NewPath("Hosts").Index(i)
-			hostIPs, err := agentAsset.GetAllHostIPs(host.NetworkConfig)
-			if err != nil {
-				allErrs = append(allErrs, field.Invalid(hostPath, host.NetworkConfig, err.Error()))
-				continue
-			}
-			_, found := hostIPs[rendezvousIP]
-			if found {
+			if strings.Contains(string(host.NetworkConfig.Raw), rendezvousIP) && host.Role == workerRole {
 				errMsg := "Host " + host.Hostname + " has role 'worker' and has the rendezvousIP assigned to it. The rendezvousIP must be assigned to a control plane host."
 				allErrs = append(allErrs, field.Forbidden(hostPath.Child("Host"), errMsg))
 			}

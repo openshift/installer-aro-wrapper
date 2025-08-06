@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -47,15 +46,7 @@ func Validate(ctx context.Context, meta *Metadata, config *types.InstallConfig) 
 		return errors.New(field.Required(field.NewPath("platform", "aws"), "AWS validation requires an AWS platform configuration").Error())
 	}
 	allErrs = append(allErrs, validateAMI(ctx, config)...)
-	allErrs = append(allErrs, validatePublicIpv4Pool(ctx, meta, field.NewPath("platform", "aws", "publicIpv4PoolId"), config)...)
 	allErrs = append(allErrs, validatePlatform(ctx, meta, field.NewPath("platform", "aws"), config.Platform.AWS, config.Networking, config.Publish)...)
-
-	if awstypes.IsPublicOnlySubnetsEnabled() {
-		logrus.Warnln("Public-only subnets install. Please be warned this is not supported")
-		if config.Publish == types.InternalPublishingStrategy {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("publish"), config.Publish, "cluster cannot be private with public subnets"))
-		}
-	}
 
 	if config.ControlPlane != nil {
 		arch := string(config.ControlPlane.Architecture)
@@ -96,8 +87,6 @@ func validatePlatform(ctx context.Context, meta *Metadata, fldPath *field.Path, 
 
 	if len(platform.Subnets) > 0 {
 		allErrs = append(allErrs, validateSubnets(ctx, meta, fldPath.Child("subnets"), platform.Subnets, networking, publish)...)
-	} else if awstypes.IsPublicOnlySubnetsEnabled() {
-		allErrs = append(allErrs, field.Required(fldPath.Child("subnets"), "subnets must be specified for public-only subnets clusters"))
 	}
 	if platform.DefaultMachinePlatform != nil {
 		allErrs = append(allErrs, validateMachinePool(ctx, meta, fldPath.Child("defaultMachinePlatform"), platform, platform.DefaultMachinePlatform, controlPlaneReq, "", "")...)
@@ -152,47 +141,6 @@ func validateAMI(ctx context.Context, config *types.InstallConfig) field.ErrorLi
 	return field.ErrorList{field.Required(field.NewPath("platform", "aws", "amiID"), "AMI must be provided")}
 }
 
-func validatePublicIpv4Pool(ctx context.Context, meta *Metadata, fldPath *field.Path, config *types.InstallConfig) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	if config.Platform.AWS.PublicIpv4Pool == "" {
-		return nil
-	}
-	poolID := config.Platform.AWS.PublicIpv4Pool
-	if config.Publish != types.ExternalPublishingStrategy {
-		return append(allErrs, field.Invalid(fldPath, poolID, fmt.Errorf("publish strategy %s can't be used with custom Public IPv4 Pools", config.Publish).Error()))
-	}
-
-	// Pool validations
-	// Resources claiming Public IPv4 from Pool in regular 'External' installations:
-	// 1* for Bootsrtap
-	// N*Zones for NAT Gateways
-	// N*Zones for API LB
-	// N*Zones for Ingress LB
-	allzones, err := meta.AvailabilityZones(ctx)
-	if err != nil {
-		return append(allErrs, field.InternalError(fldPath, err))
-	}
-	totalPublicIPRequired := int64(1 + (len(allzones) * 3))
-
-	sess, err := meta.Session(ctx)
-	if err != nil {
-		return append(allErrs, field.Invalid(fldPath, nil, fmt.Sprintf("unable to start a session: %s", err.Error())))
-	}
-	publicIpv4Pool, err := DescribePublicIpv4Pool(ctx, sess, config.Platform.AWS.Region, poolID)
-	if err != nil {
-		return append(allErrs, field.Invalid(fldPath, poolID, err.Error()))
-	}
-
-	got := aws.Int64Value(publicIpv4Pool.TotalAvailableAddressCount)
-	if got < totalPublicIPRequired {
-		err = fmt.Errorf("required a minimum of %d Public IPv4 IPs available in the pool %s, got %d", totalPublicIPRequired, poolID, got)
-		return append(allErrs, field.InternalError(fldPath, err))
-	}
-
-	return nil
-}
-
 func validateSubnets(ctx context.Context, meta *Metadata, fldPath *field.Path, subnets []string, networking *types.Networking, publish types.PublishingStrategy) field.ErrorList {
 	allErrs := field.ErrorList{}
 	privateSubnets, err := meta.PrivateSubnets(ctx)
@@ -213,17 +161,11 @@ func validateSubnets(ctx context.Context, meta *Metadata, fldPath *field.Path, s
 	if err != nil {
 		return append(allErrs, field.Invalid(fldPath, subnets, err.Error()))
 	}
-	if publish == types.InternalPublishingStrategy && len(publicSubnets) > 0 {
-		logrus.Warnf("Public subnets should not be provided when publish is set to %s", types.InternalPublishingStrategy)
-	}
 	publicSubnetsIdx := map[string]int{}
 	for idx, id := range subnets {
 		if _, ok := publicSubnets[id]; ok {
 			publicSubnetsIdx[id] = idx
 		}
-	}
-	if len(publicSubnets) == 0 && awstypes.IsPublicOnlySubnetsEnabled() {
-		allErrs = append(allErrs, field.Required(fldPath, "public subnets are required for a public-only subnets cluster"))
 	}
 
 	edgeSubnets, err := meta.EdgeSubnets(ctx)

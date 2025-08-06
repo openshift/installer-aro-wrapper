@@ -14,20 +14,22 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	ibmcloudmachines "github.com/openshift/installer/pkg/asset/machines/ibmcloud"
+	alibabacloudmanifests "github.com/openshift/installer/pkg/asset/manifests/alibabacloud"
 	"github.com/openshift/installer/pkg/asset/manifests/azure"
-	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	gcpmanifests "github.com/openshift/installer/pkg/asset/manifests/gcp"
 	ibmcloudmanifests "github.com/openshift/installer/pkg/asset/manifests/ibmcloud"
 	nutanixmanifests "github.com/openshift/installer/pkg/asset/manifests/nutanix"
 	openstackmanifests "github.com/openshift/installer/pkg/asset/manifests/openstack"
 	powervsmanifests "github.com/openshift/installer/pkg/asset/manifests/powervs"
 	vspheremanifests "github.com/openshift/installer/pkg/asset/manifests/vsphere"
+	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
 	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
+	libvirttypes "github.com/openshift/installer/pkg/types/libvirt"
 	nonetypes "github.com/openshift/installer/pkg/types/none"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
@@ -92,7 +94,7 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 	}
 
 	switch installConfig.Config.Platform.Name() {
-	case externaltypes.Name, nonetypes.Name, baremetaltypes.Name, ovirttypes.Name:
+	case libvirttypes.Name, externaltypes.Name, nonetypes.Name, baremetaltypes.Name, ovirttypes.Name:
 		return nil
 	case awstypes.Name:
 		// Store the additional trust bundle in the ca-bundle.pem key if the cluster is being installed on a C2S region.
@@ -107,6 +109,17 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		// Note that the newline is required in order to be valid yaml.
 		cm.Data[cloudProviderConfigDataKey] = `[Global]
 `
+	case alibabacloudtypes.Name:
+		alibabacloudConfig, err := alibabacloudmanifests.CloudConfig{
+			Global: alibabacloudmanifests.GlobalConfig{
+				ClusterID: clusterID.InfraID,
+				Region:    installConfig.Config.AlibabaCloud.Region,
+			},
+		}.JSON()
+		if err != nil {
+			return errors.Wrap(err, "could not create Alibaba Cloud provider config")
+		}
+		cm.Data[cloudProviderConfigDataKey] = alibabacloudConfig
 	case openstacktypes.Name:
 		cloudProviderConfigData, cloudProviderConfigCABundleData, err := openstackmanifests.GenerateCloudProviderConfig(*installConfig.Config)
 		if err != nil {
@@ -123,7 +136,7 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 			return errors.Wrap(err, "could not get azure session")
 		}
 
-		nsg := installConfig.Config.Azure.NetworkSecurityGroupName(clusterID.InfraID)
+		nsg := fmt.Sprintf("%s-nsg", clusterID.InfraID)
 		nrg := installConfig.Config.Azure.ClusterResourceGroupName(clusterID.InfraID)
 		if installConfig.Config.Azure.NetworkResourceGroupName != "" {
 			nrg = installConfig.Config.Azure.NetworkResourceGroupName
@@ -252,38 +265,10 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		vpcSubnets := installConfig.Config.PowerVS.VPCSubnets
 		if vpc == "" {
 			vpc = fmt.Sprintf("vpc-%s", clusterID.InfraID)
-		} else {
-			existingSubnets, err := installConfig.PowerVS.GetVPCSubnets(context.TODO(), vpc)
-			if err != nil {
-				return err
-			}
-
-			// cluster-api-provider-ibm requires any existing VPC subnet to be specified in the cluster
-			// manifest and as such we need to also specify these in the cloudproviderconfig.
-			// @TODO: Deprecate platform.powervs.vpcSubnets?
-			for _, subnet := range existingSubnets {
-				vpcSubnets = append(vpcSubnets, *subnet.Name)
-			}
 		}
 
 		if len(vpcSubnets) == 0 {
-			if capiutils.IsEnabled(installConfig) {
-				vpcZones, err := powervstypes.AvailableVPCZones(installConfig.Config.PowerVS.Region)
-				if err != nil {
-					return err
-				}
-
-				// The PowerVS CAPI provider generates three subnets.  One for
-				// each of the endpoint.
-				// @TODO the provider should export a function which gives us
-				// an array
-				for _, zone := range vpcZones {
-					vpcSubnets = append(vpcSubnets,
-						fmt.Sprintf("%s-vpcsubnet-%s", clusterID.InfraID, zone))
-				}
-			} else {
-				vpcSubnets = append(vpcSubnets, fmt.Sprintf("vpc-subnet-%s", clusterID.InfraID))
-			}
+			vpcSubnets = append(vpcSubnets, fmt.Sprintf("vpc-subnet-%s", clusterID.InfraID))
 		}
 
 		var (

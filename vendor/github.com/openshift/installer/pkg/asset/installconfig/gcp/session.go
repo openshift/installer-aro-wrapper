@@ -25,10 +25,6 @@ var (
 // Session is an object representing session for GCP API.
 type Session struct {
 	Credentials *googleoauth.Credentials
-
-	// Path contains the filepath for provided credentials. When authenticating with
-	// Default Application Credentials, Path will be empty.
-	Path string
 }
 
 // GetSession returns a GCP session by using credentials found in default locations in order:
@@ -39,18 +35,17 @@ type Session struct {
 // gcloud cli defaults
 // and, if no creds are found, asks for them and stores them on disk in a config file
 func GetSession(ctx context.Context) (*Session, error) {
-	creds, path, err := loadCredentials(ctx)
+	creds, err := loadCredentials(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load credentials")
 	}
 
 	return &Session{
 		Credentials: creds,
-		Path:        path,
 	}, nil
 }
 
-func loadCredentials(ctx context.Context) (*googleoauth.Credentials, string, error) {
+func loadCredentials(ctx context.Context) (*googleoauth.Credentials, error) {
 	if len(credLoaders) == 0 {
 		for _, authEnv := range authEnvs {
 			credLoaders = append(credLoaders, &envLoader{env: authEnv})
@@ -71,31 +66,30 @@ func loadCredentials(ctx context.Context) (*googleoauth.Credentials, string, err
 		onceLoggers[loader].Do(func() {
 			logrus.Infof("Credentials loaded from %s", loader)
 		})
-		return creds, loader.Content(), nil
+		return creds, nil
 	}
 	return getCredentials(ctx)
 }
 
-func getCredentials(ctx context.Context) (*googleoauth.Credentials, string, error) {
+func getCredentials(ctx context.Context) (*googleoauth.Credentials, error) {
 	creds, err := (&userLoader{}).Load(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	filePath := defaultAuthFilePath
 	logrus.Infof("Saving the credentials to %q", filePath)
 	if err := os.MkdirAll(filepath.Dir(filePath), 0700); err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	if err := os.WriteFile(filePath, creds.JSON, 0o600); err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	return creds, filePath, nil
+	return creds, nil
 }
 
 type credLoader interface {
 	Load(context.Context) (*googleoauth.Credentials, error)
-	Content() string
 }
 
 type envLoader struct {
@@ -121,14 +115,6 @@ func (e *envLoader) String() string {
 	return strings.Join(path, ", ")
 }
 
-func (e *envLoader) Content() string {
-	envValue, found := os.LookupEnv(e.env)
-	if !found {
-		return ""
-	}
-	return envValue
-}
-
 type fileOrContentLoader struct {
 	pathOrContent string
 	delegate      credLoader
@@ -136,10 +122,12 @@ type fileOrContentLoader struct {
 
 func (fc *fileOrContentLoader) Load(ctx context.Context) (*googleoauth.Credentials, error) {
 	// if this is a path and we can stat it, assume it's ok
-	if _, err := os.Stat(fc.pathOrContent); err != nil {
-		return nil, fmt.Errorf("supplied value should be the path to a GCP credentials file: %w", err)
+	if _, err := os.Stat(fc.pathOrContent); err == nil {
+		fc.delegate = &fileLoader{path: fc.pathOrContent}
+	} else {
+		fc.delegate = &contentLoader{content: fc.pathOrContent}
 	}
-	fc.delegate = &fileLoader{path: fc.pathOrContent}
+
 	return fc.delegate.Load(ctx)
 }
 
@@ -148,13 +136,6 @@ func (fc *fileOrContentLoader) String() string {
 		return fmt.Sprintf("%s", fc.delegate)
 	}
 	return "file or content"
-}
-
-func (fc *fileOrContentLoader) Content() string {
-	if _, err := os.Stat(fc.pathOrContent); err != nil {
-		return ""
-	}
-	return fc.pathOrContent
 }
 
 type fileLoader struct {
@@ -173,10 +154,6 @@ func (f *fileLoader) String() string {
 	return fmt.Sprintf("file %q", f.path)
 }
 
-func (f *fileLoader) Content() string {
-	return f.path
-}
-
 type contentLoader struct {
 	content string
 }
@@ -189,10 +166,6 @@ func (f *contentLoader) String() string {
 	return "content <redacted>"
 }
 
-func (f *contentLoader) Content() string {
-	return ""
-}
-
 type cliLoader struct{}
 
 func (c *cliLoader) Load(ctx context.Context) (*googleoauth.Credentials, error) {
@@ -203,10 +176,6 @@ func (c *cliLoader) String() string {
 	return "gcloud CLI defaults"
 }
 
-func (c *cliLoader) Content() string {
-	return ""
-}
-
 type userLoader struct{}
 
 func (u *userLoader) Load(ctx context.Context) (*googleoauth.Credentials, error) {
@@ -214,7 +183,7 @@ func (u *userLoader) Load(ctx context.Context) (*googleoauth.Credentials, error)
 	err := survey.Ask([]*survey.Question{
 		{
 			Prompt: &survey.Multiline{
-				Message: "Service Account (absolute path to file)",
+				Message: "Service Account (absolute path to file or JSON content)",
 				// Due to a bug in survey pkg, help message is not rendered
 				Help: "The location to file that contains the service account in JSON, or the service account in JSON format",
 			},
@@ -224,9 +193,5 @@ func (u *userLoader) Load(ctx context.Context) (*googleoauth.Credentials, error)
 		return nil, err
 	}
 	content = strings.TrimSpace(content)
-	return (&fileLoader{path: content}).Load(ctx)
-}
-
-func (u *userLoader) Content() string {
-	return defaultAuthFilePath
+	return (&fileOrContentLoader{pathOrContent: content}).Load(ctx)
 }

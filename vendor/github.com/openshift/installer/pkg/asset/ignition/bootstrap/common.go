@@ -22,7 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vincent-petithory/dataurl"
 	utilsnet "k8s.io/utils/net"
-	"k8s.io/utils/ptr"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/data"
@@ -40,7 +39,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
-	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 )
 
@@ -113,7 +111,6 @@ func (a *Common) Dependencies() []asset.Asset {
 		&baremetal.IronicCreds{},
 		&CVOIgnore{},
 		&installconfig.InstallConfig{},
-		&installconfig.ClusterID{},
 		&kubeconfig.AdminInternalClient{},
 		&kubeconfig.Kubelet{},
 		&kubeconfig.LoopbackClient{},
@@ -161,7 +158,6 @@ func (a *Common) Dependencies() []asset.Asset {
 		&tls.MCSCertKey{},
 		&tls.RootCA{},
 		&tls.ServiceAccountKeyPair{},
-		&tls.IronicTLSCert{},
 		&releaseimage.Image{},
 		new(rhcos.Image),
 	}
@@ -171,8 +167,7 @@ func (a *Common) Dependencies() []asset.Asset {
 func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootstrapTemplateData) error {
 	installConfig := &installconfig.InstallConfig{}
 	bootstrapSSHKeyPair := &tls.BootstrapSSHKeyPair{}
-	clusterID := &installconfig.ClusterID{}
-	dependencies.Get(installConfig, bootstrapSSHKeyPair, clusterID)
+	dependencies.Get(installConfig, bootstrapSSHKeyPair)
 
 	a.Config = &igntypes.Config{
 		Ignition: igntypes.Ignition{
@@ -186,7 +181,7 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 	if err := AddSystemdUnits(a.Config, "bootstrap/systemd/common/units", templateData, commonEnabledServices); err != nil {
 		return err
 	}
-	if !templateData.IsOKD {
+	if !(templateData.IsOKD && templateData.Invoker == "agent-installer") {
 		if err := AddSystemdUnits(a.Config, "bootstrap/systemd/rhcos/units", templateData, rhcosEnabledServices); err != nil {
 			return err
 		}
@@ -222,24 +217,6 @@ func (a *Common) generateConfig(dependencies asset.Parents, templateData *bootst
 			igntypes.SSHAuthorizedKey(string(bootstrapSSHKeyPair.Public())),
 		}},
 	)
-
-	if platform == nutanixtypes.Name {
-		// Inserts the file "/etc/hostname" with the bootstrap machine name to the bootstrap ignition data
-		hostname := fmt.Sprintf("%s-bootstrap", clusterID.InfraID)
-		hostnameFile := igntypes.File{
-			Node: igntypes.Node{
-				Path:      "/etc/hostname",
-				Overwrite: ptr.To(true),
-			},
-			FileEmbedded1: igntypes.FileEmbedded1{
-				Mode: ptr.To(420),
-				Contents: igntypes.Resource{
-					Source: ptr.To(dataurl.EncodeBytes([]byte(hostname))),
-				},
-			},
-		}
-		a.Config.Storage.Files = append(a.Config.Storage.Files, hostnameFile)
-	}
 
 	return nil
 }
@@ -306,14 +283,7 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 
 	switch installConfig.Config.Platform.Name() {
 	case baremetaltypes.Name:
-		platformData.BareMetal = baremetal.GetTemplateData(
-			installConfig.Config.Platform.BareMetal,
-			installConfig.Config.MachineNetwork,
-			*installConfig.Config.ControlPlane.Replicas,
-			ironicCreds.Username,
-			ironicCreds.Password,
-			dependencies,
-		)
+		platformData.BareMetal = baremetal.GetTemplateData(installConfig.Config.Platform.BareMetal, installConfig.Config.MachineNetwork, ironicCreds.Username, ironicCreds.Password)
 	case vspheretypes.Name:
 		platformData.VSphere = vsphere.GetTemplateData(installConfig.Config.Platform.VSphere)
 	}
@@ -636,7 +606,6 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 		&tls.MCSCertKey{},
 		&tls.ServiceAccountKeyPair{},
 		&tls.JournalCertKey{},
-		&tls.IronicTLSCert{},
 	} {
 		dependencies.Get(asset)
 

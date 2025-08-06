@@ -14,10 +14,6 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.availableReplicas,selectorpath=.status.selector
-// +kubebuilder:resource:path=ingresscontrollers,scope=Namespaced
-// +openshift:api-approved.openshift.io=https://github.com/openshift/api/pull/616
-// +openshift:capability=Ingress
-// +openshift:file-pattern=cvoRunLevel=0000_50,operatorName=ingress,operatorOrdering=00
 
 // IngressController describes a managed ingress controller for the cluster. The
 // controller can service OpenShift Route and Kubernetes Ingress resources.
@@ -1885,6 +1881,7 @@ type IngressControllerStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // IngressControllerList contains a list of IngressControllers.
 //

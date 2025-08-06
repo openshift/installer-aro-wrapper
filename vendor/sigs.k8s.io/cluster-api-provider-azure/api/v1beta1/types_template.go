@@ -21,23 +21,6 @@ import (
 	"k8s.io/utils/net"
 )
 
-// AzureManagedControlPlaneTemplateResourceSpec specifies an Azure managed control plane template resource.
-type AzureManagedControlPlaneTemplateResourceSpec struct {
-	AzureManagedControlPlaneClassSpec `json:",inline"`
-}
-
-// AzureManagedControlPlaneTemplateMachineTemplate is only used to fulfill the CAPI contract which expects a
-// MachineTemplate field for any controlplane ref in a topology.
-type AzureManagedControlPlaneTemplateMachineTemplate struct{}
-
-// AzureManagedMachinePoolTemplateResourceSpec specifies an Azure managed control plane template resource.
-type AzureManagedMachinePoolTemplateResourceSpec struct {
-	AzureManagedMachinePoolClassSpec `json:",inline"`
-}
-
-// AzureManagedClusterTemplateResourceSpec specifies an Azure managed cluster template resource.
-type AzureManagedClusterTemplateResourceSpec struct{}
-
 // AzureClusterTemplateResourceSpec specifies an Azure cluster template resource.
 type AzureClusterTemplateResourceSpec struct {
 	AzureClusterClassSpec `json:",inline"`
@@ -77,20 +60,20 @@ type NetworkTemplateSpec struct {
 	ControlPlaneOutboundLB *LoadBalancerClassSpec `json:"controlPlaneOutboundLB,omitempty"`
 }
 
-// GetSubnetTemplate returns the subnet template based on the subnet role.
-func (n *NetworkTemplateSpec) GetSubnetTemplate(role SubnetRole) (SubnetTemplateSpec, error) {
+// GetControlPlaneSubnetTemplate returns the cluster control plane subnet template.
+func (n *NetworkTemplateSpec) GetControlPlaneSubnetTemplate() (SubnetTemplateSpec, error) {
 	for _, sn := range n.Subnets {
-		if sn.Role == role {
+		if sn.Role == SubnetControlPlane {
 			return sn, nil
 		}
 	}
-	return SubnetTemplateSpec{}, errors.Errorf("no subnet template found with role %s", role)
+	return SubnetTemplateSpec{}, errors.Errorf("no subnet template found with role %s", SubnetControlPlane)
 }
 
-// UpdateSubnetTemplate updates the subnet template based on subnet role.
-func (n *NetworkTemplateSpec) UpdateSubnetTemplate(subnet SubnetTemplateSpec, role SubnetRole) {
+// UpdateControlPlaneSubnetTemplate updates the cluster control plane subnet template.
+func (n *NetworkTemplateSpec) UpdateControlPlaneSubnetTemplate(subnet SubnetTemplateSpec) {
 	for i, sn := range n.Subnets {
-		if sn.Role == role {
+		if sn.Role == SubnetControlPlane {
 			n.Subnets[i] = subnet
 		}
 	}

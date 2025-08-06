@@ -298,16 +298,15 @@ func ConfigMasters(machines []machineapi.Machine, controlPlane *machinev1.Contro
 }
 
 func getNetworkInfo(platform *azure.Platform, clusterID, role string) (string, string, string, error) {
-	networkResourceGroupName := platform.NetworkResourceGroupName
 	if platform.VirtualNetwork == "" {
-		networkResourceGroupName = platform.ClusterResourceGroupName(clusterID)
+		return platform.ClusterResourceGroupName(clusterID), fmt.Sprintf("%s-vnet", clusterID), fmt.Sprintf("%s-%s-subnet", clusterID, role), nil
 	}
 
 	switch role {
 	case "worker":
-		return networkResourceGroupName, platform.VirtualNetworkName(clusterID), platform.ComputeSubnetName(clusterID), nil
+		return platform.NetworkResourceGroupName, platform.VirtualNetwork, platform.ComputeSubnet, nil
 	case "master":
-		return networkResourceGroupName, platform.VirtualNetworkName(clusterID), platform.ControlPlaneSubnetName(clusterID), nil
+		return platform.NetworkResourceGroupName, platform.VirtualNetwork, platform.ControlPlaneSubnet, nil
 	default:
 		return "", "", "", fmt.Errorf("unrecognized machine role %s", role)
 	}

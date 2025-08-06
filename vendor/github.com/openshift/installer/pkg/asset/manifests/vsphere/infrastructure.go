@@ -5,7 +5,6 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/types"
 )
 
 // GetInfraPlatformSpec constructs VSpherePlatformSpec for the infrastructure spec
@@ -46,10 +45,5 @@ func GetInfraPlatformSpec(ic *installconfig.InstallConfig, clusterID string) *co
 			})
 		}
 	}
-
-	platformSpec.APIServerInternalIPs = types.StringsToIPs(icPlatformSpec.APIVIPs)
-	platformSpec.IngressIPs = types.StringsToIPs(icPlatformSpec.IngressVIPs)
-	platformSpec.MachineNetworks = types.MachineNetworksToCIDRs(ic.Config.MachineNetwork)
-
 	return &platformSpec
 }

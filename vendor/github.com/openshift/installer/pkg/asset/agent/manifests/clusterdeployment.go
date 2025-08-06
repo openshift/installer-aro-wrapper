@@ -10,11 +10,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	hiveext "github.com/openshift/assisted-service/api/hiveextension/v1beta1"
 	hivev1 "github.com/openshift/hive/apis/hive/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/agent"
-	"github.com/openshift/installer/pkg/asset/agent/workflow"
 )
 
 var (
@@ -38,41 +36,34 @@ func (*ClusterDeployment) Name() string {
 // the asset.
 func (*ClusterDeployment) Dependencies() []asset.Asset {
 	return []asset.Asset{
-		&workflow.AgentWorkflow{},
 		&agent.OptionalInstallConfig{},
 	}
 }
 
 // Generate generates the ClusterDeployment manifest.
 func (cd *ClusterDeployment) Generate(dependencies asset.Parents) error {
-	agentWorkflow := &workflow.AgentWorkflow{}
 	installConfig := &agent.OptionalInstallConfig{}
-	dependencies.Get(agentWorkflow, installConfig)
-
-	// This manifest is not required for AddNodes workflow
-	if agentWorkflow.Workflow == workflow.AgentWorkflowTypeAddNodes {
-		return nil
-	}
+	dependencies.Get(installConfig)
 
 	if installConfig.Config != nil {
 		clusterDeployment := &hivev1.ClusterDeployment{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ClusterDeployment",
-				APIVersion: hivev1.SchemeGroupVersion.String(),
+				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      getClusterDeploymentName(installConfig),
-				Namespace: installConfig.ClusterNamespace(),
+				Namespace: getObjectMetaNamespace(installConfig),
 			},
 			Spec: hivev1.ClusterDeploymentSpec{
 				ClusterName: getClusterDeploymentName(installConfig),
 				BaseDomain:  installConfig.Config.BaseDomain,
 				PullSecretRef: &corev1.LocalObjectReference{
-					Name: getPullSecretName(installConfig.ClusterName()),
+					Name: getPullSecretName(installConfig),
 				},
 				ClusterInstallRef: &hivev1.ClusterInstallLocalReference{
-					Group:   hiveext.Group,
-					Version: hiveext.Version,
+					Group:   "extensions.hive.openshift.io",
+					Version: "v1beta1",
 					Kind:    "AgentClusterInstall",
 					Name:    getAgentClusterInstallName(installConfig),
 				},

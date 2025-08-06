@@ -111,14 +111,10 @@ func Machines(clusterID string, region string, subnets map[string]string, pool *
 		}
 		if subnet == "" {
 			domain.Subnet.Type = machinev1.AWSFiltersReferenceType
-			domain.Subnet.Filters = &[]machinev1.AWSResourceFilter{
-				{
-					Name: "tag:Name",
-					Values: []string{
-						fmt.Sprintf("%s-subnet-private-%s", clusterID, zone),
-					},
-				},
-			}
+			domain.Subnet.Filters = &[]machinev1.AWSResourceFilter{{
+				Name:   "tag:Name",
+				Values: []string{fmt.Sprintf("%s-private-%s", clusterID, zone)},
+			}}
 		} else {
 			domain.Subnet.Type = machinev1.AWSIDReferenceType
 			domain.Subnet.ID = pointer.String(subnet)
@@ -182,31 +178,12 @@ func provider(in *machineProviderInput) (*machineapi.AWSMachineProviderConfig, e
 		return nil, errors.Wrap(err, "failed to create machineapi.TagSpecifications from UserTags")
 	}
 
-	sgFilters := []machineapi.Filter{
-		{
+	securityGroups := []machineapi.AWSResourceReference{{
+		Filters: []machineapi.Filter{{
 			Name:   "tag:Name",
-			Values: []string{fmt.Sprintf("%s-node", in.clusterID)},
-		},
-		{
-			Name:   "tag:Name",
-			Values: []string{fmt.Sprintf("%s-lb", in.clusterID)},
-		},
-	}
-
-	if in.role == "master" {
-		cpFilter := machineapi.Filter{
-			Name:   "tag:Name",
-			Values: []string{fmt.Sprintf("%s-controlplane", in.clusterID)},
-		}
-		sgFilters = append(sgFilters, cpFilter)
-	}
-
-	securityGroups := []machineapi.AWSResourceReference{}
-	for _, filter := range sgFilters {
-		securityGroups = append(securityGroups, machineapi.AWSResourceReference{
-			Filters: []machineapi.Filter{filter},
-		})
-	}
+			Values: []string{fmt.Sprintf("%s-%s-sg", in.clusterID, in.role)},
+		}},
+	}}
 	securityGroupsIn := []machineapi.AWSResourceReference{}
 	for _, sgID := range in.securityGroupIDs {
 		sgID := sgID
@@ -246,23 +223,17 @@ func provider(in *machineProviderInput) (*machineapi.AWSMachineProviderConfig, e
 		SecurityGroups:    securityGroups,
 	}
 
-	visibility := "private"
+	subnetName := fmt.Sprintf("%s-private-%s", in.clusterID, in.zone)
 	if in.publicSubnet {
 		config.PublicIP = pointer.Bool(in.publicSubnet)
-		visibility = "public"
-	}
-
-	subnetFilters := []machineapi.Filter{
-		{
-			Name: "tag:Name",
-			Values: []string{
-				fmt.Sprintf("%s-subnet-%s-%s", in.clusterID, visibility, in.zone),
-			},
-		},
+		subnetName = fmt.Sprintf("%s-public-%s", in.clusterID, in.zone)
 	}
 
 	if in.subnet == "" {
-		config.Subnet.Filters = subnetFilters
+		config.Subnet.Filters = []machineapi.Filter{{
+			Name:   "tag:Name",
+			Values: []string{subnetName},
+		}}
 	} else {
 		config.Subnet.ID = pointer.String(in.subnet)
 	}

@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
-	features "github.com/openshift/api/features"
 	"github.com/openshift/installer/pkg/ipnet"
+	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
@@ -17,6 +16,7 @@ import (
 	"github.com/openshift/installer/pkg/types/featuregates"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
+	"github.com/openshift/installer/pkg/types/libvirt"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -37,9 +37,9 @@ var (
 	// platform names in alphabetical order. This is the list of
 	// platforms presented to the user in the interactive wizard.
 	PlatformNames = []string{
+		alibabacloud.Name,
 		aws.Name,
 		azure.Name,
-		baremetal.Name,
 		gcp.Name,
 		ibmcloud.Name,
 		nutanix.Name,
@@ -51,6 +51,7 @@ var (
 	// hidden-but-supported platform names. This list isn't presented
 	// to the user in the interactive wizard.
 	HiddenPlatformNames = []string{
+		baremetal.Name,
 		external.Name,
 		none.Name,
 	}
@@ -193,6 +194,7 @@ type InstallConfig struct {
 	// AzureStack: "Manual"
 	// GCP: "Mint", "Passthrough", "Manual"
 	// IBMCloud: "Manual"
+	// AlibabaCloud: "Manual"
 	// PowerVS: "Manual"
 	// Nutanix: "Manual"
 	// +optional
@@ -260,6 +262,10 @@ const (
 // Platform is the configuration for the specific platform upon which to perform
 // the installation. Only one of the platform configuration should be set.
 type Platform struct {
+	// AlibabaCloud is the configuration used when installing on Alibaba Cloud.
+	// +optional
+	AlibabaCloud *alibabacloud.Platform `json:"alibabacloud,omitempty"`
+
 	// AWS is the configuration used when installing on AWS.
 	// +optional
 	AWS *aws.Platform `json:"aws,omitempty"`
@@ -279,6 +285,10 @@ type Platform struct {
 	// IBMCloud is the configuration used when installing on IBM Cloud.
 	// +optional
 	IBMCloud *ibmcloud.Platform `json:"ibmcloud,omitempty"`
+
+	// Libvirt is the configuration used when installing on libvirt.
+	// +optional
+	Libvirt *libvirt.Platform `json:"libvirt,omitempty"`
 
 	// None is the empty configuration used when installing on an unsupported
 	// platform.
@@ -332,6 +342,8 @@ func (p *Platform) Name() string {
 	switch {
 	case p == nil:
 		return ""
+	case p.AlibabaCloud != nil:
+		return alibabacloud.Name
 	case p.AWS != nil:
 		return aws.Name
 	case p.Azure != nil:
@@ -342,6 +354,8 @@ func (p *Platform) Name() string {
 		return gcp.Name
 	case p.IBMCloud != nil:
 		return ibmcloud.Name
+	case p.Libvirt != nil:
+		return libvirt.Name
 	case p.None != nil:
 		return none.Name
 	case p.External != nil:
@@ -373,7 +387,8 @@ type Networking struct {
 	// MachineNetwork is the list of IP address pools for machines.
 	// This field replaces MachineCIDR, and if set MachineCIDR must
 	// be empty or match the first entry in the list.
-	// Default is 10.0.0.0/16 for all platforms other than Power VS.
+	// Default is 10.0.0.0/16 for all platforms other than libvirt and Power VS.
+	// For libvirt, the default is 192.168.126.0/24.
 	// For Power VS, the default is 192.168.0.0/24.
 	//
 	// +optional
@@ -541,52 +556,7 @@ func (c *InstallConfig) EnabledFeatureGates() featuregates.FeatureGate {
 		customFS = featuregates.GenerateCustomFeatures(c.FeatureGates)
 	}
 
-	clusterProfile := GetClusterProfileName()
-	featureSets, ok := features.AllFeatureSets()[clusterProfile]
-	if !ok {
-		logrus.Warnf("no feature sets for cluster profile %q", clusterProfile)
-	}
-	fg := featuregates.FeatureGateFromFeatureSets(featureSets, c.FeatureSet, customFS)
+	fg := featuregates.FeatureGateFromFeatureSets(configv1.FeatureSets, c.FeatureSet, customFS)
 
 	return fg
-}
-
-// ClusterAPIFeatureGateEnabled checks whether feature gates enabling
-// cluster api installs are enabled.
-func ClusterAPIFeatureGateEnabled(platform string, fgs featuregates.FeatureGate) bool {
-	// FeatureGateClusterAPIInstall enables for all platforms.
-	if fgs.Enabled(features.FeatureGateClusterAPIInstall) {
-		return true
-	}
-
-	// Check if CAPI install is enabled for individual platforms.
-	switch platform {
-	case aws.Name, nutanix.Name, openstack.Name, vsphere.Name:
-		return true
-	case azure.StackTerraformName, azure.StackCloud.Name():
-		return false
-	case azure.Name:
-		return fgs.Enabled(features.FeatureGateClusterAPIInstallAzure)
-	case gcp.Name:
-		return fgs.Enabled(features.FeatureGateClusterAPIInstallGCP)
-	case ibmcloud.Name:
-		return fgs.Enabled(features.FeatureGateClusterAPIInstallIBMCloud)
-	case powervs.Name:
-		return fgs.Enabled(features.FeatureGateClusterAPIInstallPowerVS)
-	default:
-		return false
-	}
-}
-
-// PublicAPI indicates whether the API load balancer should be public
-// by inspecting the cluster and operator publishing strategies.
-func (c *InstallConfig) PublicAPI() bool {
-	if c.Publish == ExternalPublishingStrategy {
-		return true
-	}
-
-	if op := c.OperatorPublishingStrategy; op != nil && strings.EqualFold(op.APIServer, "External") {
-		return true
-	}
-	return false
 }

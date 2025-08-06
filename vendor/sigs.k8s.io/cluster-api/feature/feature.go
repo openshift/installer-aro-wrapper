@@ -32,7 +32,6 @@ const (
 	// MachinePool is a feature gate for MachinePool functionality.
 	//
 	// alpha: v0.3
-	// beta: v1.7
 	MachinePool featuregate.Feature = "MachinePool"
 
 	// ClusterResourceSet is a feature gate for the ClusterResourceSet functionality.
@@ -71,7 +70,7 @@ func init() {
 // To add a new feature, define a key for it above and add it here.
 var defaultClusterAPIFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	// Every feature should be initiated here:
-	MachinePool:                    {Default: true, PreRelease: featuregate.Beta},
+	MachinePool:                    {Default: false, PreRelease: featuregate.Alpha},
 	ClusterResourceSet:             {Default: true, PreRelease: featuregate.Beta},
 	ClusterTopology:                {Default: false, PreRelease: featuregate.Alpha},
 	KubeadmBootstrapFormatIgnition: {Default: false, PreRelease: featuregate.Alpha},

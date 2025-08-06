@@ -10,7 +10,6 @@ import (
 
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	gcpic "github.com/openshift/installer/pkg/asset/installconfig/gcp"
-	gcpconsts "github.com/openshift/installer/pkg/constants/gcp"
 )
 
 const (
@@ -28,12 +27,10 @@ func NewStorageClient(ctx context.Context) (*storage.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session while creating gcp storage client: %w", err)
 	}
-
 	client, err := storage.NewClient(ctx, option.WithCredentials(ssn.Credentials))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
-
 	return client, nil
 }
 
@@ -42,11 +39,10 @@ func NewStorageClient(ctx context.Context) (*storage.Client, error) {
 // the data stored inside the object can be set at a later time.
 func CreateStorage(ctx context.Context, ic *installconfig.InstallConfig, bucketHandle *storage.BucketHandle, clusterID string) error {
 	labels := map[string]string{}
-	labels[fmt.Sprintf(gcpconsts.ClusterIDLabelFmt, clusterID)] = "owned"
+	labels[fmt.Sprintf("kubernetes-io-cluster-%s", clusterID)] = "owned"
 	for _, label := range ic.Config.GCP.UserLabels {
 		labels[label.Key] = label.Value
 	}
-
 	bucketAttrs := storage.BucketAttrs{
 		UniformBucketLevelAccess: storage.UniformBucketLevelAccess{
 			Enabled: true,
@@ -54,10 +50,8 @@ func CreateStorage(ctx context.Context, ic *installconfig.InstallConfig, bucketH
 		Location: ic.Config.GCP.Region,
 		Labels:   labels,
 	}
-
 	ctx, cancel := context.WithTimeout(ctx, time.Minute*1)
 	defer cancel()
-
 	if err := bucketHandle.Create(ctx, ic.Config.GCP.ProjectID, &bucketAttrs); err != nil {
 		return fmt.Errorf("failed to create bucket: %w", err)
 	}

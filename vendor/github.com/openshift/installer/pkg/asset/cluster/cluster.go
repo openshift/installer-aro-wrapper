@@ -3,7 +3,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -14,18 +13,9 @@ import (
 	"github.com/openshift/installer/pkg/asset/cluster/aws"
 	"github.com/openshift/installer/pkg/asset/cluster/azure"
 	"github.com/openshift/installer/pkg/asset/cluster/openstack"
-	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
-	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
-	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/kubeconfig"
-	"github.com/openshift/installer/pkg/asset/machines"
-	"github.com/openshift/installer/pkg/asset/manifests"
-	capimanifests "github.com/openshift/installer/pkg/asset/manifests/clusterapi"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/quota"
-	"github.com/openshift/installer/pkg/asset/rhcos"
-	"github.com/openshift/installer/pkg/clusterapi"
 	infra "github.com/openshift/installer/pkg/infrastructure/platform"
 	typesaws "github.com/openshift/installer/pkg/types/aws"
 	typesazure "github.com/openshift/installer/pkg/types/azure"
@@ -44,7 +34,6 @@ type Cluster struct {
 }
 
 var _ asset.WritableAsset = (*Cluster)(nil)
-var _ asset.Generator = (*Cluster)(nil)
 
 // Name returns the human-friendly name of the asset.
 func (c *Cluster) Name() string {
@@ -57,40 +46,29 @@ func (c *Cluster) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&installconfig.ClusterID{},
 		&installconfig.InstallConfig{},
-		// PlatformCredsCheck, PlatformPermsCheck, PlatformProvisionCheck, and VCenterContexts.
+		// PlatformCredsCheck, PlatformPermsCheck and PlatformProvisionCheck
 		// perform validations & check perms required to provision infrastructure.
 		// We do not actually use them in this asset directly, hence
 		// they are put in the dependencies but not fetched in Generate.
 		&installconfig.PlatformCredsCheck{},
 		&installconfig.PlatformPermsCheck{},
 		&installconfig.PlatformProvisionCheck{},
-		new(rhcos.Image),
 		&quota.PlatformQuotaCheck{},
-		&tfvars.TerraformVariables{},
+		&TerraformVariables{},
 		&password.KubeadminPassword{},
-		&manifests.Manifests{},
-		&capimanifests.Cluster{},
-		&kubeconfig.AdminClient{},
-		&bootstrap.Bootstrap{},
-		&machine.Master{},
-		&machines.Worker{},
-		&machines.ClusterAPI{},
-		new(rhcos.Image),
-		&manifests.Manifests{},
 	}
 }
 
 // Generate launches the cluster and generates the terraform state file on disk.
-func (c *Cluster) GenerateWithContext(ctx context.Context, parents asset.Parents) (err error) {
+func (c *Cluster) Generate(parents asset.Parents) (err error) {
 	if InstallDir == "" {
 		logrus.Fatalf("InstallDir has not been set for the %q asset", c.Name())
 	}
 
 	clusterID := &installconfig.ClusterID{}
 	installConfig := &installconfig.InstallConfig{}
-	rhcosImage := new(rhcos.Image)
-	terraformVariables := &tfvars.TerraformVariables{}
-	parents.Get(clusterID, installConfig, terraformVariables, rhcosImage)
+	terraformVariables := &TerraformVariables{}
+	parents.Get(clusterID, installConfig, terraformVariables)
 
 	if fs := installConfig.Config.FeatureSet; strings.HasSuffix(string(fs), "NoUpgrade") {
 		logrus.Warnf("FeatureSet %q is enabled. This FeatureSet does not allow upgrades and may affect the supportability of the cluster.", fs)
@@ -110,8 +88,6 @@ func (c *Cluster) GenerateWithContext(ctx context.Context, parents asset.Parents
 		platform = typesazure.StackTerraformName
 	}
 
-	// TODO(padillon): determine whether CAPI handles tagging shared subnets, in which case we should be able
-	// to encapsulate these into the terraform package.
 	logrus.Infof("Creating infrastructure resources...")
 	switch platform {
 	case typesaws.Name:
@@ -123,23 +99,21 @@ func (c *Cluster) GenerateWithContext(ctx context.Context, parents asset.Parents
 			return err
 		}
 	case typesopenstack.Name:
-		var tfvarsFile *asset.File
-		for _, f := range terraformVariables.Files() {
-			if f.Filename == tfvars.TfPlatformVarsFileName {
-				tfvarsFile = f
-				break
-			}
-		}
-		if err := openstack.PreTerraform(context.TODO(), tfvarsFile, installConfig, clusterID, rhcosImage); err != nil {
+		if err := openstack.PreTerraform(); err != nil {
 			return err
 		}
+	}
+
+	tfvarsFiles := []*asset.File{}
+	for _, file := range terraformVariables.Files() {
+		tfvarsFiles = append(tfvarsFiles, file)
 	}
 
 	provider, err := infra.ProviderForPlatform(platform, installConfig.Config.EnabledFeatureGates())
 	if err != nil {
 		return fmt.Errorf("error getting infrastructure provider: %w", err)
 	}
-	files, err := provider.Provision(ctx, InstallDir, parents)
+	files, err := provider.Provision(InstallDir, tfvarsFiles)
 	if files != nil {
 		c.FileList = append(c.FileList, files...) // append state files even in case of failure
 	}
@@ -163,26 +137,8 @@ func (c *Cluster) Load(f asset.FileFetcher) (found bool, err error) {
 		return true, err
 	}
 	if len(matches) != 0 {
-		return true, fmt.Errorf("terraform state files already exist.  There may already be a running cluster")
+		return true, errors.Errorf("terraform state files alread exist.  There may already be a running cluster")
 	}
 
-	matches, err = filepath.Glob(filepath.Join(InstallDir, clusterapi.ArtifactsDir, "envtest.kubeconfig"))
-	if err != nil {
-		return true, fmt.Errorf("error checking for existence of envtest.kubeconfig: %w", err)
-	}
-
-	// Cluster-API based installs can be re-entered, but this is an experimental feature
-	// that should be opted into and only used for testing and development.
-	reentrant := strings.EqualFold(os.Getenv("OPENSHIFT_INSTALL_REENTRANT"), "true")
-
-	if !reentrant && len(matches) != 0 {
-		return true, fmt.Errorf("local infrastructure provisioning artifacts already exist. There may already be a running cluster")
-	}
 	return false, nil
-}
-
-// Generate is implemented so the Cluster Asset maintains compatibility
-// with the Asset interface. It should never be called.
-func (c *Cluster) Generate(_ asset.Parents) (err error) {
-	panic("Cluster.Generate was called instead of Cluster.GenerateWithContext")
 }

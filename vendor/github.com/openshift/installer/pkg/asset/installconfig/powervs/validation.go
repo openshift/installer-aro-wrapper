@@ -262,7 +262,7 @@ func ValidateSystemTypeForZone(client API, ic *types.InstallConfig) error {
 	}
 	availableOnes, err := powervstypes.AvailableSysTypes(ic.PowerVS.Region, ic.PowerVS.Zone)
 	if err != nil {
-		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Region)
+		return fmt.Errorf("failed to obtain available SysTypes for: %s", ic.PowerVS.Zone)
 	}
 	requested := ic.ControlPlane.Platform.PowerVS.SysType
 	found := false

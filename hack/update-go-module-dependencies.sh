@@ -25,9 +25,9 @@
 # we also must take care of replacing modules such as  github.com/metal3-io/baremetal-operator
 # with github.com/openshift/baremetal-operator (just an example, there are more).
 
-RELEASE=release-4.15
+RELEASE=release-4.16
 K8S_RELEASE=v0.28.3
-GO_VERSION=1.20
+GO_VERSION=1.24
 
 for x in vendor/github.com/openshift/*; do
 	case $x in

@@ -35,7 +35,7 @@ const (
 )
 
 // Machines returns a list of machines for a machinepool.
-func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string, trunkSupport bool) ([]machineapi.Machine, *machinev1.ControlPlaneMachineSet, error) {
+func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, osImage, role, userDataSecret string) ([]machineapi.Machine, *machinev1.ControlPlaneMachineSet, error) {
 	if configPlatform := config.Platform.Name(); configPlatform != openstack.Name {
 		return nil, nil, fmt.Errorf("non-OpenStack configuration: %q", configPlatform)
 	}
@@ -44,6 +44,11 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 	}
 
 	mpool := pool.Platform.OpenStack
+	platform := config.Platform.OpenStack
+	trunkSupport, err := checkNetworkExtensionAvailability(platform.Cloud, "trunk", nil)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	total := int64(1)
 	if pool.Replicas != nil {
@@ -56,7 +61,7 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 
 		providerSpec, err := generateProviderSpec(
 			clusterID,
-			config.Platform.OpenStack,
+			platform,
 			mpool,
 			osImage,
 			role,
@@ -94,7 +99,7 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 
 	machineSetProviderSpec, err := generateProviderSpec(
 		clusterID,
-		config.Platform.OpenStack,
+		platform,
 		mpool,
 		osImage,
 		role,
@@ -198,6 +203,7 @@ func generateProviderSpec(clusterID string, platform *openstack.Platform, mpool 
 			Subnets: []machinev1alpha1.SubnetParam{
 				{
 					Filter: machinev1alpha1.SubnetFilter{
+						Name: fmt.Sprintf("%s-nodes", clusterID),
 						Tags: fmt.Sprintf("openshiftClusterID=%s", clusterID),
 					},
 				},
@@ -374,12 +380,7 @@ func failureDomainsFromSpec(mpool openstack.MachinePool) []machinev1.OpenStackFa
 	return failureDomains
 }
 
-// CheckNetworkExtensionAvailability interrogates the OpenStack API to validate
-// the availability of a given Neutron extension.
-// The `opts` parameter is provided for external consumers needing to configure
-// the client e.g. with custom certs. If unspecified (nil), a default client is
-// built based on the specified `cloud`.
-func CheckNetworkExtensionAvailability(cloud, alias string, opts *clientconfig.ClientOpts) (bool, error) {
+func checkNetworkExtensionAvailability(cloud, alias string, opts *clientconfig.ClientOpts) (bool, error) {
 	if opts == nil {
 		opts = openstackdefaults.DefaultClientOpts(cloud)
 	}

@@ -15,9 +15,8 @@ import (
 // Zone represents a DNS Zone
 type Zone struct {
 	Name            string
-	InstanceCRN     string
+	CISInstanceCRN  string
 	ResourceGroupID string
-	Publish         types.PublishingStrategy
 }
 
 // GetDNSZone returns a DNS Zone chosen by survey.
@@ -29,29 +28,23 @@ func GetDNSZone() (*Zone, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	var options []string
-	var optionToZoneMap = make(map[string]*Zone, 10)
-	isInternal := ""
-	strategies := []types.PublishingStrategy{types.ExternalPublishingStrategy, types.InternalPublishingStrategy}
-	for _, s := range strategies {
-		zones, err := client.GetDNSZones(ctx, s)
-		if err != nil {
-			return nil, fmt.Errorf("could not retrieve base domains: %w", err)
-		}
+	// Default to offering only external DNS entries, as IBM Cloud does in their provider
+	// TODO(mjturek): Offer private zones (IBM DNS) when deploying a private cluster
+	publicZones, err := client.GetDNSZones(ctx, types.ExternalPublishingStrategy)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve base domains: %w", err)
+	}
 
-		for _, zone := range zones {
-			if s == types.InternalPublishingStrategy {
-				isInternal = " (Internal)"
-			}
-			option := fmt.Sprintf("%s%s", zone.Name, isInternal)
-			optionToZoneMap[option] = &Zone{
-				Name:            zone.Name,
-				InstanceCRN:     zone.InstanceCRN,
-				ResourceGroupID: zone.ResourceGroupID,
-				Publish:         s,
-			}
-			options = append(options, option)
+	var options []string
+	var optionToZoneMap = make(map[string]*Zone, len(publicZones))
+	for _, zone := range publicZones {
+		option := fmt.Sprintf("%s (%s)", zone.Name, zone.InstanceName)
+		optionToZoneMap[option] = &Zone{
+			Name:            zone.Name,
+			CISInstanceCRN:  zone.InstanceCRN,
+			ResourceGroupID: zone.ResourceGroupID,
 		}
+		options = append(options, option)
 	}
 	sort.Strings(options)
 
@@ -65,7 +58,7 @@ func GetDNSZone() (*Zone, error) {
 		survey.WithValidator(func(ans interface{}) error {
 			choice := ans.(core.OptionAnswer).Value
 			i := sort.SearchStrings(options, choice)
-			if i == len(options) || options[i] != choice {
+			if i == len(publicZones) || options[i] != choice {
 				return fmt.Errorf("invalid base domain %q", choice)
 			}
 			return nil

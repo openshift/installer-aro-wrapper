@@ -9,6 +9,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
+	alibabacloudconfig "github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	azconfig "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	bmconfig "github.com/openshift/installer/pkg/asset/installconfig/baremetal"
@@ -19,12 +20,14 @@ import (
 	ovirtconfig "github.com/openshift/installer/pkg/asset/installconfig/ovirt"
 	powervsconfig "github.com/openshift/installer/pkg/asset/installconfig/powervs"
 	vsconfig "github.com/openshift/installer/pkg/asset/installconfig/vsphere"
+	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
+	"github.com/openshift/installer/pkg/types/libvirt"
 	"github.com/openshift/installer/pkg/types/none"
 	"github.com/openshift/installer/pkg/types/nutanix"
 	"github.com/openshift/installer/pkg/types/openstack"
@@ -143,6 +146,15 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
+	case alibabacloud.Name:
+		client, err := ic.AlibabaCloud.Client()
+		if err != nil {
+			return err
+		}
+		err = alibabacloudconfig.ValidateForProvisioning(client, ic.Config, ic.AlibabaCloud)
+		if err != nil {
+			return err
+		}
 	case powervs.Name:
 		client, err := powervsconfig.NewClient()
 		if err != nil {
@@ -178,7 +190,7 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
-	case external.Name, none.Name:
+	case external.Name, libvirt.Name, none.Name:
 		// no special provisioning requirements to check
 	case nutanix.Name:
 		err := nutanixconfig.ValidateForProvisioning(ic.Config)

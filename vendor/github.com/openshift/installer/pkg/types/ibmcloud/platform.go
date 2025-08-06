@@ -18,10 +18,10 @@ const (
 	IBMCloudServiceDNSServicesVar string = "IBMCLOUD_PRIVATE_DNS_API_ENDPOINT"
 
 	// IBMCloudServiceGlobalSearchVar is the variable name used by the IBM Cloud Terraform Provider to override the Global Search endpoint.
-	IBMCloudServiceGlobalSearchVar string = "IBMCLOUD_GS_API_ENDPOINT" //nolint:gosec // not hardcoded creds
+	IBMCloudServiceGlobalSearchVar string = "IBMCLOUD_GS_API_ENDPOINT"
 
 	// IBMCloudServiceGlobalTaggingVar is the variable name used by the IBM Cloud Terraform Provider to override the Global Tagging endpoint.
-	IBMCloudServiceGlobalTaggingVar string = "IBMCLOUD_GT_API_ENDPOINT" //nolint:gosec // not hardcoded creds
+	IBMCloudServiceGlobalTaggingVar string = "IBMCLOUD_GT_API_ENDPOINT"
 
 	// IBMCloudServiceHyperProtectVar is the variable name used by the IBM Cloud Terraform Provider to override the Hyper Protect endpoint.
 	IBMCloudServiceHyperProtectVar string = "IBMCLOUD_HPCS_API_ENDPOINT"
@@ -30,7 +30,7 @@ const (
 	IBMCloudServiceIAMVar string = "IBMCLOUD_IAM_API_ENDPOINT"
 
 	// IBMCloudServiceKeyProtectVar is the variable name used by the IBM Cloud Terraform Provider to override the Key Protect endpoint.
-	IBMCloudServiceKeyProtectVar string = "IBMCLOUD_KP_API_ENDPOINT" //nolint:gosec // not hardcoded creds
+	IBMCloudServiceKeyProtectVar string = "IBMCLOUD_KP_API_ENDPOINT"
 
 	// IBMCloudServiceResourceControllerVar is the variable name used by the IBM Cloud Terraform Provider to override the Resource Controller endpoint.
 	IBMCloudServiceResourceControllerVar string = "IBMCLOUD_RESOURCE_CONTROLLER_API_ENDPOINT"

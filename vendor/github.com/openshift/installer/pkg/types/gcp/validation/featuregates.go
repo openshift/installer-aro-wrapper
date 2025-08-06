@@ -3,7 +3,7 @@ package validation
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	features "github.com/openshift/api/features"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/featuregates"
 	"github.com/openshift/installer/pkg/types/gcp"
@@ -15,17 +15,17 @@ func GatedFeatures(c *types.InstallConfig) []featuregates.GatedInstallConfigFeat
 	g := c.GCP
 	return []featuregates.GatedInstallConfigFeature{
 		{
-			FeatureGateName: features.FeatureGateGCPLabelsTags,
+			FeatureGateName: configv1.FeatureGateGCPLabelsTags,
 			Condition:       len(g.UserLabels) > 0,
 			Field:           field.NewPath("platform", "gcp", "userLabels"),
 		},
 		{
-			FeatureGateName: features.FeatureGateGCPLabelsTags,
+			FeatureGateName: configv1.FeatureGateGCPLabelsTags,
 			Condition:       len(g.UserTags) > 0,
 			Field:           field.NewPath("platform", "gcp", "userTags"),
 		},
 		{
-			FeatureGateName: features.FeatureGateGCPClusterHostedDNS,
+			FeatureGateName: configv1.FeatureGateGCPClusterHostedDNS,
 			Condition:       g.UserProvisionedDNS == gcp.UserProvisionedDNSEnabled,
 			Field:           field.NewPath("platform", "gcp", "userProvisionedDNS"),
 		},

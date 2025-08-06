@@ -29,10 +29,8 @@ var (
 	validMetadataAuthValues = sets.NewString("Required", "Optional")
 )
 
-// AWS has a limit of 16 security groups. See:
 // https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html
-// We set a user limit of 10 and reserve 6 for use by OpenShift.
-const maxUserSecurityGroupsCount = 10
+const maxSecurityGroupsCount = 16
 
 // ValidateMachinePool checks that the specified machine pool is valid.
 func ValidateMachinePool(platform *aws.Platform, p *aws.MachinePool, fldPath *field.Path) field.ErrorList {
@@ -65,8 +63,8 @@ func validateSecurityGroups(platform *aws.Platform, p *aws.MachinePool, fldPath 
 	}
 
 	// The installer also creates a security group: `${var.cluster_id}-master-sg/${var.cluster_id}-worker-sg`
-	if count := len(p.AdditionalSecurityGroupIDs); count > maxUserSecurityGroupsCount {
-		allErrs = append(allErrs, field.TooMany(fldPath, count, maxUserSecurityGroupsCount))
+	if count := len(p.AdditionalSecurityGroupIDs); count > maxSecurityGroupsCount-1 {
+		allErrs = append(allErrs, field.TooMany(fldPath, count, maxSecurityGroupsCount-1))
 	}
 
 	return allErrs
