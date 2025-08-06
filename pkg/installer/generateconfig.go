@@ -105,15 +105,17 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	workerVMNetworkingType := determineVMNetworkingType(workerSKU)
 
-	controlPlaneZones, workerZones, err := determineAvailabilityZones(masterSKU, workerSKU)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
+	var controlPlaneZones, workerZones []string
 
 	// centraluseuap reports one zone, so we need to perform a non-zonal install in that region
 	if strings.EqualFold(m.oc.Location, "centraluseuap") {
 		workerZones = []string{""}
 		controlPlaneZones = []string{""}
+	} else {
+		controlPlaneZones, workerZones, err = determineAvailabilityZones(masterSKU, workerSKU)
+		if err != nil {
+			return nil, nil, errors.WithStack(err)
+		}
 	}
 
 	// Set NetworkType to OVNKubernetes by default
