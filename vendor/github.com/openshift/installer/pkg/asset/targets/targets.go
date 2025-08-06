@@ -3,12 +3,14 @@ package targets
 import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/cluster"
+	"github.com/openshift/installer/pkg/asset/cluster/tfvars"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/kubeconfig"
 	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/manifests"
+	"github.com/openshift/installer/pkg/asset/manifests/clusterapi"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
 	"github.com/openshift/installer/pkg/asset/templates/content/openshift"
@@ -25,8 +27,10 @@ var (
 	Manifests = []asset.WritableAsset{
 		&machines.Master{},
 		&machines.Worker{},
+		&machines.ClusterAPI{},
 		&manifests.Manifests{},
 		&manifests.Openshift{},
+		&clusterapi.Cluster{},
 	}
 
 	// ManifestTemplates are the manifest-templates targeted assets.
@@ -66,7 +70,7 @@ var (
 		&cluster.Metadata{},
 		&machine.MasterIgnitionCustomizations{},
 		&machine.WorkerIgnitionCustomizations{},
-		&cluster.TerraformVariables{},
+		&tfvars.TerraformVariables{},
 		&kubeconfig.AdminClient{},
 		&password.KubeadminPassword{},
 		&tls.JournalCertKey{},

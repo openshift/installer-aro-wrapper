@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	baremetalhost "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -13,12 +14,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1beta1"
 	"sigs.k8s.io/yaml"
 
 	configv1 "github.com/openshift/api/config/v1"
 	machinev1 "github.com/openshift/api/machine/v1"
 	machinev1alpha1 "github.com/openshift/api/machine/v1alpha1"
 	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	baremetalapi "github.com/openshift/cluster-api-provider-baremetal/pkg/apis"
 	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
 	libvirtapi "github.com/openshift/cluster-api-provider-libvirt/pkg/apis"
@@ -28,23 +31,21 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/machines/alibabacloud"
 	"github.com/openshift/installer/pkg/asset/machines/aws"
 	"github.com/openshift/installer/pkg/asset/machines/azure"
 	"github.com/openshift/installer/pkg/asset/machines/baremetal"
 	"github.com/openshift/installer/pkg/asset/machines/gcp"
 	"github.com/openshift/installer/pkg/asset/machines/ibmcloud"
-	"github.com/openshift/installer/pkg/asset/machines/libvirt"
 	"github.com/openshift/installer/pkg/asset/machines/machineconfig"
 	"github.com/openshift/installer/pkg/asset/machines/nutanix"
 	"github.com/openshift/installer/pkg/asset/machines/openstack"
 	"github.com/openshift/installer/pkg/asset/machines/ovirt"
 	"github.com/openshift/installer/pkg/asset/machines/powervs"
 	"github.com/openshift/installer/pkg/asset/machines/vsphere"
+	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	rhcosutils "github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
-	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	awsdefaults "github.com/openshift/installer/pkg/types/aws/defaults"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
@@ -53,7 +54,6 @@ import (
 	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
-	libvirttypes "github.com/openshift/installer/pkg/types/libvirt"
 	nonetypes "github.com/openshift/installer/pkg/types/none"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
@@ -62,7 +62,6 @@ import (
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 	ibmcloudapi "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis"
 	ibmcloudprovider "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
-	mcfgv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
 
 // Master generates the machines for the `master` machine pool.
@@ -71,6 +70,8 @@ type Master struct {
 	MachineConfigFiles     []*asset.File
 	MachineFiles           []*asset.File
 	ControlPlaneMachineSet *asset.File
+	IPClaimFiles           []*asset.File
+	IPAddrFiles            []*asset.File
 
 	// SecretFiles is used by the baremetal platform to register the
 	// credential information for communicating with management
@@ -110,8 +111,14 @@ const (
 	// user-data secret.
 	masterUserDataFileName = "99_openshift-cluster-api_master-user-data-secret.yaml"
 
-	// masterUserDataFileName is the filename used for the control plane machine sets.
+	// controlPlaneMachineSetFileName is the filename used for the control plane machine sets.
 	controlPlaneMachineSetFileName = "99_openshift-machine-api_master-control-plane-machine-set.yaml"
+
+	// ipClaimFileName is the filename used for the ip claims list.
+	ipClaimFileName = "99_openshift-machine-api_claim-%s.yaml"
+
+	// ipAddressFileName is the filename used for the ip addresses list.
+	ipAddressFileName = "99_openshift-machine-api_address-%s.yaml"
 )
 
 var (
@@ -119,6 +126,8 @@ var (
 	networkConfigSecretFileNamePattern = fmt.Sprintf(networkConfigSecretFileName, "*")
 	hostFileNamePattern                = fmt.Sprintf(hostFileName, "*")
 	masterMachineFileNamePattern       = fmt.Sprintf(masterMachineFileName, "*")
+	masterIPClaimFileNamePattern       = fmt.Sprintf(ipClaimFileName, "*master*")
+	masterIPAddressFileNamePattern     = fmt.Sprintf(ipAddressFileName, "*master*")
 
 	_ asset.WritableAsset = (*Master)(nil)
 )
@@ -159,40 +168,10 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 	pool := *ic.ControlPlane
 	var err error
 	machines := []machinev1beta1.Machine{}
+	var ipClaims []ipamv1.IPAddressClaim
+	var ipAddrs []ipamv1.IPAddress
 	var controlPlaneMachineSet *machinev1.ControlPlaneMachineSet
 	switch ic.Platform.Name() {
-	case alibabacloudtypes.Name:
-		client, err := installConfig.AlibabaCloud.Client()
-		if err != nil {
-			return err
-		}
-		vswitchMaps, err := installConfig.AlibabaCloud.VSwitchMaps()
-		if err != nil {
-			return errors.Wrap(err, "failed to get VSwitchs map")
-		}
-		mpool := alibabacloudtypes.DefaultMasterMachinePoolPlatform()
-		mpool.ImageID = string(*rhcosImage)
-		mpool.Set(ic.Platform.AlibabaCloud.DefaultMachinePlatform)
-		mpool.Set(pool.Platform.AlibabaCloud)
-		if len(mpool.Zones) == 0 {
-			if len(vswitchMaps) > 0 {
-				for zone := range vswitchMaps {
-					mpool.Zones = append(mpool.Zones, zone)
-				}
-			} else {
-				azs, err := client.GetAvailableZonesByInstanceType(mpool.InstanceType)
-				if err != nil || len(azs) == 0 {
-					return errors.Wrap(err, "failed to fetch availability zones")
-				}
-				mpool.Zones = azs
-			}
-		}
-
-		pool.Platform.AlibabaCloud = &mpool
-		machines, err = alibabacloud.Machines(clusterID.InfraID, ic, &pool, "master", masterUserDataSecretName, installConfig.Config.Platform.AlibabaCloud.Tags, vswitchMaps)
-		if err != nil {
-			return errors.Wrap(err, "failed to create master machine objects")
-		}
 	case awstypes.Name:
 		subnets := map[string]string{}
 		if len(ic.Platform.AWS.Subnets) > 0 {
@@ -222,6 +201,10 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 				for zone := range subnets {
 					mpool.Zones = append(mpool.Zones, zone)
 				}
+				// Since zones are extracted from map keys, order is not guaranteed.
+				// Thus, sort the zones by lexical order to ensure CAPI and MAPI machines
+				// are distributed to zones in the same order.
+				slices.Sort(mpool.Zones)
 			} else {
 				mpool.Zones, err = installConfig.AWS.AvailabilityZones(ctx)
 				if err != nil {
@@ -285,6 +268,26 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
+
+		// CAPG-based installs will use only backend services--no target pools,
+		// so we don't want to include target pools in the control plane machineset.
+		// TODO(padillon): once this feature gate is the default and we are
+		// no longer using Terraform, we can update ConfigMasters not to populate this.
+		if capiutils.IsEnabled(installConfig) {
+			for _, machine := range machines {
+				providerSpec, ok := machine.Spec.ProviderSpec.Value.Object.(*machinev1beta1.GCPMachineProviderSpec)
+				if !ok {
+					return errors.New("unable to convert ProviderSpec to GCPMachineProviderSpec")
+				}
+				providerSpec.TargetPools = nil
+			}
+			cpms := controlPlaneMachineSet.Spec.Template.OpenShiftMachineV1Beta1Machine.Spec.ProviderSpec.Value.Object
+			providerSpec, ok := cpms.(*machinev1beta1.GCPMachineProviderSpec)
+			if !ok {
+				return errors.New("Unable to set target pools to control plane machine set")
+			}
+			providerSpec.TargetPools = nil
+		}
 	case ibmcloudtypes.Name:
 		subnets := map[string]string{}
 		if len(ic.Platform.IBMCloud.ControlPlaneSubnets) > 0 {
@@ -313,15 +316,6 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		}
 		// TODO: IBM: implement ConfigMasters() if needed
 		// ibmcloud.ConfigMasters(machines, clusterID.InfraID, ic.Publish)
-	case libvirttypes.Name:
-		mpool := defaultLibvirtMachinePoolPlatform()
-		mpool.Set(ic.Platform.Libvirt.DefaultMachinePlatform)
-		mpool.Set(pool.Platform.Libvirt)
-		pool.Platform.Libvirt = &mpool
-		machines, err = libvirt.Machines(clusterID.InfraID, ic, &pool, "master", masterUserDataSecretName)
-		if err != nil {
-			return errors.Wrap(err, "failed to create master machine objects")
-		}
 	case openstacktypes.Name:
 		mpool := defaultOpenStackMachinePoolPlatform()
 		mpool.Set(ic.Platform.OpenStack.DefaultMachinePlatform)
@@ -330,9 +324,17 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 
 		imageName, _ := rhcosutils.GenerateOpenStackImageName(string(*rhcosImage), clusterID.InfraID)
 
-		machines, controlPlaneMachineSet, err = openstack.Machines(clusterID.InfraID, ic, &pool, imageName, "master", masterUserDataSecretName)
+		trunkSupport, err := openstack.CheckNetworkExtensionAvailability(
+			ic.Platform.OpenStack.Cloud,
+			"trunk",
+			nil,
+		)
 		if err != nil {
-			return errors.Wrap(err, "failed to create master machine objects")
+			return fmt.Errorf("failed to check for trunk support: %w", err)
+		}
+		machines, controlPlaneMachineSet, err = openstack.Machines(clusterID.InfraID, ic, &pool, imageName, "master", masterUserDataSecretName, trunkSupport)
+		if err != nil {
+			return fmt.Errorf("failed to create master machine objects: %w", err)
 		}
 		openstack.ConfigMasters(machines, clusterID.InfraID)
 	case azuretypes.Name:
@@ -408,7 +410,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
 
-		hostSettings, err := baremetal.Hosts(ic, machines)
+		hostSettings, err := baremetal.Hosts(ic, machines, masterUserDataSecretName)
 		if err != nil {
 			return errors.Wrap(err, "failed to assemble host data")
 		}
@@ -471,14 +473,14 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		pool.Platform.VSphere = &mpool
 		templateName := clusterID.InfraID + "-rhcos"
 
-		machines, controlPlaneMachineSet, err = vsphere.Machines(clusterID.InfraID, ic, &pool, templateName, "master", masterUserDataSecretName)
+		data, err := vsphere.Machines(clusterID.InfraID, ic, &pool, templateName, "master", masterUserDataSecretName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
-
-		if ic.FeatureSet != configv1.TechPreviewNoUpgrade {
-			controlPlaneMachineSet = nil
-		}
+		machines = data.Machines
+		controlPlaneMachineSet = data.ControlPlaneMachineSet
+		ipClaims = data.IPClaims
+		ipAddrs = data.IPAddresses
 
 		vsphere.ConfigMasters(machines, clusterID.InfraID)
 	case powervstypes.Name:
@@ -595,6 +597,33 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			Data:     data,
 		}
 	}
+
+	m.IPClaimFiles = make([]*asset.File, len(ipClaims))
+	for i, claim := range ipClaims {
+		data, err := yaml.Marshal(claim)
+		if err != nil {
+			return errors.Wrapf(err, "unable to marshal ip claim %v", claim.Name)
+		}
+
+		m.IPClaimFiles[i] = &asset.File{
+			Filename: filepath.Join(directory, fmt.Sprintf(ipClaimFileName, claim.Name)),
+			Data:     data,
+		}
+	}
+
+	m.IPAddrFiles = make([]*asset.File, len(ipAddrs))
+	for i, address := range ipAddrs {
+		data, err := yaml.Marshal(address)
+		if err != nil {
+			return errors.Wrapf(err, "unable to marshal ip claim %v", address.Name)
+		}
+
+		m.IPAddrFiles[i] = &asset.File{
+			Filename: filepath.Join(directory, fmt.Sprintf(ipAddressFileName, address.Name)),
+			Data:     data,
+		}
+	}
+
 	padFormat := fmt.Sprintf("%%0%dd", len(fmt.Sprintf("%d", len(machines))))
 	for i, machine := range machines {
 		data, err := yaml.Marshal(machine)
@@ -630,6 +659,8 @@ func (m *Master) Files() []*asset.File {
 	if m.ControlPlaneMachineSet != nil {
 		files = append(files, m.ControlPlaneMachineSet)
 	}
+	files = append(files, m.IPClaimFiles...)
+	files = append(files, m.IPAddrFiles...)
 	return files
 }
 
@@ -686,6 +717,18 @@ func (m *Master) Load(f asset.FileFetcher) (found bool, err error) {
 	}
 	m.ControlPlaneMachineSet = file
 
+	fileList, err = f.FetchByPattern(filepath.Join(directory, masterIPClaimFileNamePattern))
+	if err != nil {
+		return true, err
+	}
+	m.IPClaimFiles = fileList
+
+	fileList, err = f.FetchByPattern(filepath.Join(directory, masterIPAddressFileNamePattern))
+	if err != nil {
+		return true, err
+	}
+	m.IPAddrFiles = fileList
+
 	return true, nil
 }
 
@@ -706,7 +749,6 @@ func (m *Master) Machines() ([]machinev1beta1.Machine, error) {
 		&machinev1beta1.GCPMachineProviderSpec{},
 	)
 	scheme.AddKnownTypes(machinev1.GroupVersion,
-		&machinev1.AlibabaCloudMachineProviderConfig{},
 		&machinev1.NutanixMachineProviderConfig{},
 		&machinev1.PowerVSMachineProviderConfig{},
 		&machinev1.ControlPlaneMachineSet{},
@@ -768,6 +810,8 @@ func IsMachineManifest(file *asset.File) bool {
 		{Pattern: hostFileNamePattern, Type: "host"},
 		{Pattern: masterMachineFileNamePattern, Type: "master machine"},
 		{Pattern: workerMachineSetFileNamePattern, Type: "worker machineset"},
+		{Pattern: masterIPAddressFileNamePattern, Type: "master ip address"},
+		{Pattern: masterIPClaimFileNamePattern, Type: "master ip address claim"},
 	} {
 		if matched, err := filepath.Match(pattern.Pattern, filename); err != nil {
 			panic(fmt.Sprintf("bad format for %s file name pattern", pattern.Type))
@@ -776,6 +820,23 @@ func IsMachineManifest(file *asset.File) bool {
 		}
 	}
 	return false
+}
+
+// IPAddresses returns IPAddress manifest structures.
+func (m *Master) IPAddresses() ([]ipamv1.IPAddress, error) {
+	ipAddresses := []ipamv1.IPAddress{}
+	for i, file := range m.IPAddrFiles {
+		logrus.Debugf("Attempting to load address %v.", file.Filename)
+		address := &ipamv1.IPAddress{}
+		err := yaml.Unmarshal(file.Data, &address)
+		if err != nil {
+			return ipAddresses, errors.Wrapf(err, "unable to unmarshal ip address %d", i)
+		}
+
+		ipAddresses = append(ipAddresses, *address)
+	}
+
+	return ipAddresses, nil
 }
 
 func createSecretAssetFiles(resources []corev1.Secret, fileName string) ([]*asset.File, error) {

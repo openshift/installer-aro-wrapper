@@ -73,16 +73,16 @@ func ValidatePlatform(p *nutanix.Platform, fldPath *field.Path, c *types.Install
 		allErrs = append(allErrs, field.Required(fldPath.Child("subnet"), "must specify the subnet"))
 	}
 
-	// Platform fields only allowed in TechPreviewNoUpgrade
-	if c.FeatureSet != configv1.TechPreviewNoUpgrade {
-		if c.Nutanix.LoadBalancer != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPath.Child("loadBalancer"), "load balancer is not supported in this feature set"))
-		}
-	}
-
 	if c.Nutanix.LoadBalancer != nil {
 		if !validateLoadBalancer(c.Nutanix.LoadBalancer.Type) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("loadBalancer", "type"), c.Nutanix.LoadBalancer.Type, "invalid load balancer type"))
+		}
+	}
+
+	// validate prismAPICallTimeout if configured
+	if p.PrismAPICallTimeout != nil {
+		if *p.PrismAPICallTimeout <= 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("prismAPICallTimeout"), *p.PrismAPICallTimeout, "must be a positive integer value"))
 		}
 	}
 

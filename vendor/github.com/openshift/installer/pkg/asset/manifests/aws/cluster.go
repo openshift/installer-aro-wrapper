@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -13,17 +12,28 @@ import (
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	"github.com/openshift/installer/pkg/asset/machines/aws"
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
+	awstypes "github.com/openshift/installer/pkg/types/aws"
 )
 
-// GenerateClusterAssets generates the manifests for the cluster-api.
-func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID *installconfig.ClusterID) (*capiutils.GenerateClusterAssetsOutput, error) {
-	manifests := []*asset.RuntimeFile{}
-	mainCIDR := capiutils.CIDRFromInstallConfig(installConfig)
+// BootstrapSSHDescription is the description for the
+// ingress rule that provides SSH access to the bootstrap node
+// & identifies the rule for removal during bootstrap destroy.
+const BootstrapSSHDescription = "Bootstrap SSH Access"
 
-	zones, err := installConfig.AWS.AvailabilityZones(context.TODO())
+// GenerateClusterAssets generates the manifests for the cluster-api.
+func GenerateClusterAssets(ic *installconfig.InstallConfig, clusterID *installconfig.ClusterID) (*capiutils.GenerateClusterAssetsOutput, error) {
+	manifests := []*asset.RuntimeFile{}
+
+	tags, err := aws.CapaTagsFromUserTags(clusterID.InfraID, ic.Config.AWS.UserTags)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get availability zones")
+		return nil, fmt.Errorf("failed to get user tags: %w", err)
+	}
+
+	sshRuleCidr := []string{"0.0.0.0/0"}
+	if !ic.Config.PublicAPI() {
+		sshRuleCidr = []string{capiutils.CIDRFromInstallConfig(ic).String()}
 	}
 
 	awsCluster := &capa.AWSCluster{
@@ -32,13 +42,8 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 			Namespace: capiutils.Namespace,
 		},
 		Spec: capa.AWSClusterSpec{
-			Region: installConfig.Config.AWS.Region,
+			Region: ic.Config.AWS.Region,
 			NetworkSpec: capa.NetworkSpec{
-				VPC: capa.VPCSpec{
-					CidrBlock:                  mainCIDR.String(),
-					AvailabilityZoneUsageLimit: ptr.To(len(zones)),
-					AvailabilityZoneSelection:  &capa.AZSelectionSchemeOrdered,
-				},
 				CNI: &capa.CNISpec{
 					CNIIngressRules: capa.CNIIngressRules{
 						{
@@ -121,7 +126,7 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 						Protocol:                 capa.SecurityGroupProtocolTCP,
 						FromPort:                 22623,
 						ToPort:                   22623,
-						SourceSecurityGroupRoles: []capa.SecurityGroupRole{"node", "controlplane"},
+						SourceSecurityGroupRoles: []capa.SecurityGroupRole{"node", "controlplane", "apiserver-lb"},
 					},
 					{
 						Description:              "controller-manager",
@@ -138,67 +143,120 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 						SourceSecurityGroupRoles: []capa.SecurityGroupRole{"controlplane", "node"},
 					},
 					{
-						Description: "SSH everyone",
+						Description: BootstrapSSHDescription,
 						Protocol:    capa.SecurityGroupProtocolTCP,
 						FromPort:    22,
 						ToPort:      22,
-						CidrBlocks:  []string{"0.0.0.0/0"},
+						CidrBlocks:  sshRuleCidr,
 					},
 				},
 			},
 			S3Bucket: &capa.S3Bucket{
-				Name:                 fmt.Sprintf("openshift-bootstrap-data-%s", clusterID.InfraID),
-				PresignedURLDuration: &metav1.Duration{Duration: 1 * time.Hour},
+				Name:                    GetIgnitionBucketName(clusterID.InfraID),
+				PresignedURLDuration:    &metav1.Duration{Duration: 1 * time.Hour},
+				BestEffortDeleteObjects: ptr.To(ic.Config.AWS.BestEffortDeleteIgnition),
 			},
 			ControlPlaneLoadBalancer: &capa.AWSLoadBalancerSpec{
-				Name:             ptr.To(clusterID.InfraID + "-ext"),
-				LoadBalancerType: capa.LoadBalancerTypeNLB,
-				Scheme:           &capa.ELBSchemeInternetFacing,
+				Name:                   ptr.To(clusterID.InfraID + "-int"),
+				LoadBalancerType:       capa.LoadBalancerTypeNLB,
+				Scheme:                 &capa.ELBSchemeInternal,
+				CrossZoneLoadBalancing: true,
+				HealthCheckProtocol:    &capa.ELBProtocolHTTPS,
+				HealthCheck: &capa.TargetGroupHealthCheckAPISpec{
+					IntervalSeconds:         ptr.To[int64](10),
+					TimeoutSeconds:          ptr.To[int64](10),
+					ThresholdCount:          ptr.To[int64](2),
+					UnhealthyThresholdCount: ptr.To[int64](2),
+				},
 				AdditionalListeners: []capa.AdditionalListenerSpec{
 					{
 						Port:     22623,
 						Protocol: capa.ELBProtocolTCP,
+						HealthCheck: &capa.TargetGroupHealthCheckAdditionalSpec{
+							Protocol:                ptr.To[string](capa.ELBProtocolHTTPS.String()),
+							Port:                    ptr.To[string]("22623"),
+							Path:                    ptr.To[string]("/healthz"),
+							IntervalSeconds:         ptr.To[int64](10),
+							TimeoutSeconds:          ptr.To[int64](10),
+							ThresholdCount:          ptr.To[int64](2),
+							UnhealthyThresholdCount: ptr.To[int64](2),
+						},
+					},
+				},
+				IngressRules: []capa.IngressRule{
+					{
+						Description:              "Machine Config Server internal traffic from cluster",
+						Protocol:                 capa.SecurityGroupProtocolTCP,
+						FromPort:                 22623,
+						ToPort:                   22623,
+						SourceSecurityGroupRoles: []capa.SecurityGroupRole{"node", "controlplane"},
 					},
 				},
 			},
+			AdditionalTags: tags,
 		},
 	}
+	awsCluster.SetGroupVersionKind(capa.GroupVersion.WithKind("AWSCluster"))
 
-	// If the install config has subnets, use them.
-	if len(installConfig.AWS.Subnets) > 0 {
-		privateSubnets, err := installConfig.AWS.PrivateSubnets(context.TODO())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get private subnets")
+	if ic.Config.PublicAPI() {
+		awsCluster.Spec.SecondaryControlPlaneLoadBalancer = &capa.AWSLoadBalancerSpec{
+			Name:                   ptr.To(clusterID.InfraID + "-ext"),
+			LoadBalancerType:       capa.LoadBalancerTypeNLB,
+			Scheme:                 &capa.ELBSchemeInternetFacing,
+			CrossZoneLoadBalancing: true,
+			HealthCheckProtocol:    &capa.ELBProtocolHTTPS,
+			HealthCheck: &capa.TargetGroupHealthCheckAPISpec{
+				IntervalSeconds:         ptr.To[int64](10),
+				TimeoutSeconds:          ptr.To[int64](10),
+				ThresholdCount:          ptr.To[int64](2),
+				UnhealthyThresholdCount: ptr.To[int64](2),
+			},
+			IngressRules: []capa.IngressRule{
+				{
+					Description: "Kubernetes API Server traffic for public access",
+					Protocol:    capa.SecurityGroupProtocolTCP,
+					FromPort:    6443,
+					ToPort:      6443,
+					CidrBlocks:  []string{"0.0.0.0/0"},
+				},
+			},
 		}
-		for _, subnet := range privateSubnets {
-			awsCluster.Spec.NetworkSpec.Subnets = append(awsCluster.Spec.NetworkSpec.Subnets, capa.SubnetSpec{
-				ID:               subnet.ID,
-				CidrBlock:        subnet.CIDR,
-				AvailabilityZone: subnet.Zone.Name,
-				IsPublic:         subnet.Public,
-			})
-		}
-		publicSubnets, err := installConfig.AWS.PublicSubnets(context.TODO())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get public subnets")
-		}
+	} else {
+		awsCluster.Spec.ControlPlaneLoadBalancer.IngressRules = append(
+			awsCluster.Spec.ControlPlaneLoadBalancer.IngressRules,
+			capa.IngressRule{
+				Description: "Kubernetes API Server traffic",
+				Protocol:    capa.SecurityGroupProtocolTCP,
+				FromPort:    6443,
+				ToPort:      6443,
+				CidrBlocks:  []string{"0.0.0.0/0"},
+			},
+		)
+	}
 
-		for _, subnet := range publicSubnets {
-			awsCluster.Spec.NetworkSpec.Subnets = append(awsCluster.Spec.NetworkSpec.Subnets, capa.SubnetSpec{
-				ID:               subnet.ID,
-				CidrBlock:        subnet.CIDR,
-				AvailabilityZone: subnet.Zone.Name,
-				IsPublic:         subnet.Public,
-			})
-		}
+	// Set the NetworkSpec.Subnets from VPC and zones (managed)
+	// or subnets (BYO VPC) based in the install-config.yaml.
+	err = setSubnets(context.TODO(), &zonesInput{
+		InstallConfig: ic,
+		ClusterID:     clusterID,
+		Cluster:       awsCluster,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set cluster zones or subnets: %w", err)
+	}
 
-		vpc, err := installConfig.AWS.VPC(context.TODO())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get VPC")
+	// Enable BYO Public IPv4 when defined on install-config.yaml
+	if len(ic.Config.Platform.AWS.PublicIpv4Pool) > 0 {
+		awsCluster.Spec.NetworkSpec.VPC.ElasticIPPool = &capa.ElasticIPPool{
+			PublicIpv4Pool:              ptr.To(ic.Config.Platform.AWS.PublicIpv4Pool),
+			PublicIpv4PoolFallBackOrder: ptr.To(capa.PublicIpv4PoolFallbackOrderAmazonPool),
 		}
-		awsCluster.Spec.NetworkSpec.VPC = capa.VPCSpec{
-			ID: vpc,
-		}
+	}
+
+	if awstypes.IsPublicOnlySubnetsEnabled() {
+		// If we don't set the subnets for the internal LB, CAPA will try to use private subnets but there aren't any in
+		// public-only mode.
+		awsCluster.Spec.ControlPlaneLoadBalancer.Subnets = awsCluster.Spec.NetworkSpec.Subnets.IDs()
 	}
 
 	manifests = append(manifests, &asset.RuntimeFile{
@@ -217,6 +275,7 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 			},
 		},
 	}
+	id.SetGroupVersionKind(capa.GroupVersion.WithKind("AWSClusterControllerIdentity"))
 	manifests = append(manifests, &asset.RuntimeFile{
 		Object: id,
 		File:   asset.File{Filename: "01_aws-cluster-controller-identity-default.yaml"},
@@ -225,10 +284,15 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 	return &capiutils.GenerateClusterAssetsOutput{
 		Manifests: manifests,
 		InfrastructureRef: &corev1.ObjectReference{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
+			APIVersion: capa.GroupVersion.String(),
 			Kind:       "AWSCluster",
 			Name:       awsCluster.Name,
 			Namespace:  awsCluster.Namespace,
 		},
 	}, nil
+}
+
+// GetIgnitionBucketName returns the name of the bucket for the given cluster.
+func GetIgnitionBucketName(infraID string) string {
+	return fmt.Sprintf("openshift-bootstrap-data-%s", infraID)
 }

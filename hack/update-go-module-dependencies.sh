@@ -26,7 +26,7 @@
 # with github.com/openshift/baremetal-operator (just an example, there are more).
 
 RELEASE=release-4.16
-K8S_RELEASE=v0.28.3
+K8S_RELEASE=v0.29.3
 GO_VERSION=1.24
 
 for x in vendor/github.com/openshift/*; do
@@ -80,9 +80,9 @@ for x in vendor/k8s.io/*; do
 done
 
 # From installer(-aro), they don't use forks anymore!
-go mod edit -replace sigs.k8s.io/cluster-api=sigs.k8s.io/cluster-api@v1.5.3
-go mod edit -replace sigs.k8s.io/cluster-api-provider-aws/v2=sigs.k8s.io/cluster-api-provider-aws/v2@v2.0.0-20231024062453-0bf78b04b305
-go mod edit -replace sigs.k8s.io/cluster-api-provider-azure=sigs.k8s.io/cluster-api-provider-azure@v1.11.1-0.20231026140308-a3f4914170d9
+go mod edit -replace sigs.k8s.io/cluster-api=sigs.k8s.io/cluster-api@v1.7.1
+go mod edit -replace sigs.k8s.io/cluster-api-provider-aws/v2=sigs.k8s.io/cluster-api-provider-aws/v2@v2.6.1
+go mod edit -replace sigs.k8s.io/cluster-api-provider-azure=sigs.k8s.io/cluster-api-provider-azure@v1.14.2
 
 for x in baremetal-operator baremetal-operator/apis baremetal-operator/pkg/hardwareutils cluster-api-provider-baremetal cluster-api-provider-metal3 cluster-api-provider-metal3/api; do
   go mod edit -replace github.com/metal3-io/$x="$(go list -mod=mod -m github.com/openshift/$x@$RELEASE | sed -e 's/ /@/')"
