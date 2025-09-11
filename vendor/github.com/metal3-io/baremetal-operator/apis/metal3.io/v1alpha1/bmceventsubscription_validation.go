@@ -21,7 +21,7 @@ import (
 	"net/url"
 )
 
-// validateSubscription validates BMCEventSubscription resource for creation
+// validateSubscription validates BMCEventSubscription resource for creation.
 func (s *BMCEventSubscription) validateSubscription() []error {
 	var errs []error
 
@@ -29,19 +29,22 @@ func (s *BMCEventSubscription) validateSubscription() []error {
 		errs = append(errs, errors.New("hostName cannot be empty"))
 	}
 
-	if s.Spec.Destination == "" {
-		errs = append(errs, errors.New("destination cannot be empty"))
-	} else {
-		destinationUrl, err := url.ParseRequestURI(s.Spec.Destination)
-
-		if err != nil {
-			errs = append(errs, fmt.Errorf("destination is invalid: %w", err))
-		} else {
-			if destinationUrl.Path == "" {
-				errs = append(errs, errors.New("hostname-only destination must have a trailing slash"))
-			}
+	if s.Spec.HTTPHeadersRef != nil {
+		if s.Spec.HTTPHeadersRef.Namespace != s.Namespace {
+			errs = append(errs, errors.New("httpHeadersRef secret must be in the same namespace as the BMCEventSubscription"))
 		}
 	}
 
+	if s.Spec.Destination == "" {
+		errs = append(errs, errors.New("destination cannot be empty"))
+	} else {
+		destinationURL, err := url.ParseRequestURI(s.Spec.Destination)
+
+		if err != nil {
+			errs = append(errs, fmt.Errorf("destination is invalid: %w", err))
+		} else if destinationURL.Path == "" {
+			errs = append(errs, errors.New("hostname-only destination must have a trailing slash"))
+		}
+	}
 	return errs
 }
