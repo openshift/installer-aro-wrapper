@@ -3,7 +3,7 @@
 export GOPRIVATE=github.com
 export GONOPROXY="y"
 
-RELEASE=release-4.18
+RELEASE=release-4.19
 VM_SKU=aro_4$(echo $RELEASE | sed 's/.*\.//')
 declare -a pinned=(
 	"github.com/openshift/assisted-service/api"
