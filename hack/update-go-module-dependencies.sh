@@ -11,8 +11,6 @@ declare -a pinned=(
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/api"
 	"github.com/openshift/client-go"
-	"github.com/openshift/machine-api-operator"
-	"github.com/openshift/machine-api-provider-gcp"
 )
 
 read -p "This will update to $RELEASE. Is this correct? " -n 1
