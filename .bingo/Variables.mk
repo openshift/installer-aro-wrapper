@@ -53,9 +53,9 @@ $(GOTESTSUM): $(BINGO_DIR)/gotestsum.mod
 	@echo "(re)installing $(GOBIN)/gotestsum-v1.12.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gotestsum.mod -o=$(GOBIN)/gotestsum-v1.12.0 "gotest.tools/gotestsum"
 
-MOCKGEN := $(GOBIN)/mockgen-v1.7.0-rc.1
+MOCKGEN := $(GOBIN)/mockgen-v0.6.0
 $(MOCKGEN): $(BINGO_DIR)/mockgen.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/mockgen-v1.7.0-rc.1"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mockgen.mod -o=$(GOBIN)/mockgen-v1.7.0-rc.1 "github.com/golang/mock/mockgen"
+	@echo "(re)installing $(GOBIN)/mockgen-v0.6.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mockgen.mod -o=$(GOBIN)/mockgen-v0.6.0 "go.uber.org/mock/mockgen"
 
