@@ -124,7 +124,6 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
@@ -249,7 +248,7 @@ require (
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/thedevsaddam/retry v1.2.1 // indirect
 	github.com/thoas/go-funk v0.9.3 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/vmware/govmomi v0.47.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
@@ -265,7 +264,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.23.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
@@ -325,16 +324,13 @@ replace (
 	// too-new versions of openshift/api and openshift/client-go don't work
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20250909020331-93b8cc2cf247
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20250425165505-5f55ff6979a1
-	github.com/openshift/machine-api-operator => github.com/openshift/machine-api-operator v0.2.1-0.20250910141901-dd0126864cf2
-	github.com/openshift/machine-api-provider-gcp => github.com/openshift/machine-api-provider-gcp v0.0.1-0.20250805140029-4fd69cf5c0b7
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.19.3
 )
 
 // Installer forks/tags
 replace (
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20231128154154-6736c9b9c6c8
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20231128154154-6736c9b9c6c8
-	k8s.io/cloud-provider-vsphere => github.com/openshift/cloud-provider-vsphere v1.19.1-0.20241016091151-c414d1f5b0d9
-	sigs.k8s.io/cluster-api-provider-ibmcloud => sigs.k8s.io/cluster-api-provider-ibmcloud v0.9.0-beta.1
 )
 
 // They add a require to a module in the same tree with an invalid version, but also add a replace statement to use the local module,
