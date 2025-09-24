@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -259,6 +260,14 @@ func (m *Metadata) IsVPCPermittedNetwork(ctx context.Context, vpcName string, ba
 	return false, nil
 }
 
+// EnsureVPCNameIsSpecifiedForInternal checks if platform.powervs.vpcName is specified when the publishing strategy is Internal.
+func (m *Metadata) EnsureVPCNameIsSpecifiedForInternal(vpcName string) error {
+	if strings.Compare(vpcName, "") == 0 {
+		return fmt.Errorf("a pre-existing VPC is required when deploying with an Internal publishing strategy")
+	}
+	return nil
+}
+
 // EnsureVPCIsPermittedNetwork checks if a VPC is permitted to the DNS zone and adds it if it is not.
 func (m *Metadata) EnsureVPCIsPermittedNetwork(ctx context.Context, vpcName string) error {
 	dnsCRN, err := crn.Parse(m.dnsInstanceCRN)
@@ -504,12 +513,13 @@ func leftInContext(ctx context.Context) time.Duration {
 
 // SetDefaultPrivateServiceEndpoints sets service endpoint overrides as needed for Disconnected install.
 func (m *Metadata) SetDefaultPrivateServiceEndpoints(ctx context.Context, overrides []configv1.PowerVSServiceEndpoint, cosRegion string, vpcRegion string) []configv1.PowerVSServiceEndpoint {
-	overrides = addOverride(overrides, "COS", fmt.Sprintf("https://s3.direct.%s.cloud-object-storage.appdomain.cloud", cosRegion))
-	overrides = addOverride(overrides, "DNSServices", "https://api.private.dns-svcs.cloud.ibm.com")
-	overrides = addOverride(overrides, "IAM", "https://private.iam.cloud.ibm.com")
-	overrides = addOverride(overrides, "Power", fmt.Sprintf("https://private.%s.power-iaas.cloud.ibm.com", vpcRegion))
-	overrides = addOverride(overrides, "ResourceController", "https://private.resource-controller.cloud.ibm.com")
-	overrides = addOverride(overrides, "VPC", fmt.Sprintf("https://%s.private.iaas.cloud.ibm.com", vpcRegion))
+	overrides = addOverride(overrides, string(configv1.IBMCloudServiceCOS), fmt.Sprintf("https://s3.direct.%s.cloud-object-storage.appdomain.cloud", cosRegion))
+	overrides = addOverride(overrides, string(configv1.IBMCloudServiceDNSServices), "https://api.private.dns-svcs.cloud.ibm.com/v1")
+	overrides = addOverride(overrides, string(configv1.IBMCloudServiceIAM), "https://private.iam.cloud.ibm.com")
+	overrides = addOverride(overrides, "Power", fmt.Sprintf("https://private.%s.power-iaas.cloud.ibm.com", vpcRegion)) // FIXME confiv1.IBMCloudServicePower?
+	overrides = addOverride(overrides, string(configv1.IBMCloudServiceResourceController), "https://private.resource-controller.cloud.ibm.com")
+	overrides = addOverride(overrides, string(configv1.IBMCloudServiceResourceManager), "https://private.resource-controller.cloud.ibm.com")
+	overrides = addOverride(overrides, string(configv1.IBMCloudServiceVPC), fmt.Sprintf("https://%s.private.iaas.cloud.ibm.com", vpcRegion))
 	return overrides
 }
 

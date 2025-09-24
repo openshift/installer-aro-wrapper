@@ -203,6 +203,13 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 			}
 			config.Status.PlatformStatus.GCP.ResourceTags = resourceTags
 		}
+
+		config.Status.PlatformStatus.GCP.ServiceEndpoints = installConfig.Config.Platform.GCP.ServiceEndpoints
+		sort.Slice(config.Status.PlatformStatus.GCP.ServiceEndpoints, func(i, j int) bool {
+			return config.Status.PlatformStatus.GCP.ServiceEndpoints[i].Name <
+				config.Status.PlatformStatus.GCP.ServiceEndpoints[j].Name
+		})
+
 		// If the user has requested the use of a DNS provisioned by them, then OpenShift needs to
 		// start an in-cluster DNS for the installation to succeed. The user can then configure their
 		// DNS post-install.
@@ -261,8 +268,6 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 		config.Spec.PlatformSpec.VSphere = &configv1.VSpherePlatformSpec{}
 		if len(installConfig.Config.VSphere.APIVIPs) > 0 {
 			config.Status.PlatformStatus.VSphere = &configv1.VSpherePlatformStatus{
-				APIServerInternalIP:  installConfig.Config.VSphere.APIVIPs[0],
-				IngressIP:            installConfig.Config.VSphere.IngressVIPs[0],
 				APIServerInternalIPs: installConfig.Config.VSphere.APIVIPs,
 				IngressIPs:           installConfig.Config.VSphere.IngressVIPs,
 				LoadBalancer:         installConfig.Config.VSphere.LoadBalancer,
@@ -272,11 +277,12 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 		}
 
 		config.Spec.PlatformSpec.VSphere = vsphereinfra.GetInfraPlatformSpec(installConfig, clusterID.InfraID)
-		if _, exists := cloudproviderconfig.ConfigMap.Data["vsphere.conf"]; exists {
-			cloudProviderConfigMapKey = "vsphere.conf"
+		if cloudproviderconfig.ConfigMap != nil {
+			if _, exists := cloudproviderconfig.ConfigMap.Data["vsphere.conf"]; exists {
+				cloudProviderConfigMapKey = "vsphere.conf"
+			}
 		}
-
-		config.Status.PlatformStatus.VSphere.MachineNetworks = types.MachineNetworksToCIDRs(installConfig.Config.MachineNetwork)
+		config.Status.PlatformStatus.VSphere.MachineNetworks = config.Spec.PlatformSpec.VSphere.MachineNetworks
 	case ovirt.Name:
 		config.Spec.PlatformSpec.Type = configv1.OvirtPlatformType
 		config.Status.PlatformStatus.Ovirt = &configv1.OvirtPlatformStatus{
@@ -330,7 +336,7 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 			ResourceGroup:    installConfig.Config.Platform.PowerVS.PowerVSResourceGroup,
 			CISInstanceCRN:   cisInstanceCRN,
 			DNSInstanceCRN:   dnsInstanceCRN,
-			ServiceEndpoints: installConfig.Config.Platform.PowerVS.ServiceEndpoints,
+			ServiceEndpoints: config.Spec.PlatformSpec.PowerVS.ServiceEndpoints,
 		}
 	case nutanix.Name:
 		config.Spec.PlatformSpec.Type = configv1.NutanixPlatformType

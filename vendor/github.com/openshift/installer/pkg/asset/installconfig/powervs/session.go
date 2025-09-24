@@ -417,6 +417,41 @@ func saveSessionStoreToAuthFile(pss *SessionStore) error {
 	return os.WriteFile(authFilePath, jsonVars, 0o600)
 }
 
+// UpdateSessionStoreToAuthFile updates the saved session store structure on the disk.
+func UpdateSessionStoreToAuthFile(update *SessionStore) error {
+	var (
+		original SessionStore
+		err      error
+	)
+
+	if update == nil {
+		return fmt.Errorf("empty session store passed to UpdateSessionStoreToAuthFile")
+	}
+
+	err = getSessionStoreFromAuthFile(&original)
+	if err != nil {
+		return err
+	}
+
+	if update.ID != "" {
+		original.ID = update.ID
+	}
+	if update.APIKey != "" {
+		original.APIKey = update.APIKey
+	}
+	if update.DefaultRegion != "" {
+		original.DefaultRegion = update.DefaultRegion
+	}
+	if update.DefaultZone != "" {
+		original.DefaultZone = update.DefaultZone
+	}
+	if update.PowerVSResourceGroup != "" {
+		original.PowerVSResourceGroup = update.PowerVSResourceGroup
+	}
+
+	return saveSessionStoreToAuthFile(&original)
+}
+
 func getEnv(envs []string) string {
 	for _, k := range envs {
 		if v := os.Getenv(k); v != "" {
@@ -434,7 +469,7 @@ func (c *BxClient) MapServiceEndpointsForCAPI(cfg *powervs.Metadata) []string {
 		"COS":                "cos",
 		"Power":              "powervs",
 		"ResourceController": "", // FIXME CAPI recognizes "rc," but crashes if passed in...
-		"ResourceManager":    "rm",
+		"ResourceManager":    "", // FIXME? masters unable to get their ignition if "rm" override is present...
 		"VPC":                "vpc",
 	}
 	overrides := make([]string, 0, len(cfg.ServiceEndpoints))

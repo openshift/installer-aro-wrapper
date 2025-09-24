@@ -3,6 +3,7 @@ package gcp
 import (
 	"fmt"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/types/dns"
 )
 
@@ -58,6 +59,12 @@ type Platform struct {
 	// +default="Disabled"
 	// +kubebuilder:validation:Enum="Enabled";"Disabled"
 	UserProvisionedDNS dns.UserProvisionedDNS `json:"userProvisionedDNS,omitempty"`
+
+	// ServiceEndpoints list contains custom endpoints which will override default
+	// service endpoint of GCP Services.
+	// There must be only one ServiceEndpoint for a service.
+	// +optional
+	ServiceEndpoints []configv1.GCPServiceEndpoint `json:"serviceEndpoints,omitempty"`
 }
 
 // UserLabel is a label to apply to GCP resources created for the cluster.

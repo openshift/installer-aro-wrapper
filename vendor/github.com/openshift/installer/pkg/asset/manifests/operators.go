@@ -8,16 +8,22 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/yaml"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/asset/templates/content/bootkube"
+	"github.com/openshift/installer/pkg/asset/templates/content/manifests"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/vsphere"
+	"github.com/openshift/library-go/pkg/crypto"
 )
 
 const (
@@ -56,6 +62,7 @@ func (m *Manifests) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&installconfig.ClusterID{},
 		&installconfig.InstallConfig{},
+		&manifests.MCO{},
 		&Ingress{},
 		&DNS{},
 		&Infrastructure{},
@@ -67,10 +74,13 @@ func (m *Manifests) Dependencies() []asset.Asset {
 		&ImageDigestMirrorSet{},
 		&tls.RootCA{},
 		&tls.MCSCertKey{},
+		new(rhcos.Image),
 
 		&bootkube.CVOOverrides{},
 		&bootkube.KubeCloudConfig{},
 		&bootkube.KubeSystemConfigmapRootCA{},
+		&bootkube.MachineConfigServerCASecret{},
+		&bootkube.MachineConfigServerCAConfigMap{},
 		&bootkube.MachineConfigServerTLSSecret{},
 		&bootkube.OpenshiftConfigSecretPullSecret{},
 	}
@@ -88,8 +98,9 @@ func (m *Manifests) Generate(_ context.Context, dependencies asset.Parents) erro
 	imageContentSourcePolicy := &ImageContentSourcePolicy{}
 	clusterCSIDriverConfig := &ClusterCSIDriverConfig{}
 	imageDigestMirrorSet := &ImageDigestMirrorSet{}
+	mcoCfgTemplate := &manifests.MCO{}
 
-	dependencies.Get(installConfig, ingress, dns, network, infra, proxy, scheduler, imageContentSourcePolicy, imageDigestMirrorSet, clusterCSIDriverConfig)
+	dependencies.Get(installConfig, ingress, dns, network, infra, proxy, scheduler, imageContentSourcePolicy, imageDigestMirrorSet, clusterCSIDriverConfig, mcoCfgTemplate)
 
 	redactedConfig, err := redactedInstallConfig(*installConfig.Config)
 	if err != nil {
@@ -116,6 +127,7 @@ func (m *Manifests) Generate(_ context.Context, dependencies asset.Parents) erro
 		},
 	}
 	m.FileList = append(m.FileList, m.generateBootKubeManifests(dependencies)...)
+	m.FileList = append(m.FileList, generateMCOManifest(installConfig.Config, mcoCfgTemplate.Files())...)
 
 	m.FileList = append(m.FileList, ingress.Files()...)
 	m.FileList = append(m.FileList, dns.Files()...)
@@ -150,21 +162,52 @@ func (m *Manifests) generateBootKubeManifests(dependencies asset.Parents) []*ass
 	)
 
 	templateData := &bootkubeTemplateData{
-		CVOCapabilities:  installConfig.Config.Capabilities,
-		CVOClusterID:     clusterID.UUID,
-		McsTLSCert:       base64.StdEncoding.EncodeToString(mcsCertKey.Cert()),
-		McsTLSKey:        base64.StdEncoding.EncodeToString(mcsCertKey.Key()),
-		PullSecretBase64: base64.StdEncoding.EncodeToString([]byte(installConfig.Config.PullSecret)),
-		RootCaCert:       string(rootCA.Cert()),
-		IsFCOS:           installConfig.Config.IsFCOS(),
-		IsSCOS:           installConfig.Config.IsSCOS(),
-		IsOKD:            installConfig.Config.IsOKD(),
+		CVOCapabilities:       installConfig.Config.Capabilities,
+		CVOClusterID:          clusterID.UUID,
+		McsTLSCert:            base64.StdEncoding.EncodeToString(mcsCertKey.Cert()),
+		McsTLSKey:             base64.StdEncoding.EncodeToString(mcsCertKey.Key()),
+		PullSecretBase64:      base64.StdEncoding.EncodeToString([]byte(installConfig.Config.PullSecret)),
+		RootCaCert:            string(rootCA.Cert()),
+		RootCACertBase64:      base64.StdEncoding.EncodeToString(rootCA.Cert()),
+		RootCASignerKeyBase64: base64.StdEncoding.EncodeToString(rootCA.Key()),
+		IsFCOS:                installConfig.Config.IsFCOS(),
+		IsSCOS:                installConfig.Config.IsSCOS(),
+		IsOKD:                 installConfig.Config.IsOKD(),
+	}
+
+	// Populate MCS CA(also called root-CA) specifics
+	if rootCAPair, err := crypto.GetCAFromBytes(rootCA.Cert(), rootCA.Key()); err == nil {
+		templateData.RootCAIssuerName = rootCAPair.Config.Certs[0].Issuer.CommonName
+		templateData.RootCANotAfter = rootCAPair.Config.Certs[0].NotAfter.Format(time.RFC3339)
+		templateData.RootCANotBefore = rootCAPair.Config.Certs[0].NotBefore.Format(time.RFC3339)
+		logrus.Infof("Successfully populated MCS CA cert information: %s %s %s", templateData.RootCAIssuerName, templateData.RootCANotAfter, templateData.RootCANotBefore)
+	} else {
+		logrus.Errorf("error populating MCS CA cert details: %v", err)
+	}
+	// Populate MCS TLS Cert specifics
+	if MCSTLSCertPair, err := crypto.GetCAFromBytes(mcsCertKey.Cert(), mcsCertKey.Key()); err == nil {
+		// Hostname annottation need a little massaging
+		hostnames := sets.Set[string]{}
+		for _, ip := range MCSTLSCertPair.Config.Certs[0].IPAddresses {
+			hostnames.Insert(ip.String())
+		}
+		for _, dnsName := range MCSTLSCertPair.Config.Certs[0].DNSNames {
+			hostnames.Insert(dnsName)
+		}
+		templateData.McsHostName = strings.Join(sets.List(hostnames), ",")
+		templateData.McsTLSCertNotAfter = MCSTLSCertPair.Config.Certs[0].NotAfter.Format(time.RFC3339)
+		templateData.McsTLSCertNotBefore = MCSTLSCertPair.Config.Certs[0].NotBefore.Format(time.RFC3339)
+		logrus.Infof("Successfully populated MCS TLS cert information: %s %s %s", templateData.RootCAIssuerName, templateData.RootCANotAfter, templateData.RootCANotBefore)
+	} else {
+		logrus.Errorf("error populating MCS TLS cert details: %v", err)
 	}
 
 	files := []*asset.File{}
 	for _, a := range []asset.WritableAsset{
 		&bootkube.CVOOverrides{},
 		&bootkube.KubeCloudConfig{},
+		&bootkube.MachineConfigServerCASecret{},
+		&bootkube.MachineConfigServerCAConfigMap{},
 		&bootkube.KubeSystemConfigmapRootCA{},
 		&bootkube.MachineConfigServerTLSSecret{},
 		&bootkube.OpenshiftConfigSecretPullSecret{},
