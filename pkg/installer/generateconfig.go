@@ -252,6 +252,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						// a more permanent fix (disabling public DNS
 						// provisioning).
 						BaseDomainResourceGroupName: resourceGroup,
+						UserTags: map[string]string{
+							"red-hat-managed": "true",
+						},
 					},
 				},
 				PullSecret: pullSecret,
