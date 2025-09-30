@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	mock_encryption "github.com/openshift/installer-aro-wrapper/pkg/util/mocks/encryption"
 )

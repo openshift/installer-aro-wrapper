@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/http"
+	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -61,11 +64,13 @@ func Validate(client API, ic *types.InstallConfig) error {
 	allErrs = append(allErrs, validateRegion(client, ic, field.NewPath("platform").Child("gcp"))...)
 	allErrs = append(allErrs, validateZones(client, ic)...)
 	allErrs = append(allErrs, validateNetworks(client, ic, field.NewPath("platform").Child("gcp"))...)
+	allErrs = append(allErrs, validateServiceEndpoints(client, ic, field.NewPath("platform").Child("gcp"))...)
 	allErrs = append(allErrs, validateInstanceTypes(client, ic)...)
 	allErrs = append(allErrs, ValidateCredentialMode(client, ic)...)
 	allErrs = append(allErrs, validatePreexistingServiceAccount(client, ic)...)
 	allErrs = append(allErrs, validateServiceAccountPresent(client, ic)...)
 	allErrs = append(allErrs, validateMarketplaceImages(client, ic)...)
+	allErrs = append(allErrs, validatePlatformKMSKeys(client, ic, field.NewPath("platform").Child("gcp"))...)
 
 	if err := validateUserTags(client, ic.Platform.GCP.ProjectID, ic.Platform.GCP.UserTags); err != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("platform").Child("gcp").Child("userTags"), ic.Platform.GCP.UserTags, err.Error()))
@@ -106,8 +111,34 @@ func validateInstanceAndDiskType(fldPath *field.Path, diskType, instanceType, ar
 	return nil
 }
 
+func validateInstanceAndConfidentialCompute(fldPath *field.Path, instanceType string, onHostMaintenance gcp.OnHostMaintenanceType, confidentialCompute gcp.ConfidentialComputePolicy) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if confidentialCompute == gcp.ConfidentialComputePolicy(gcp.DisabledFeature) {
+		// Nothing to validate here
+		return allErrs
+	}
+
+	if onHostMaintenance != gcp.OnHostMaintenanceTerminate {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("onHostMaintenance"), onHostMaintenance, fmt.Sprintf("onHostMaintenace must be set to Terminate when confidentialCompute is %s", confidentialCompute)))
+	}
+
+	machineType, _, _ := strings.Cut(instanceType, "-")
+	machineSupportMatrixSelector := confidentialCompute
+	if confidentialCompute == gcp.ConfidentialComputePolicy(gcp.EnabledFeature) {
+		machineSupportMatrixSelector = gcp.ConfidentialComputePolicySEV
+	}
+	supportedMachineTypes, ok := gcp.ConfidentialComputePolicyToSupportedInstanceType[machineSupportMatrixSelector]
+	if !ok {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("confidentialCompute"), confidentialCompute, fmt.Sprintf("Unknown confidential computing technology %s", confidentialCompute)))
+	} else if !slices.Contains(supportedMachineTypes, machineType) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("type"), instanceType, fmt.Sprintf("Machine type does not support a Confidential Compute value of %s. Machine types supporting %s: %s", confidentialCompute, confidentialCompute, strings.Join(supportedMachineTypes, ", "))))
+	}
+
+	return allErrs
+}
+
 // ValidateInstanceType ensures the instance type has sufficient Vcpu and Memory.
-func ValidateInstanceType(client API, fieldPath *field.Path, project, region string, zones []string, diskType string, instanceType string, req resourceRequirements, arch string) field.ErrorList {
+func ValidateInstanceType(client API, fieldPath *field.Path, project, region string, zones []string, diskType string, instanceType string, req resourceRequirements, arch string, onHostMaintenance string, confidentialCompute string) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	typeMeta, typeZones, err := client.GetMachineTypeWithZones(context.TODO(), project, region, instanceType)
@@ -121,6 +152,14 @@ func ValidateInstanceType(client API, fieldPath *field.Path, project, region str
 	if fieldErr := validateInstanceAndDiskType(fieldPath, diskType, instanceType, arch); fieldErr != nil {
 		return append(allErrs, fieldErr)
 	}
+
+	allErrs = append(allErrs,
+		validateInstanceAndConfidentialCompute(
+			fieldPath,
+			instanceType,
+			gcp.OnHostMaintenanceType(onHostMaintenance),
+			gcp.ConfidentialComputePolicy(confidentialCompute),
+		)...)
 
 	userZones := sets.New(zones...)
 	if len(userZones) == 0 {
@@ -179,6 +218,8 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 
 	defaultInstanceType := ""
 	defaultDiskType := gcp.PDSSD
+	defaultOnHostMaintenance := string(gcp.OnHostMaintenanceMigrate)
+	defaultConfidentialCompute := string(gcp.DisabledFeature)
 	defaultZones := []string{}
 
 	// Default requirements need to be sufficient to support Control Plane instances.
@@ -195,6 +236,14 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 			defaultDiskType = ic.GCP.DefaultMachinePlatform.DiskType
 		}
 
+		if ic.GCP.DefaultMachinePlatform.OnHostMaintenance != "" {
+			defaultOnHostMaintenance = ic.GCP.DefaultMachinePlatform.OnHostMaintenance
+		}
+
+		if ic.GCP.DefaultMachinePlatform.ConfidentialCompute != "" {
+			defaultConfidentialCompute = ic.GCP.DefaultMachinePlatform.ConfidentialCompute
+		}
+
 		if ic.GCP.DefaultMachinePlatform.InstanceType != "" {
 			allErrs = append(allErrs,
 				ValidateInstanceType(
@@ -207,6 +256,8 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 					ic.GCP.DefaultMachinePlatform.InstanceType,
 					defaultInstanceReq,
 					unknownArchitecture,
+					defaultOnHostMaintenance,
+					defaultConfidentialCompute,
 				)...)
 		}
 	}
@@ -215,6 +266,8 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 	instanceType := defaultInstanceType
 	arch := types.ArchitectureAMD64
 	cpDiskType := defaultDiskType
+	cpOnHostMaintenance := defaultOnHostMaintenance
+	cpConfidentialCompute := defaultConfidentialCompute
 	if ic.ControlPlane != nil {
 		arch = string(ic.ControlPlane.Architecture)
 		if instanceType == "" {
@@ -229,6 +282,12 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 			}
 			if ic.ControlPlane.Platform.GCP.DiskType != "" {
 				cpDiskType = ic.ControlPlane.Platform.GCP.DiskType
+			}
+			if ic.ControlPlane.Platform.GCP.OnHostMaintenance != "" {
+				cpOnHostMaintenance = ic.ControlPlane.Platform.GCP.OnHostMaintenance
+			}
+			if ic.ControlPlane.Platform.GCP.ConfidentialCompute != "" {
+				cpConfidentialCompute = ic.ControlPlane.Platform.GCP.ConfidentialCompute
 			}
 		}
 	}
@@ -252,6 +311,8 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 				instanceType,
 				controlPlaneReq,
 				arch,
+				cpOnHostMaintenance,
+				cpConfidentialCompute,
 			)...)
 	}
 
@@ -260,6 +321,8 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 		zones := defaultZones
 		instanceType := defaultInstanceType
 		diskType := defaultDiskType
+		onHostMaintenance := defaultOnHostMaintenance
+		confidentialCompute := defaultConfidentialCompute
 		if instanceType == "" {
 			instanceType = DefaultInstanceTypeForArch(compute.Architecture)
 		}
@@ -273,6 +336,12 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 			}
 			if len(compute.Platform.GCP.Zones) > 0 {
 				zones = compute.Platform.GCP.Zones
+			}
+			if compute.Platform.GCP.OnHostMaintenance != "" {
+				onHostMaintenance = compute.Platform.GCP.OnHostMaintenance
+			}
+			if compute.Platform.GCP.ConfidentialCompute != "" {
+				confidentialCompute = compute.Platform.GCP.ConfidentialCompute
 			}
 		}
 
@@ -291,6 +360,8 @@ func validateInstanceTypes(client API, ic *types.InstallConfig) field.ErrorList 
 				instanceType,
 				computeReq,
 				string(arch),
+				onHostMaintenance,
+				confidentialCompute,
 			)...)
 	}
 
@@ -458,6 +529,21 @@ func validateNetworks(client API, ic *types.InstallConfig, fieldPath *field.Path
 		allErrs = append(allErrs, validateSubnet(client, ic, fieldPath.Child("controlPlaneSubnet"), subnets, ic.GCP.ControlPlaneSubnet)...)
 	}
 
+	return allErrs
+}
+
+func validateServiceEndpoints(_ API, ic *types.InstallConfig, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// attempt to resolve all the custom (overridden) endpoints. If any are not reachable,
+	// then the installation should fail not skip the endpoint use.
+	for id, serviceEndpoint := range ic.GCP.ServiceEndpoints {
+		if _, err := url.Parse(serviceEndpoint.URL); err != nil {
+			allErrs = append(allErrs, field.Invalid(fieldPath.Child("serviceEndpoints").Index(id), serviceEndpoint.URL, fmt.Sprintf("failed to parse service endpoint url: %v", err)))
+		} else if _, err := http.Head(serviceEndpoint.URL); err != nil {
+			allErrs = append(allErrs, field.Invalid(fieldPath.Child("serviceEndpoints").Index(id), serviceEndpoint.URL, fmt.Sprintf("error connecting to endpoint: %v", err)))
+		}
+	}
 	return allErrs
 }
 
@@ -709,4 +795,52 @@ func checkArchitecture(imageArch string, icArch types.Architecture, role string)
 // validated tags in-memory.
 func validateUserTags(client API, projectID string, userTags []gcp.UserTag) error {
 	return NewTagManager(client).validateAndPersistUserTags(context.Background(), projectID, userTags)
+}
+
+// validatePlatformKMSKeys checks for encryption keys for all the machine pools. The encryption key rings are
+// checked against the API for validity/availability.
+func validatePlatformKMSKeys(client API, ic *types.InstallConfig, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	cp := ic.ControlPlane
+	validatedControlPlaneKey := false
+	if cp != nil && cp.Platform.GCP != nil && cp.Platform.GCP.EncryptionKey != nil && cp.Platform.GCP.EncryptionKey.KMSKey != nil {
+		if _, err := client.GetKeyRing(context.TODO(), cp.Platform.GCP.OSDisk.EncryptionKey.KMSKey); err != nil {
+			return append(allErrs, field.Invalid(fieldPath.Child("controlPlane").Child("encryptionKey").Child("kmsKey").Child("keyRing"),
+				cp.Platform.GCP.OSDisk.EncryptionKey.KMSKey.KeyRing,
+				err.Error(),
+			))
+		}
+		validatedControlPlaneKey = true
+	}
+
+	validatedComputeKeys := false
+	for _, mp := range ic.Compute {
+		if mp.Platform.GCP != nil && mp.Platform.GCP.EncryptionKey != nil && mp.Platform.GCP.EncryptionKey.KMSKey != nil {
+			if _, err := client.GetKeyRing(context.TODO(), mp.Platform.GCP.OSDisk.EncryptionKey.KMSKey); err != nil {
+				allErrs = append(allErrs, field.Invalid(fieldPath.Child("compute").Child("encryptionKey").Child("kmsKey").Child("keyRing"),
+					mp.Platform.GCP.OSDisk.EncryptionKey.KMSKey.KeyRing,
+					err.Error(),
+				))
+			} else {
+				validatedComputeKeys = true
+			}
+		}
+	}
+
+	defaultMp := ic.GCP.DefaultMachinePlatform
+	if defaultMp != nil && defaultMp.EncryptionKey != nil && defaultMp.EncryptionKey.KMSKey != nil {
+		if _, err := client.GetKeyRing(context.TODO(), defaultMp.EncryptionKey.KMSKey); err != nil {
+			if validatedControlPlaneKey && (validatedComputeKeys && len(allErrs) == 0) {
+				logrus.Warn("defaultMachinePool.encryptionKey.KMSKey.KeyRing is not valid, but compute and control plane key rings are valid")
+			} else {
+				return append(allErrs, field.Invalid(fieldPath.Child("defaultMachinePool").Child("encryptionKey").Child("kmsKey").Child("keyRing"),
+					defaultMp.EncryptionKey.KMSKey.KeyRing,
+					err.Error(),
+				))
+			}
+		}
+	}
+
+	return allErrs
 }

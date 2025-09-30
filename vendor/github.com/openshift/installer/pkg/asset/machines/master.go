@@ -59,6 +59,7 @@ import (
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
 	ovirttypes "github.com/openshift/installer/pkg/types/ovirt"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
+	powervsdefaults "github.com/openshift/installer/pkg/types/powervs/defaults"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 	ibmcloudapi "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis"
 	ibmcloudprovider "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
@@ -176,7 +177,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 	// Check if SNO topology is supported on this platform
 	if pool.Replicas != nil && *pool.Replicas == 1 {
 		bootstrapInPlace := false
-		if ic.BootstrapInPlace != nil {
+		if ic.BootstrapInPlace != nil && ic.BootstrapInPlace.InstallationDisk != "" {
 			bootstrapInPlace = true
 		}
 		if !supportedSingleNodePlatform(bootstrapInPlace, ic.Platform.Name()) {
@@ -186,15 +187,9 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 
 	switch ic.Platform.Name() {
 	case awstypes.Name:
-		subnets := map[string]string{}
-		if len(ic.Platform.AWS.Subnets) > 0 {
-			subnetMeta, err := installConfig.AWS.PrivateSubnets(ctx)
-			if err != nil {
-				return err
-			}
-			for id, subnet := range subnetMeta {
-				subnets[subnet.Zone.Name] = id
-			}
+		subnets, err := aws.MachineSubnetsByZones(ctx, installConfig, awstypes.ClusterNodeSubnetRole)
+		if err != nil {
+			return err
 		}
 
 		mpool := defaultAWSMachinePoolPlatform("master")
@@ -256,6 +251,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 			"master",
 			masterUserDataSecretName,
 			installConfig.Config.Platform.AWS.UserTags,
+			awstypes.IsPublicOnlySubnetsEnabled(),
 		)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
@@ -343,7 +339,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		}
 		openstack.ConfigMasters(machines, clusterID.InfraID)
 	case azuretypes.Name:
-		mpool := defaultAzureMachinePoolPlatform()
+		mpool := defaultAzureMachinePoolPlatform(installConfig.Config.Platform.Azure.CloudName)
 		mpool.InstanceType = azuredefaults.ControlPlaneInstanceType(
 			installConfig.Config.Platform.Azure.CloudName,
 			installConfig.Config.Platform.Azure.Region,
@@ -392,8 +388,12 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		if err != nil {
 			return err
 		}
+		session, err := installConfig.Azure.Session()
+		if err != nil {
+			return err
+		}
 		useImageGallery := installConfig.Azure.CloudName != azuretypes.StackCloud
-		machines, controlPlaneMachineSet, err = azure.Machines(clusterID.InfraID, ic, &pool, rhcosImage.ControlPlane, "master", masterUserDataSecretName, capabilities, useImageGallery)
+		machines, controlPlaneMachineSet, err = azure.Machines(clusterID.InfraID, ic, &pool, rhcosImage.ControlPlane, "master", masterUserDataSecretName, capabilities, useImageGallery, session)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
@@ -480,9 +480,8 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		}
 
 		pool.Platform.VSphere = &mpool
-		templateName := clusterID.InfraID + "-rhcos"
 
-		data, err := vsphere.Machines(clusterID.InfraID, ic, &pool, templateName, "master", masterUserDataSecretName)
+		data, err := vsphere.Machines(clusterID.InfraID, ic, &pool, "master", masterUserDataSecretName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
@@ -528,7 +527,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		return fmt.Errorf("invalid Platform")
 	}
 
-	data, err := userDataSecret(masterUserDataSecretName, mign.File.Data)
+	data, err := UserDataSecret(masterUserDataSecretName, mign.File.Data)
 	if err != nil {
 		return errors.Wrap(err, "failed to create user-data secret for master machines")
 	}
@@ -575,6 +574,21 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 				return errors.Wrap(err, "failed to create ignition for Power SMT for master machines")
 			}
 			machineConfigs = append(machineConfigs, ignPowerSMT)
+		}
+
+		if installConfig.Config.Publish == types.InternalPublishingStrategy &&
+			(len(installConfig.Config.ImageDigestSources) > 0 || len(installConfig.Config.DeprecatedImageContentSources) > 0) {
+			ignChrony, err := machineconfig.ForCustomNTP("master", powervsdefaults.DefaultNTPServer)
+			if err != nil {
+				return errors.Wrap(err, "failed to create ignition for custom NTP for master machines")
+			}
+			machineConfigs = append(machineConfigs, ignChrony)
+
+			ignRoutes, err := machineconfig.ForExtraRoutes("master", powervsdefaults.DefaultExtraRoutes(), ic.MachineNetwork[0].CIDR.String())
+			if err != nil {
+				return errors.Wrap(err, "failed to create ignition for extra routes for master machines")
+			}
+			machineConfigs = append(machineConfigs, ignRoutes)
 		}
 	}
 	// The maximum number of networks supported on ServiceNetwork is two, one IPv4 and one IPv6 network.
@@ -891,7 +905,7 @@ func createAssetFiles(objects []interface{}, fileName string) ([]*asset.File, er
 // a platform.
 func supportedSingleNodePlatform(bootstrapInPlace bool, platformName string) bool {
 	switch platformName {
-	case awstypes.Name, gcptypes.Name, azuretypes.Name, powervstypes.Name, nonetypes.Name:
+	case awstypes.Name, gcptypes.Name, azuretypes.Name, powervstypes.Name, nonetypes.Name, ibmcloudtypes.Name:
 		// Single node OpenShift installations supported without `bootstrapInPlace`
 		return true
 	case externaltypes.Name:

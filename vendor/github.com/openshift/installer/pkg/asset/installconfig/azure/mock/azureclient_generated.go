@@ -12,7 +12,7 @@ import (
 	subscriptions "github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/resources/mgmt/subscriptions"
 	network "github.com/Azure/azure-sdk-for-go/profiles/2020-09-01/network/mgmt/network"
 	compute "github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockAPI is a mock of API interface.
@@ -66,6 +66,20 @@ func (m *MockAPI) CheckIPAddressAvailability(ctx context.Context, resourceGroupN
 func (mr *MockAPIMockRecorder) CheckIPAddressAvailability(ctx, resourceGroupName, virtualNetwork, ipAddr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIPAddressAvailability", reflect.TypeOf((*MockAPI)(nil).CheckIPAddressAvailability), ctx, resourceGroupName, virtualNetwork, ipAddr)
+}
+
+// CheckIfExistsStorageAccount mocks base method.
+func (m *MockAPI) CheckIfExistsStorageAccount(ctx context.Context, resourceGroup, storageAccountName, region string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfExistsStorageAccount", ctx, resourceGroup, storageAccountName, region)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckIfExistsStorageAccount indicates an expected call of CheckIfExistsStorageAccount.
+func (mr *MockAPIMockRecorder) CheckIfExistsStorageAccount(ctx, resourceGroup, storageAccountName, region interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfExistsStorageAccount", reflect.TypeOf((*MockAPI)(nil).CheckIfExistsStorageAccount), ctx, resourceGroup, storageAccountName, region)
 }
 
 // GetAvailabilityZones mocks base method.

@@ -60,6 +60,7 @@ type API interface {
 
 	// Data Center
 	GetDatacenterCapabilities(ctx context.Context, region string) (map[string]bool, error)
+	GetDatacenterSupportedSystems(ctx context.Context, region string) ([]string, error)
 
 	// API
 	GetAuthenticatorAPIKeyDetails(ctx context.Context) (*iamidentityv1.APIKey, error)
@@ -304,8 +305,7 @@ func (c *Client) GetDNSCustomResolverIP(ctx context.Context, dnsID string, vpcID
 
 // CreateDNSCustomResolver creates a custom resolver associated with the specified VPC in the specified DNS zone.
 func (c *Client) CreateDNSCustomResolver(ctx context.Context, name string, dnsID string, vpcID string) (*dnssvcsv1.CustomResolver, error) {
-	createCustomResolverOptions := c.dnsServicesAPI.NewCreateCustomResolverOptions(dnsID)
-	createCustomResolverOptions.SetName(name)
+	createCustomResolverOptions := c.dnsServicesAPI.NewCreateCustomResolverOptions(dnsID, name)
 
 	subnets, err := c.GetVPCSubnets(ctx, vpcID)
 	if err != nil {
@@ -465,14 +465,12 @@ func (c *Client) GetDNSInstancePermittedNetworks(ctx context.Context, dnsID stri
 
 // AddVPCToPermittedNetworks adds the specified VPC to the specified DNS zone.
 func (c *Client) AddVPCToPermittedNetworks(ctx context.Context, vpcCRN string, dnsID string, dnsZone string) error {
-	createPermittedNetworkOptions := c.dnsServicesAPI.NewCreatePermittedNetworkOptions(dnsID, dnsZone)
 	permittedNetwork, err := c.dnsServicesAPI.NewPermittedNetworkVpc(vpcCRN)
 	if err != nil {
 		return err
 	}
 
-	createPermittedNetworkOptions.SetPermittedNetwork(permittedNetwork)
-	createPermittedNetworkOptions.SetType("vpc")
+	createPermittedNetworkOptions := c.dnsServicesAPI.NewCreatePermittedNetworkOptions(dnsID, dnsZone, dnssvcsv1.CreatePermittedNetworkOptions_Type_Vpc, permittedNetwork)
 
 	_, _, err = c.dnsServicesAPI.CreatePermittedNetworkWithContext(ctx, createPermittedNetworkOptions)
 	if err != nil {
@@ -561,11 +559,10 @@ func (c *Client) createPrivateDNSRecord(ctx context.Context, crnstr string, base
 	if err != nil {
 		return fmt.Errorf("NewResourceRecordInputRdataRdataCnameRecord failed: %w", err)
 	}
-	createOptions := c.dnsServicesAPI.NewCreateResourceRecordOptions(dnsCRN.ServiceInstance, zoneID)
+	createOptions := c.dnsServicesAPI.NewCreateResourceRecordOptions(dnsCRN.ServiceInstance, zoneID, dnssvcsv1.CreateResourceRecordOptions_Type_Cname)
 	createOptions.SetRdata(rdataCnameRecord)
 	createOptions.SetTTL(120)
 	createOptions.SetName(hostname)
-	createOptions.SetType("CNAME")
 	result, resp, err := c.dnsServicesAPI.CreateResourceRecord(createOptions)
 	if err != nil {
 		logrus.Errorf("dnsRecordService.CreateResourceRecord returns %v", err)
@@ -1096,6 +1093,23 @@ func (c *Client) GetDatacenterCapabilities(ctx context.Context, region string) (
 		return nil, fmt.Errorf("failed to get datacenter capabilities: %w", err)
 	}
 	return getOk.Payload.Capabilities, nil
+}
+
+// GetDatacenterSupportedSystems retrieves the capabilities of the specified datacenter.
+func (c *Client) GetDatacenterSupportedSystems(ctx context.Context, region string) ([]string, error) {
+	var err error
+	if c.BXCli.PISession == nil {
+		err = c.BXCli.NewPISession()
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize PISession in GetDatacenterSupportedSystems: %w", err)
+		}
+	}
+	params := datacenters.NewV1DatacentersGetParamsWithContext(ctx).WithDatacenterRegion(region)
+	getOk, err := c.BXCli.PISession.Power.Datacenters.V1DatacentersGet(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datacenter supported systems: %w", err)
+	}
+	return getOk.Payload.CapabilitiesDetails.SupportedSystems.General, nil
 }
 
 // TransitGatewayID checks to see if the name is an existing transit gateway name.

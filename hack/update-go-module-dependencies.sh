@@ -3,7 +3,7 @@
 export GOPRIVATE=github.com
 export GONOPROXY="y"
 
-RELEASE=release-4.18
+RELEASE=release-4.19
 VM_SKU=aro_4$(echo $RELEASE | sed 's/.*\.//')
 declare -a pinned=(
 	"github.com/openshift/assisted-service/api"
@@ -11,8 +11,6 @@ declare -a pinned=(
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/api"
 	"github.com/openshift/client-go"
-	"github.com/openshift/machine-api-operator"
-	"github.com/openshift/machine-api-provider-gcp"
 )
 
 read -p "This will update to $RELEASE. Is this correct? " -n 1

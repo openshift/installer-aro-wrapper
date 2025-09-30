@@ -84,7 +84,7 @@ func regenerateMCSCertKey(ic *installconfig.InstallConfig, ca *tls.RootCA, priva
 	cfg := &tls.CertCfg{
 		Subject:      pkix.Name{CommonName: "system:machine-config-server"},
 		ExtKeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		Validity:     tls.ValidityTenYears,
+		Validity:     tls.ValidityTenYears(),
 	}
 	cfg.IPAddresses = []net.IP{}
 	cfg.DNSNames = []string{hostname}

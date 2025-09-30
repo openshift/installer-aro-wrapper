@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	"github.com/openshift/api/features"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	ibmcloudmachines "github.com/openshift/installer/pkg/asset/machines/ibmcloud"
@@ -152,7 +152,7 @@ func (cpc *CloudProviderConfig) Generate(ctx context.Context, dependencies asset
 			VirtualNetworkName:       vnet,
 			SubnetName:               subnet,
 			ResourceManagerEndpoint:  installConfig.Config.Azure.ARMEndpoint,
-			ARO:                      installConfig.Config.Azure.IsARO(),
+			UseManagedIdentity:       installConfig.Config.CreateAzureIdentity(),
 		}.JSON()
 		if err != nil {
 			return errors.Wrap(err, "could not create cloud provider config")
@@ -171,7 +171,28 @@ func (cpc *CloudProviderConfig) Generate(ctx context.Context, dependencies asset
 		if installConfig.Config.GCP.ComputeSubnet != "" {
 			subnet = installConfig.Config.GCP.ComputeSubnet
 		}
-		gcpConfig, err := gcpmanifests.CloudProviderConfig(clusterID.InfraID, installConfig.Config.GCP.ProjectID, subnet, installConfig.Config.GCP.NetworkProjectID)
+
+		apiEndpoint := ""
+		containerAPIEndpoint := ""
+		for _, endpoint := range installConfig.Config.GCP.ServiceEndpoints {
+			// the installconfig should only allow one service endpoint for each
+			// name, otherwise this would take the last one.
+			switch endpoint.Name {
+			case configv1.GCPServiceEndpointNameCompute:
+				apiEndpoint = endpoint.URL
+			case configv1.GCPServiceEndpointNameContainer:
+				containerAPIEndpoint = endpoint.URL
+			}
+		}
+
+		gcpConfig, err := gcpmanifests.CloudProviderConfig(
+			clusterID.InfraID,
+			installConfig.Config.GCP.ProjectID,
+			subnet,
+			installConfig.Config.GCP.NetworkProjectID,
+			apiEndpoint,
+			containerAPIEndpoint,
+		)
 		if err != nil {
 			return errors.Wrap(err, "could not create cloud provider config")
 		}
@@ -329,14 +350,7 @@ func (cpc *CloudProviderConfig) Generate(ctx context.Context, dependencies asset
 		}
 		cm.Data[cloudProviderConfigDataKey] = powervsConfig
 	case vspheretypes.Name:
-		var vsphereConfig string
-		var err error
-		// When we GA multi vcenter, we should only support yaml generation here.
-		if installConfig.Config.EnabledFeatureGates().Enabled(features.FeatureGateVSphereMultiVCenters) {
-			vsphereConfig, err = vspheremanifests.CloudProviderConfigYaml(clusterID.InfraID, installConfig.Config.Platform.VSphere)
-		} else {
-			vsphereConfig, err = vspheremanifests.CloudProviderConfigIni(clusterID.InfraID, installConfig.Config.Platform.VSphere)
-		}
+		vsphereConfig, err := vspheremanifests.CloudProviderConfigYaml(clusterID.InfraID, installConfig.Config.Platform.VSphere)
 
 		if err != nil {
 			return errors.Wrap(err, "could not create cloud provider config")

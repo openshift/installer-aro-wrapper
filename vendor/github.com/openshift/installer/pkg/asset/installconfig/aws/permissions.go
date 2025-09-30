@@ -109,6 +109,7 @@ var permissions = map[PermissionGroup][]string{
 		"ec2:DescribeInstanceAttribute",
 		"ec2:DescribeInstanceCreditSpecifications",
 		"ec2:DescribeInstances",
+		"ec2:DescribeInstanceTypeOfferings", // Needed to filter zones by instance type
 		"ec2:DescribeInternetGateways",
 		"ec2:DescribeKeyPairs",
 		"ec2:DescribeNatGateways",
@@ -220,7 +221,6 @@ var permissions = map[PermissionGroup][]string{
 	},
 	// Permissions required for deleting base cluster resources
 	PermissionDeleteBase: {
-		"autoscaling:DescribeAutoScalingGroups",
 		"ec2:DeleteNetworkInterface",
 		"ec2:DeletePlacementGroup",
 		"ec2:DeleteTags",
@@ -255,6 +255,8 @@ var permissions = map[PermissionGroup][]string{
 		"ec2:CreateVpcEndpoint",
 		"ec2:ModifySubnetAttribute",
 		"ec2:ModifyVpcAttribute",
+		// Needed by CAPA to update outdated routes
+		"ec2:ReplaceRoute",
 	},
 	// Permissions required for deleting network resources
 	PermissionDeleteNetworking: {
@@ -339,8 +341,6 @@ var permissions = map[PermissionGroup][]string{
 	PermissionDefaultZones: {
 		// Needed to list the zones available in the region
 		"ec2:DescribeAvailabilityZones",
-		// Needed to filter zones by instance type
-		"ec2:DescribeInstanceTypeOfferings",
 	},
 	PermissionAssumeRole: {
 		// Needed so the installer can use the provided custom IAM role
@@ -483,7 +483,7 @@ func ValidateCreds(ssn *session.Session, groups []PermissionGroup, region string
 // RequiredPermissionGroups returns a set of required permissions for a given cluster configuration.
 func RequiredPermissionGroups(ic *types.InstallConfig) []PermissionGroup {
 	permissionGroups := []PermissionGroup{PermissionCreateBase}
-	usingExistingVPC := len(ic.AWS.Subnets) != 0
+	usingExistingVPC := len(ic.AWS.VPC.Subnets) != 0
 	usingExistingPrivateZone := len(ic.AWS.HostedZone) != 0
 
 	if !usingExistingVPC {
@@ -725,7 +725,7 @@ func includesZones(installConfig *types.InstallConfig) bool {
 		mpool.Set(compute.Platform.AWS)
 	}
 
-	return len(mpool.Zones) > 0 || len(installConfig.AWS.Subnets) > 0
+	return len(mpool.Zones) > 0 || len(installConfig.AWS.VPC.Subnets) > 0
 }
 
 // includesAssumeRole checks if a custom IAM role is specified in the install-config.

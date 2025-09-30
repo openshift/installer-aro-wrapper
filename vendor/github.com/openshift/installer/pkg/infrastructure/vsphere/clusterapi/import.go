@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/cluster-api-provider-vsphere/pkg/session"
 
 	"github.com/openshift/installer/pkg/types/vsphere"
+	"github.com/openshift/installer/pkg/utils"
 )
 
 func debugCorruptOva(cachedImage string, err error) error {
@@ -58,8 +59,16 @@ func checkOvaSecureBoot(ovfEnvelope *ovf.Envelope) bool {
 }
 
 func importRhcosOva(ctx context.Context, session *session.Session, folder *object.Folder, cachedImage, clusterID, tagID, diskProvisioningType string, failureDomain vsphere.FailureDomain) error {
-	name := fmt.Sprintf("%s-rhcos-%s-%s", clusterID, failureDomain.Region, failureDomain.Zone)
+	// Name originally was cluster id + fd.region + fd.zone.  This could cause length of ova to be longer than max allowed.
+	// So for now, we are going to make cluster id  + fd.name
+	name := utils.GenerateVSphereTemplateName(clusterID, failureDomain.Name)
 	logrus.Infof("Importing OVA %v into failure domain %v.", name, failureDomain.Name)
+
+	// OVA name must not exceed 80 characters
+	if len(name) > 80 {
+		logrus.Warningf("Unable to generate ova template name due to exceeding 80 characters. Cluster=\"%v\" Failure Domain=\"%v\" results in \"%v\"", clusterID, failureDomain.Name, name)
+		return fmt.Errorf("ova name \"%v\" exceeed 80 characters (%d)", name, len(name))
+	}
 
 	archive := &importer.TapeArchive{Path: cachedImage}
 
@@ -90,10 +99,14 @@ func importRhcosOva(ctx context.Context, session *session.Session, folder *objec
 	}
 
 	clusterHostSystems, err := cluster.Hosts(ctx)
-
 	if err != nil {
 		return fmt.Errorf("failed to get cluster hosts: %w", err)
 	}
+
+	if len(clusterHostSystems) == 0 {
+		return fmt.Errorf("the vCenter cluster %s has no ESXi nodes", failureDomain.Topology.ComputeCluster)
+	}
+
 	resourcePool, err := session.Finder.ResourcePool(ctx, failureDomain.Topology.ResourcePool)
 	if err != nil {
 		return fmt.Errorf("failed to find resource pool: %w", err)
@@ -141,7 +154,8 @@ func importRhcosOva(ctx context.Context, session *session.Session, folder *objec
 		string(ovfDescriptor),
 		resourcePool.Reference(),
 		datastore.Reference(),
-		cisp)
+		&cisp)
+
 	if err != nil {
 		return fmt.Errorf("failed to create import spec: %w", err)
 	}

@@ -82,6 +82,7 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 	rhcosImage := new(rhcos.Image)
 	bootstrapIgnAsset := &bootstrap.Bootstrap{}
 	masterIgnAsset := &machine.Master{}
+	workerIgnAsset := &machine.Worker{}
 	tfvarsAsset := &tfvars.TerraformVariables{}
 	rootCA := &tls.RootCA{}
 	parents.Get(
@@ -94,6 +95,7 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 		rhcosImage,
 		bootstrapIgnAsset,
 		masterIgnAsset,
+		workerIgnAsset,
 		capiMachinesAsset,
 		tfvarsAsset,
 		rootCA,
@@ -279,6 +281,7 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 	if err != nil {
 		return fileList, fmt.Errorf("unable to inject installation info: %w", err)
 	}
+	workerIgnData := workerIgnAsset.Files()[0].Data
 	ignitionSecrets := []*corev1.Secret{}
 
 	// The cloud-platform may need to override the default
@@ -288,6 +291,7 @@ func (i *InfraProvider) Provision(ctx context.Context, dir string, parents asset
 			Client:           cl,
 			BootstrapIgnData: bootstrapIgnData,
 			MasterIgnData:    masterIgnData,
+			WorkerIgnData:    workerIgnData,
 			InfraID:          clusterID.InfraID,
 			InstallConfig:    installConfig,
 			TFVarsAsset:      tfvarsAsset,
@@ -629,7 +633,8 @@ func checkMachineReady(machine *clusterv1.Machine, requirePublicIP bool) (bool, 
 		logrus.Debugf("Machine %s has not yet provisioned: %s", machine.Name, machine.Status.Phase)
 		return false, nil
 	} else if machine.Status.Phase == string(clusterv1.MachinePhaseFailed) {
-		msg := ptr.Deref(machine.Status.FailureMessage, "machine.Status.FailureMessage was not set")
+		//TODO: We need to update this to use non deprecated field
+		msg := ptr.Deref(machine.Status.FailureMessage, "machine.Status.FailureMessage was not set") //nolint:staticcheck
 		return false, fmt.Errorf("machine %s failed to provision: %s", machine.Name, msg)
 	}
 	logrus.Debugf("Machine %s has status: %s", machine.Name, machine.Status.Phase)
