@@ -25,11 +25,12 @@
 # we also must take care of replacing modules such as  github.com/metal3-io/baremetal-operator
 # with github.com/openshift/baremetal-operator (just an example, there are more).
 
-RELEASE=release-4.15
-K8S_RELEASE=v0.28.3
-GO_VERSION=1.20
+RELEASE=release-4.17
+K8S_RELEASE=v0.30.10
+GO_VERSION=1.24
 
 for x in vendor/github.com/openshift/*; do
+	echo $x
 	case $x in
 		# Review the list of special cases on each release.
 
@@ -58,6 +59,8 @@ for x in vendor/github.com/openshift/*; do
 		# We skip it and let go mod resolve it
 		vendor/github.com/openshift/custom-resource-status)
 			;;
+		vendor/github.com/openshift/assisted-image-service)
+			;;
 
 		*)
 			go mod edit -replace "${x##vendor/}"="$(go list -mod=mod -m ${x##vendor/}@$RELEASE | sed -e 's/ /@/')"
@@ -80,9 +83,9 @@ for x in vendor/k8s.io/*; do
 done
 
 # From installer(-aro), they don't use forks anymore!
-go mod edit -replace sigs.k8s.io/cluster-api=sigs.k8s.io/cluster-api@v1.5.3
-go mod edit -replace sigs.k8s.io/cluster-api-provider-aws/v2=sigs.k8s.io/cluster-api-provider-aws/v2@v2.0.0-20231024062453-0bf78b04b305
-go mod edit -replace sigs.k8s.io/cluster-api-provider-azure=sigs.k8s.io/cluster-api-provider-azure@v1.11.1-0.20231026140308-a3f4914170d9
+go mod edit -replace sigs.k8s.io/cluster-api=sigs.k8s.io/cluster-api@v1.8.4
+go mod edit -replace sigs.k8s.io/cluster-api-provider-aws/v2=sigs.k8s.io/cluster-api-provider-aws/v2@v2.6.1-0.20241026111253-5b4f7c1acb52
+go mod edit -replace sigs.k8s.io/cluster-api-provider-azure=sigs.k8s.io/cluster-api-provider-azure@v1.15.1-0.20240617212811-a52056dfb88c
 
 for x in baremetal-operator baremetal-operator/apis baremetal-operator/pkg/hardwareutils cluster-api-provider-baremetal cluster-api-provider-metal3 cluster-api-provider-metal3/api; do
   go mod edit -replace github.com/metal3-io/$x="$(go list -mod=mod -m github.com/openshift/$x@$RELEASE | sed -e 's/ /@/')"
