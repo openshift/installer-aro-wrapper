@@ -2,7 +2,7 @@
 #
 ARG REGISTRY=registry.access.redhat.com
 ARG BUILDER_REGISTRY=registry.ci.openshift.org/ocp/builder
-FROM ${BUILDER_REGISTRY}:rhel-9-golang-1.24-openshift-4.20 AS builder
+FROM --platform=linux/amd64 ${BUILDER_REGISTRY}:rhel-9-golang-1.24-openshift-4.20 AS builder
 
 ENV GO_COMPLIANCE_INFO=0
 USER root
@@ -16,7 +16,7 @@ COPY . /app
 RUN git config --system --add safe.directory '*'
 RUN make aro RELEASE=${IS_OFFICIAL_RELEASE} -o generate && make validate-fips
 
-FROM ${REGISTRY}/ubi9/ubi-minimal
+FROM --platform=linux/amd64 ${REGISTRY}/ubi9/ubi-minimal
 RUN microdnf update -y && microdnf clean all -y
 COPY --from=builder /app/aro /bin/openshift-install
 ENTRYPOINT ["/bin/openshift-install"]
