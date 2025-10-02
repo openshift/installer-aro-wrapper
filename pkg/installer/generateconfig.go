@@ -257,6 +257,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							Identity: &azuretypes.VMIdentity{
 								Type: v1beta1.VMIdentityNone,
 							},
+						UserTags: map[string]string{
+							"red-hat-managed": "true",
 						},
 					},
 				},
