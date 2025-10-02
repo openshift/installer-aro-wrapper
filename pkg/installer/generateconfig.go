@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
+	"sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -252,6 +253,10 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						// a more permanent fix (disabling public DNS
 						// provisioning).
 						BaseDomainResourceGroupName: resourceGroup,
+						DefaultMachinePlatform: &azuretypes.MachinePool{
+							Identity: &azuretypes.VMIdentity{
+								Type: v1beta1.VMIdentityNone,
+							},
 						UserTags: map[string]string{
 							"red-hat-managed": "true",
 						},
