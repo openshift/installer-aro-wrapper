@@ -18,6 +18,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	capzazure "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
+
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -211,6 +213,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 								DiskSizeGB:        1024,
 							},
 							OSImage: *rhcosImage,
+							BootDiagnostics: &azuretypes.BootDiagnostics{
+								Type: capzazure.ManagedDiagnosticsStorage,
+							},
 						},
 					},
 					Hyperthreading: "Enabled",
@@ -231,6 +236,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
 								},
 								OSImage: *rhcosImage,
+								BootDiagnostics: &azuretypes.BootDiagnostics{
+									Type: capzazure.ManagedDiagnosticsStorage,
+								},
 							},
 						},
 						Hyperthreading: "Enabled",
@@ -257,6 +265,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							Identity: &azuretypes.VMIdentity{
 								Type: v1beta1.VMIdentityNone,
 							},
+						},
 						UserTags: map[string]string{
 							"red-hat-managed": "true",
 						},
