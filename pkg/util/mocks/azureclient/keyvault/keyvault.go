@@ -8,9 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockBaseClient is a mock of BaseClient interface.

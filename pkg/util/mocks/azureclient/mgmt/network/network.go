@@ -8,9 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	network "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-08-01/network"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockInterfacesClient is a mock of InterfacesClient interface.

@@ -8,9 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	compute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockDisksClient is a mock of DisksClient interface.

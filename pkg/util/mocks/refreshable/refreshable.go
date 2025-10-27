@@ -7,9 +7,8 @@ package mock_refreshable
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	autorest "github.com/Azure/go-autorest/autorest"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockAuthorizer is a mock of Authorizer interface.
