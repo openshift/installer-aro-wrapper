@@ -4,9 +4,9 @@ package bootstraplogging
 // Licensed under the Apache License 2.0.
 
 import (
+	"github.com/Azure/ARO-RP/pkg/api"
 	"github.com/Azure/go-autorest/autorest/azure"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	utiltls "github.com/openshift/installer-aro-wrapper/pkg/util/tls"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/version"
