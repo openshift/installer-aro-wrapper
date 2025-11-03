@@ -10,12 +10,12 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Azure/ARO-RP/pkg/api"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	storagesdk "github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armstorage"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/azblob"
 )

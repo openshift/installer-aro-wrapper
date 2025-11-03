@@ -10,9 +10,8 @@ import (
 	x509 "crypto/x509"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
+	gomock "github.com/golang/mock/gomock"
 
 	keyvault0 "github.com/openshift/installer-aro-wrapper/pkg/util/keyvault"
 )
