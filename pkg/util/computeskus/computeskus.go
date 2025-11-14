@@ -48,6 +48,30 @@ func IsRestricted(skus map[string]*mgmtcompute.ResourceSku, location, VMSize str
 	return false
 }
 
+// GetCapabilityValue retrieves the value of a specific capability from a resource SKU
+func GetCapabilityValue(sku *mgmtcompute.ResourceSku, capabilityName string) (string, bool) {
+	if sku.Capabilities == nil {
+		return "", false
+	}
+
+	for _, c := range *sku.Capabilities {
+		if *c.Name == capabilityName {
+			return *c.Value, true
+		}
+	}
+
+	return "", false
+}
+
+// RequiresHyperVGenerationV2Only checks if the SKU ONLY supports Gen2 (not Gen1)
+func RequiresHyperVGenerationV2Only(sku *mgmtcompute.ResourceSku) bool {
+	if val, ok := GetCapabilityValue(sku, "HyperVGenerations"); ok {
+		// Only supports V2, not V1
+		return strings.Contains(val, "V2") && !strings.Contains(val, "V1")
+	}
+	return false
+}
+
 // FilterVMSizes filters resource SKU by location and returns only virtual machines, their names, restrictions, location info, and capabilities.
 func FilterVMSizes(skus []mgmtcompute.ResourceSku, location string) map[string]*mgmtcompute.ResourceSku {
 	vmskus := map[string]*mgmtcompute.ResourceSku{}

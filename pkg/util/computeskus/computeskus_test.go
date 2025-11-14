@@ -255,3 +255,103 @@ func TestIsRestricted(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCapabilityValue(t *testing.T) {
+	capabilityName := "TestCapability"
+
+	for _, tt := range []struct {
+		name      string
+		sku       *mgmtcompute.ResourceSku
+		wantValue string
+		wantFound bool
+	}{
+		{
+			name: "capability exists",
+			sku: &mgmtcompute.ResourceSku{
+				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
+					{Name: &capabilityName, Value: to.StringPtr("TestValue")},
+				},
+			},
+			wantValue: "TestValue",
+			wantFound: true,
+		},
+		{
+			name: "capability does not exist",
+			sku: &mgmtcompute.ResourceSku{
+				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
+					{Name: to.StringPtr("OtherCapability"), Value: to.StringPtr("OtherValue")},
+				},
+			},
+			wantValue: "",
+			wantFound: false,
+		},
+		{
+			name:      "capabilities is nil",
+			sku:       &mgmtcompute.ResourceSku{},
+			wantValue: "",
+			wantFound: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			value, found := GetCapabilityValue(tt.sku, capabilityName)
+
+			if value != tt.wantValue {
+				t.Errorf("expected value %q, got %q", tt.wantValue, value)
+			}
+			if found != tt.wantFound {
+				t.Errorf("expected found %v, got %v", tt.wantFound, found)
+			}
+		})
+	}
+}
+
+func TestRequiresHyperVGenerationV2Only(t *testing.T) {
+	hyperVGenCapability := "HyperVGenerations"
+
+	for _, tt := range []struct {
+		name       string
+		sku        *mgmtcompute.ResourceSku
+		wantResult bool
+	}{
+		{
+			name: "supports only V2 - requires Gen2",
+			sku: &mgmtcompute.ResourceSku{
+				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
+					{Name: &hyperVGenCapability, Value: to.StringPtr("V2")},
+				},
+			},
+			wantResult: true,
+		},
+		{
+			name: "supports V1 and V2 - does not require Gen2",
+			sku: &mgmtcompute.ResourceSku{
+				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
+					{Name: &hyperVGenCapability, Value: to.StringPtr("V1,V2")},
+				},
+			},
+			wantResult: false,
+		},
+		{
+			name: "supports only V1 - does not require Gen2",
+			sku: &mgmtcompute.ResourceSku{
+				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
+					{Name: &hyperVGenCapability, Value: to.StringPtr("V1")},
+				},
+			},
+			wantResult: false,
+		},
+		{
+			name:       "no HyperVGenerations capability",
+			sku:        &mgmtcompute.ResourceSku{},
+			wantResult: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			result := RequiresHyperVGenerationV2Only(tt.sku)
+
+			if result != tt.wantResult {
+				t.Errorf("expected %v, got %v", tt.wantResult, result)
+			}
+		})
+	}
+}
