@@ -41,8 +41,10 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
 
-const ALLOW_EXPANDED_AZ_ENV = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
-const CONTROL_PLANE_MACHINE_COUNT = 3
+const (
+	ALLOW_EXPANDED_AZ_ENV       = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
+	CONTROL_PLANE_MACHINE_COUNT = 3
+)
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
@@ -163,10 +165,30 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// TODO: Load this from the OpenShiftCluster from the RP maybe, or get it
 	// from a manifest so it can be specified in the RP's
 	// OpenShiftClusterVersions?
+	
+	// Use Gen2 image SKU by default, fall back to Gen1 if either SKU only supports V1
+	imageSKU := "419-v2" // Gen2 SKU (default)
+
+	// Determine HyperV generation for master and worker skus
+	masterGeneration, err := determineHyperVGeneration(masterSKU)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	workerGeneration, err := determineHyperVGeneration(workerSKU)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	// If any SKU only supports V1, use V1 images for the entire cluster to maintain consistency.
+	// This should help to avoid potential edge cases with mixed generations.
+	if masterGeneration == "V1" || workerGeneration == "V1" {
+		imageSKU = "aro_419" // Gen1 SKU for backward compatibility
+	}
+
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_419",        // "aro_4x"
+		SKU:       imageSKU,
 		Version:   "419.6.20250523", // "4x.yy.2020zzzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
@@ -312,7 +334,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						configv1.ClusterVersionCapabilityStorage,
 					},
 				},
-			}},
+			},
+		},
 	}
 
 	if m.oc.Properties.IngressProfiles[0].Visibility == api.VisibilityPrivate {
@@ -453,4 +476,20 @@ func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.Resource
 	slices.Sort(workerZones)
 
 	return controlPlaneZones, workerZones, nil
+}
+
+// determineFallbackToGenV1 checks if the SKU only supports HyperV Generation V1.
+// It prefers V2 when available, but falls back to V1 if V2 is not supported.
+// Returns "V1" if only V1 is supported, "V2" if V2 is supported.
+func determineHyperVGeneration(sku *mgmtcompute.ResourceSku) (string, error) {
+	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
+	if !capabilityExists {
+		return "", fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
+	}
+	// GetHyperVGenerationVersion prefers V2 if available; returns V1 if only V1 is supported
+	skuGeneration, err := icazure.GetHyperVGenerationVersion(skuCapabilities, "V2")
+	if err != nil {
+		return "", fmt.Errorf("could not fetch HyperV generation for SKU %s: %w", *sku.Name, err)
+	}
+	return skuGeneration, nil
 }
