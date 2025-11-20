@@ -163,10 +163,21 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// TODO: Load this from the OpenShiftCluster from the RP maybe, or get it
 	// from a manifest so it can be specified in the RP's
 	// OpenShiftClusterVersions?
+	// Determine if we need Gen2 images based on VM SKU capabilities.
+	// Some newer VM sizes like Standard_D8s_v6 only support Gen2 images.
+	requiresGen2 := computeskus.RequiresHyperVGenerationV2Only(masterSKU) ||
+		computeskus.RequiresHyperVGenerationV2Only(workerSKU)
+
+	// Use Gen2 image SKU if required, otherwise use Gen1 for compatibility
+	imageSKU := "aro_419" // Gen1 SKU for backward compatibility
+	if requiresGen2 {
+		imageSKU = "419-v2" // Gen2 SKU for VM sizes that require it
+	}
+
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_419",        // "aro_4x"
+		SKU:       imageSKU,
 		Version:   "419.6.20250523", // "4x.yy.2020zzzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
