@@ -1,10 +1,6 @@
 reviewers:
-- anshulvermapatel
 - bennerv
-- bitoku
 - cadenmarchese
-- cblecker
-- fahlmant
 - hawkowl
 - hlipsig
 - jaitaiwan
@@ -13,20 +9,14 @@ reviewers:
 - mociarain
 - petrkotas
 - rogbas
-- SrinivasAtmakuri
 - SudoBrendan
 - tiguelu
 - tsatam
-- ulrichschlueter
 - yjst2012
 - wanghaoran1988
 approvers:
-- anshulvermapatel
 - bennerv
-- bitoku
 - cadenmarchese
-- cblecker
-- fahlmant
 - hawkowl
 - hlipsig
 - jaitaiwan
@@ -35,10 +25,8 @@ approvers:
 - mociarain
 - petrkotas
 - rogbas
-- SrinivasAtmakuri
 - SudoBrendan
 - tiguelu
 - tsatam
-- ulrichschlueter
 - yjst2012
 - wanghaoran1988
