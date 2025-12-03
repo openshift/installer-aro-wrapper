@@ -48,20 +48,6 @@ func IsRestricted(skus map[string]*mgmtcompute.ResourceSku, location, VMSize str
 	return false
 }
 
-// GetCapabilityMap converts *[]ResourceSkuCapabilities to map[string]string
-func GetCapabilityMap(sku *mgmtcompute.ResourceSku) (map[string]string, bool) {
-	if sku.Capabilities == nil || len(*sku.Capabilities) == 0 {
-		return nil, false
-	}
-	capabilityMap := make(map[string]string, len(*sku.Capabilities))
-	for _, c := range *sku.Capabilities {
-		if c.Name != nil && c.Value != nil {
-			capabilityMap[*c.Name] = *c.Value
-		}
-	}
-	return capabilityMap, len(capabilityMap) > 0
-}
-
 // FilterVMSizes filters resource SKU by location and returns only virtual machines, their names, restrictions, location info, and capabilities.
 func FilterVMSizes(skus []mgmtcompute.ResourceSku, location string) map[string]*mgmtcompute.ResourceSku {
 	vmskus := map[string]*mgmtcompute.ResourceSku{}
