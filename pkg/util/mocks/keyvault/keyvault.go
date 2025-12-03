@@ -15,8 +15,9 @@ import (
 	x509 "crypto/x509"
 	reflect "reflect"
 
-	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
 	gomock "go.uber.org/mock/gomock"
+
+	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
 
 	keyvault0 "github.com/openshift/installer-aro-wrapper/pkg/util/keyvault"
 )
