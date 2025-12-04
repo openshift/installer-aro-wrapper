@@ -50,42 +50,42 @@ func TestVMNetworkingType(t *testing.T) {
 	}
 }
 
-func TestDetermineHyperVGeneration(t *testing.T) {
+func TestDetermineSkuSupportsV2Only(t *testing.T) {
 	for _, tt := range []struct {
-		name           string
-		sku            *mgmtcompute.ResourceSku
-		wantGeneration string
-		wantErr        string
+		name       string
+		sku        *mgmtcompute.ResourceSku
+		wantResult bool
+		wantErr    string
 	}{
 		{
-			name: "sku supports both V1 and V2, should prefer V2",
+			name: "sku supports both V1 and V2, does not require V2",
 			sku: &mgmtcompute.ResourceSku{
 				Name: to.StringPtr("Standard_D8s_v3"),
 				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V1,V2")},
 				},
 			},
-			wantGeneration: "V2",
+			wantResult: false,
 		},
 		{
-			name: "sku supports only V2",
+			name: "sku supports only V2, requires V2",
 			sku: &mgmtcompute.ResourceSku{
 				Name: to.StringPtr("Standard_D8s_v6"),
 				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V2")},
 				},
 			},
-			wantGeneration: "V2",
+			wantResult: true,
 		},
 		{
-			name: "sku supports only V1, should fallback to V1",
+			name: "sku supports only V1, does not require V2",
 			sku: &mgmtcompute.ResourceSku{
 				Name: to.StringPtr("Standard_D2_v2"),
 				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V1")},
 				},
 			},
-			wantGeneration: "V1",
+			wantResult: false,
 		},
 		{
 			name: "sku with empty capabilities returns error",
@@ -104,11 +104,11 @@ func TestDetermineHyperVGeneration(t *testing.T) {
 					{Name: to.StringPtr("vCPUs"), Value: to.StringPtr("8")},
 				},
 			},
-			wantErr: "could not fetch HyperV generation for SKU Standard_NoHyperV: unable to determine HyperVGeneration version",
+			wantErr: "could not fetch HyperV generations for SKU Standard_NoHyperV: unable to determine HyperVGeneration version",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			generation, err := determineHyperVGeneration(tt.sku)
+			result, err := determineSkuSupportsV2Only(tt.sku)
 
 			if tt.wantErr != "" {
 				if err == nil {
@@ -124,8 +124,8 @@ func TestDetermineHyperVGeneration(t *testing.T) {
 				return
 			}
 
-			if generation != tt.wantGeneration {
-				t.Errorf("expected generation %q, got %q", tt.wantGeneration, generation)
+			if result != tt.wantResult {
+				t.Errorf("expected %v, got %v", tt.wantResult, result)
 			}
 		})
 	}

@@ -1,5 +1,4 @@
 //go:build aro
-// +build aro
 
 package main
 

@@ -16,10 +16,11 @@ import (
 	net "net"
 	reflect "reflect"
 
+	gomock "go.uber.org/mock/gomock"
+
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	compute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	autorest "github.com/Azure/go-autorest/autorest"
-	gomock "go.uber.org/mock/gomock"
 
 	env "github.com/openshift/installer-aro-wrapper/pkg/env"
 	azureclient "github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"

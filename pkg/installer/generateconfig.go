@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -165,24 +164,22 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// TODO: Load this from the OpenShiftCluster from the RP maybe, or get it
 	// from a manifest so it can be specified in the RP's
 	// OpenShiftClusterVersions?
-	
-	// Use Gen2 image SKU by default, fall back to Gen1 if either SKU only supports V1
-	imageSKU := "419-v2" // Gen2 SKU (default)
 
-	// Determine HyperV generation for master and worker skus
-	masterGeneration, err := determineHyperVGeneration(masterSKU)
+	imageSKU := "aro_419" // Gen1 SKU (default)
+
+	// Check if any SKU requires V2 only (doesn't support V1)
+	masterRequiresV2, err := determineSkuSupportsV2Only(masterSKU)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	workerGeneration, err := determineHyperVGeneration(workerSKU)
+	workerRequiresV2, err := determineSkuSupportsV2Only(workerSKU)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
 
-	// If any SKU only supports V1, use V1 images for the entire cluster to maintain consistency.
-	// This should help to avoid potential edge cases with mixed generations.
-	if masterGeneration == "V1" || workerGeneration == "V1" {
-		imageSKU = "aro_419" // Gen1 SKU for backward compatibility
+	// If any SKU only supports V2, use Gen2 images for the entire cluster.
+	if masterRequiresV2 || workerRequiresV2 {
+		imageSKU = "419-v2"
 	}
 
 	rhcosImage := &azuretypes.OSImage{
@@ -285,7 +282,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						BaseDomainResourceGroupName: resourceGroup,
 						DefaultMachinePlatform: &azuretypes.MachinePool{
 							Identity: &azuretypes.VMIdentity{
-								Type: v1beta1.VMIdentityNone,
+								Type: capzazure.VMIdentityNone,
 							},
 						},
 					},
@@ -478,18 +475,16 @@ func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.Resource
 	return controlPlaneZones, workerZones, nil
 }
 
-// determineFallbackToGenV1 checks if the SKU only supports HyperV Generation V1.
-// It prefers V2 when available, but falls back to V1 if V2 is not supported.
-// Returns "V1" if only V1 is supported, "V2" if V2 is supported.
-func determineHyperVGeneration(sku *mgmtcompute.ResourceSku) (string, error) {
+// determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
+// Returns true if the SKU requires Gen2 images (supports V2 but not V1).
+func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
 	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
 	if !capabilityExists {
-		return "", fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
+		return false, fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
 	}
-	// GetHyperVGenerationVersion prefers V2 if available; returns V1 if only V1 is supported
-	skuGeneration, err := icazure.GetHyperVGenerationVersion(skuCapabilities, "V2")
+	generations, err := icazure.GetHyperVGenerationVersions(skuCapabilities)
 	if err != nil {
-		return "", fmt.Errorf("could not fetch HyperV generation for SKU %s: %w", *sku.Name, err)
+		return false, fmt.Errorf("could not fetch HyperV generations for SKU %s: %w", *sku.Name, err)
 	}
-	return skuGeneration, nil
+	return generations.Has("V2") && !generations.Has("V1"), nil
 }
