@@ -52,10 +52,10 @@ func TestVMNetworkingType(t *testing.T) {
 
 func TestDetermineSkuSupportsV2Only(t *testing.T) {
 	for _, tt := range []struct {
-		name        string
-		sku         *mgmtcompute.ResourceSku
-		wantResult  bool
-		wantErr     string
+		name       string
+		sku        *mgmtcompute.ResourceSku
+		wantResult bool
+		wantErr    string
 	}{
 		{
 			name: "sku supports both V1 and V2, does not require V2",

@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -283,7 +282,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						BaseDomainResourceGroupName: resourceGroup,
 						DefaultMachinePlatform: &azuretypes.MachinePool{
 							Identity: &azuretypes.VMIdentity{
-								Type: v1beta1.VMIdentityNone,
+								Type: capzazure.VMIdentityNone,
 							},
 						},
 					},
