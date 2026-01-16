@@ -11,7 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/Azure/ARO-RP/pkg/api"
 )
 
 type pullSecret struct {

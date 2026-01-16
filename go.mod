@@ -35,6 +35,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require github.com/ugorji/go/codec v1.2.12 // indirect
+
 require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.14.0 // indirect

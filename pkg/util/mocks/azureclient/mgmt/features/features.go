@@ -17,6 +17,7 @@ import (
 
 	features "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features"
 	autorest "github.com/Azure/go-autorest/autorest"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockDeploymentsClient is a mock of DeploymentsClient interface.
