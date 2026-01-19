@@ -1,6 +1,6 @@
 module github.com/openshift/installer-aro-wrapper
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
@@ -29,9 +29,10 @@ require (
 	github.com/vincent-petithory/dataurl v1.0.0
 	go.uber.org/mock v0.5.0
 	golang.org/x/crypto v0.36.0
-	k8s.io/api v0.32.3
-	k8s.io/apimachinery v0.32.3
-	k8s.io/client-go v0.32.2
+	k8s.io/api v0.33.2
+	k8s.io/apimachinery v0.33.2
+	k8s.io/client-go v0.33.2
+	sigs.k8s.io/cluster-api-provider-azure v1.17.5
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -151,7 +152,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
+	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20250208200701-d0013a598941 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
@@ -161,7 +162,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/gophercloud/gophercloud/v2 v2.5.0 // indirect
 	github.com/gophercloud/utils/v2 v2.0.0-20250212084022-725b94822eeb // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/h2non/filetype v1.0.12 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -278,7 +279,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	google.golang.org/grpc v1.69.4 // indirect
-	google.golang.org/protobuf v1.36.3 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/djherbis/times.v1 v1.3.0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
@@ -296,13 +297,12 @@ require (
 	k8s.io/component-base v0.32.2 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
+	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kubectl v0.32.2 // indirect
 	k8s.io/utils v0.0.0-20241210054802-24370beab758 // indirect
 	libvirt.org/go/libvirtxml v1.10002.0 // indirect
 	sigs.k8s.io/cluster-api v1.9.5 // indirect
 	sigs.k8s.io/cluster-api-provider-aws/v2 v2.7.1-0.20250314180547-17a09f59176c // indirect
-	sigs.k8s.io/cluster-api-provider-azure v1.17.5 // indirect
 	sigs.k8s.io/cluster-api-provider-gcp v1.8.1-0.20250225090028-d80bfabadd3f // indirect
 	sigs.k8s.io/cluster-api-provider-ibmcloud v0.11.0-alpha.0.0.20250319131234-d3cc59096981 // indirect
 	sigs.k8s.io/cluster-api-provider-openstack v0.11.1 // indirect
@@ -311,6 +311,7 @@ require (
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.18.1 // indirect
+	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 )
 
@@ -322,8 +323,8 @@ replace (
 	github.com/imdario/mergo => dario.cat/mergo v0.3.16
 
 	// too-new versions of openshift/api and openshift/client-go don't work
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20250909020331-93b8cc2cf247
-	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20250425165505-5f55ff6979a1
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20260107143020-50517c6f4bfd
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20250811163556-6193816ae379
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.19.3
 )
 
@@ -339,7 +340,7 @@ replace (
 // The upstream openshift installer adds a replace statement to fix that, but these are not inherited, so we have to add them in the wrapper, too:
 // https://github.com/openshift/installer/commit/aed3ddb3bbca729f006efb5499fb80253e492e2b#diff-33ef32bf6c23acb95f5902d7097b7a1d5128ca061167ec0716715b0b9eeaa5f6R256
 replace (
-	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20250914161748-f56d2b039a7a
-	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20250914161748-f56d2b039a7a
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20250914161748-f56d2b039a7a
+	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20251202132226-43bfecff9fdb
+	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20251202132226-43bfecff9fdb
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20251202132226-43bfecff9fdb
 )
