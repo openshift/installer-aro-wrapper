@@ -29,9 +29,9 @@ require (
 	github.com/vincent-petithory/dataurl v1.0.0
 	go.uber.org/mock v0.5.0
 	golang.org/x/crypto v0.36.0
-	k8s.io/api v0.33.2
-	k8s.io/apimachinery v0.33.2
-	k8s.io/client-go v0.33.2
+	k8s.io/api v0.32.3
+	k8s.io/apimachinery v0.32.3
+	k8s.io/client-go v0.32.3
 	sigs.k8s.io/cluster-api-provider-azure v1.17.5
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -323,8 +323,8 @@ replace (
 	github.com/imdario/mergo => dario.cat/mergo v0.3.16
 
 	// too-new versions of openshift/api and openshift/client-go don't work
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20260107143020-50517c6f4bfd
-	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20250811163556-6193816ae379
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20250313134101-8a7efbfb5316
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20241203091221-452dfb8fa071
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.19.3
 )
 

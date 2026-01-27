@@ -3,8 +3,8 @@
 package internal
 
 import (
-	fmt "fmt"
-	sync "sync"
+	"fmt"
+	"sync"
 
 	typed "sigs.k8s.io/structured-merge-diff/v4/typed"
 )
@@ -176,7 +176,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: machineType
       type:
         scalar: string
-      default: ""
     - name: machines_v1beta1_machine_openshift_io
       type:
         namedType: com.github.openshift.api.machine.v1.OpenShiftMachineV1Beta1MachineTemplate

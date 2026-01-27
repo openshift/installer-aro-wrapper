@@ -3,12 +3,11 @@
 package versioned
 
 import (
-	fmt "fmt"
-	http "net/http"
+	"fmt"
+	"net/http"
 
 	configv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	configv1alpha1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1alpha1"
-	configv1alpha2 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1alpha2"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -18,7 +17,6 @@ type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	ConfigV1() configv1.ConfigV1Interface
 	ConfigV1alpha1() configv1alpha1.ConfigV1alpha1Interface
-	ConfigV1alpha2() configv1alpha2.ConfigV1alpha2Interface
 }
 
 // Clientset contains the clients for groups.
@@ -26,7 +24,6 @@ type Clientset struct {
 	*discovery.DiscoveryClient
 	configV1       *configv1.ConfigV1Client
 	configV1alpha1 *configv1alpha1.ConfigV1alpha1Client
-	configV1alpha2 *configv1alpha2.ConfigV1alpha2Client
 }
 
 // ConfigV1 retrieves the ConfigV1Client
@@ -37,11 +34,6 @@ func (c *Clientset) ConfigV1() configv1.ConfigV1Interface {
 // ConfigV1alpha1 retrieves the ConfigV1alpha1Client
 func (c *Clientset) ConfigV1alpha1() configv1alpha1.ConfigV1alpha1Interface {
 	return c.configV1alpha1
-}
-
-// ConfigV1alpha2 retrieves the ConfigV1alpha2Client
-func (c *Clientset) ConfigV1alpha2() configv1alpha2.ConfigV1alpha2Interface {
-	return c.configV1alpha2
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -96,10 +88,6 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
-	cs.configV1alpha2, err = configv1alpha2.NewForConfigAndClient(&configShallowCopy, httpClient)
-	if err != nil {
-		return nil, err
-	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -123,7 +111,6 @@ func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.configV1 = configv1.New(c)
 	cs.configV1alpha1 = configv1alpha1.New(c)
-	cs.configV1alpha2 = configv1alpha2.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
