@@ -6,7 +6,7 @@
 
 ``Update pkg/installer/generateconfig.go 's rhcosImage struct with:
 SKU: "aro_420"
-Version: "9.6.20251015",``
+Version: "420.6.20251015",``
 
 4. Update /pkg/installer/generateconfig.go with the output.
     1. SKU on line 168, 182

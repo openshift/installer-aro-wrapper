@@ -29,9 +29,16 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	echo "||| Running go mod tidy"
 	go mod tidy
 
-	RHCOS_VERSION=$(az vm image list --publisher azureopenshift --offer aro4 --sku $VM_SKU --all --query "sort_by([], &version)[-1].version")
+	RHCOS_VERSION_RAW=$(az vm image list --publisher azureopenshift --offer aro4 --sku $VM_SKU --all --query "sort_by([], &version)[-1].version" -o tsv)
+
+	# Extract version number from RELEASE (e.g., release-4.20 -> 420)
+	VERSION_PREFIX=$(echo ${RELEASE#release-} | sed 's/\.//')
+
+	# Transform version: if Azure returns "9.6.20251015", convert to "420.6.20251015"
+	# This handles cases where Azure may use a shortened prefix
+	RHCOS_VERSION=$(echo "$RHCOS_VERSION_RAW" | sed "s/^[0-9]\+/$VERSION_PREFIX/")
 
 	echo "Update pkg/installer/generateconfig.go 's rhcosImage struct with:"
 	echo "SKU: \"$VM_SKU\""
-	echo "Version: $RHCOS_VERSION,"
+	echo "Version: \"$RHCOS_VERSION\","
 fi
