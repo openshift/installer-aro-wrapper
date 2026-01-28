@@ -186,7 +186,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		SKU:       imageSKU,
-		Version:   "420.6.20251015", // "4x.yy.2020zzzz"
+		Version:   "9.6.20251015", // "9.yy.20205zzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
