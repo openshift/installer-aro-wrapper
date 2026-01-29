@@ -431,14 +431,16 @@ type OVNKubernetesConfig struct {
 	// v4InternalSubnet is a v4 subnet used internally by ovn-kubernetes in case the
 	// default one is being already used by something else. It must not overlap with
 	// any other subnet being used by OpenShift or by the node network. The size of the
-	// subnet must be larger than the number of nodes.
+	// subnet must be larger than the number of nodes. The value cannot be changed
+	// after installation.
 	// Default is 100.64.0.0/16
 	// +optional
 	V4InternalSubnet string `json:"v4InternalSubnet,omitempty"`
 	// v6InternalSubnet is a v6 subnet used internally by ovn-kubernetes in case the
 	// default one is being already used by something else. It must not overlap with
 	// any other subnet being used by OpenShift or by the node network. The size of the
-	// subnet must be larger than the number of nodes.
+	// subnet must be larger than the number of nodes. The value cannot be changed
+	// after installation.
 	// Default is fd98::/64
 	// +optional
 	V6InternalSubnet string `json:"v6InternalSubnet,omitempty"`
@@ -476,10 +478,11 @@ type IPv4OVNKubernetesConfig struct {
 	// architecture that connects the cluster routers on each node together to enable
 	// east west traffic. The subnet chosen should not overlap with other networks
 	// specified for OVN-Kubernetes as well as other networks used on the host.
+	// The value cannot be changed after installation.
 	// When ommitted, this means no opinion and the platform is left to choose a reasonable
 	// default which is subject to change over time.
 	// The current default subnet is 100.88.0.0/16
-	// The subnet must be large enough to accommodate one IP per node in your cluster
+	// The subnet must be large enough to accomadate one IP per node in your cluster
 	// The value must be in proper IPV4 CIDR format
 	// +kubebuilder:validation:MaxLength=18
 	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 4",message="Subnet must be in valid IPV4 CIDR format"
@@ -490,9 +493,10 @@ type IPv4OVNKubernetesConfig struct {
 	// internalJoinSubnet is a v4 subnet used internally by ovn-kubernetes in case the
 	// default one is being already used by something else. It must not overlap with
 	// any other subnet being used by OpenShift or by the node network. The size of the
-	// subnet must be larger than the number of nodes.
+	// subnet must be larger than the number of nodes. The value cannot be changed
+	// after installation.
 	// The current default value is 100.64.0.0/16
-	// The subnet must be large enough to accommodate one IP per node in your cluster
+	// The subnet must be large enough to accomadate one IP per node in your cluster
 	// The value must be in proper IPV4 CIDR format
 	// +kubebuilder:validation:MaxLength=18
 	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 4",message="Subnet must be in valid IPV4 CIDR format"
@@ -508,9 +512,10 @@ type IPv6OVNKubernetesConfig struct {
 	// architecture that connects the cluster routers on each node together to enable
 	// east west traffic. The subnet chosen should not overlap with other networks
 	// specified for OVN-Kubernetes as well as other networks used on the host.
+	// The value cannot be changed after installation.
 	// When ommitted, this means no opinion and the platform is left to choose a reasonable
 	// default which is subject to change over time.
-	// The subnet must be large enough to accommodate one IP per node in your cluster
+	// The subnet must be large enough to accomadate one IP per node in your cluster
 	// The current default subnet is fd97::/64
 	// The value must be in proper IPV6 CIDR format
 	// Note that IPV6 dual addresses are not permitted
@@ -522,8 +527,9 @@ type IPv6OVNKubernetesConfig struct {
 	// internalJoinSubnet is a v6 subnet used internally by ovn-kubernetes in case the
 	// default one is being already used by something else. It must not overlap with
 	// any other subnet being used by OpenShift or by the node network. The size of the
-	// subnet must be larger than the number of nodes.
-	// The subnet must be large enough to accommodate one IP per node in your cluster
+	// subnet must be larger than the number of nodes. The value cannot be changed
+	// after installation.
+	// The subnet must be large enough to accomadate one IP per node in your cluster
 	// The current default value is fd98::/64
 	// The value must be in proper IPV6 CIDR format
 	// Note that IPV6 dual addresses are not permitted
@@ -640,7 +646,7 @@ type IPv4GatewayConfig struct {
 	// OVN-Kubernetes as well as other networks used on the host. Additionally the subnet must
 	// be large enough to accommodate 6 IPs (maximum prefix length /29).
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default which is subject to change over time.
-	// The current default subnet is 169.254.0.0/17
+	// The current default subnet is 169.254.169.0/29
 	// The value must be in proper IPV4 CIDR format
 	// +kubebuilder:validation:MaxLength=18
 	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 4",message="Subnet must be in valid IPV4 CIDR format"
@@ -659,7 +665,7 @@ type IPv6GatewayConfig struct {
 	// OVN-Kubernetes as well as other networks used on the host. Additionally the subnet must
 	// be large enough to accommodate 6 IPs (maximum prefix length /125).
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default which is subject to change over time.
-	// The current default subnet is fd69::/112
+	// The current default subnet is fd69::/125
 	// Note that IPV6 dual addresses are not permitted
 	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).ip().family() == 6",message="Subnet must be in valid IPV6 CIDR format"
 	// +kubebuilder:validation:XValidation:rule="isCIDR(self) && cidr(self).prefixLength() <= 125",message="subnet must be in the range /0 to /125 inclusive"

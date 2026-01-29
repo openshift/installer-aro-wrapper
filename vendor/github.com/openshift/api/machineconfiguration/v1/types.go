@@ -222,11 +222,11 @@ type ControllerCertificate struct {
 
 	// notBefore is the lower boundary for validity
 	// +optional
-	NotBefore *metav1.Time `json:"notBefore,omitempty"`
+	NotBefore *metav1.Time `json:"notBefore"`
 
 	// notAfter is the upper boundary for validity
 	// +optional
-	NotAfter *metav1.Time `json:"notAfter,omitempty"`
+	NotAfter *metav1.Time `json:"notAfter"`
 
 	// bundleFile is the larger bundle a cert comes from
 	// +required
@@ -323,7 +323,7 @@ type MachineConfigSpec struct {
 
 	// config is a Ignition Config object.
 	// +optional
-	Config runtime.RawExtension `json:"config,omitempty"`
+	Config runtime.RawExtension `json:"config"`
 
 	// kernelArguments contains a list of kernel arguments to be added
 	// +listType=atomic
@@ -598,7 +598,7 @@ type MachineConfigPoolCondition struct {
 
 	// status of the condition, one of ('True', 'False', 'Unknown').
 	// +optional
-	Status corev1.ConditionStatus `json:"status,omitempty"`
+	Status corev1.ConditionStatus `json:"status"`
 
 	// lastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
@@ -636,10 +636,6 @@ const (
 	// MachineConfigPoolRenderDegraded means the rendered configuration for the pool cannot be generated because of an error
 	MachineConfigPoolRenderDegraded MachineConfigPoolConditionType = "RenderDegraded"
 
-	// MachineConfigPoolImageBuildDegraded means the image build for the pool was not successful
-	// This condition is only used when Image Mode is enabled for the pool
-	MachineConfigPoolImageBuildDegraded MachineConfigPoolConditionType = "ImageBuildDegraded"
-
 	// MachineConfigPoolPinnedImageSetsDegraded means the pinned image sets for the pool cannot be populated because of an error
 	// +openshift:enable:FeatureGate=PinnedImages
 	MachineConfigPoolPinnedImageSetsDegraded MachineConfigPoolConditionType = "PinnedImageSetsDegraded"
@@ -648,7 +644,7 @@ const (
 	// +openshift:enable:FeatureGate=PinnedImages
 	MachineConfigPoolSynchronizerDegraded MachineConfigPoolConditionType = "PoolSynchronizerDegraded"
 
-	// MachineConfigPoolDegraded is the overall status of the pool based, today, on whether we fail with NodeDegraded, RenderDegraded, or ImageBuildDegraded
+	// MachineConfigPoolDegraded is the overall status of the pool based, today, on whether we fail with NodeDegraded or RenderDegraded
 	MachineConfigPoolDegraded MachineConfigPoolConditionType = "Degraded"
 
 	MachineConfigPoolBuildPending MachineConfigPoolConditionType = "BuildPending"
@@ -746,7 +742,7 @@ type KubeletConfigCondition struct {
 
 	// status of the condition, one of True, False, Unknown.
 	// +optional
-	Status corev1.ConditionStatus `json:"status,omitempty"`
+	Status corev1.ConditionStatus `json:"status"`
 
 	// lastTransitionTime is the time of the last update to the current status object.
 	// +optional
@@ -848,25 +844,18 @@ type ContainerRuntimeConfiguration struct {
 	// +optional
 	OverlaySize *resource.Quantity `json:"overlaySize,omitempty"`
 
-	// defaultRuntime is the name of the OCI runtime to be used as the default for containers.
-	// Allowed values are `runc` and `crun`.
-	// When set to `runc`, OpenShift will use runc to execute the container
-	// When set to `crun`, OpenShift will use crun to execute the container
-	// When omitted, this means no opinion and the platform is left to choose a reasonable default,
-	// which is subject to change over time. Currently, the default is `crun`.
-	// +kubebuilder:validation:Enum=crun;runc
+	// defaultRuntime is the name of the OCI runtime to be used as the default.
 	// +optional
 	DefaultRuntime ContainerRuntimeDefaultRuntime `json:"defaultRuntime,omitempty"`
 }
 
 type ContainerRuntimeDefaultRuntime string
 
-// These constants are used in the Machine Config Operator (MCO)
 const (
 	ContainerRuntimeDefaultRuntimeEmpty   = ""
 	ContainerRuntimeDefaultRuntimeRunc    = "runc"
 	ContainerRuntimeDefaultRuntimeCrun    = "crun"
-	ContainerRuntimeDefaultRuntimeDefault = ContainerRuntimeDefaultRuntimeCrun
+	ContainerRuntimeDefaultRuntimeDefault = ContainerRuntimeDefaultRuntimeRunc
 )
 
 // ContainerRuntimeConfigStatus defines the observed state of a ContainerRuntimeConfig
@@ -889,7 +878,7 @@ type ContainerRuntimeConfigCondition struct {
 
 	// status of the condition, one of True, False, Unknown.
 	// +optional
-	Status corev1.ConditionStatus `json:"status,omitempty"`
+	Status corev1.ConditionStatus `json:"status"`
 
 	// lastTransitionTime is the time of the last update to the current status object.
 	// +nullable

@@ -3,10 +3,10 @@
 package v1
 
 import (
-	http "net/http"
+	"net/http"
 
-	machineconfigurationv1 "github.com/openshift/api/machineconfiguration/v1"
-	scheme "github.com/openshift/client-go/machineconfiguration/clientset/versioned/scheme"
+	v1 "github.com/openshift/api/machineconfiguration/v1"
+	"github.com/openshift/client-go/machineconfiguration/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -16,11 +16,7 @@ type MachineconfigurationV1Interface interface {
 	ControllerConfigsGetter
 	KubeletConfigsGetter
 	MachineConfigsGetter
-	MachineConfigNodesGetter
 	MachineConfigPoolsGetter
-	MachineOSBuildsGetter
-	MachineOSConfigsGetter
-	PinnedImageSetsGetter
 }
 
 // MachineconfigurationV1Client is used to interact with features provided by the machineconfiguration.openshift.io group.
@@ -44,24 +40,8 @@ func (c *MachineconfigurationV1Client) MachineConfigs() MachineConfigInterface {
 	return newMachineConfigs(c)
 }
 
-func (c *MachineconfigurationV1Client) MachineConfigNodes() MachineConfigNodeInterface {
-	return newMachineConfigNodes(c)
-}
-
 func (c *MachineconfigurationV1Client) MachineConfigPools() MachineConfigPoolInterface {
 	return newMachineConfigPools(c)
-}
-
-func (c *MachineconfigurationV1Client) MachineOSBuilds() MachineOSBuildInterface {
-	return newMachineOSBuilds(c)
-}
-
-func (c *MachineconfigurationV1Client) MachineOSConfigs() MachineOSConfigInterface {
-	return newMachineOSConfigs(c)
-}
-
-func (c *MachineconfigurationV1Client) PinnedImageSets() PinnedImageSetInterface {
-	return newPinnedImageSets(c)
 }
 
 // NewForConfig creates a new MachineconfigurationV1Client for the given config.
@@ -69,7 +49,9 @@ func (c *MachineconfigurationV1Client) PinnedImageSets() PinnedImageSetInterface
 // where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*MachineconfigurationV1Client, error) {
 	config := *c
-	setConfigDefaults(&config)
+	if err := setConfigDefaults(&config); err != nil {
+		return nil, err
+	}
 	httpClient, err := rest.HTTPClientFor(&config)
 	if err != nil {
 		return nil, err
@@ -81,7 +63,9 @@ func NewForConfig(c *rest.Config) (*MachineconfigurationV1Client, error) {
 // Note the http client provided takes precedence over the configured transport values.
 func NewForConfigAndClient(c *rest.Config, h *http.Client) (*MachineconfigurationV1Client, error) {
 	config := *c
-	setConfigDefaults(&config)
+	if err := setConfigDefaults(&config); err != nil {
+		return nil, err
+	}
 	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
@@ -104,15 +88,17 @@ func New(c rest.Interface) *MachineconfigurationV1Client {
 	return &MachineconfigurationV1Client{c}
 }
 
-func setConfigDefaults(config *rest.Config) {
-	gv := machineconfigurationv1.SchemeGroupVersion
+func setConfigDefaults(config *rest.Config) error {
+	gv := v1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = rest.CodecFactoryForGeneratedClient(scheme.Scheme, scheme.Codecs).WithoutConversion()
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
+
+	return nil
 }
 
 // RESTClient returns a RESTClient that is used to communicate
