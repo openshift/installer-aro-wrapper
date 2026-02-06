@@ -17,7 +17,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/Azure/ARO-RP/pkg/api"
+	capzazure "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
+
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -38,8 +39,10 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
 
-const ALLOW_EXPANDED_AZ_ENV = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
-const CONTROL_PLANE_MACHINE_COUNT = 3
+const (
+	ALLOW_EXPANDED_AZ_ENV       = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
+	CONTROL_PLANE_MACHINE_COUNT = 3
+)
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
@@ -160,11 +163,29 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// TODO: Load this from the OpenShiftCluster from the RP maybe, or get it
 	// from a manifest so it can be specified in the RP's
 	// OpenShiftClusterVersions?
+
+	imageSKU := "aro_419" // Gen1 SKU (default)
+
+	// Check if any SKU requires V2 only (doesn't support V1)
+	masterRequiresV2, err := determineSkuSupportsV2Only(masterSKU)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	workerRequiresV2, err := determineSkuSupportsV2Only(workerSKU)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	// If any SKU only supports V2, use Gen2 images for the entire cluster.
+	if masterRequiresV2 || workerRequiresV2 {
+		imageSKU = "419-v2"
+	}
+
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       "aro_417",         // "aro_4x"
-		Version:   "417.94.20240701", // "4x.yy.2020zzzz"
+		SKU:       imageSKU,
+		Version:   "419.6.20250523", // "4x.yy.2020zzzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
@@ -210,6 +231,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 								DiskSizeGB:        1024,
 							},
 							OSImage: *rhcosImage,
+							BootDiagnostics: &azuretypes.BootDiagnostics{
+								Type: capzazure.ManagedDiagnosticsStorage,
+							},
 						},
 					},
 					Hyperthreading: "Enabled",
@@ -230,6 +254,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
 								},
 								OSImage: *rhcosImage,
+								BootDiagnostics: &azuretypes.BootDiagnostics{
+									Type: capzazure.ManagedDiagnosticsStorage,
+								},
 							},
 						},
 						Hyperthreading: "Enabled",
@@ -252,6 +279,11 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						// a more permanent fix (disabling public DNS
 						// provisioning).
 						BaseDomainResourceGroupName: resourceGroup,
+						DefaultMachinePlatform: &azuretypes.MachinePool{
+							Identity: &azuretypes.VMIdentity{
+								Type: capzazure.VMIdentityNone,
+							},
+						},
 					},
 				},
 				PullSecret: pullSecret,
@@ -298,7 +330,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						configv1.ClusterVersionCapabilityStorage,
 					},
 				},
-			}},
+			},
+		},
 	}
 
 	if m.oc.Properties.IngressProfiles[0].Visibility == api.VisibilityPrivate {
@@ -439,4 +472,18 @@ func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.Resource
 	slices.Sort(workerZones)
 
 	return controlPlaneZones, workerZones, nil
+}
+
+// determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
+// Returns true if the SKU requires Gen2 images (supports V2 but not V1).
+func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
+	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
+	if !capabilityExists {
+		return false, fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
+	}
+	generations, err := icazure.GetHyperVGenerationVersions(skuCapabilities)
+	if err != nil {
+		return false, fmt.Errorf("could not fetch HyperV generations for SKU %s: %w", *sku.Name, err)
+	}
+	return generations.Has("V2") && !generations.Has("V1"), nil
 }

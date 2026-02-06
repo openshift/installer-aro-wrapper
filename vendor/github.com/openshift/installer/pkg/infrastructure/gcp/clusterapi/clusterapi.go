@@ -18,6 +18,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/infrastructure/clusterapi"
 	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/dns"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 )
 
@@ -121,17 +122,12 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 		return nil, fmt.Errorf("failed to create bucket %s: %w", bucketName, err)
 	}
 
-	editedIgnitionBytes, err := EditIgnition(ctx, in)
+	ignOutput, err := editIgnition(ctx, in)
 	if err != nil {
-		return nil, fmt.Errorf("failed to edit bootstrap ignition: %w", err)
+		return nil, fmt.Errorf("failed to edit bootstrap, master or worker ignition: %w", err)
 	}
 
-	ignitionBytes := in.BootstrapIgnData
-	if editedIgnitionBytes != nil {
-		ignitionBytes = editedIgnitionBytes
-	}
-
-	if err := gcp.FillBucket(ctx, bucketHandle, string(ignitionBytes)); err != nil {
+	if err := gcp.FillBucket(ctx, bucketHandle, string(ignOutput.UpdatedBootstrapIgn)); err != nil {
 		return nil, fmt.Errorf("ignition failed to fill bucket: %w", err)
 	}
 
@@ -154,7 +150,8 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 
 	ignSecrets := []*corev1.Secret{
 		clusterapi.IgnitionSecret([]byte(ignShim), in.InfraID, "bootstrap"),
-		clusterapi.IgnitionSecret(in.MasterIgnData, in.InfraID, "master"),
+		clusterapi.IgnitionSecret(ignOutput.UpdatedMasterIgn, in.InfraID, "master"),
+		clusterapi.IgnitionSecret(ignOutput.UpdatedWorkerIgn, in.InfraID, "worker"),
 	}
 
 	return ignSecrets, nil
@@ -224,7 +221,7 @@ func (p Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput)
 		return fmt.Errorf("failed to add firewall rules: %w", err)
 	}
 
-	if in.InstallConfig.Config.GCP.UserProvisionedDNS != gcptypes.UserProvisionedDNSEnabled {
+	if in.InstallConfig.Config.GCP.UserProvisionedDNS != dns.UserProvisionedDNSEnabled {
 		// Get the network from the GCP Cluster. The network is used to create the private managed zone.
 		if gcpCluster.Status.Network.SelfLink == nil {
 			return fmt.Errorf("failed to get GCP network: %w", err)

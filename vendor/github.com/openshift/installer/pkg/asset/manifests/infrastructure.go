@@ -21,6 +21,7 @@ import (
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	"github.com/openshift/installer/pkg/types/dns"
 	"github.com/openshift/installer/pkg/types/external"
 	"github.com/openshift/installer/pkg/types/gcp"
 	"github.com/openshift/installer/pkg/types/ibmcloud"
@@ -128,6 +129,15 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 					config.Status.PlatformStatus.AWS.ServiceEndpoints[j].Name
 			})
 		}
+		// If the user has requested the use of a DNS provisioned by them, then OpenShift needs to
+		// start an in-cluster DNS for the installation to succeed. The user can then configure their
+		// DNS post-install.
+		config.Status.PlatformStatus.AWS.CloudLoadBalancerConfig = &configv1.CloudLoadBalancerConfig{
+			DNSType: configv1.PlatformDefaultDNSType,
+		}
+		if installConfig.Config.AWS.UserProvisionedDNS == dns.UserProvisionedDNSEnabled {
+			config.Status.PlatformStatus.AWS.CloudLoadBalancerConfig.DNSType = configv1.ClusterHostedDNSType
+		}
 	case azure.Name:
 		config.Spec.PlatformSpec.Type = configv1.AzurePlatformType
 
@@ -193,12 +203,20 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 			}
 			config.Status.PlatformStatus.GCP.ResourceTags = resourceTags
 		}
+
+		config.Status.PlatformStatus.GCP.ServiceEndpoints = installConfig.Config.Platform.GCP.ServiceEndpoints
+		sort.Slice(config.Status.PlatformStatus.GCP.ServiceEndpoints, func(i, j int) bool {
+			return config.Status.PlatformStatus.GCP.ServiceEndpoints[i].Name <
+				config.Status.PlatformStatus.GCP.ServiceEndpoints[j].Name
+		})
+
 		// If the user has requested the use of a DNS provisioned by them, then OpenShift needs to
 		// start an in-cluster DNS for the installation to succeed. The user can then configure their
 		// DNS post-install.
-		config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig = &configv1.CloudLoadBalancerConfig{}
-		config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig.DNSType = configv1.PlatformDefaultDNSType
-		if installConfig.Config.GCP.UserProvisionedDNS == gcp.UserProvisionedDNSEnabled {
+		config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig = &configv1.CloudLoadBalancerConfig{
+			DNSType: configv1.PlatformDefaultDNSType,
+		}
+		if installConfig.Config.GCP.UserProvisionedDNS == dns.UserProvisionedDNSEnabled {
 			config.Status.PlatformStatus.GCP.CloudLoadBalancerConfig.DNSType = configv1.ClusterHostedDNSType
 		}
 	case ibmcloud.Name:
@@ -250,8 +268,6 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 		config.Spec.PlatformSpec.VSphere = &configv1.VSpherePlatformSpec{}
 		if len(installConfig.Config.VSphere.APIVIPs) > 0 {
 			config.Status.PlatformStatus.VSphere = &configv1.VSpherePlatformStatus{
-				APIServerInternalIP:  installConfig.Config.VSphere.APIVIPs[0],
-				IngressIP:            installConfig.Config.VSphere.IngressVIPs[0],
 				APIServerInternalIPs: installConfig.Config.VSphere.APIVIPs,
 				IngressIPs:           installConfig.Config.VSphere.IngressVIPs,
 				LoadBalancer:         installConfig.Config.VSphere.LoadBalancer,
@@ -261,11 +277,12 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 		}
 
 		config.Spec.PlatformSpec.VSphere = vsphereinfra.GetInfraPlatformSpec(installConfig, clusterID.InfraID)
-		if _, exists := cloudproviderconfig.ConfigMap.Data["vsphere.conf"]; exists {
-			cloudProviderConfigMapKey = "vsphere.conf"
+		if cloudproviderconfig.ConfigMap != nil {
+			if _, exists := cloudproviderconfig.ConfigMap.Data["vsphere.conf"]; exists {
+				cloudProviderConfigMapKey = "vsphere.conf"
+			}
 		}
-
-		config.Status.PlatformStatus.VSphere.MachineNetworks = types.MachineNetworksToCIDRs(installConfig.Config.MachineNetwork)
+		config.Status.PlatformStatus.VSphere.MachineNetworks = config.Spec.PlatformSpec.VSphere.MachineNetworks
 	case ovirt.Name:
 		config.Spec.PlatformSpec.Type = configv1.OvirtPlatformType
 		config.Status.PlatformStatus.Ovirt = &configv1.OvirtPlatformStatus{
@@ -300,13 +317,26 @@ func (i *Infrastructure) Generate(ctx context.Context, dependencies asset.Parent
 				URL:  service.URL,
 			})
 		}
+		if installConfig.Config.Publish == types.InternalPublishingStrategy &&
+			(len(installConfig.Config.ImageDigestSources) > 0 || len(installConfig.Config.DeprecatedImageContentSources) > 0) {
+			piRegion := installConfig.Config.PowerVS.Region
+			vpcRegion, err := powervs.VPCRegionForPowerVSRegion(piRegion)
+			if err != nil {
+				return fmt.Errorf("failed to determine VPC region: %w", err)
+			}
+			cosRegion, err := powervs.COSRegionForPowerVSRegion(piRegion)
+			if err != nil {
+				return fmt.Errorf("failed to determine COS region: %w", err)
+			}
+			config.Spec.PlatformSpec.PowerVS.ServiceEndpoints = installConfig.PowerVS.SetDefaultPrivateServiceEndpoints(ctx, config.Spec.PlatformSpec.PowerVS.ServiceEndpoints, cosRegion, vpcRegion)
+		}
 		config.Status.PlatformStatus.PowerVS = &configv1.PowerVSPlatformStatus{
 			Region:           installConfig.Config.Platform.PowerVS.Region,
 			Zone:             installConfig.Config.Platform.PowerVS.Zone,
 			ResourceGroup:    installConfig.Config.Platform.PowerVS.PowerVSResourceGroup,
 			CISInstanceCRN:   cisInstanceCRN,
 			DNSInstanceCRN:   dnsInstanceCRN,
-			ServiceEndpoints: installConfig.Config.Platform.PowerVS.ServiceEndpoints,
+			ServiceEndpoints: config.Spec.PlatformSpec.PowerVS.ServiceEndpoints,
 		}
 	case nutanix.Name:
 		config.Spec.PlatformSpec.Type = configv1.NutanixPlatformType

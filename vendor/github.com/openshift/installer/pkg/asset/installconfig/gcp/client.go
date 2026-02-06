@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	kms "cloud.google.com/go/kms/apiv1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 	"github.com/pkg/errors"
 	googleoauth "golang.org/x/oauth2/google"
 	"google.golang.org/api/cloudresourcemanager/v3"
@@ -13,11 +15,13 @@ import (
 	dns "google.golang.org/api/dns/v1"
 	"google.golang.org/api/googleapi"
 	iam "google.golang.org/api/iam/v1"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/api/serviceusage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	gcpconsts "github.com/openshift/installer/pkg/constants/gcp"
+	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 )
 
 //go:generate mockgen -source=./client.go -destination=./mock/gcpclient_generated.go -package=mock
@@ -52,6 +56,7 @@ type API interface {
 	ValidateServiceAccountHasPermissions(ctx context.Context, project string, permissions []string) (bool, error)
 	GetProjectTags(ctx context.Context, projectID string) (sets.Set[string], error)
 	GetNamespacedTagValue(ctx context.Context, tagNamespacedName string) (*cloudresourcemanager.TagValue, error)
+	GetKeyRing(ctx context.Context, kmsKeyRef *gcptypes.KMSKeyReference) (*kmspb.KeyRing, error)
 }
 
 // Client makes calls to the GCP API.
@@ -139,6 +144,10 @@ func (c *Client) GetMachineTypeWithZones(ctx context.Context, project, region, m
 	if len(machines) == 0 {
 		cctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 		defer cancel()
+
+		if len(pz) == 0 {
+			return nil, nil, fmt.Errorf("failed to find public zone in project %s region %s", project, region)
+		}
 		machine, err := svc.MachineTypes.Get(project, pz[0].Name, machineType).Context(cctx).Do()
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to fetch instance type: %w", err)
@@ -226,13 +235,19 @@ func (c *Client) GetDNSZone(ctx context.Context, project, baseDomain string, isP
 	if !strings.HasSuffix(baseDomain, ".") {
 		baseDomain = fmt.Sprintf("%s.", baseDomain)
 	}
+
+	// currently, only private and public are supported. All peering zones are private.
+	visibility := "private"
+	if isPublic {
+		visibility = "public"
+	}
+
 	req := svc.ManagedZones.List(project).DnsName(baseDomain).Context(ctx)
 	var res *dns.ManagedZone
 	if err := req.Pages(ctx, func(page *dns.ManagedZonesListResponse) error {
 		for idx, v := range page.ManagedZones {
-			if v.Visibility != "private" && isPublic {
-				res = page.ManagedZones[idx]
-			} else if v.Visibility == "private" && !isPublic {
+			// Peering zones are not allowed during the installation process.
+			if v.Visibility == visibility && v.PeeringConfig == nil {
 				res = page.ManagedZones[idx]
 			}
 		}
@@ -561,4 +576,43 @@ func (c *Client) GetNamespacedTagValue(ctx context.Context, tagNamespacedName st
 	}
 
 	return tagValue, nil
+}
+
+func (c *Client) getKeyManagementClient(ctx context.Context) (*kms.KeyManagementClient, error) {
+	kmsClient, err := kms.NewKeyManagementClient(ctx, option.WithCredentials(c.ssn.Credentials))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kms key management client: %w", err)
+	}
+	return kmsClient, nil
+}
+
+// GetKeyRing returns the key ring associated with the key name (if found).
+func (c *Client) GetKeyRing(ctx context.Context, kmsKeyRef *gcptypes.KMSKeyReference) (*kmspb.KeyRing, error) {
+	kmsClient, err := c.getKeyManagementClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("key ring client creation failed: %w", err)
+	}
+
+	keyRingName := fmt.Sprintf("projects/%s/locations/%s/keyRings/%s", kmsKeyRef.ProjectID, kmsKeyRef.Location, kmsKeyRef.KeyRing)
+	listReq := &kmspb.ListKeyRingsRequest{
+		Parent: fmt.Sprintf("projects/%s/locations/%s", kmsKeyRef.ProjectID, kmsKeyRef.Location),
+	}
+
+	// OCPBUGS-52203:  GetKeyRingRequest{Name: keyRingName} should work but the resource name (above) is not found.
+	// The cloudkms.keyRings.list permission is required for this operation.
+	listItr := kmsClient.ListKeyRings(ctx, listReq)
+	for {
+		resp, err := listItr.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to iterate through list of kms keyrings: %w", err)
+		}
+
+		re := resp
+		if re.Name == keyRingName {
+			return re, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to find kms key ring with name %s", keyRingName)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/machines"
 	"github.com/openshift/installer/pkg/asset/manifests"
 	"github.com/openshift/installer/pkg/asset/rhcos"
+	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
 )
 
@@ -64,9 +65,18 @@ type IgnitionInput struct {
 	Client           client.Client
 	BootstrapIgnData []byte
 	MasterIgnData    []byte
+	WorkerIgnData    []byte
 	InfraID          string
 	InstallConfig    *installconfig.InstallConfig
 	TFVarsAsset      *tfvars.TerraformVariables
+	RootCA           *tls.RootCA
+}
+
+// IgnitionOutput collects updated Ignition Data for Bootstrap, Master and Worker nodes.
+type IgnitionOutput struct {
+	UpdatedBootstrapIgn []byte
+	UpdatedMasterIgn    []byte
+	UpdatedWorkerIgn    []byte
 }
 
 // InfraReadyProvider defines the InfraReady hook, which is

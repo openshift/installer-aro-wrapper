@@ -23,6 +23,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/azure"
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/asset/manifests/gcp"
+	"github.com/openshift/installer/pkg/asset/manifests/ibmcloud"
 	"github.com/openshift/installer/pkg/asset/manifests/nutanix"
 	"github.com/openshift/installer/pkg/asset/manifests/openstack"
 	"github.com/openshift/installer/pkg/asset/manifests/powervs"
@@ -32,7 +33,11 @@ import (
 	"github.com/openshift/installer/pkg/clusterapi"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
+	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	externaltypes "github.com/openshift/installer/pkg/types/external"
 	gcptypes "github.com/openshift/installer/pkg/types/gcp"
+	ibmcloudtypes "github.com/openshift/installer/pkg/types/ibmcloud"
+	nonetypes "github.com/openshift/installer/pkg/types/none"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
@@ -133,6 +138,16 @@ func (c *Cluster) Generate(_ context.Context, dependencies asset.Parents) error 
 		if err != nil {
 			return errors.Wrap(err, "failed to generate Nutanix manifests")
 		}
+	case ibmcloudtypes.Name:
+		var err error
+		// Isolate the RHCOS Image filename.
+		imageName := strings.SplitN(filepath.Base(rhcosImage.ControlPlane), ".gz", 2)[0]
+		out, err = ibmcloud.GenerateClusterAssets(installConfig, clusterID, imageName)
+		if err != nil {
+			return fmt.Errorf("failed to generate IBM Cloud VPC manifests: %w", err)
+		}
+	case externaltypes.Name, nonetypes.Name, baremetaltypes.Name:
+		return nil
 	default:
 		return fmt.Errorf("unsupported platform %q", platform)
 	}
@@ -185,7 +200,6 @@ func (c *Cluster) Generate(_ context.Context, dependencies asset.Parents) error 
 func (c *Cluster) Files() []*asset.File {
 	files := []*asset.File{}
 	for _, f := range c.FileList {
-		f := f // TODO: remove with golang 1.22
 		files = append(files, &f.File)
 	}
 	return files

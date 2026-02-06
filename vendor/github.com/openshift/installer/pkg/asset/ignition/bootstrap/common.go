@@ -28,7 +28,9 @@ import (
 	"github.com/openshift/installer/data"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/aws"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/baremetal"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/gcp"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/vsphere"
 	mcign "github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -39,8 +41,10 @@ import (
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
+	awstypes "github.com/openshift/installer/pkg/types/aws"
 	aztypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
+	gcptypes "github.com/openshift/installer/pkg/types/gcp"
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 )
@@ -98,8 +102,10 @@ type bootstrapTemplateData struct {
 // platformTemplateData is the data to use to replace values in bootstrap
 // template files that are specific to one platform.
 type platformTemplateData struct {
+	AWS       *aws.TemplateData
 	BareMetal *baremetal.TemplateData
 	VSphere   *vsphere.TemplateData
+	GCP       *gcp.TemplateData
 }
 
 // Common is an asset that generates the ignition config for bootstrap nodes.
@@ -121,6 +127,7 @@ func (a *Common) Dependencies() []asset.Asset {
 		&mcign.MasterIgnitionCustomizations{},
 		&mcign.WorkerIgnitionCustomizations{},
 		&machines.Master{},
+		&machines.Arbiter{},
 		&machines.Worker{},
 		&manifests.Manifests{},
 		&manifests.Openshift{},
@@ -309,16 +316,24 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	// Generate platform-specific bootstrap data
 	var platformData platformTemplateData
 
+	controlPlaneReplicas := *installConfig.Config.ControlPlane.Replicas
+	if installConfig.Config.Arbiter != nil {
+		controlPlaneReplicas += *installConfig.Config.Arbiter.Replicas
+	}
 	switch installConfig.Config.Platform.Name() {
+	case awstypes.Name:
+		platformData.AWS = aws.GetTemplateData(installConfig.Config.Platform.AWS)
 	case baremetaltypes.Name:
 		platformData.BareMetal = baremetal.GetTemplateData(
 			installConfig.Config.Platform.BareMetal,
 			installConfig.Config.MachineNetwork,
-			*installConfig.Config.ControlPlane.Replicas,
+			controlPlaneReplicas,
 			ironicCreds.Username,
 			ironicCreds.Password,
 			dependencies,
 		)
+	case gcptypes.Name:
+		platformData.GCP = gcp.GetTemplateData(installConfig.Config.Platform.GCP)
 	case vspheretypes.Name:
 		platformData.VSphere = vsphere.GetTemplateData(installConfig.Config.Platform.VSphere)
 	}
@@ -428,20 +443,22 @@ func AddStorageFiles(config *igntypes.Config, base string, uri string, templateD
 	}
 
 	filename := path.Base(uri)
+	filename = strings.TrimSuffix(filename, ".template")
 	parentDir := path.Base(path.Dir(uri))
 
 	var mode int
 	appendToFile := false
-	if parentDir == "bin" || parentDir == "dispatcher.d" {
+	switch {
+	case parentDir == "bin", parentDir == "dispatcher.d", parentDir == "system-generators":
 		mode = 0555
-	} else if filename == "motd" || filename == "containers.conf" {
+	case filename == "motd", filename == "containers.conf":
 		mode = 0644
 		appendToFile = true
-	} else if filename == "registries.conf" {
+	case filename == "registries.conf":
 		// Having the mode be private breaks rpm-ostree, xref
 		// https://github.com/openshift/installer/pull/6789
 		mode = 0644
-	} else {
+	default:
 		mode = 0600
 	}
 	ign := ignition.FileFromBytes(strings.TrimSuffix(base, ".template"), "root", mode, data)
@@ -588,6 +605,7 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 		&manifests.Manifests{},
 		&manifests.Openshift{},
 		&machines.Master{},
+		&machines.Arbiter{},
 		&machines.Worker{},
 		&mcign.MasterIgnitionCustomizations{},
 		&mcign.WorkerIgnitionCustomizations{},
@@ -691,12 +709,16 @@ func (a *Common) load(f asset.FileFetcher, filename string) (found bool, err err
 	}
 
 	a.File, a.Config = file, config
-	warnIfCertificatesExpired(a.Config)
-	return true, nil
+	err = warnIfCertificatesExpired(a.Config)
+	if err != nil {
+		logrus.Warnf("Please regenerate ignition configuration files in a new directory.")
+	}
+
+	return true, err
 }
 
 // warnIfCertificatesExpired checks for expired certificates and warns if so
-func warnIfCertificatesExpired(config *igntypes.Config) {
+func warnIfCertificatesExpired(config *igntypes.Config) error {
 	expiredCerts := 0
 	for _, file := range config.Storage.Files {
 		if filepath.Ext(file.Path) == ".crt" && file.Contents.Source != nil {
@@ -716,7 +738,7 @@ func warnIfCertificatesExpired(config *igntypes.Config) {
 				cert, err := x509.ParseCertificate(block.Bytes)
 				if err == nil {
 					if time.Now().UTC().After(cert.NotAfter) {
-						logrus.Warnf("Bootstrap Ignition-Config Certificate %s expired at %s.", path.Base(file.Path), cert.NotAfter.Format(time.RFC3339))
+						logrus.Errorf("Bootstrap Ignition-Config Certificate %s expired at %s.", path.Base(file.Path), cert.NotAfter.Format(time.RFC3339))
 						expiredCerts++
 					}
 				} else {
@@ -730,6 +752,7 @@ func warnIfCertificatesExpired(config *igntypes.Config) {
 	}
 
 	if expiredCerts > 0 {
-		logrus.Warnf("Bootstrap Ignition-Config: %d certificates expired. Installation attempts with the created Ignition-Configs will possibly fail.", expiredCerts)
+		return fmt.Errorf("%d certificates expired", expiredCerts)
 	}
+	return nil
 }

@@ -49,8 +49,6 @@ func (ccy *CommonConfigYAML) CreateConfig() *Config {
 	cfg.Global.SecretName = ccy.Global.SecretName
 	cfg.Global.SecretNamespace = ccy.Global.SecretNamespace
 	cfg.Global.SecretsDirectory = ccy.Global.SecretsDirectory
-	cfg.Global.APIDisable = ccy.Global.APIDisable
-	cfg.Global.APIBinding = ccy.Global.APIBinding
 
 	for keyVcConfig, valVcConfig := range ccy.Vcenter {
 		cfg.VirtualCenter[keyVcConfig] = &VirtualCenterConfig{
@@ -228,4 +226,15 @@ func ReadConfigYAML(byConfig []byte) (*Config, error) {
 	}
 
 	return cfg.CreateConfig(), nil
+}
+
+func isConfigYaml(byConfig []byte) error {
+	cfg := CommonConfigYAML{
+		Vcenter: make(map[string]*VirtualCenterConfigYAML),
+	}
+
+	if err := yaml.Unmarshal(byConfig, &cfg); err != nil {
+		return err
+	}
+	return nil
 }

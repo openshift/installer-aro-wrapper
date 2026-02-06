@@ -172,16 +172,19 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 
 	// Use a custom resolver if using an Internal publishing strategy
 	if installConfig.Config.Publish == types.InternalPublishingStrategy {
-		dnsServerIP, err := installConfig.PowerVS.GetDNSServerIP(context.TODO(), installConfig.Config.PowerVS.VPCName)
+		var dnsServerIP string
+		err := installConfig.PowerVS.EnsureVPCNameIsSpecifiedForInternal(installConfig.Config.PowerVS.VPCName)
+		if err != nil {
+			return nil, err
+		}
+		dnsServerIP, err = installConfig.PowerVS.GetDNSServerIP(context.TODO(), installConfig.Config.PowerVS.VPCName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to find a DNS server for specified VPC: %s %w", installConfig.Config.PowerVS.VPCName, err)
 		}
 
 		powerVSCluster.Spec.DHCPServer.DNSServer = &dnsServerIP
-		// TODO(mjturek): Restore once work is finished in 4.18 for disconnected scenario.
-		if !(len(installConfig.Config.DeprecatedImageContentSources) == 0 && len(installConfig.Config.ImageDigestSources) == 0) {
-			return nil, fmt.Errorf("deploying a disconnected cluster directly in 4.17 is not supported for Power VS. Please deploy disconnected in 4.16 and upgrade to 4.17")
-		}
+		// Disable SNAT for disconnected scenario.
+		powerVSCluster.Spec.DHCPServer.Snat = ptr.To(len(installConfig.Config.DeprecatedImageContentSources) == 0 && len(installConfig.Config.ImageDigestSources) == 0)
 	}
 
 	// If a VPC was specified, pass all subnets in it to cluster API
@@ -211,6 +214,11 @@ func GenerateClusterAssets(installConfig *installconfig.InstallConfig, clusterID
 		Object: powerVSCluster,
 		File:   asset.File{Filename: "02_powervs-cluster.yaml"},
 	})
+
+	if vpcRegion != cosRegion {
+		logrus.Debugf("GenerateClusterAssets: vpcRegion(%s) is different than cosRegion(%s), cosRegion. Overriding bucket name", vpcRegion, cosRegion)
+		bucket = fmt.Sprintf("rhcos-powervs-images-%s", cosRegion)
+	}
 
 	powerVSImage = &capibm.IBMPowerVSImage{
 		TypeMeta: metav1.TypeMeta{
