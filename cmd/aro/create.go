@@ -12,12 +12,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/Azure/ARO-RP/pkg/api"
 	"github.com/Azure/go-autorest/autorest/azure"
 
 	"github.com/openshift/installer/pkg/asset"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer"

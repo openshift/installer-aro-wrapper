@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/Azure/ARO-RP/pkg/api"
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	mgmtnetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-08-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -15,7 +16,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/arm"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
 )

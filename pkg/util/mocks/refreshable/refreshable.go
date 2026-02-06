@@ -15,6 +15,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 
 	autorest "github.com/Azure/go-autorest/autorest"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockAuthorizer is a mock of Authorizer interface.

@@ -10,11 +10,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/Azure/ARO-RP/pkg/api"
 	mgmtfeatures "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/features"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureerrors"
 )

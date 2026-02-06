@@ -25,6 +25,8 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/Azure/ARO-RP/pkg/api"
+
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
@@ -34,7 +36,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
 	"github.com/openshift/installer-aro-wrapper/pkg/data/manifests"

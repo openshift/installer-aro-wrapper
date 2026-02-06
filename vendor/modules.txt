@@ -58,6 +58,10 @@ cloud.google.com/go/storage/internal/apiv2/storagepb
 github.com/AlecAivazis/survey/v2
 github.com/AlecAivazis/survey/v2/core
 github.com/AlecAivazis/survey/v2/terminal
+# github.com/Azure/ARO-RP/pkg/api v0.0.0-20251020201421-ff0f3d19d0e3
+## explicit; go 1.22.9
+github.com/Azure/ARO-RP/pkg/api
+github.com/Azure/ARO-RP/pkg/api/util/uuid
 # github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 ## explicit
 github.com/Azure/azure-sdk-for-go/profiles/2018-03-01/dns/mgmt/dns
@@ -80,7 +84,7 @@ github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features
 github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2017-10-01/storage
 github.com/Azure/azure-sdk-for-go/storage
 github.com/Azure/azure-sdk-for-go/version
-# github.com/Azure/azure-sdk-for-go/sdk/azcore v1.14.0
+# github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
 ## explicit; go 1.18
 github.com/Azure/azure-sdk-for-go/sdk/azcore
 github.com/Azure/azure-sdk-for-go/sdk/azcore/arm
