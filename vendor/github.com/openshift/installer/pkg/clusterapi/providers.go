@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -49,6 +50,8 @@ var (
 	Nutanix = infrastructureProvider("nutanix")
 	// OpenStack is the provider for creating resources in OpenStack.
 	OpenStack = infrastructureProvider("openstack")
+	// OpenStackORC is a companion component to OpenStack that is used to create resources declaratively.
+	OpenStackORC = infrastructureProvider("openstackorc")
 	// VSphere is the provider for creating resources in vSphere.
 	VSphere = infrastructureProvider("vsphere")
 )
@@ -78,7 +81,7 @@ var Mirror embed.FS
 
 // Extract extracts the provider from the embedded data into the specified directory.
 func (p Provider) Extract(dir string) error {
-	f, err := Mirror.Open(filepath.Join("mirror", zipFile))
+	f, err := Mirror.Open(path.Join("mirror", zipFile))
 	if err != nil {
 		return errors.Wrap(err, "failed to open cluster api zip from mirror")
 	}
@@ -113,9 +116,11 @@ func (p Provider) Extract(dir string) error {
 	// Extract the files.
 	for _, f := range r.File {
 		name := f.Name
-		if !p.Sources.Has(name) {
+		nameWithoutExt := strings.TrimSuffix(name, ".exe")
+		if !p.Sources.Has(name) && !p.Sources.Has(nameWithoutExt) {
 			continue
 		}
+
 		path, err := sanitizeArchivePath(dir, name)
 		if err != nil {
 			return errors.Wrapf(err, "failed to sanitize archive file %q", name)

@@ -17,7 +17,6 @@ limitations under the License.
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -256,41 +255,23 @@ func (cfg *Config) FromEnv() error {
 // ReadConfig parses vSphere cloud config file and stores it into VSphereConfig.
 // Environment variables are also checked
 func ReadConfig(byConfig []byte) (*Config, error) {
-	var cfg *Config
-
 	if len(byConfig) == 0 {
 		return nil, fmt.Errorf("Invalid YAML/INI file")
 	}
 
-	// Check to see if yaml file before calling parser to prevent unnecessary error messages.
-	yamlErr := isConfigYaml(byConfig)
-	if yamlErr == nil {
-		cfg, yamlErr = ReadConfigYAML(byConfig)
+	cfg, err := ReadConfigYAML(byConfig)
+	if err != nil {
+		klog.Warningf("ReadConfigYAML failed: %s", err)
 
-		// ReadConfigYAML can fail for other config errors not related to YAML.  So it is ok for yamlErr == nil initially
-		// and a new error occurs after read.
-		if yamlErr != nil {
-			klog.Errorf("ReadConfigYAML failed: %s", yamlErr)
-			return nil, yamlErr
+		cfg, err = ReadConfigINI(byConfig)
+		if err != nil {
+			klog.Errorf("ReadConfigINI failed: %s", err)
+			return nil, err
 		}
-		klog.V(4).Info("ReadConfig YAML succeeded")
-	} else {
-		klog.V(4).Infof("YAML not detected.  Attempting INI config load.")
-		var iniErr error
-		cfg, iniErr = ReadConfigINI(byConfig)
-		if iniErr != nil {
-			var cfgErr Err
-			if errors.As(iniErr, &cfgErr) {
-				// This error means it was valid INI but something was wrong w/ the config
-				return nil, iniErr
-			}
 
-			// If we are here, YAML and INI failed.  Create an error with both failure messages so user can review to determine cause
-			klog.Errorf("ReadConfigYAML failed: %v", yamlErr)
-			klog.Errorf("ReadConfigINI failed: %v", iniErr)
-			return nil, fmt.Errorf("ReadConfig failed.  YAML=[%v], INI=[%v]", yamlErr, iniErr)
-		}
 		klog.Info("ReadConfig INI succeeded. INI-based cloud-config is deprecated and will be removed in 2.0. Please use YAML based cloud-config.")
+	} else {
+		klog.Info("ReadConfig YAML succeeded")
 	}
 
 	// Env Vars should override config file entries if present

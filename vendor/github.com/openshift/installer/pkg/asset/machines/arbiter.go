@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1beta1"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta1" //nolint:staticcheck //CORS-3563
 	"sigs.k8s.io/yaml"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -31,8 +31,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/types"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
-	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
-	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
 	ibmcloudapi "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis"
 	ibmcloudprovider "github.com/openshift/machine-api-provider-ibmcloud/pkg/apis/ibmcloudprovider/v1"
 )
@@ -202,8 +200,7 @@ func (m *Arbiter) Generate(ctx context.Context, dependencies asset.Parents) erro
 	// The maximum number of networks supported on ServiceNetwork is two, one IPv4 and one IPv6 network.
 	// The cluster-network-operator handles the validation of this field.
 	// Reference: https://github.com/openshift/cluster-network-operator/blob/fc3e0e25b4cfa43e14122bdcdd6d7f2585017d75/pkg/network/cluster_config.go#L45-L52
-	if ic.Networking != nil && len(ic.Networking.ServiceNetwork) == 2 &&
-		(ic.Platform.Name() == openstacktypes.Name || ic.Platform.Name() == vspheretypes.Name) {
+	if ic.Networking != nil && len(ic.Networking.ServiceNetwork) == 2 {
 		// Only configure kernel args for dual-stack clusters.
 		ignIPv6, err := machineconfig.ForDualStackAddresses("arbiter")
 		if err != nil {

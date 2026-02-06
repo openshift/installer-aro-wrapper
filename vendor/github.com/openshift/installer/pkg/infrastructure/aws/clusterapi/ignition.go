@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/sirupsen/logrus"
 	capa "sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	k8sClient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/infrastructure/clusterapi"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
@@ -33,26 +35,31 @@ func editIgnition(ctx context.Context, in clusterapi.IgnitionInput) (*clusterapi
 		return nil, fmt.Errorf("failed to get AWSCluster: %w", err)
 	}
 
-	awsSession, err := in.InstallConfig.AWS.Session(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get aws session: %w", err)
-	}
-
 	// There is no direct access to load balancer IP addresses, so the security groups
 	// are used here to find the network interfaces that correspond to the load balancers.
-	securityGroupIDs := make([]*string, 0, len(awsCluster.Status.Network.SecurityGroups))
+	securityGroupIDs := make([]string, 0, len(awsCluster.Status.Network.SecurityGroups))
 	for _, securityGroup := range awsCluster.Status.Network.SecurityGroups {
-		securityGroupIDs = append(securityGroupIDs, aws.String(securityGroup.ID))
+		securityGroupIDs = append(securityGroupIDs, securityGroup.ID)
 	}
 	nicInput := ec2.DescribeNetworkInterfacesInput{
-		Filters: []*ec2.Filter{
+		Filters: []ec2types.Filter{
 			{
 				Name:   aws.String("group-id"),
 				Values: securityGroupIDs,
 			},
 		},
 	}
-	nicOutput, err := ec2.New(awsSession).DescribeNetworkInterfacesWithContext(ctx, &nicInput)
+
+	platformAWS := in.InstallConfig.Config.AWS
+	client, err := awsconfig.NewEC2Client(ctx, awsconfig.EndpointOptions{
+		Region:    platformAWS.Region,
+		Endpoints: platformAWS.ServiceEndpoints,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ec2 client: %w", err)
+	}
+
+	nicOutput, err := client.DescribeNetworkInterfaces(ctx, &nicInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe network interfaces: %w", err)
 	}

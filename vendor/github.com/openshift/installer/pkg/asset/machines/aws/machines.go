@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	v1 "github.com/openshift/api/config/v1"
 	machinev1 "github.com/openshift/api/machine/v1"
@@ -35,6 +36,7 @@ type machineProviderInput struct {
 	userTags         map[string]string
 	publicSubnet     bool
 	securityGroupIDs []string
+	cpuOptions       *awstypes.CPUOptions
 }
 
 // Machines returns a list of machines for a machinepool.
@@ -77,6 +79,7 @@ func Machines(clusterID string, region string, subnets aws.SubnetsByZone, pool *
 			userTags:         userTags,
 			publicSubnet:     publicSubnet,
 			securityGroupIDs: pool.Platform.AWS.AdditionalSecurityGroupIDs,
+			cpuOptions:       mpool.CPUOptions,
 		})
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to create provider")
@@ -239,11 +242,12 @@ func provider(in *machineProviderInput) (*machineapi.AWSMachineProviderConfig, e
 		BlockDevices: []machineapi.BlockDeviceMappingSpec{
 			{
 				EBS: &machineapi.EBSBlockDeviceSpec{
-					VolumeType: pointer.String(in.root.Type),
-					VolumeSize: pointer.Int64(int64(in.root.Size)),
-					Iops:       pointer.Int64(int64(in.root.IOPS)),
-					Encrypted:  pointer.Bool(true),
-					KMSKey:     machineapi.AWSResourceReference{ARN: pointer.String(in.root.KMSKeyARN)},
+					VolumeType:    pointer.String(in.root.Type),
+					VolumeSize:    pointer.Int64(int64(in.root.Size)),
+					Iops:          pointer.Int64(int64(in.root.IOPS)),
+					ThroughputMib: in.root.Throughput,
+					Encrypted:     pointer.Bool(true),
+					KMSKey:        machineapi.AWSResourceReference{ARN: pointer.String(in.root.KMSKeyARN)},
 				},
 			},
 		},
@@ -289,6 +293,16 @@ func provider(in *machineProviderInput) (*machineapi.AWSMachineProviderConfig, e
 
 	if in.imds.Authentication != "" {
 		config.MetadataServiceOptions.Authentication = machineapi.MetadataServiceAuthentication(in.imds.Authentication)
+	}
+
+	if in.cpuOptions != nil {
+		cpuOptions := machineapi.CPUOptions{}
+
+		if in.cpuOptions.ConfidentialCompute != nil {
+			cpuOptions.ConfidentialCompute = ptr.To(machineapi.AWSConfidentialComputePolicy(*in.cpuOptions.ConfidentialCompute))
+		}
+
+		config.CPUOptions = &cpuOptions
 	}
 
 	return config, nil

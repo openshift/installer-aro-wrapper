@@ -2,6 +2,7 @@ package clusterapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -16,10 +17,12 @@ import (
 	"github.com/openshift/installer/pkg/asset/manifests/capiutils"
 	"github.com/openshift/installer/pkg/infrastructure/clusterapi"
 	"github.com/openshift/installer/pkg/infrastructure/openstack/infraready"
+	"github.com/openshift/installer/pkg/infrastructure/openstack/postdestroy"
 	"github.com/openshift/installer/pkg/infrastructure/openstack/postprovision"
 	"github.com/openshift/installer/pkg/infrastructure/openstack/preprovision"
 	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types/openstack"
+	"github.com/openshift/installer/pkg/types/powervc"
 )
 
 // Provider defines the InfraProvider.
@@ -37,6 +40,7 @@ func (p Provider) Name() string {
 func (Provider) PublicGatherEndpoint() clusterapi.GatherEndpoint { return clusterapi.InternalIP }
 
 var _ clusterapi.PreProvider = Provider{}
+var _ clusterapi.PostDestroyer = Provider{}
 
 // PreProvision tags the VIP ports, and creates the security groups and the
 // server groups defined in the Machine manifests.
@@ -54,12 +58,14 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 		return fmt.Errorf("failed to tag VIP ports: %w", err)
 	}
 
-	// upload the corresponding image to Glance if rhcosImage contains a
-	// URL. If rhcosImage contains a name, then that points to an existing
-	// Glance image.
-	if imageName, isURL := rhcos.GenerateOpenStackImageName(rhcosImage, infraID); isURL {
-		if err := preprovision.UploadBaseImage(ctx, installConfig.Config.Platform.OpenStack.Cloud, rhcosImage, imageName, infraID, installConfig.Config.Platform.OpenStack.ClusterOSImageProperties); err != nil {
-			return fmt.Errorf("failed to upload the RHCOS base image: %w", err)
+	if installConfig.Config.Platform.Name() != powervc.Name {
+		// upload the corresponding image to Glance if rhcosImage contains a
+		// URL. If rhcosImage contains a name, then that points to an existing
+		// Glance image.
+		if imageName, isURL := rhcos.GenerateOpenStackImageName(rhcosImage, infraID); isURL {
+			if err := preprovision.UploadBaseImage(ctx, installConfig.Config.Platform.OpenStack.Cloud, rhcosImage, imageName, infraID, installConfig.Config.Platform.OpenStack.ClusterOSImageProperties); err != nil {
+				return fmt.Errorf("failed to upload the RHCOS base image: %w", err)
+			}
 		}
 	}
 
@@ -75,8 +81,10 @@ func (p Provider) PreProvision(ctx context.Context, in clusterapi.PreProvisionIn
 				break
 			}
 		}
-		if err := preprovision.SecurityGroups(ctx, installConfig, infraID, mastersSchedulable); err != nil {
-			return fmt.Errorf("failed to create security groups: %w", err)
+		if installConfig.Config.Platform.Name() != powervc.Name {
+			if err := preprovision.SecurityGroups(ctx, installConfig, infraID, mastersSchedulable); err != nil {
+				return fmt.Errorf("failed to create security groups: %w", err)
+			}
 		}
 	}
 
@@ -140,7 +148,9 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 		installConfig    = in.InstallConfig
 	)
 
-	ignShim, err := preprovision.UploadIgnitionAndBuildShim(ctx, installConfig.Config.Platform.OpenStack.Cloud, infraID, installConfig.Config.Proxy, bootstrapIgnData)
+	useGlance := installConfig.Config.Platform.Name() == openstack.Name
+
+	ignShim, err := preprovision.UploadIgnitionAndBuildShim(ctx, installConfig.Config.Platform.OpenStack.Cloud, infraID, installConfig.Config.Proxy, bootstrapIgnData, useGlance)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload and build ignition shim: %w", err)
 	}
@@ -172,4 +182,33 @@ func (p Provider) PostProvision(ctx context.Context, in clusterapi.PostProvision
 	}
 
 	return postprovision.FloatingIPs(ctx, k8sClient, ospCluster, installConfig, infraID)
+}
+
+// PostDestroy cleans up the temporary bootstrap resources after the bootstrap machine has been deleted.
+// This cleans up resources that were created by the installer for the bootstrap machine:
+// - Bootstrap security group that was created during pre-provisioning
+// This runs after CAPO has deleted the bootstrap machine and its ports, ensuring resources are no longer in use.
+func (p Provider) PostDestroy(ctx context.Context, in clusterapi.PostDestroyerInput) error {
+	logrus.Info("Cleaning up OpenStack bootstrap resources")
+
+	cloud := in.Metadata.OpenStack.Cloud
+	infraID := in.Metadata.InfraID
+
+	// Best effort approach trying to delete SG even in case FIP fails
+	var errs []error
+
+	// Delete floating IPs tagged with the cluster ID and bootstrap role
+	if err := postdestroy.FloatingIPs(ctx, cloud, infraID); err != nil {
+		errs = append(errs, err)
+	}
+
+	// If we are not a PowerVC driver, then deal with security groups
+	if in.Metadata.PowerVC == nil {
+		// Delete security groups tagged with the cluster ID and bootstrap role
+		if err := postdestroy.SecurityGroups(ctx, cloud, infraID); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
 }

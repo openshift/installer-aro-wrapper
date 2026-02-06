@@ -269,8 +269,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
 						NetworkResourceGroupName: vnetr.ResourceGroup,
 						VirtualNetwork:           vnetr.ResourceName,
-						ControlPlaneSubnet:       masterSubnetName,
-						ComputeSubnet:            workerSubnetName,
+						DeprecatedControlPlaneSubnet: masterSubnetName,
+						DeprecatedComputeSubnet:      workerSubnetName,
 						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
 						OutboundType:             outboundType,
 						ResourceGroupName:        resourceGroup,
@@ -358,8 +358,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	}
 
 	installConfig.Azure = icazure.NewMetadataWithCredentials(
-		azuretypes.CloudEnvironment(m.env.Environment().Name),
-		m.env.Environment().ResourceManagerEndpoint,
+		installConfig.Config.Platform.Azure,
+		installConfig.Config.ControlPlane,
+		&installConfig.Config.Compute[0],
 		credentials,
 	)
 

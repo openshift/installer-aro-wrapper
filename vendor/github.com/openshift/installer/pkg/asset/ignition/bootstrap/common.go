@@ -29,6 +29,7 @@ import (
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/ignition"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/aws"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/azure"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/baremetal"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/gcp"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap/vsphere"
@@ -88,7 +89,6 @@ type bootstrapTemplateData struct {
 	BootstrapInPlace      *types.BootstrapInPlace
 	UseIPv6ForNodeIP      bool
 	UseDualForNodeIP      bool
-	IsFCOS                bool
 	IsSCOS                bool
 	IsOKD                 bool
 	BootstrapNodeIP       string
@@ -103,6 +103,7 @@ type bootstrapTemplateData struct {
 // template files that are specific to one platform.
 type platformTemplateData struct {
 	AWS       *aws.TemplateData
+	Azure     *azure.TemplateData
 	BareMetal *baremetal.TemplateData
 	VSphere   *vsphere.TemplateData
 	GCP       *gcp.TemplateData
@@ -167,9 +168,11 @@ func (a *Common) Dependencies() []asset.Asset {
 		&tls.KubeletCSRSignerCertKey{},
 		&tls.KubeletServingCABundle{},
 		&tls.MCSCertKey{},
+		&tls.IRICertKey{},
 		&tls.RootCA{},
 		&tls.ServiceAccountKeyPair{},
 		&tls.IronicTLSCert{},
+		&tls.BMCVerifyCA{},
 		&releaseimage.Image{},
 		new(rhcos.Image),
 	}
@@ -307,6 +310,7 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		registry := sysregistriesv2.Registry{}
 		registry.Endpoint.Location = group.Source
 		registry.MirrorByDigestOnly = true
+		registry.Blocked = group.SourcePolicy == configv1.NeverContactSource
 		for _, mirror := range group.Mirrors {
 			registry.Mirrors = append(registry.Mirrors, sysregistriesv2.Endpoint{Location: mirror})
 		}
@@ -323,6 +327,8 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 	switch installConfig.Config.Platform.Name() {
 	case awstypes.Name:
 		platformData.AWS = aws.GetTemplateData(installConfig.Config.Platform.AWS)
+	case aztypes.Name:
+		platformData.Azure = azure.GetTemplateData(installConfig.Config.Platform.Azure)
 	case baremetaltypes.Name:
 		platformData.BareMetal = baremetal.GetTemplateData(
 			installConfig.Config.Platform.BareMetal,
@@ -387,7 +393,6 @@ func (a *Common) getTemplateData(dependencies asset.Parents, bootstrapInPlace bo
 		BootstrapInPlace:      bootstrapInPlaceConfig,
 		UseIPv6ForNodeIP:      ipv6Primary,
 		UseDualForNodeIP:      hasIPv4 && hasIPv6,
-		IsFCOS:                installConfig.Config.IsFCOS(),
 		IsSCOS:                installConfig.Config.IsSCOS(),
 		IsOKD:                 installConfig.Config.IsOKD(),
 		BootstrapNodeIP:       bootstrapNodeIP,
@@ -615,6 +620,15 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 
 		// Replace files that already exist in the slice with ones added later, otherwise append them
 		for _, file := range ignition.FilesFromAsset(rootDir, "root", 0644, asset) {
+			// We limit read access to the fencing secrets
+			match, err := machines.IsFencingCredentialsFile(file.Path)
+			if err != nil {
+				logrus.Warnf("failed regex scan for fencing secrets during ignition files creation: %s", err.Error())
+			} else if match {
+				logrus.Debugf("Setting file mode to 0600 for file: %s", file.Path)
+				file.Mode = ptr.To(0600)
+			}
+
 			a.Config.Storage.Files = replaceOrAppend(a.Config.Storage.Files, file)
 		}
 	}
@@ -657,9 +671,11 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 		&tls.KubeletCSRSignerCertKey{},
 		&tls.KubeletServingCABundle{},
 		&tls.MCSCertKey{},
+		&tls.IRICertKey{},
 		&tls.ServiceAccountKeyPair{},
 		&tls.JournalCertKey{},
 		&tls.IronicTLSCert{},
+		&tls.BMCVerifyCA{},
 	} {
 		dependencies.Get(asset)
 
@@ -671,7 +687,7 @@ func (a *Common) addParentFiles(dependencies asset.Parents) {
 
 	rootCA := &tls.RootCA{}
 	dependencies.Get(rootCA)
-	a.Config.Storage.Files = replaceOrAppend(a.Config.Storage.Files, ignition.FileFromBytes(filepath.Join(rootDir, rootCA.CertFile().Filename), "root", 0644, rootCA.Cert()))
+	a.Config.Storage.Files = replaceOrAppend(a.Config.Storage.Files, ignition.FileFromBytes(path.Join(rootDir, rootCA.CertFile().Filename), "root", 0644, rootCA.Cert()))
 }
 
 func replaceOrAppend(files []igntypes.File, file igntypes.File) []igntypes.File {

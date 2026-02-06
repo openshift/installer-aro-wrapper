@@ -11,7 +11,7 @@ import (
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	configgcp "github.com/openshift/installer/pkg/asset/installconfig/gcp"
+	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	openstackvalidation "github.com/openshift/installer/pkg/asset/installconfig/openstack/validation"
 	configpowervs "github.com/openshift/installer/pkg/asset/installconfig/powervs"
 	"github.com/openshift/installer/pkg/asset/machines"
@@ -32,6 +32,7 @@ import (
 	"github.com/openshift/installer/pkg/types/nutanix"
 	typesopenstack "github.com/openshift/installer/pkg/types/openstack"
 	"github.com/openshift/installer/pkg/types/ovirt"
+	"github.com/openshift/installer/pkg/types/powervc"
 	"github.com/openshift/installer/pkg/types/powervs"
 	"github.com/openshift/installer/pkg/types/vsphere"
 )
@@ -77,12 +78,8 @@ func (a *PlatformQuotaCheck) Generate(ctx context.Context, dependencies asset.Pa
 			return nil
 		}
 		services := []string{"ec2", "vpc"}
-		session, err := ic.AWS.Session(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to load AWS session")
-		}
-		q, err := quotaaws.Load(ctx, session, ic.AWS.Region, services...)
-		if quotaaws.IsUnauthorized(err) {
+		q, err := quotaaws.Load(ctx, ic.AWS.Region, ic.AWS.Services, services...)
+		if awsconfig.IsUnauthorized(err) {
 			logrus.Debugf("Missing permissions to fetch Quotas and therefore will skip checking them: %v, make sure you have `servicequotas:ListAWSDefaultServiceQuotas` permission available to the user.", err)
 			logrus.Info("Skipping quota checks")
 			return nil
@@ -90,8 +87,8 @@ func (a *PlatformQuotaCheck) Generate(ctx context.Context, dependencies asset.Pa
 		if err != nil {
 			return errors.Wrapf(err, "failed to load Quota for services: %s", strings.Join(services, ", "))
 		}
-		instanceTypes, err := aws.InstanceTypes(ctx, session, ic.AWS.Region)
-		if quotaaws.IsUnauthorized(err) {
+		instanceTypes, err := aws.InstanceTypes(ctx, ic.AWS.Region, ic.AWS.Services)
+		if awsconfig.IsUnauthorized(err) {
 			logrus.Warnf("Missing permissions to fetch instance types and therefore will skip checking Quotas: %v, make sure you have `ec2:DescribeInstanceTypes` permission available to the user.", err)
 			return nil
 		}
@@ -105,7 +102,7 @@ func (a *PlatformQuotaCheck) Generate(ctx context.Context, dependencies asset.Pa
 		summarizeReport(reports)
 	case typesgcp.Name:
 		services := []string{"compute.googleapis.com", "iam.googleapis.com"}
-		q, err := quotagcp.Load(ctx, ic.Config.Platform.GCP.ProjectID, services...)
+		q, err := quotagcp.Load(ctx, ic.Config.Platform.GCP.ProjectID, ic.Config.Platform.GCP.Endpoint, services...)
 		if quotagcp.IsUnauthorized(err) {
 			logrus.Warnf("Missing permissions to fetch Quotas and therefore will skip checking them: %v, make sure you have `roles/servicemanagement.quotaViewer` assigned to the user.", err)
 			return nil
@@ -113,11 +110,12 @@ func (a *PlatformQuotaCheck) Generate(ctx context.Context, dependencies asset.Pa
 		if err != nil {
 			return errors.Wrapf(err, "failed to load Quota for services: %s", strings.Join(services, ", "))
 		}
-		session, err := configgcp.GetSession(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to load GCP session")
+		endpointName := ""
+		endpoint := ic.Config.Platform.GCP.Endpoint
+		if typesgcp.ShouldUseEndpointForInstaller(endpoint) {
+			endpointName = ic.Config.GCP.Endpoint.Name
 		}
-		client, err := gcp.NewClient(ctx, session, ic.Config.Platform.GCP.ProjectID)
+		client, err := gcp.NewClient(ctx, ic.Config.Platform.GCP.ProjectID, endpointName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create client for quota constraints")
 		}
@@ -126,7 +124,7 @@ func (a *PlatformQuotaCheck) Generate(ctx context.Context, dependencies asset.Pa
 			return summarizeFailingReport(reports)
 		}
 		summarizeReport(reports)
-	case typesopenstack.Name:
+	case typesopenstack.Name, powervc.Name:
 		if skip := os.Getenv("OPENSHIFT_INSTALL_SKIP_PREFLIGHT_VALIDATIONS"); skip == "1" {
 			logrus.Warnf("OVERRIDE: pre-flight validation disabled.")
 			return nil

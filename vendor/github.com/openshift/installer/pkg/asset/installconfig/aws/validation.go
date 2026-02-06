@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"sort"
 
-	awsv2 "github.com/aws/aws-sdk-go-v2/aws"
+	ec2v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -111,6 +111,7 @@ func validatePlatform(ctx context.Context, meta *Metadata, fldPath *field.Path, 
 
 	if len(platform.VPC.Subnets) > 0 {
 		allErrs = append(allErrs, validateSubnets(ctx, meta, fldPath.Child("vpc").Child("subnets"), config)...)
+		allErrs = append(allErrs, validateSharedVPC(ctx, meta, fldPath.Child("vpc").Child("subnets"))...)
 	}
 	if platform.DefaultMachinePlatform != nil {
 		allErrs = append(allErrs, validateMachinePool(ctx, meta, fldPath.Child("defaultMachinePlatform"), platform, platform.DefaultMachinePlatform, controlPlaneReq, "", "")...)
@@ -156,17 +157,14 @@ func validateAMI(ctx context.Context, meta *Metadata, config *types.InstallConfi
 		return nil
 	}
 
+	// accept AMI that can be copied from us-east-1 if the region is in the standard AWS partition
 	regions, err := meta.Regions(ctx)
 	if err != nil {
 		return field.ErrorList{field.InternalError(field.NewPath("platform", "aws", "region"), fmt.Errorf("failed to get list of regions: %w", err))}
 	}
-
 	if sets.New(regions...).Has(config.Platform.AWS.Region) {
-		defaultEndpoint, err := getDefaultServiceEndpoint(config.Platform.AWS.Region, "ec2", endpointOptions{
-			DisableHTTPS:         false,
-			UseDualStackEndpoint: awsv2.DualStackEndpointStateDisabled,
-		})
-		if err != nil || defaultEndpoint == nil {
+		defaultEndpoint, err := GetDefaultServiceEndpoint(ctx, ec2v2.ServiceID, EndpointOptions{Region: config.Platform.AWS.Region, UseFIPS: false})
+		if err != nil {
 			return field.ErrorList{field.InternalError(field.NewPath("platform", "aws", "region"), fmt.Errorf("failed to resolve ec2 endpoint"))}
 		}
 		if defaultEndpoint.PartitionID == endpoints.AwsPartitionID {
@@ -330,6 +328,7 @@ func validateSubnets(ctx context.Context, meta *Metadata, fldPath *field.Path, c
 		}
 	}
 
+	allErrs = append(allErrs, validateSharedSubnets(ctx, meta, fldPath)...)
 	allErrs = append(allErrs, validateSubnetCIDR(fldPath, subnetDataGroups.Private, networking.MachineNetwork)...)
 	allErrs = append(allErrs, validateSubnetCIDR(fldPath, subnetDataGroups.Public, networking.MachineNetwork)...)
 
@@ -488,7 +487,7 @@ func translateEC2Arches(arches []string) sets.Set[string] {
 func validateSecurityGroupIDs(ctx context.Context, meta *Metadata, fldPath *field.Path, platform *awstypes.Platform, pool *awstypes.MachinePool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	vpc, err := meta.VPC(ctx)
+	vpc, err := meta.VPCID(ctx)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not determine cluster VPC: %s", err.Error())
 		return append(allErrs, field.Invalid(fldPath, vpc, errMsg))
@@ -713,9 +712,48 @@ func validateUntaggedSubnets(ctx context.Context, fldPath *field.Path, meta *Met
 	sort.Strings(untaggedSubnetIDs)
 
 	if len(untaggedSubnetIDs) > 0 {
-		errMsg := fmt.Sprintf("additional subnets %v without tag prefix %s are found in vpc %s of provided subnets. %s", untaggedSubnetIDs, TagNameKubernetesClusterPrefix, vpcSubnets.VPC,
+		errMsg := fmt.Sprintf("additional subnets %v without tag prefix %s are found in vpc %s of provided subnets. %s", untaggedSubnetIDs, TagNameKubernetesClusterPrefix, vpcSubnets.VpcID,
 			fmt.Sprintf("Please add a tag %s to those subnets to exclude them from cluster installation or explicitly assign roles in the install-config to provided subnets", TagNameKubernetesUnmanaged))
 		allErrs = append(allErrs, field.Forbidden(fldPath, errMsg))
+	}
+
+	return allErrs
+}
+
+// validateSharedVPC ensures the BYO VPC can be shared to install the new cluster.
+// That is the VPC must not have have tag: kubernetes.io/cluster/<another-cluster-id>: owned.
+func validateSharedVPC(ctx context.Context, meta *Metadata, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	vpc, err := meta.VPC(ctx)
+	if err != nil {
+		return append(allErrs, field.Invalid(fldPath, meta.ProvidedSubnets, err.Error()))
+	}
+
+	if vpc.Tags.HasClusterOwnedTag() {
+		clusterIDs := vpc.Tags.GetClusterIDs(TagValueOwned)
+		allErrs = append(allErrs, field.Forbidden(fldPath,
+			fmt.Sprintf("VPC of subnets is owned by other clusters %v and cannot be used for new installations, another VPC must be created separately", clusterIDs)))
+	}
+
+	return allErrs
+}
+
+// validateSharedSubnets ensures the BYO subnets can be shared to install the new cluster.
+// That is the subnets must not have have tag: kubernetes.io/cluster/<another-cluster-id>: owned.
+func validateSharedSubnets(ctx context.Context, meta *Metadata, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	subnets, err := meta.Subnets(ctx)
+	if err != nil {
+		return append(allErrs, field.Invalid(fldPath, meta.ProvidedSubnets, err.Error()))
+	}
+
+	for id, subnet := range mergeSubnets(subnets.Private, subnets.Public, subnets.Edge) {
+		if subnet.Tags.HasClusterOwnedTag() {
+			clusterIDs := subnet.Tags.GetClusterIDs(TagValueOwned)
+			allErrs = append(allErrs, field.Forbidden(fldPath, fmt.Sprintf("subnet %s is owned by other clusters %v and cannot be used for new installations, another subnet must be created separately", id, clusterIDs)))
+		}
 	}
 
 	return allErrs
@@ -883,7 +921,7 @@ func validateHostedZone(hostedZoneOutput *route53.GetHostedZoneOutput, hostedZon
 	allErrs := field.ErrorList{}
 
 	// validate that the hosted zone is associated with the VPC containing the existing subnets for the cluster
-	vpcID, err := metadata.VPC(context.TODO())
+	vpcID, err := metadata.VPCID(context.TODO())
 	if err == nil {
 		if !isHostedZoneAssociatedWithVPC(hostedZoneOutput, vpcID) {
 			allErrs = append(allErrs, field.Invalid(hostedZonePath, hostedZoneName, "hosted zone is not associated with the VPC"))
