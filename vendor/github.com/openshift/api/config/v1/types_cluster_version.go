@@ -796,10 +796,11 @@ type ConditionalUpdate struct {
 	// conditions represents the observations of the conditional update's
 	// current status. Known types are:
 	// * Recommended, for whether the update is recommended for the current cluster.
+	// +patchMergeKey=type
+	// +patchStrategy=merge
 	// +listType=map
 	// +listMapKey=type
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 // ConditionalUpdateRisk represents a reason and cluster-state
