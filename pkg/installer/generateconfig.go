@@ -166,7 +166,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// OpenShiftClusterVersions?
 
 	// 4.20 onwards, we default to Gen2 images
-	imageSKU := "aro_420-v2" // Gen2 SKU (default)
+	imageSKU := "420-v2" // Gen2 SKU (default)
 
 	// If any SKU doesn't support V2, use Gen1 images
 	masterSupportsV2, err := determineV2SkuSupport(masterSKU)
