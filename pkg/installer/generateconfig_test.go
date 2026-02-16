@@ -50,7 +50,7 @@ func TestVMNetworkingType(t *testing.T) {
 	}
 }
 
-func TestDetermineSkuSupportsV2Only(t *testing.T) {
+func TestDetermineV2SkuSupport(t *testing.T) {
 	for _, tt := range []struct {
 		name       string
 		sku        *mgmtcompute.ResourceSku
@@ -58,17 +58,17 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 		wantErr    string
 	}{
 		{
-			name: "sku supports both V1 and V2, does not require V2",
+			name: "sku supports both V1 and V2",
 			sku: &mgmtcompute.ResourceSku{
 				Name: to.StringPtr("Standard_D8s_v3"),
 				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V1,V2")},
 				},
 			},
-			wantResult: false,
+			wantResult: true,
 		},
 		{
-			name: "sku supports only V2, requires V2",
+			name: "sku supports only V2",
 			sku: &mgmtcompute.ResourceSku{
 				Name: to.StringPtr("Standard_D8s_v6"),
 				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
@@ -78,7 +78,7 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 			wantResult: true,
 		},
 		{
-			name: "sku supports only V1, does not require V2",
+			name: "sku supports only V1",
 			sku: &mgmtcompute.ResourceSku{
 				Name: to.StringPtr("Standard_D2_v2"),
 				Capabilities: &[]mgmtcompute.ResourceSkuCapabilities{
@@ -108,7 +108,7 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := determineSkuSupportsV2Only(tt.sku)
+			result, err := determineV2SkuSupport(tt.sku)
 
 			if tt.wantErr != "" {
 				if err == nil {
