@@ -26,7 +26,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/tls"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
-	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dns"
 )
 
 const (
@@ -93,7 +93,7 @@ func regenerateMCSCertKey(ic *installconfig.InstallConfig, ca *tls.RootCA, priva
 	return regenerateSignedCertKey(cfg, ca, tls.DoNotAppendParent)
 }
 
-func updateMCSCertKey(g graph.Graph, ic *installconfig.InstallConfig, localdnsConfig *dnsmasq.DNSConfig) error {
+func updateMCSCertKey(g graph.Graph, ic *installconfig.InstallConfig, localdnsConfig *dns.DNSConfig) error {
 	if len(localdnsConfig.APIIntIP) > 0 {
 		rootCA := g.Get(&tls.RootCA{}).(*tls.RootCA)
 		keyRaw, certRaw, err := regenerateMCSCertKey(ic, rootCA, localdnsConfig.APIIntIP)

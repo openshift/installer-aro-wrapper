@@ -8,10 +8,10 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
-	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dns"
 )
 
-func AppendEtcHostFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig installconfig.InstallConfig, dnsConfig dnsmasq.DNSConfig) error {
+func AppendEtcHostFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig installconfig.InstallConfig, dnsConfig dns.DNSConfig) error {
 	etcHostIgnConfig, err := EtcHostsIgnitionConfig(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP)
 	if err != nil {
 		return err

@@ -38,6 +38,7 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
 	"github.com/openshift/installer-aro-wrapper/pkg/data/manifests"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dns"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/etchost"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/mdsd"
@@ -92,7 +93,7 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 		HTTPSecret:    hex.EncodeToString(httpSecret),
 	}
 
-	localdnsConfig := dnsmasq.DNSConfig{
+	localdnsConfig := dns.DNSConfig{
 		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
@@ -317,7 +318,7 @@ func removeDNSConfigData(bootstrap *bootstrap.Bootstrap, installConfig installco
 
 // replacePointerIgnition performs the same functionality as the upstream
 // installer's pointerIgnitionConfig() but with ARO specific DNS config
-func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfig *dnsmasq.DNSConfig) (err error) {
+func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfig *dns.DNSConfig) (err error) {
 	masterPointerIgn := g.Get(&machine.Master{}).(*machine.Master)
 	workerPointerIgn := g.Get(&machine.Worker{}).(*machine.Worker)
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")
