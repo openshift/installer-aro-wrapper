@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/coreos/ignition/v2/config/util"
@@ -183,6 +184,12 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 	if err != nil {
 		return nil, err
 	}
+	// Inject LB IPs into Infrastructure CR for Custom DNS (CoreDNS) mode
+	if m.oc.Properties.OperatorFlags[api.OperatorFlagDNSType] == api.OperatorFlagDNSTypeClusterHosted {
+		if err = addLBIPsToInfrastructureCR(bootstrapAsset, localdnsConfig.APIIntIP, m.oc.Properties.APIServerProfile.IP); err != nil {
+			return nil, err
+		}
+	}
 	// Update Master and Worker Pointer Ignition with ARO API-Int IP
 	if err = replacePointerIgnition(bootstrapAsset, g, &localdnsConfig); err != nil {
 		return nil, err
@@ -313,6 +320,49 @@ func removeDNSConfigData(bootstrap *bootstrap.Bootstrap, installConfig installco
 	}
 	config := ignition.FileFromBytes(dnsCfgFilename, "root", 0644, data)
 	bootstrap.Config.Storage.Files = bootstrapfiles.ReplaceOrAppend(bootstrap.Config.Storage.Files, []igntypes.File{config})
+	return nil
+}
+
+const infrastructureFilepath = "/opt/openshift/manifests/cluster-infrastructure-02-config.yml"
+
+// addLBIPsToInfrastructureCR injects API and API-Int load balancer IPs into the
+// Infrastructure CR within bootstrap ignition. This is needed for Custom DNS
+// (CoreDNS) mode where the MCO reads these IPs from the Infrastructure CR to
+// configure CoreDNS static pods. Mirrors upstream's addLoadBalancersToInfra()
+// in pkg/infrastructure/clusterapi/ignition.go.
+func addLBIPsToInfrastructureCR(bootstrapAsset *bootstrap.Bootstrap, apiIntIP string, apiIP string) error {
+	for i, fileData := range bootstrapAsset.Config.Storage.Files {
+		if fileData.Path == infrastructureFilepath {
+			contents := strings.Split(*bootstrapAsset.Config.Storage.Files[i].Contents.Source, ",")
+			rawDecodedText, err := base64.StdEncoding.DecodeString(contents[1])
+			if err != nil {
+				return fmt.Errorf("failed to decode infrastructure CR: %w", err)
+			}
+
+			infra := &configv1.Infrastructure{}
+			if err := yaml.Unmarshal(rawDecodedText, infra); err != nil {
+				return fmt.Errorf("failed to unmarshal infrastructure CR: %w", err)
+			}
+
+			cloudLBInfo := configv1.CloudLoadBalancerIPs{
+				APIIntLoadBalancerIPs: []configv1.IP{configv1.IP(apiIntIP)},
+			}
+			if apiIP != "" {
+				cloudLBInfo.APILoadBalancerIPs = []configv1.IP{configv1.IP(apiIP)}
+			}
+
+			infra.Status.PlatformStatus.Azure.CloudLoadBalancerConfig.ClusterHosted = &cloudLBInfo
+
+			infraContents, err := yaml.Marshal(infra)
+			if err != nil {
+				return fmt.Errorf("failed to marshal infrastructure CR: %w", err)
+			}
+
+			encoded := fmt.Sprintf("data:text/plain;charset=utf-8;base64,%s", base64.StdEncoding.EncodeToString(infraContents))
+			bootstrapAsset.Config.Storage.Files[i].Contents.Source = &encoded
+			break
+		}
+	}
 	return nil
 }
 
