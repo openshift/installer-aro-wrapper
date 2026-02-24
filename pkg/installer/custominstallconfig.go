@@ -151,9 +151,11 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 	}
 
 	bootstrapAsset := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
-	err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, localdnsConfig)
-	if err != nil {
-		return nil, err
+	if m.oc.Properties.OperatorFlags[api.OperatorFlagDNSType] != api.OperatorFlagDNSTypeClusterHosted {
+		err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, localdnsConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 	err = mdsd.AppendMdsdFiles(bootstrapAsset, bootstrapLoggingConfig)
 	if err != nil {

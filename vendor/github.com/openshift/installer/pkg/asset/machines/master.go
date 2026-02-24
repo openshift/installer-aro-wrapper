@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -12,12 +13,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1beta1"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta1" //nolint:staticcheck //CORS-3563
 	"sigs.k8s.io/yaml"
 
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/api/features"
 	machinev1 "github.com/openshift/api/machine/v1"
 	machinev1alpha1 "github.com/openshift/api/machine/v1alpha1"
 	machinev1beta1 "github.com/openshift/api/machine/v1beta1"
@@ -58,6 +61,7 @@ import (
 	nutanixtypes "github.com/openshift/installer/pkg/types/nutanix"
 	openstacktypes "github.com/openshift/installer/pkg/types/openstack"
 	ovirttypes "github.com/openshift/installer/pkg/types/ovirt"
+	powervctypes "github.com/openshift/installer/pkg/types/powervc"
 	powervstypes "github.com/openshift/installer/pkg/types/powervs"
 	powervsdefaults "github.com/openshift/installer/pkg/types/powervs/defaults"
 	vspheretypes "github.com/openshift/installer/pkg/types/vsphere"
@@ -86,6 +90,11 @@ type Master struct {
 	// HostFiles is the list of baremetal hosts provided in the
 	// installer configuration.
 	HostFiles []*asset.File
+
+	// FencingCredentialsSecretFiles is a collection of secrets
+	// that will be used to fence machines to enable safe recovery
+	// in Two Node OpenShift with Fencing (TNF) deployments
+	FencingCredentialsSecretFiles []*asset.File
 }
 
 const (
@@ -120,6 +129,10 @@ const (
 
 	// ipAddressFileName is the filename used for the ip addresses list.
 	ipAddressFileName = "99_openshift-machine-api_address-%s.yaml"
+
+	// fencingCredentialsSecretFileName is the format string for constructing the
+	// secret filenames for Two Node OpenShift with Fencing (TNF) clusters.
+	fencingCredentialsSecretFileName = "99_openshift-etcd_fencing-credentials-secrets-%s.yaml" // #nosec G101
 )
 
 var (
@@ -129,6 +142,7 @@ var (
 	masterMachineFileNamePattern       = fmt.Sprintf(masterMachineFileName, "*")
 	masterIPClaimFileNamePattern       = fmt.Sprintf(ipClaimFileName, "*master*")
 	masterIPAddressFileNamePattern     = fmt.Sprintf(ipAddressFileName, "*master*")
+	fencingCredentialsFilenamePattern  = fmt.Sprintf(fencingCredentialsSecretFileName, "*")
 
 	_ asset.WritableAsset = (*Master)(nil)
 )
@@ -184,7 +198,6 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 			return fmt.Errorf("this install method does not support Single Node installation on platform %s", ic.Platform.Name())
 		}
 	}
-
 	switch ic.Platform.Name() {
 	case awstypes.Name:
 		subnets, err := aws.MachineSubnetsByZones(ctx, installConfig, awstypes.ClusterNodeSubnetRole)
@@ -240,6 +253,9 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 			if err != nil {
 				logrus.Warn(errors.Wrap(err, "failed to filter zone list"))
 			}
+			// Sort the zones by lexical order to ensure CAPI and MAPI machines
+			// are distributed to zones in the same order.
+			slices.Sort(mpool.Zones)
 		}
 
 		pool.Platform.AWS = &mpool
@@ -262,7 +278,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		mpool.Set(ic.Platform.GCP.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.GCP)
 		if len(mpool.Zones) == 0 {
-			azs, err := gcp.ZonesForInstanceType(ic.Platform.GCP.ProjectID, ic.Platform.GCP.Region, mpool.InstanceType)
+			azs, err := gcp.ZonesForInstanceType(ic.Platform.GCP.ProjectID, ic.Platform.GCP.Region, mpool.InstanceType, ic.Platform.GCP.Endpoint)
 			if err != nil {
 				return errors.Wrap(err, "failed to fetch availability zones")
 			}
@@ -325,7 +341,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		}
 		// TODO: IBM: implement ConfigMasters() if needed
 		// ibmcloud.ConfigMasters(machines, clusterID.InfraID, ic.Publish)
-	case openstacktypes.Name:
+	case openstacktypes.Name, powervctypes.Name:
 		mpool := defaultOpenStackMachinePoolPlatform()
 		mpool.Set(ic.Platform.OpenStack.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.OpenStack)
@@ -358,7 +374,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		}
 
 		if len(mpool.Zones) == 0 {
-			azs, err := client.GetAvailabilityZones(ctx, ic.Platform.Azure.Region, mpool.InstanceType)
+			azs, err := installConfig.Azure.VMAvailabilityZones(ctx, mpool.InstanceType)
 			if err != nil {
 				return errors.Wrap(err, "failed to fetch availability zones")
 			}
@@ -384,7 +400,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		}
 		pool.Platform.Azure = &mpool
 
-		capabilities, err := client.GetVMCapabilities(ctx, mpool.InstanceType, installConfig.Config.Platform.Azure.Region)
+		capabilities, err := installConfig.Azure.ControlPlaneCapabilities()
 		if err != nil {
 			return err
 		}
@@ -392,8 +408,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		if err != nil {
 			return err
 		}
-		useImageGallery := installConfig.Azure.CloudName != azuretypes.StackCloud
-		machines, controlPlaneMachineSet, err = azure.Machines(clusterID.InfraID, ic, &pool, rhcosImage.ControlPlane, "master", masterUserDataSecretName, capabilities, useImageGallery, session)
+		machines, controlPlaneMachineSet, err = azure.Machines(clusterID.InfraID, ic, &pool, rhcosImage.ControlPlane, "master", masterUserDataSecretName, capabilities, session)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
@@ -594,14 +609,62 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 	// The maximum number of networks supported on ServiceNetwork is two, one IPv4 and one IPv6 network.
 	// The cluster-network-operator handles the validation of this field.
 	// Reference: https://github.com/openshift/cluster-network-operator/blob/fc3e0e25b4cfa43e14122bdcdd6d7f2585017d75/pkg/network/cluster_config.go#L45-L52
-	if ic.Networking != nil && len(ic.Networking.ServiceNetwork) == 2 &&
-		(ic.Platform.Name() == openstacktypes.Name || ic.Platform.Name() == vspheretypes.Name) {
+	if ic.Networking != nil && len(ic.Networking.ServiceNetwork) == 2 {
 		// Only configure kernel args for dual-stack clusters.
 		ignIPv6, err := machineconfig.ForDualStackAddresses("master")
 		if err != nil {
 			return errors.Wrap(err, "failed to create ignition to configure IPv6 for master machines")
 		}
 		machineConfigs = append(machineConfigs, ignIPv6)
+	}
+
+	if installConfig.Config.EnabledFeatureGates().Enabled(features.FeatureGateMultiDiskSetup) {
+		for i, diskSetup := range installConfig.Config.ControlPlane.DiskSetup {
+			var dataDisk any
+			var diskName string
+
+			switch diskSetup.Type {
+			case types.Etcd:
+				diskName = diskSetup.Etcd.PlatformDiskID
+			case types.Swap:
+				diskName = diskSetup.Etcd.PlatformDiskID
+			case types.UserDefined:
+				diskName = diskSetup.UserDefined.PlatformDiskID
+			default:
+				// We shouldn't get here, but just in case
+				return errors.Errorf("disk setup type %s is not supported", diskSetup.Type)
+			}
+
+			switch ic.Platform.Name() {
+			case azuretypes.Name:
+				azureControlPlaneMachinePool := ic.ControlPlane.Platform.Azure
+
+				if i < len(azureControlPlaneMachinePool.DataDisks) {
+					dataDisk = azureControlPlaneMachinePool.DataDisks[i]
+				}
+			case vspheretypes.Name:
+				vsphereControlPlaneMachinePool := ic.ControlPlane.Platform.VSphere
+				for index, disk := range vsphereControlPlaneMachinePool.DataDisks {
+					if disk.Name == diskName {
+						dataDisk = vsphere.DiskInfo{
+							Index: index,
+							Disk:  disk,
+						}
+						break
+					}
+				}
+			default:
+				return errors.Errorf("disk setup for %s is not supported", ic.Platform.Name())
+			}
+
+			if dataDisk != nil {
+				diskSetupIgn, err := NodeDiskSetup(installConfig, "master", diskSetup, dataDisk)
+				if err != nil {
+					return errors.Wrap(err, "failed to create ignition to setup disks for control plane")
+				}
+				machineConfigs = append(machineConfigs, diskSetupIgn)
+			}
+		}
 	}
 
 	m.MachineConfigFiles, err = machineconfig.Manifests(machineConfigs, "master", directory)
@@ -660,7 +723,51 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 			Data:     data,
 		}
 	}
+
+	// This is only used by Two Node OpenShift with Fencing (TNF)
+	// The credentials are rendered into secrets that will be consumed by the
+	// cluster-etcd operator to enable recovery via fencing
+	if pool.Fencing != nil && len(pool.Fencing.Credentials) > 0 {
+		credentials, err := gatherFencingCredentials(pool.Fencing.Credentials)
+		if err != nil {
+			return err
+		}
+
+		secrets, err := createSecretAssetFiles(credentials, fencingCredentialsSecretFileName)
+		if err != nil {
+			return fmt.Errorf("failed to gather fencing credentials for control plane hosts: %w", err)
+		}
+		m.FencingCredentialsSecretFiles = append(m.FencingCredentialsSecretFiles, secrets...)
+	}
+
 	return nil
+}
+
+func gatherFencingCredentials(credentials []*types.Credential) ([]corev1.Secret, error) {
+	secrets := []corev1.Secret{}
+
+	for _, credential := range credentials {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("fencing-credentials-%s", credential.HostName),
+				Namespace: "openshift-etcd",
+			},
+			Data: map[string][]byte{
+				"username":                []byte(credential.Username),
+				"password":                []byte(credential.Password),
+				"address":                 []byte(credential.Address),
+				"certificateVerification": []byte(credential.CertificateVerification),
+			},
+		}
+
+		secrets = append(secrets, *secret)
+	}
+
+	return secrets, nil
 }
 
 // Files returns the files generated by the asset.
@@ -684,6 +791,8 @@ func (m *Master) Files() []*asset.File {
 	}
 	files = append(files, m.IPClaimFiles...)
 	files = append(files, m.IPAddrFiles...)
+	files = append(files, m.FencingCredentialsSecretFiles...)
+
 	return files
 }
 
@@ -731,12 +840,13 @@ func (m *Master) Load(f asset.FileFetcher) (found bool, err error) {
 
 	file, err = f.FetchByName(filepath.Join(directory, controlPlaneMachineSetFileName))
 	if err != nil {
-		if os.IsNotExist(err) {
-			// Choosing to ignore the CPMS file if it does not exist since UPI does not need it.
-			logrus.Debugf("CPMS file missing. Ignoring it while loading machine asset.")
-			return true, nil
+		// Throw the error only if the file was present, since UPI and baremetal
+		// deployments do not use CPMS. We ignore this file if it's missing.
+		if !os.IsNotExist(err) {
+			return true, err
 		}
-		return true, err
+
+		logrus.Debugf("CPMS file missing. Ignoring it while loading machine asset.")
 	}
 	m.ControlPlaneMachineSet = file
 
@@ -751,6 +861,17 @@ func (m *Master) Load(f asset.FileFetcher) (found bool, err error) {
 		return true, err
 	}
 	m.IPAddrFiles = fileList
+
+	fileList, err = f.FetchByPattern(filepath.Join(directory, fencingCredentialsFilenamePattern))
+	if err != nil {
+		// Throw the error only if the file was present, since fencing credentials
+		// are apply only to Two Node OpenShift with Fencing (TNF) deployments.
+		// All other deployments will ignore this file.
+		if !os.IsNotExist(err) {
+			return true, err
+		}
+	}
+	m.FencingCredentialsSecretFiles = fileList
 
 	return true, nil
 }
@@ -835,6 +956,7 @@ func IsMachineManifest(file *asset.File) bool {
 		{Pattern: workerMachineSetFileNamePattern, Type: "worker machineset"},
 		{Pattern: masterIPAddressFileNamePattern, Type: "master ip address"},
 		{Pattern: masterIPClaimFileNamePattern, Type: "master ip address claim"},
+		{Pattern: fencingCredentialsFilenamePattern, Type: "fencing credentials secret"},
 	} {
 		if matched, err := filepath.Match(pattern.Pattern, filename); err != nil {
 			panic(fmt.Sprintf("bad format for %s file name pattern", pattern.Type))
@@ -899,6 +1021,16 @@ func createAssetFiles(objects []interface{}, fileName string) ([]*asset.File, er
 	}
 
 	return assetFiles, nil
+}
+
+// IsFencingCredentialsFile is used during the creation of the ignition files
+// to override its file mode to use a reduced permission set.
+func IsFencingCredentialsFile(filepath string) (bool, error) {
+	match, err := regexp.MatchString(fmt.Sprintf(fencingCredentialsSecretFileName, "[0-9]+"), filepath)
+	if err != nil {
+		return false, err
+	}
+	return match, nil
 }
 
 // supportedSingleNodePlatform indicates if the IPI Installer can be used to install SNO on

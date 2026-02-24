@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"net/http"
-	"net/url"
 	"slices"
 	"strings"
 
@@ -64,13 +62,15 @@ func Validate(client API, ic *types.InstallConfig) error {
 	allErrs = append(allErrs, validateRegion(client, ic, field.NewPath("platform").Child("gcp"))...)
 	allErrs = append(allErrs, validateZones(client, ic)...)
 	allErrs = append(allErrs, validateNetworks(client, ic, field.NewPath("platform").Child("gcp"))...)
-	allErrs = append(allErrs, validateServiceEndpoints(client, ic, field.NewPath("platform").Child("gcp"))...)
 	allErrs = append(allErrs, validateInstanceTypes(client, ic)...)
 	allErrs = append(allErrs, ValidateCredentialMode(client, ic)...)
 	allErrs = append(allErrs, validatePreexistingServiceAccount(client, ic)...)
+	allErrs = append(allErrs, ValidatePreExistingPublicDNS(client, ic)...)
+	allErrs = append(allErrs, ValidatePrivateDNSZone(client, ic)...)
 	allErrs = append(allErrs, validateServiceAccountPresent(client, ic)...)
 	allErrs = append(allErrs, validateMarketplaceImages(client, ic)...)
 	allErrs = append(allErrs, validatePlatformKMSKeys(client, ic, field.NewPath("platform").Child("gcp"))...)
+	allErrs = append(allErrs, validateServiceEndpointOverride(client, ic, field.NewPath("platform").Child("gcp"))...)
 
 	if err := validateUserTags(client, ic.Platform.GCP.ProjectID, ic.Platform.GCP.UserTags); err != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("platform").Child("gcp").Child("userTags"), ic.Platform.GCP.UserTags, err.Error()))
@@ -391,47 +391,84 @@ func validatePreexistingServiceAccount(client API, ic *types.InstallConfig) fiel
 // DNS zone for cluster's Kubernetes API. If a PublicDNSZone is provided, the provided
 // zone is verified against the BaseDomain. If no zone is provided, the base domain is
 // checked for any public zone that can be used.
-func ValidatePreExistingPublicDNS(client API, ic *types.InstallConfig) *field.Error {
+func ValidatePreExistingPublicDNS(client API, ic *types.InstallConfig) field.ErrorList {
 	// If this is an internal cluster, this check is not necessary
-	if ic.Publish == types.InternalPublishingStrategy {
+	if ic.Publish == types.InternalPublishingStrategy || ic.GCP.UserProvisionedDNS == dnstypes.UserProvisionedDNSEnabled {
 		return nil
 	}
+	allErrs := field.ErrorList{}
 
 	zone, err := client.GetDNSZone(context.TODO(), ic.Platform.GCP.ProjectID, ic.BaseDomain, true)
 	if err != nil {
 		if IsNotFound(err) {
-			return field.NotFound(field.NewPath("baseDomain"), fmt.Sprintf("Public DNS Zone (%s/%s)", ic.Platform.GCP.ProjectID, ic.BaseDomain))
+			return append(allErrs, field.NotFound(field.NewPath("baseDomain"), fmt.Sprintf("Public DNS Zone (%s/%s)", ic.Platform.GCP.ProjectID, ic.BaseDomain)))
 		}
-		return field.InternalError(field.NewPath("baseDomain"), err)
+		return append(allErrs, field.InternalError(field.NewPath("baseDomain"), err))
 	}
-	return checkRecordSets(client, ic, zone, []string{apiRecordType(ic)})
+
+	if err := checkRecordSets(client, ic, ic.Platform.GCP.ProjectID, zone, []string{apiRecordType(ic)}); err != nil {
+		allErrs = append(allErrs, err)
+	}
+	return allErrs
 }
 
 // ValidatePrivateDNSZone ensure no pre-existing DNS record exists in the private dns zone
 // matching the name that will be used for this installation.
-func ValidatePrivateDNSZone(client API, ic *types.InstallConfig) *field.Error {
+func ValidatePrivateDNSZone(client API, ic *types.InstallConfig) field.ErrorList {
 	if ic.GCP.Network == "" || ic.GCP.NetworkProjectID == "" {
 		return nil
 	}
+	allErrs := field.ErrorList{}
 
-	zone, err := client.GetDNSZone(context.TODO(), ic.GCP.ProjectID, ic.ClusterDomain(), false)
-	if err != nil {
-		logrus.Debug("No private DNS Zone found")
-		if IsNotFound(err) {
-			return field.NotFound(field.NewPath("baseDomain"), fmt.Sprintf("Private DNS Zone (%s/%s)", ic.Platform.GCP.ProjectID, ic.BaseDomain))
+	// The private zone does NOT need to exist. When the zone does exist it will be used, but when
+	// the zone does not exist one will be created with the specified zone name.
+	project := ic.GCP.ProjectID
+	zoneName := ""
+	icdns := ic.GCP.DNS
+	if icdns != nil && icdns.PrivateZone != nil {
+		if icdns.PrivateZone.ProjectID != "" {
+			project = icdns.PrivateZone.ProjectID
 		}
-		return field.InternalError(field.NewPath("baseDomain"), err)
+		zoneName = icdns.PrivateZone.Name
 	}
 
-	// Private Zone can be nil, check to see if it was found or not
-	if zone != nil {
-		return checkRecordSets(client, ic, zone, []string{apiRecordType(ic), apiIntRecordName(ic)})
+	// The base check will determine if any of the private zone exists with the specified base domain.
+	params := []gcp.DNSZoneParams{{Project: project, IsPublic: false, BaseDomain: ic.ClusterDomain()}}
+	if zoneName != "" {
+		// When a private dns zone is specified in the install-config then the test should
+		// determine if the private zone found is the only one matching the specified base domain.
+		params = append(params, gcp.DNSZoneParams{Project: project, IsPublic: false, BaseDomain: ic.ClusterDomain(), Name: zoneName})
 	}
-	return nil
+
+	for _, paramSet := range params {
+		zone, err := client.GetDNSZoneFromParams(context.TODO(), paramSet)
+		if err != nil {
+			if IsNotFound(err) {
+				// Ignore the not found error, because the zone will be created in this instance.
+				logrus.Debug("No private DNS Zone found")
+				continue
+			}
+			return append(allErrs, field.Invalid(field.NewPath("baseDomain"), ic.BaseDomain, err.Error()))
+		}
+
+		// Private Zone can be nil, check to see if it was found or not
+		if zone != nil {
+			if icdns != nil && icdns.PrivateZone != nil && zoneName != zone.Name {
+				allErrs = append(allErrs, field.Invalid(
+					field.NewPath("platform").Child("gcp").Child("dns").Child("privateZone").Child("name"),
+					zoneName,
+					fmt.Sprintf("found existing private zone %s in project %s with DNS name %s", zone.Name, project, zone.DnsName),
+				))
+			} else if err := checkRecordSets(client, ic, project, zone, []string{apiRecordType(ic), apiIntRecordName(ic)}); err != nil {
+				allErrs = append(allErrs, err)
+			}
+		}
+	}
+	return allErrs
 }
 
-func checkRecordSets(client API, ic *types.InstallConfig, zone *dns.ManagedZone, records []string) *field.Error {
-	rrSets, err := client.GetRecordSets(context.TODO(), ic.GCP.ProjectID, zone.Name)
+func checkRecordSets(client API, ic *types.InstallConfig, project string, zone *dns.ManagedZone, records []string) *field.Error {
+	rrSets, err := client.GetRecordSets(context.TODO(), project, zone.Name)
 	if err != nil {
 		return field.InternalError(field.NewPath("baseDomain"), err)
 	}
@@ -443,7 +480,7 @@ func checkRecordSets(client API, ic *types.InstallConfig, zone *dns.ManagedZone,
 	preexistingRecords := sets.New[string](records...).Intersection(setOfReturnedRecords)
 
 	if preexistingRecords.Len() > 0 {
-		errMsg := fmt.Sprintf("record(s) %q already exists in DNS Zone (%s/%s) and might be in use by another cluster, please remove it to continue", sets.List(preexistingRecords), ic.GCP.ProjectID, zone.Name)
+		errMsg := fmt.Sprintf("record(s) %q already exists in DNS Zone (%s/%s) and might be in use by another cluster, please remove it to continue", sets.List(preexistingRecords), project, zone.Name)
 		return field.Invalid(field.NewPath("metadata", "name"), ic.ObjectMeta.Name, errMsg)
 	}
 	return nil
@@ -457,17 +494,36 @@ func ValidateForProvisioning(ic *types.InstallConfig) error {
 
 	allErrs := field.ErrorList{}
 
-	client, err := NewClient(context.TODO())
-	if err != nil {
-		return err
-	}
+	if ic.GCP.FirewallRulesManagement == gcp.UnmanagedFirewallRules && ic.GCP.Network == "" {
+		// this is usually a static check, however it is validated here after the
+		// create install-config process to ensure that the create install-config
+		// does not fail in cases where the firewall rules management is set to
+		// unmanaged when the permissions do not exist.
+		allErrs = append(allErrs, field.Required(
+			field.NewPath("platform").Child("gcp").Child("network"),
+			"a network must be specified when firewall rules are unmanaged"),
+		)
+	} else if ic.GCP.FirewallRulesManagement == gcp.ManagedFirewallRules {
+		projectID := ic.GCP.ProjectID
+		configField := "projectID"
+		if ic.GCP.NetworkProjectID != "" {
+			projectID = ic.GCP.NetworkProjectID
+			configField = "networkProjectID"
+		}
 
-	if err := ValidatePreExistingPublicDNS(client, ic); err != nil {
-		allErrs = append(allErrs, err)
-	}
-
-	if err := ValidatePrivateDNSZone(client, ic); err != nil {
-		allErrs = append(allErrs, err)
+		hasPermissions, err := HasPermission(context.TODO(), projectID, []string{
+			CreateFirewallPermission,
+			DeleteFirewallPermission,
+			UpdateNetworksPermission,
+		}, ic.GCP.Endpoint)
+		if err != nil {
+			allErrs = append(allErrs, field.InternalError(field.NewPath("platform").Child("gcp").Child(configField), err))
+		} else if !hasPermissions {
+			allErrs = append(allErrs, field.Invalid(
+				field.NewPath("platform").Child("gcp").Child("firewallRulesManagement"),
+				ic.GCP.FirewallRulesManagement,
+				"firewall permissions are required when firewall rules management is set to Managed"))
+		}
 	}
 
 	return allErrs.ToAggregate()
@@ -529,21 +585,6 @@ func validateNetworks(client API, ic *types.InstallConfig, fieldPath *field.Path
 		allErrs = append(allErrs, validateSubnet(client, ic, fieldPath.Child("controlPlaneSubnet"), subnets, ic.GCP.ControlPlaneSubnet)...)
 	}
 
-	return allErrs
-}
-
-func validateServiceEndpoints(_ API, ic *types.InstallConfig, fieldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	// attempt to resolve all the custom (overridden) endpoints. If any are not reachable,
-	// then the installation should fail not skip the endpoint use.
-	for id, serviceEndpoint := range ic.GCP.ServiceEndpoints {
-		if _, err := url.Parse(serviceEndpoint.URL); err != nil {
-			allErrs = append(allErrs, field.Invalid(fieldPath.Child("serviceEndpoints").Index(id), serviceEndpoint.URL, fmt.Sprintf("failed to parse service endpoint url: %v", err)))
-		} else if _, err := http.Head(serviceEndpoint.URL); err != nil {
-			allErrs = append(allErrs, field.Invalid(fieldPath.Child("serviceEndpoints").Index(id), serviceEndpoint.URL, fmt.Sprintf("error connecting to endpoint: %v", err)))
-		}
-	}
 	return allErrs
 }
 
@@ -840,6 +881,29 @@ func validatePlatformKMSKeys(client API, ic *types.InstallConfig, fieldPath *fie
 				))
 			}
 		}
+	}
+
+	return allErrs
+}
+
+// validateServiceEndpointOverride validates the endpoint that is provided by the user.
+func validateServiceEndpointOverride(client API, ic *types.InstallConfig, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if ic.GCP.Endpoint == nil {
+		return nil
+	}
+
+	endpoint, err := client.GetPrivateServiceConnectEndpoint(context.Background(), ic.GCP.ProjectID, ic.GCP.Endpoint)
+	if err != nil || endpoint == nil {
+		return append(allErrs, field.NotFound(fieldPath.Child("endpoint").Child("name"), ic.GCP.Endpoint.Name))
+	}
+	network := ""
+	if parts := strings.Split(endpoint.Network, "/"); len(parts) > 0 {
+		network = parts[len(parts)-1]
+	}
+	if network != ic.GCP.Network {
+		errMsg := fmt.Sprintf("psc endpoint %s is on the %s network, but user supplied %s", endpoint.Name, network, ic.GCP.Network)
+		return append(allErrs, field.Invalid(fieldPath.Child("endpoint").Child("name"), ic.GCP.Endpoint.Name, errMsg))
 	}
 
 	return allErrs

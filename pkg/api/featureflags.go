@@ -20,4 +20,12 @@ const (
 	// Unit (MTU) on Azure virtual networks, which as of late 2021 is 3900 bytes.
 	// Otherwise cluster nodes will use the DHCP-provided MTU of 1500 bytes.
 	FeatureFlagMTU3900 = "Microsoft.RedHatOpenShift/MTU3900"
+
+	// OperatorFlagDNSType is the operator flag that controls which DNS solution to use.
+	// When set to "dnsmasq" (or absent), dnsmasq is used at the node level.
+	// When set to "clusterhosted", CoreDNS static pods are deployed via the upstream
+	// Custom DNS feature (4.21+).
+	OperatorFlagDNSType              = "aro.dns.type"
+	OperatorFlagDNSTypeDnsmasq       = "dnsmasq"
+	OperatorFlagDNSTypeClusterHosted = "clusterhosted"
 )

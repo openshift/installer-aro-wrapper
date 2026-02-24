@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+	"runtime"
 
+	orcv1alpha1 "github.com/k-orc/openstack-resource-controller/v2/api/v1alpha1"
 	capnv1 "github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/sirupsen/logrus"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -22,7 +23,7 @@ import (
 	capiv1 "sigs.k8s.io/cluster-api-provider-ibmcloud/api/v1beta2"
 	capov1 "sigs.k8s.io/cluster-api-provider-openstack/api/v1beta1"
 	capvv1 "sigs.k8s.io/cluster-api-provider-vsphere/apis/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck //CORS-3563
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -37,6 +38,8 @@ var (
 
 func init() {
 	utilruntime.Must(clusterv1.AddToScheme(Scheme))
+
+	utilruntime.Must(orcv1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(capav1beta1.AddToScheme(Scheme))
 	utilruntime.Must(capav1.AddToScheme(Scheme))
 	utilruntime.Must(capzv1.AddToScheme(Scheme))
@@ -85,14 +88,17 @@ func (c *localControlPlane) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to create kube-apiserver log file: %w", err)
 	}
 
+	if runtime.GOOS == "windows" {
+		os.Setenv("TEST_ASSET_ETCD", filepath.Join(c.BinDir, "etcd.exe"))
+		os.Setenv("TEST_ASSET_KUBE_APISERVER", filepath.Join(c.BinDir, "kube-apiserver.exe"))
+	}
+
 	log.SetLogger(klog.NewKlogr())
 	logrus.Info("Started local control plane with envtest")
 	c.Env = &envtest.Environment{
 		Scheme:                   Scheme,
 		AttachControlPlaneOutput: true,
 		BinaryAssetsDirectory:    c.BinDir,
-		ControlPlaneStartTimeout: 10 * time.Second,
-		ControlPlaneStopTimeout:  10 * time.Second,
 		ControlPlane: envtest.ControlPlane{
 			Etcd: &envtest.Etcd{
 				DataDir: c.EtcdDataDir,
