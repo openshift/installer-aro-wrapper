@@ -572,23 +572,37 @@ func TestAddLBIPsToInfrastructureCR(t *testing.T) {
 		name             string
 		apiIntIP         string
 		apiIP            string
+		ingressIP        string
 		wantAPIIntIPs    []configv1.IP
 		wantAPIIPs       []configv1.IP
-		wantClusterNil   bool
+		wantIngressIPs   []configv1.IP
 	}{
 		{
-			name:          "public cluster with both IPs",
-			apiIntIP:      "10.0.0.1",
-			apiIP:         "20.0.0.1",
-			wantAPIIntIPs: []configv1.IP{"10.0.0.1"},
-			wantAPIIPs:    []configv1.IP{"20.0.0.1"},
+			name:           "public cluster with all IPs",
+			apiIntIP:       "10.0.0.1",
+			apiIP:          "20.0.0.1",
+			ingressIP:      "10.0.0.5",
+			wantAPIIntIPs:  []configv1.IP{"10.0.0.1"},
+			wantAPIIPs:     []configv1.IP{"20.0.0.1"},
+			wantIngressIPs: []configv1.IP{"10.0.0.5"},
 		},
 		{
-			name:          "private cluster with only internal IP",
-			apiIntIP:      "10.0.0.1",
-			apiIP:         "",
-			wantAPIIntIPs: []configv1.IP{"10.0.0.1"},
-			wantAPIIPs:    nil,
+			name:           "private cluster with only internal IP",
+			apiIntIP:       "10.0.0.1",
+			apiIP:          "",
+			ingressIP:      "10.0.0.5",
+			wantAPIIntIPs:  []configv1.IP{"10.0.0.1"},
+			wantAPIIPs:     nil,
+			wantIngressIPs: []configv1.IP{"10.0.0.5"},
+		},
+		{
+			name:           "cluster without ingress IP",
+			apiIntIP:       "10.0.0.1",
+			apiIP:          "20.0.0.1",
+			ingressIP:      "",
+			wantAPIIntIPs:  []configv1.IP{"10.0.0.1"},
+			wantAPIIPs:     []configv1.IP{"20.0.0.1"},
+			wantIngressIPs: nil,
 		},
 	}
 
@@ -597,7 +611,7 @@ func TestAddLBIPsToInfrastructureCR(t *testing.T) {
 			infraData := makeInfrastructureCR(configv1.ClusterHostedDNSType)
 			bootstrapAsset := makeBootstrapWithInfraCR(infraData)
 
-			err := addLBIPsToInfrastructureCR(bootstrapAsset, tt.apiIntIP, tt.apiIP)
+			err := addLBIPsToInfrastructureCR(bootstrapAsset, tt.apiIntIP, tt.apiIP, tt.ingressIP)
 			require.NoError(t, err)
 
 			// Decode the modified Infrastructure CR from the bootstrap asset
@@ -615,6 +629,8 @@ func TestAddLBIPsToInfrastructureCR(t *testing.T) {
 				infra.Status.PlatformStatus.Azure.CloudLoadBalancerConfig.ClusterHosted.APIIntLoadBalancerIPs)
 			assert.Equal(t, tt.wantAPIIPs,
 				infra.Status.PlatformStatus.Azure.CloudLoadBalancerConfig.ClusterHosted.APILoadBalancerIPs)
+			assert.Equal(t, tt.wantIngressIPs,
+				infra.Status.PlatformStatus.Azure.CloudLoadBalancerConfig.ClusterHosted.IngressLoadBalancerIPs)
 		})
 	}
 }
@@ -628,6 +644,6 @@ func TestAddLBIPsToInfrastructureCR_NoInfraFile(t *testing.T) {
 		},
 	}
 
-	err := addLBIPsToInfrastructureCR(bootstrapAsset, "10.0.0.1", "20.0.0.1")
+	err := addLBIPsToInfrastructureCR(bootstrapAsset, "10.0.0.1", "20.0.0.1", "10.0.0.5")
 	require.NoError(t, err, "should not error when infrastructure file is not found")
 }

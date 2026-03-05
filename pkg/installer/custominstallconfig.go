@@ -186,7 +186,7 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 	}
 	// Inject LB IPs into Infrastructure CR for Custom DNS (CoreDNS) mode
 	if m.oc.Properties.OperatorFlags[api.OperatorFlagDNSType] == api.OperatorFlagDNSTypeClusterHosted {
-		if err = addLBIPsToInfrastructureCR(bootstrapAsset, localdnsConfig.APIIntIP, m.oc.Properties.APIServerProfile.IP); err != nil {
+		if err = addLBIPsToInfrastructureCR(bootstrapAsset, localdnsConfig.APIIntIP, m.oc.Properties.APIServerProfile.IP, localdnsConfig.IngressIP); err != nil {
 			return nil, err
 		}
 	}
@@ -325,12 +325,12 @@ func removeDNSConfigData(bootstrap *bootstrap.Bootstrap, installConfig installco
 
 const infrastructureFilepath = "/opt/openshift/manifests/cluster-infrastructure-02-config.yml"
 
-// addLBIPsToInfrastructureCR injects API and API-Int load balancer IPs into the
-// Infrastructure CR within bootstrap ignition. This is needed for Custom DNS
-// (CoreDNS) mode where the MCO reads these IPs from the Infrastructure CR to
+// addLBIPsToInfrastructureCR injects API, API-Int, and Ingress load balancer IPs
+// into the Infrastructure CR within bootstrap ignition. This is needed for Custom
+// DNS (CoreDNS) mode where the MCO reads these IPs from the Infrastructure CR to
 // configure CoreDNS static pods. Mirrors upstream's addLoadBalancersToInfra()
 // in pkg/infrastructure/clusterapi/ignition.go.
-func addLBIPsToInfrastructureCR(bootstrapAsset *bootstrap.Bootstrap, apiIntIP string, apiIP string) error {
+func addLBIPsToInfrastructureCR(bootstrapAsset *bootstrap.Bootstrap, apiIntIP string, apiIP string, ingressIP string) error {
 	for i, fileData := range bootstrapAsset.Config.Storage.Files {
 		if fileData.Path == infrastructureFilepath {
 			contents := strings.Split(*bootstrapAsset.Config.Storage.Files[i].Contents.Source, ",")
@@ -349,6 +349,9 @@ func addLBIPsToInfrastructureCR(bootstrapAsset *bootstrap.Bootstrap, apiIntIP st
 			}
 			if apiIP != "" {
 				cloudLBInfo.APILoadBalancerIPs = []configv1.IP{configv1.IP(apiIP)}
+			}
+			if ingressIP != "" {
+				cloudLBInfo.IngressLoadBalancerIPs = []configv1.IP{configv1.IP(ingressIP)}
 			}
 
 			infra.Status.PlatformStatus.Azure.CloudLoadBalancerConfig.ClusterHosted = &cloudLBInfo
