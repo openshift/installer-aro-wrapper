@@ -16,6 +16,10 @@ limitations under the License.
 
 package config
 
+import (
+	"errors"
+)
+
 const (
 	// DefaultRoundTripperCount is the number of allowed round trips
 	// before an error is returned.
@@ -47,34 +51,19 @@ const (
 
 var (
 	// ErrUsernameMissing is returned when the provided username is empty.
-	ErrUsernameMissing = getError("Username is missing")
+	ErrUsernameMissing = errors.New("Username is missing")
 
 	// ErrPasswordMissing is returned when the provided password is empty.
-	ErrPasswordMissing = getError("Password is missing")
+	ErrPasswordMissing = errors.New("Password is missing")
 
 	// ErrInvalidVCenterIP is returned when the provided vCenter IP address is
 	// missing from the provided configuration.
-	ErrInvalidVCenterIP = getError("vsphere.conf does not have the VirtualCenter IP address specified")
+	ErrInvalidVCenterIP = errors.New("vsphere.conf does not have the VirtualCenter IP address specified")
 
 	// ErrMissingVCenter is returned when the provided configuration does not
 	// define any vCenters.
-	ErrMissingVCenter = getError("No Virtual Center hosts defined")
+	ErrMissingVCenter = errors.New("No Virtual Center hosts defined")
 
 	// ErrInvalidIPFamilyType is returned when an invalid IPFamily type is encountered
-	ErrInvalidIPFamilyType = getError("Invalid IP Family type")
+	ErrInvalidIPFamilyType = errors.New("Invalid IP Family type")
 )
-
-// Err error to be used for any config related errors
-type Err struct {
-	Msg string
-}
-
-func (p Err) Error() string {
-	return p.Msg
-}
-
-func getError(msg string) error {
-	return Err{
-		Msg: msg,
-	}
-}

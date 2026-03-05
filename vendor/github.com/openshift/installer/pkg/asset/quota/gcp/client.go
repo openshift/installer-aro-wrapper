@@ -23,8 +23,12 @@ type Client struct {
 }
 
 // NewClient returns Client using the context and session.
-func NewClient(ctx context.Context, sess *gcpconfig.Session, projectID string) (*Client, error) {
-	svc, err := computev1.NewService(ctx, option.WithCredentials(sess.Credentials))
+func NewClient(ctx context.Context, projectID, endpointName string) (*Client, error) {
+	opts := []option.ClientOption{}
+	if endpointName != "" {
+		opts = append(opts, gcpconfig.CreateEndpointOption(endpointName, gcpconfig.ServiceNameGCPCompute))
+	}
+	svc, err := gcpconfig.GetComputeService(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create compute service")
 	}

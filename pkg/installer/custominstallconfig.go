@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/coreos/ignition/v2/config/util"
@@ -38,6 +39,7 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
 	"github.com/openshift/installer-aro-wrapper/pkg/data/manifests"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dns"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/etchost"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/mdsd"
@@ -92,7 +94,7 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 		HTTPSecret:    hex.EncodeToString(httpSecret),
 	}
 
-	localdnsConfig := dnsmasq.DNSConfig{
+	localdnsConfig := dns.DNSConfig{
 		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
@@ -151,9 +153,11 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 	}
 
 	bootstrapAsset := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
-	err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, localdnsConfig)
-	if err != nil {
-		return nil, err
+	if m.oc.Properties.OperatorFlags[api.OperatorFlagDNSType] != api.OperatorFlagDNSTypeClusterHosted {
+		err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, localdnsConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 	err = mdsd.AppendMdsdFiles(bootstrapAsset, bootstrapLoggingConfig)
 	if err != nil {
@@ -179,6 +183,12 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 	err = removeDNSConfigData(bootstrapAsset, *installConfig)
 	if err != nil {
 		return nil, err
+	}
+	// Inject LB IPs into Infrastructure CR for Custom DNS (CoreDNS) mode
+	if m.oc.Properties.OperatorFlags[api.OperatorFlagDNSType] == api.OperatorFlagDNSTypeClusterHosted {
+		if err = addLBIPsToInfrastructureCR(bootstrapAsset, localdnsConfig.APIIntIP, m.oc.Properties.APIServerProfile.IP, localdnsConfig.IngressIP); err != nil {
+			return nil, err
+		}
 	}
 	// Update Master and Worker Pointer Ignition with ARO API-Int IP
 	if err = replacePointerIgnition(bootstrapAsset, g, &localdnsConfig); err != nil {
@@ -313,9 +323,55 @@ func removeDNSConfigData(bootstrap *bootstrap.Bootstrap, installConfig installco
 	return nil
 }
 
+const infrastructureFilepath = "/opt/openshift/manifests/cluster-infrastructure-02-config.yml"
+
+// addLBIPsToInfrastructureCR injects API, API-Int, and Ingress load balancer IPs
+// into the Infrastructure CR within bootstrap ignition. This is needed for Custom
+// DNS (CoreDNS) mode where the MCO reads these IPs from the Infrastructure CR to
+// configure CoreDNS static pods. Mirrors upstream's addLoadBalancersToInfra()
+// in pkg/infrastructure/clusterapi/ignition.go.
+func addLBIPsToInfrastructureCR(bootstrapAsset *bootstrap.Bootstrap, apiIntIP string, apiIP string, ingressIP string) error {
+	for i, fileData := range bootstrapAsset.Config.Storage.Files {
+		if fileData.Path == infrastructureFilepath {
+			contents := strings.Split(*bootstrapAsset.Config.Storage.Files[i].Contents.Source, ",")
+			rawDecodedText, err := base64.StdEncoding.DecodeString(contents[1])
+			if err != nil {
+				return fmt.Errorf("failed to decode infrastructure CR: %w", err)
+			}
+
+			infra := &configv1.Infrastructure{}
+			if err := yaml.Unmarshal(rawDecodedText, infra); err != nil {
+				return fmt.Errorf("failed to unmarshal infrastructure CR: %w", err)
+			}
+
+			cloudLBInfo := configv1.CloudLoadBalancerIPs{
+				APIIntLoadBalancerIPs: []configv1.IP{configv1.IP(apiIntIP)},
+			}
+			if apiIP != "" {
+				cloudLBInfo.APILoadBalancerIPs = []configv1.IP{configv1.IP(apiIP)}
+			}
+			if ingressIP != "" {
+				cloudLBInfo.IngressLoadBalancerIPs = []configv1.IP{configv1.IP(ingressIP)}
+			}
+
+			infra.Status.PlatformStatus.Azure.CloudLoadBalancerConfig.ClusterHosted = &cloudLBInfo
+
+			infraContents, err := yaml.Marshal(infra)
+			if err != nil {
+				return fmt.Errorf("failed to marshal infrastructure CR: %w", err)
+			}
+
+			encoded := fmt.Sprintf("data:text/plain;charset=utf-8;base64,%s", base64.StdEncoding.EncodeToString(infraContents))
+			bootstrapAsset.Config.Storage.Files[i].Contents.Source = &encoded
+			break
+		}
+	}
+	return nil
+}
+
 // replacePointerIgnition performs the same functionality as the upstream
 // installer's pointerIgnitionConfig() but with ARO specific DNS config
-func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfig *dnsmasq.DNSConfig) (err error) {
+func replacePointerIgnition(a *bootstrap.Bootstrap, g graph.Graph, localdnsConfig *dns.DNSConfig) (err error) {
 	masterPointerIgn := g.Get(&machine.Master{}).(*machine.Master)
 	workerPointerIgn := g.Get(&machine.Worker{}).(*machine.Worker)
 	ignitionHost := net.JoinHostPort(localdnsConfig.APIIntIP, "22623")

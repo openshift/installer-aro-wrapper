@@ -8,16 +8,10 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
+	"github.com/openshift/installer-aro-wrapper/pkg/installer/dns"
 )
 
-type DNSConfig struct {
-	APIIntIP                 string
-	IngressIP                string
-	GatewayDomains           []string
-	GatewayPrivateEndpointIP string
-}
-
-func CreatednsmasqIgnitionFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig *installconfig.InstallConfig, dnsConfig DNSConfig) error {
+func CreatednsmasqIgnitionFiles(bootstrapAsset *bootstrap.Bootstrap, installConfig *installconfig.InstallConfig, dnsConfig dns.DNSConfig) error {
 	dnsmasqIgnConfig, err := Ignition3Config(installConfig.Config.ClusterDomain(), dnsConfig.APIIntIP, dnsConfig.IngressIP, dnsConfig.GatewayDomains, dnsConfig.GatewayPrivateEndpointIP)
 	if err != nil {
 		return err
