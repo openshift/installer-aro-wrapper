@@ -33,6 +33,7 @@ import (
 	"github.com/openshift/installer/pkg/types/validation"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/compute"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
 	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/pullsecret"
@@ -95,15 +96,22 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		domain += "." + m.env.Domain()
 	}
 
-	masterSKU, err := m.env.VMSku(string(m.oc.Properties.MasterProfile.VMSize))
+	resourceSkusClient := compute.NewResourceSkusClient(m.env.Environment(), r.SubscriptionID, m.fpAuthorizer)
+
+	skus, err := m.populateVMSkus(ctx, resourceSkusClient)
 	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	masterSKU, found := skus[string(m.oc.Properties.MasterProfile.VMSize)]
+	if !found {
 		return nil, nil, errors.WithStack(err)
 	}
 
 	masterVMNetworkingType := determineVMNetworkingType(masterSKU)
 
-	workerSKU, err := m.env.VMSku(string(m.oc.Properties.WorkerProfiles[0].VMSize))
-	if err != nil {
+	workerSKU, found := skus[string(m.oc.Properties.WorkerProfiles[0].VMSize)]
+	if !found {
 		return nil, nil, errors.WithStack(err)
 	}
 
@@ -414,6 +422,16 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 		ClientID:              m.env.FPClientID(),
 		ClientCertificatePath: clientCertificateFile.Name(),
 	}, nil
+}
+
+func (m *manager) populateVMSkus(ctx context.Context, resourceSkusClient compute.ResourceSkusClient) (map[string]*mgmtcompute.ResourceSku, error) {
+	filter := fmt.Sprintf("location eq '%s'", strings.ToLower(m.oc.Location))
+	skus, err := resourceSkusClient.List(ctx, filter)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return computeskus.FilterVMSizes(skus, strings.ToLower(m.oc.Location)), nil
 }
 
 func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.ResourceSku) ([]string, []string, error) {
