@@ -34,7 +34,6 @@ import (
 	icazure "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	"github.com/openshift/installer/pkg/asset/installconfig/azure/mock"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
-	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/types"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
@@ -471,7 +470,7 @@ func verifyUpdateMCSCertKey(t *testing.T, bootstrap *bootstrap.Bootstrap) {
 			}
 			rawCert = decodedCert
 			assert.NotNil(t, rawCert)
-			cert, err = tls.PemToCertificate(decodedCert)
+			cert, err = pemToCertificate(decodedCert)
 			if err != nil {
 				t.Fatal(err)
 			}
