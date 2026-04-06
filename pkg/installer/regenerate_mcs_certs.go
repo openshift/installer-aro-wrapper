@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"strings"
@@ -39,40 +40,42 @@ const (
 	header = "data:text/plain;charset=utf-8;base64,"
 )
 
-// RegenerateSignedCertKey regenerates a cert/key pair signed by the specified parent CA.
+// regenerateSignedCertKey regenerates a cert/key pair signed by the specified parent CA.
 // It does not write the cert/key pair to an asset file.
 func regenerateSignedCertKey(
 	cfg *tls.CertCfg,
 	parentCA tls.CertKeyInterface,
 	appendParent tls.AppendParentChoice,
 ) ([]byte, []byte, error) {
-	var key *rsa.PrivateKey
-	var crt *x509.Certificate
-	var err error
-
-	caKey, err := tls.PemToPrivateKey(parentCA.Key())
+	caKeyRaw, err := pemToPrivateKey(parentCA.Key())
 	if err != nil {
-		logrus.Debugf("Failed to parse RSA private key: %s", err)
-		return nil, nil, errors.Wrap(err, "failed to parse rsa private key")
+		logrus.Debugf("Failed to parse private key: %s", err)
+		return nil, nil, errors.Wrap(err, "failed to parse private key")
 	}
 
-	caCert, err := tls.PemToCertificate(parentCA.Cert())
+	caKey, ok := caKeyRaw.(*rsa.PrivateKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("expected RSA private key, got %T", caKeyRaw)
+	}
+
+	caCert, err := pemToCertificate(parentCA.Cert())
 	if err != nil {
 		logrus.Debugf("Failed to parse x509 certificate: %s", err)
 		return nil, nil, errors.Wrap(err, "failed to parse x509 certificate")
 	}
 
-	key, crt, err = tls.GenerateSignedCertificate(caKey, caCert, cfg)
+	key, crt, err := tls.GenerateSignedCertificate(caKey, caCert, cfg)
 	if err != nil {
 		logrus.Debugf("Failed to generate signed cert/key pair: %s", err)
 		return nil, nil, errors.Wrap(err, "failed to generate signed cert/key pair")
 	}
 
-	keyRaw := tls.PrivateKeyToPem(key)
-	certRaw := tls.CertToPem(crt)
+	keyRaw := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	certRaw := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: crt.Raw})
 
 	if appendParent {
-		certRaw = bytes.Join([][]byte{certRaw, tls.CertToPem(caCert)}, []byte("\n"))
+		caCertRaw := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCert.Raw})
+		certRaw = bytes.Join([][]byte{certRaw, caCertRaw}, []byte("\n"))
 	}
 
 	return keyRaw, certRaw, nil
