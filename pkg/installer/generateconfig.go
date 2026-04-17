@@ -165,7 +165,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// from a manifest so it can be specified in the RP's
 	// OpenShiftClusterVersions?
 
-	imageSKU := "aro_420" // Gen1 SKU (default)
+	imageSKU := "aro_421" // Gen1 SKU (default)
 
 	// Check if any SKU requires V2 only (doesn't support V1)
 	masterRequiresV2, err := determineSkuSupportsV2Only(masterSKU)
@@ -179,14 +179,14 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	// If any SKU only supports V2, use Gen2 images for the entire cluster.
 	if masterRequiresV2 || workerRequiresV2 {
-		imageSKU = "aro_420-v2"
+		imageSKU = "aro_421-v2"
 	}
 
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		SKU:       imageSKU,
-		Version:   "9.6.20251015", // "9.yy.20205zzz"
+		Version:   "9.6.20251023", // "9.yy.20205zzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
@@ -269,11 +269,19 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
 						NetworkResourceGroupName: vnetr.ResourceGroup,
 						VirtualNetwork:           vnetr.ResourceName,
-						ControlPlaneSubnet:       masterSubnetName,
-						ComputeSubnet:            workerSubnetName,
-						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
-						OutboundType:             outboundType,
-						ResourceGroupName:        resourceGroup,
+						Subnets: []azuretypes.SubnetSpec{
+							{
+								Name: masterSubnetName,
+								Role: capzazure.SubnetControlPlane,
+							},
+							{
+								Name: workerSubnetName,
+								Role: capzazure.SubnetNode,
+							},
+						},
+						CloudName:         azuretypes.CloudEnvironment(m.env.Environment().Name),
+						OutboundType:      outboundType,
+						ResourceGroupName: resourceGroup,
 						// We specify BaseDomainResourceGroupName even though we
 						// do not create Public DNS zones to pass validation.
 						// See https://issues.redhat.com/browse/OCPSTRAT-991 for
@@ -358,8 +366,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	}
 
 	installConfig.Azure = icazure.NewMetadataWithCredentials(
-		azuretypes.CloudEnvironment(m.env.Environment().Name),
-		m.env.Environment().ResourceManagerEndpoint,
+		installConfig.Config.Platform.Azure,
+		installConfig.Config.ControlPlane,
+		&installConfig.Config.Compute[0],
 		credentials,
 	)
 
