@@ -269,11 +269,19 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
 						NetworkResourceGroupName: vnetr.ResourceGroup,
 						VirtualNetwork:           vnetr.ResourceName,
-						ControlPlaneSubnet:       masterSubnetName,
-						ComputeSubnet:            workerSubnetName,
-						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
-						OutboundType:             outboundType,
-						ResourceGroupName:        resourceGroup,
+						Subnets: []azuretypes.SubnetSpec{
+							{
+								Name: masterSubnetName,
+								Role: capzazure.SubnetControlPlane,
+							},
+							{
+								Name: workerSubnetName,
+								Role: capzazure.SubnetNode,
+							},
+						},
+						CloudName:         azuretypes.CloudEnvironment(m.env.Environment().Name),
+						OutboundType:      outboundType,
+						ResourceGroupName: resourceGroup,
 						// We specify BaseDomainResourceGroupName even though we
 						// do not create Public DNS zones to pass validation.
 						// See https://issues.redhat.com/browse/OCPSTRAT-991 for
@@ -358,8 +366,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	}
 
 	installConfig.Azure = icazure.NewMetadataWithCredentials(
-		azuretypes.CloudEnvironment(m.env.Environment().Name),
-		m.env.Environment().ResourceManagerEndpoint,
+		installConfig.Config.Azure,
+		installConfig.Config.ControlPlane,
+		&installConfig.Config.Compute[0],
 		credentials,
 	)
 
