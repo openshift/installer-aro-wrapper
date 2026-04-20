@@ -7,12 +7,9 @@ import (
 	"sync"
 
 	"github.com/IBM/ibm-cos-sdk-go/aws"
-	awsv2 "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	awssdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/sirupsen/logrus"
 
 	typesaws "github.com/openshift/installer/pkg/types/aws"
 )
@@ -22,13 +19,12 @@ import (
 // from external APIs).
 type Metadata struct {
 	session           *session.Session
-	config            *awsv2.Config
 	availabilityZones []string
 	availableRegions  []string
 	edgeZones         []string
 	subnets           SubnetGroups
 	vpcSubnets        SubnetGroups
-	vpc               string
+	vpc               VPC
 	instanceTypes     map[string]InstanceType
 
 	Region          string                     `json:"region,omitempty"`
@@ -66,38 +62,18 @@ func (m *Metadata) unlockedSession(ctx context.Context) (*session.Session, error
 	return m.session, nil
 }
 
-func (m *Metadata) unlockedConfig(ctx context.Context) (*awsv2.Config, error) {
-	if m.config == nil {
-		cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(m.Region))
-		if err != nil {
-			return nil, fmt.Errorf("creating AWS configuration: %w", err)
-		}
-		m.config = &cfg
-	}
-	return m.config, nil
-}
-
 // EC2Client initiates a new EC2 client when one does not already exist, otherwise the existing client
 // is returned.
 func (m *Metadata) EC2Client(ctx context.Context) (*ec2.Client, error) {
 	if m.ec2Client == nil {
-		cfg, err := m.unlockedConfig(ctx)
+		ec2Client, err := NewEC2Client(ctx, EndpointOptions{
+			Region:    m.Region,
+			Endpoints: m.Services,
+		})
 		if err != nil {
-			return nil, fmt.Errorf("metadata failed to create config: %w", err)
+			return nil, fmt.Errorf("failed to create EC2 client: %w", err)
 		}
-
-		optFns := []func(*ec2.Options){}
-		for _, service := range m.Services {
-			if service.Name == "ec2" {
-				optFns = append(optFns, func(o *ec2.Options) {
-					o.BaseEndpoint = awssdk.String(service.URL)
-				})
-				logrus.Warnf("setting ec2 endpoint URL to %s", service.URL)
-				break
-			}
-		}
-
-		m.ec2Client = ec2.NewFromConfig(*cfg, optFns...)
+		m.ec2Client = ec2Client
 	}
 	return m.ec2Client, nil
 }
@@ -274,13 +250,22 @@ func (m *Metadata) VPCSubnets(ctx context.Context) (SubnetGroups, error) {
 	return m.vpcSubnets, nil
 }
 
-// VPC retrieves the VPC ID containing PublicSubnets and PrivateSubnets.
-func (m *Metadata) VPC(ctx context.Context) (string, error) {
-	err := m.populateSubnets(ctx)
+// VPC retrieves the VPC containing provided subnets.
+func (m *Metadata) VPC(ctx context.Context) (VPC, error) {
+	err := m.populateVPC(ctx)
+	if err != nil {
+		return m.vpc, fmt.Errorf("error retrieving VPC: %w", err)
+	}
+	return m.vpc, nil
+}
+
+// VPCID retrieves the ID of the VPC containing provided subnets.
+func (m *Metadata) VPCID(ctx context.Context) (string, error) {
+	err := m.populateVPC(ctx)
 	if err != nil {
 		return "", fmt.Errorf("error retrieving VPC: %w", err)
 	}
-	return m.vpc, nil
+	return m.vpc.ID, nil
 }
 
 // SubnetByID retrieves subnet metadata for a subnet ID.
@@ -315,7 +300,7 @@ func (m *Metadata) populateSubnets(ctx context.Context) error {
 	}
 
 	subnetGroups := m.subnets
-	if m.vpc != "" || len(subnetGroups.Private) > 0 || len(subnetGroups.Public) > 0 || len(subnetGroups.Edge) > 0 {
+	if subnetGroups.VpcID != "" || len(subnetGroups.Private) > 0 || len(subnetGroups.Public) > 0 || len(subnetGroups.Edge) > 0 {
 		// Call to populate subnets has already happened
 		return nil
 	}
@@ -331,7 +316,6 @@ func (m *Metadata) populateSubnets(ctx context.Context) error {
 	}
 
 	sb, err := subnets(ctx, client, subnetIDs, "")
-	m.vpc = sb.VPC
 	m.subnets = sb
 	return err
 }
@@ -339,7 +323,7 @@ func (m *Metadata) populateSubnets(ctx context.Context) error {
 // populateVPCSubnets retrieves metadata for all subnets in the VPC of provided subnets.
 func (m *Metadata) populateVPCSubnets(ctx context.Context) error {
 	// we need to populate provided subnets to get the VPC ID.
-	if err := m.populateSubnets(ctx); err != nil {
+	if err := m.populateVPC(ctx); err != nil {
 		return err
 	}
 
@@ -357,8 +341,33 @@ func (m *Metadata) populateVPCSubnets(ctx context.Context) error {
 		return err
 	}
 
-	sb, err := subnets(ctx, client, nil, m.vpc)
+	sb, err := subnets(ctx, client, nil, m.vpc.ID)
 	m.vpcSubnets = sb
+	return err
+}
+
+// populateVPC retrieves metadata for the VPC of provided subnets.
+func (m *Metadata) populateVPC(ctx context.Context) error {
+	// we need to populate provided subnets to get the VPC ID.
+	if err := m.populateSubnets(ctx); err != nil {
+		return err
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.vpc.ID != "" {
+		// Call to populate vpc has already happened
+		return nil
+	}
+
+	client, err := m.EC2Client(ctx)
+	if err != nil {
+		return err
+	}
+
+	vpc, err := vpc(ctx, client, m.subnets.VpcID)
+	m.vpc = vpc
 	return err
 }
 
