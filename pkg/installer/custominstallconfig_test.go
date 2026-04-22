@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	capzazure "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
@@ -79,7 +80,6 @@ var expectedWorkerIgnitionSource = "https://" + apiIntIP + ":22623/config/worker
 var expectedDNSConfigSource = `apiVersion: config.openshift.io/v1
 kind: DNS
 metadata:
-  creationTimestamp: null
   name: cluster
 spec:
   baseDomain: test-cluster.test.example.com
@@ -167,7 +167,7 @@ func makeInstallConfig() *installconfig.InstallConfig {
 		},
 	}
 
-	return &installconfig.InstallConfig{
+	ic := &installconfig.InstallConfig{
 		AssetBase: installconfig.AssetBase{
 			Config: &types.InstallConfig{
 				TypeMeta: metav1.TypeMeta{
@@ -215,11 +215,19 @@ func makeInstallConfig() *installconfig.InstallConfig {
 						Region:                   "centralus",
 						NetworkResourceGroupName: "test-nrg",
 						VirtualNetwork:           "test-net",
-						ControlPlaneSubnet:       "test-cp-subnet",
-						ComputeSubnet:            "test-worker-subnet",
-						CloudName:                "AzurePublicCloud",
-						OutboundType:             azuretypes.LoadbalancerOutboundType,
-						ResourceGroupName:        "test-resource-group",
+						Subnets: []azuretypes.SubnetSpec{
+							{
+								Name: "test-cp-subnet",
+								Role: capzazure.SubnetControlPlane,
+							},
+							{
+								Name: "test-worker-subnet",
+								Role: capzazure.SubnetNode,
+							},
+						},
+						CloudName:         "AzurePublicCloud",
+						OutboundType:      azuretypes.LoadbalancerOutboundType,
+						ResourceGroupName: "test-resource-group",
 					},
 				},
 				PullSecret: "{\"auths\":{\"example.com\":{\"auth\":\"c3VwZXItc2VjcmV0Cg==\"}}}",
@@ -265,17 +273,23 @@ func makeInstallConfig() *installconfig.InstallConfig {
 				},
 			},
 		},
-		Azure: &icazure.Metadata{
-			CloudName:   "AzurePublicCloud",
-			ARMEndpoint: "arm.example.com",
-			Credentials: &icazure.Credentials{
-				TenantID:       "test-tenant",
-				SubscriptionID: "test-subscription",
-				ClientID:       "test-client-id",
-				ClientSecret:   "c3VwZXItc2VjcmV0", // notsecret
-			},
-		},
 	}
+
+	credentials := &icazure.Credentials{
+		TenantID:       "test-tenant",
+		SubscriptionID: "test-subscription",
+		ClientID:       "test-client-id",
+		ClientSecret:   "c3VwZXItc2VjcmV0", // notsecret
+	}
+
+	ic.Azure = icazure.NewMetadataWithCredentials(
+		ic.Config.Azure,
+		ic.Config.ControlPlane,
+		&ic.Config.Compute[0],
+		credentials,
+	)
+
+	return ic
 }
 
 func makeImage() *releaseimage.Image {

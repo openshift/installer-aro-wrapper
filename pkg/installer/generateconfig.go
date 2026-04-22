@@ -165,28 +165,27 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// from a manifest so it can be specified in the RP's
 	// OpenShiftClusterVersions?
 
-	imageSKU := "aro_420" // Gen1 SKU (default)
+	// 4.20 onwards, we default to Gen2 images
+	imageSKU := "421-v2" // Gen2 SKU (default)
 
-	// Check if any SKU requires V2 only (doesn't support V1)
-	masterRequiresV2, err := determineSkuSupportsV2Only(masterSKU)
+	// If any SKU doesn't support V2, use Gen1 images
+	masterSupportsV2, err := determineV2SkuSupport(masterSKU)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	workerRequiresV2, err := determineSkuSupportsV2Only(workerSKU)
+	workerSupportsV2, err := determineV2SkuSupport(workerSKU)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-
-	// If any SKU only supports V2, use Gen2 images for the entire cluster.
-	if masterRequiresV2 || workerRequiresV2 {
-		imageSKU = "aro_420-v2"
+	if !masterSupportsV2 || !workerSupportsV2 {
+		imageSKU = "aro_421"
 	}
 
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		SKU:       imageSKU,
-		Version:   "9.6.20251015", // "9.yy.20205zzz"
+		Version:   "9.6.20251023", // "9.yy.20205zzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
@@ -269,11 +268,19 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Region:                   strings.ToLower(m.oc.Location), // Used in k8s object names, so must pass DNS-1123 validation
 						NetworkResourceGroupName: vnetr.ResourceGroup,
 						VirtualNetwork:           vnetr.ResourceName,
-						ControlPlaneSubnet:       masterSubnetName,
-						ComputeSubnet:            workerSubnetName,
-						CloudName:                azuretypes.CloudEnvironment(m.env.Environment().Name),
-						OutboundType:             outboundType,
-						ResourceGroupName:        resourceGroup,
+						Subnets: []azuretypes.SubnetSpec{
+							{
+								Name: masterSubnetName,
+								Role: capzazure.SubnetControlPlane,
+							},
+							{
+								Name: workerSubnetName,
+								Role: capzazure.SubnetNode,
+							},
+						},
+						CloudName:         azuretypes.CloudEnvironment(m.env.Environment().Name),
+						OutboundType:      outboundType,
+						ResourceGroupName: resourceGroup,
 						// We specify BaseDomainResourceGroupName even though we
 						// do not create Public DNS zones to pass validation.
 						// See https://issues.redhat.com/browse/OCPSTRAT-991 for
@@ -358,8 +365,9 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	}
 
 	installConfig.Azure = icazure.NewMetadataWithCredentials(
-		azuretypes.CloudEnvironment(m.env.Environment().Name),
-		m.env.Environment().ResourceManagerEndpoint,
+		installConfig.Config.Azure,
+		installConfig.Config.ControlPlane,
+		&installConfig.Config.Compute[0],
 		credentials,
 	)
 
@@ -475,9 +483,8 @@ func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.Resource
 	return controlPlaneZones, workerZones, nil
 }
 
-// determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
-// Returns true if the SKU requires Gen2 images (supports V2 but not V1).
-func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
+// determineV2SkuSupport returns true if the SKU supports HyperV Generation V2
+func determineV2SkuSupport(sku *mgmtcompute.ResourceSku) (bool, error) {
 	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
 	if !capabilityExists {
 		return false, fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
@@ -486,5 +493,5 @@ func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("could not fetch HyperV generations for SKU %s: %w", *sku.Name, err)
 	}
-	return generations.Has("V2") && !generations.Has("V1"), nil
+	return generations.Has("V2"), nil
 }

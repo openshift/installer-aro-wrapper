@@ -155,7 +155,6 @@ fi`,
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-dns.yaml": `apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
-  creationTimestamp: null
   labels:
     machineconfiguration.openshift.io/role: master
   name: 99-master-aro-dns
@@ -249,7 +248,6 @@ spec:
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-master-aro-etc-hosts-gateway-domains.yaml": `apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
-  creationTimestamp: null
   labels:
     machineconfiguration.openshift.io/role: master
   name: 99-master-aro-etc-hosts-gateway-domains
@@ -298,7 +296,6 @@ spec:
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-dns.yaml": `apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
-  creationTimestamp: null
   labels:
     machineconfiguration.openshift.io/role: worker
   name: 99-worker-aro-dns
@@ -369,7 +366,6 @@ spec:
 	"/opt/openshift/openshift/99_openshift-machineconfig_99-worker-aro-etc-hosts-gateway-domains.yaml": `apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
-  creationTimestamp: null
   labels:
     machineconfiguration.openshift.io/role: worker
   name: 99-worker-aro-etc-hosts-gateway-domains
@@ -480,7 +476,6 @@ cmp "${TEMP_FILE}" "${HOSTS_FILE}" || cp -f "${TEMP_FILE}" "${HOSTS_FILE}"
 	"/opt/openshift/manifests/cluster-dns-02-config.yml": `apiVersion: config.openshift.io/v1
 kind: DNS
 metadata:
-  creationTimestamp: null
   name: cluster
 spec:
   baseDomain: test-cluster.test.example.com
