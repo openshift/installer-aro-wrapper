@@ -56,7 +56,7 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 	}{
 		{
 			name: "sku supports both V1 and V2, does not require V2",
-			sku: &sdkcompute.ResourceSku{
+			sku: &sdkcompute.ResourceSKU{
 				Name: to.StringPtr("Standard_D8s_v3"),
 				Capabilities: []*sdkcompute.ResourceSKUCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V1,V2")},
@@ -66,7 +66,7 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 		},
 		{
 			name: "sku supports only V2, requires V2",
-			sku: &sdkcompute.ResourceSku{
+			sku: &sdkcompute.ResourceSKU{
 				Name: to.StringPtr("Standard_D8s_v6"),
 				Capabilities: []*sdkcompute.ResourceSKUCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V2")},
@@ -76,7 +76,7 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 		},
 		{
 			name: "sku supports only V1, does not require V2",
-			sku: &sdkcompute.ResourceSku{
+			sku: &sdkcompute.ResourceSKU{
 				Name: to.StringPtr("Standard_D2_v2"),
 				Capabilities: []*sdkcompute.ResourceSKUCapabilities{
 					{Name: to.StringPtr("HyperVGenerations"), Value: to.StringPtr("V1")},
