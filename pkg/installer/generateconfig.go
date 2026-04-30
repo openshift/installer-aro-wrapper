@@ -444,7 +444,7 @@ func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, vms
 	// Ensure desired sku exists in target region
 	sku, ok := skus[vmsize]
 	if !ok {
-		return nil, fmt.Errorf("The selected SKU '%v' is unavailable in region '%v'", vmsize, location)
+		return nil, fmt.Errorf("the selected SKU '%v' is unavailable in region '%v'", vmsize, location)
 	}
 	return sku, nil
 }
