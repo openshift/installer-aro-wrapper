@@ -97,12 +97,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		return nil, nil, errors.WithStack(err)
 	}
 
-	masterSKU, err := checkSKUAvailability(filteredSkus, location, "properties.masterProfile.VMSize", string(m.oc.Properties.MasterProfile.VMSize))
+	masterSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.MasterProfile.VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
 
-	workerSKU, err := checkSKUAvailability(filteredSkus, location, "properties.workerProfiles[0].VMSize", string(m.oc.Properties.WorkerProfiles[0].VMSize))
+	workerSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
@@ -389,7 +389,7 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 
 // determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
 // Returns true if the SKU requires Gen2 images (supports V2 but not V1).
-func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
+func determineSkuSupportsV2Only(sku *armcompute.ResourceSKU) (bool, error) {
 	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
 	if !capabilityExists {
 		return false, fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
@@ -401,11 +401,11 @@ func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
 	return generations.Has("V2") && !generations.Has("V1"), nil
 }
 
-func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, path, vmsize string) (*armcompute.ResourceSKU, error) {
+func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, vmsize string) (*armcompute.ResourceSKU, error) {
 	// Ensure desired sku exists in target region
 	sku, ok := skus[vmsize]
 	if !ok {
-		return nil, fmt.Errorf("The selected SKU '%v' is unavailable in region '%v'", vmsize, location)
+		return nil, fmt.Errorf("the selected SKU '%v' is unavailable in region '%v'", vmsize, location)
 	}
 	return sku, nil
 }
