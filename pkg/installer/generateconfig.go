@@ -99,12 +99,12 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		return nil, nil, errors.WithStack(err)
 	}
 
-	masterSKU, err := checkSKUAvailability(filteredSkus, location, "properties.masterProfile.VMSize", string(m.oc.Properties.MasterProfile.VMSize))
+	masterSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.MasterProfile.VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
 
-	workerSKU, err := checkSKUAvailability(filteredSkus, location, "properties.workerProfiles[0].VMSize", string(m.oc.Properties.WorkerProfiles[0].VMSize))
+	workerSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
@@ -431,7 +431,7 @@ func determineV2SkuSupport(sku *armcompute.ResourceSKU) (bool, error) {
 	return generations.Has("V2"), nil
 }
 
-func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, path, vmsize string) (*armcompute.ResourceSKU, error) {
+func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, vmsize string) (*armcompute.ResourceSKU, error) {
 	// Ensure desired sku exists in target region
 	sku, ok := skus[vmsize]
 	if !ok {
