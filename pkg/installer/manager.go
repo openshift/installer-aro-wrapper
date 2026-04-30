@@ -15,6 +15,7 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armcompute"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/features"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/refreshable"
 )
@@ -32,7 +33,8 @@ type manager struct {
 	sub          *api.Subscription
 	fpAuthorizer refreshable.Authorizer
 
-	deployments features.DeploymentsClient
+	deployments     features.DeploymentsClient
+	armResourceSKUs armcompute.ResourceSKUsClient
 
 	graph graph.Manager
 
@@ -51,7 +53,7 @@ func gatewayDomains(env env.Interface, oc *api.OpenShiftCluster) []string {
 	return append(env.GatewayDomains(), oc.Properties.ImageRegistryStorageAccountName+".blob."+env.Environment().StorageEndpointSuffix)
 }
 
-func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, g graph.Manager) Interface {
+func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, armResourceSKUs armcompute.ResourceSKUsClient, g graph.Manager) Interface {
 	return &manager{
 		log:                       log,
 		env:                       _env,
@@ -60,6 +62,7 @@ func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clust
 		oc:                        oc,
 		sub:                       subscription,
 		fpAuthorizer:              fpAuthorizer,
+		armResourceSKUs:           armResourceSKUs,
 		deployments:               deployments,
 		graph:                     g,
 		getBootstrapLoggingConfig: bootstraplogging.GetConfig,
