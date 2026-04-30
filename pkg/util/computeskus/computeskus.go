@@ -149,3 +149,17 @@ func ListUnrestrictedVMSkusInCurrentRegion(ctx context.Context, resourceSkusClie
 	slices.Sort(vmskus)
 	return slices.Compact(vmskus), nil
 }
+
+// GetCapabilityMap converts *[]ResourceSkuCapabilities to map[string]string
+func GetCapabilityMap(sku *sdkcompute.ResourceSKU) (map[string]string, bool) {
+	if len(sku.Capabilities) == 0 {
+		return nil, false
+	}
+	capabilityMap := make(map[string]string, len(sku.Capabilities))
+	for _, c := range sku.Capabilities {
+		if c.Name != nil && c.Value != nil {
+			capabilityMap[*c.Name] = *c.Value
+		}
+	}
+	return capabilityMap, len(capabilityMap) > 0
+}

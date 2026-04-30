@@ -13,7 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
@@ -75,10 +74,6 @@ type Interface interface {
 	GatewayDomains() []string
 	ServiceKeyvault() keyvault.Manager
 	ACRDomain() string
-
-	// VMSku returns SKU for a given vm size. Note that this
-	// returns a pointer to partly populated object.
-	VMSku(vmSize string) (*mgmtcompute.ResourceSku, error)
 }
 
 func NewEnv(ctx context.Context, log *logrus.Entry) (Interface, error) {
