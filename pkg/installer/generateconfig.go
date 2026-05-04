@@ -19,6 +19,7 @@ import (
 
 	capzazure "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
+	"github.com/Azure/ARO-RP/pkg/api"
 	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
