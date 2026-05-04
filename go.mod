@@ -30,7 +30,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/vincent-petithory/dataurl v1.0.0
-	go.uber.org/mock v0.5.0
+	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.45.0
 	k8s.io/api v0.32.3
 	k8s.io/apimachinery v0.32.3
