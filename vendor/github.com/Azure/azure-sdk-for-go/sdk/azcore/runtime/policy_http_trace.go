@@ -96,6 +96,8 @@ func (h *httpTracePolicy) Do(req *policy.Request) (resp *http.Response, err erro
 
 // StartSpanOptions contains the optional values for StartSpan.
 type StartSpanOptions struct {
+	// Kind indicates the kind of Span.
+	Kind tracing.SpanKind
 	// Attributes contains key-value pairs of attributes for the span.
 	Attributes []tracing.Attribute
 }
@@ -130,9 +132,12 @@ func StartSpan(ctx context.Context, name string, tracer tracing.Tracer, options 
 	if options == nil {
 		options = &StartSpanOptions{}
 	}
+	if options.Kind == 0 {
+		options.Kind = tracing.SpanKindInternal
+	}
 
 	ctx, span := tracer.Start(ctx, name, &tracing.SpanOptions{
-		Kind:       newSpanKind,
+		Kind:       options.Kind,
 		Attributes: options.Attributes,
 	})
 	ctx = context.WithValue(ctx, ctxActiveSpan{}, options.Kind)
