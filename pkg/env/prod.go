@@ -17,13 +17,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/compute"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/instancemetadata"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/keyvault"
 )
@@ -35,7 +32,6 @@ type prod struct {
 	isLocalDevelopmentMode bool
 
 	acrDomain string
-	vmskus    map[string]*mgmtcompute.ResourceSku
 
 	fpCertificateRefresher CertificateRefresher
 	fpClientID             string
@@ -167,17 +163,6 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	p.clusterGenevaLoggingPrivateKey = clusterGenevaLoggingPrivateKey
 	p.clusterGenevaLoggingCertificate = clusterGenevaLoggingCertificates[0]
 
-	localFPAuthorizer, err := p.FPAuthorizer(p.TenantID(), p.Environment().ResourceManagerScope)
-	if err != nil {
-		return nil, err
-	}
-
-	resourceSkusClient := compute.NewResourceSkusClient(p.Environment(), p.SubscriptionID(), localFPAuthorizer)
-	err = p.populateVMSkus(ctx, resourceSkusClient)
-	if err != nil {
-		return nil, err
-	}
-
 	var acrDataDomain string
 	if p.ACRResourceID() != "" { // TODO: ugh!
 		acrResource, err := azure.ParseResourceID(p.ACRResourceID())
@@ -225,23 +210,6 @@ func (p *prod) ACRResourceID() string {
 
 func (p *prod) ACRDomain() string {
 	return p.acrDomain
-}
-
-func (p *prod) populateVMSkus(ctx context.Context, resourceSkusClient compute.ResourceSkusClient) error {
-	// Filtering is poorly documented, but currently (API version 2019-04-01)
-	// it seems that the API returns all SKUs without a filter and with invalid
-	// value in the filter.
-	// Filtering gives significant optimisation: at the moment of writing,
-	// we get ~1.2M response in eastus vs ~37M unfiltered (467 items vs 16618).
-	filter := fmt.Sprintf("location eq '%s'", p.Location())
-	skus, err := resourceSkusClient.List(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	p.vmskus = computeskus.FilterVMSizes(skus, p.Location())
-
-	return nil
 }
 
 func (p *prod) ClusterGenevaLoggingAccount() string {
@@ -314,12 +282,4 @@ func (p *prod) GatewayDomains() []string {
 
 func (p *prod) ServiceKeyvault() keyvault.Manager {
 	return p.serviceKeyvault
-}
-
-func (p *prod) VMSku(vmSize string) (*mgmtcompute.ResourceSku, error) {
-	vmsku, found := p.vmskus[vmSize]
-	if !found {
-		return nil, fmt.Errorf("sku information not found for vm size %q", vmSize)
-	}
-	return vmsku, nil
 }
