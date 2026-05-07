@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -20,7 +19,7 @@ import (
 	capzazure "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
 	"github.com/Azure/ARO-RP/pkg/api"
-	mgmtcompute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
 
@@ -33,6 +32,7 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/validation"
 
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azurezones"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
 	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/pullsecret"
@@ -40,13 +40,9 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
 
-const (
-	ALLOW_EXPANDED_AZ_ENV       = "ARO_INSTALLER_ALLOW_EXPANDED_AZS"
-	CONTROL_PLANE_MACHINE_COUNT = 3
-)
-
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
+	location := m.oc.Location
 
 	pullSecret, err := pullsecret.Build(m.oc, string(m.oc.Properties.ClusterProfile.PullSecret))
 	if err != nil {
@@ -95,18 +91,25 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		domain += "." + m.env.Domain()
 	}
 
-	masterSKU, err := m.env.VMSku(string(m.oc.Properties.MasterProfile.VMSize))
+	filteredSkus, err := computeskus.SelectVMSkusInCurrentRegion(ctx, m.armResourceSKUs, location, []string{
+		string(m.oc.Properties.MasterProfile.VMSize),
+		string(m.oc.Properties.WorkerProfiles[0].VMSize),
+	})
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	masterSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.MasterProfile.VMSize))
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	workerSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.WorkerProfiles[0].VMSize))
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
 
 	masterVMNetworkingType := determineVMNetworkingType(masterSKU)
-
-	workerSKU, err := m.env.VMSku(string(m.oc.Properties.WorkerProfiles[0].VMSize))
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
 	workerVMNetworkingType := determineVMNetworkingType(workerSKU)
 
 	var controlPlaneZones, workerZones []string
@@ -116,7 +119,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		workerZones = []string{""}
 		controlPlaneZones = []string{""}
 	} else {
-		controlPlaneZones, workerZones, err = determineAvailabilityZones(masterSKU, workerSKU)
+		controlPlaneZones, workerZones, _, err = azurezones.NewManager(false).DetermineAvailabilityZones(masterSKU, workerSKU)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
@@ -220,7 +223,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 				ControlPlane: &types.MachinePool{
 					Name:     "master",
-					Replicas: to.Int64Ptr(CONTROL_PLANE_MACHINE_COUNT),
+					Replicas: to.Int64Ptr(azurezones.CONTROL_PLANE_MACHINE_COUNT),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
 							Zones:            controlPlaneZones,
@@ -380,7 +383,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	return installConfig, image, err
 }
 
-func determineVMNetworkingType(vmSku *mgmtcompute.ResourceSku) string {
+func determineVMNetworkingType(vmSku *armcompute.ResourceSKU) string {
 	var vmNetworkingType azuretypes.VMNetworkingCapability
 
 	if computeskus.HasCapability(vmSku, azuretypes.AcceleratedNetworkingEnabled) {
@@ -416,68 +419,9 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 	}, nil
 }
 
-func determineAvailabilityZones(controlPlaneSKU, workerSKU *mgmtcompute.ResourceSku) ([]string, []string, error) {
-	controlPlaneZones := computeskus.Zones(controlPlaneSKU)
-	workerZones := computeskus.Zones(workerSKU)
-
-	// We sort the zones so that we will pick them in numerical order if we need
-	// less replicas than zones. With non-basic AZs, this means that control
-	// plane nodes will not go onto the 4th AZ by default. For workers, if more
-	// than 3 are specified on cluster creation, they will be spread across all
-	// available zones, but will pick 1,2,3 in the normal 3-node configuration.
-	// This is likely less surprising for setups where a 4th AZ might cause
-	// automation to fail by picking, e.g. zones 1, 2, 4. We may wish to be
-	// smarter about this in future. Note: If expanded AZs are available (see
-	// the env var) and a SKU is available in e.g. zones 1, 2, 4, we will deploy
-	// control planes there.
-	slices.Sort(controlPlaneZones)
-	slices.Sort(workerZones)
-
-	// Gate allowing expanded AZs behind
-	if os.Getenv(ALLOW_EXPANDED_AZ_ENV) == "" {
-		basicAZs := []string{"1", "2", "3"}
-		onlyBasicAZs := func(s string) bool {
-			return !slices.Contains(basicAZs, s)
-		}
-		controlPlaneZones = slices.DeleteFunc(controlPlaneZones, onlyBasicAZs)
-		workerZones = slices.DeleteFunc(workerZones, onlyBasicAZs)
-	}
-
-	// We handle the case where regions have no zones or >= zones than replicas,
-	// but not when replicas > zones. We (currently) only support 3 control
-	// plane replicas and Azure AZs will always be a minimum of 3, see
-	// https://azure.microsoft.com/en-us/blog/our-commitment-to-expand-azure-availability-zones-to-more-regions/
-	if len(controlPlaneZones) == 0 {
-		controlPlaneZones = []string{""}
-	} else if len(controlPlaneZones) < CONTROL_PLANE_MACHINE_COUNT {
-		return nil, nil, fmt.Errorf("cluster creation with %d zones and %d control plane replicas is unsupported", len(controlPlaneZones), CONTROL_PLANE_MACHINE_COUNT)
-	} else if len(controlPlaneZones) >= CONTROL_PLANE_MACHINE_COUNT {
-		// Pick lower zones first
-		controlPlaneZones = controlPlaneZones[:CONTROL_PLANE_MACHINE_COUNT]
-	}
-
-	// Unlike above, we don't particularly mind if we pass the Installer more
-	// zones than the usual 3 in a zonal region, since it automatically balances
-	// them across the available zones. However, if a SKU is available in less
-	// than 3 regions we will fail, since taints on cluster components like
-	// Prometheus may prevent the eventual install from turning healthy. As
-	// such, prevent situations where 2 workers may be deployed on one zone and
-	// 1 on another, even though OpenShift treats that as a theoretically valid
-	// configuration.
-	if len(workerZones) == 0 {
-		workerZones = []string{""}
-	} else if len(workerZones) < 3 {
-		return nil, nil, fmt.Errorf("cluster creation with a worker SKU available on less than 3 zones is unsupported (available: %d)", len(workerZones))
-	}
-
-	slices.Sort(workerZones)
-
-	return controlPlaneZones, workerZones, nil
-}
-
 // determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
 // Returns true if the SKU requires Gen2 images (supports V2 but not V1).
-func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
+func determineSkuSupportsV2Only(sku *armcompute.ResourceSKU) (bool, error) {
 	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
 	if !capabilityExists {
 		return false, fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
@@ -487,4 +431,13 @@ func determineSkuSupportsV2Only(sku *mgmtcompute.ResourceSku) (bool, error) {
 		return false, fmt.Errorf("could not fetch HyperV generations for SKU %s: %w", *sku.Name, err)
 	}
 	return generations.Has("V2") && !generations.Has("V1"), nil
+}
+
+func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, vmsize string) (*armcompute.ResourceSKU, error) {
+	// Ensure desired sku exists in target region
+	sku, ok := skus[vmsize]
+	if !ok {
+		return nil, fmt.Errorf("the selected SKU '%v' is unavailable in region '%v'", vmsize, location)
+	}
+	return sku, nil
 }
