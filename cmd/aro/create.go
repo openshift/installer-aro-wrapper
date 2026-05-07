@@ -21,6 +21,7 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armcompute"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/features"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/encryption"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/refreshable"
@@ -191,8 +192,15 @@ func _makeInstaller(ctx context.Context, log *logrus.Entry, assetsDir string) (i
 		return nil, err
 	}
 
+	clientOptions := _env.Environment().ArmClientOptions()
+
+	armResourceSKUsClient, err := armcompute.NewResourceSKUsClient(r.SubscriptionID, fpCredClusterTenant, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
 	graph := graph.NewManager(log, aead, storage)
 
 	// Generate the installer manifests
-	return installer.NewInstaller(log, _env, assetsDir, os.Getenv("ARO_UUID"), &oc, &sub, fpAuthorizer, deployments, graph), nil
+	return installer.NewInstaller(log, _env, assetsDir, os.Getenv("ARO_UUID"), &oc, &sub, fpAuthorizer, deployments, armResourceSKUsClient, graph), nil
 }
