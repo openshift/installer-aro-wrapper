@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
-	"github.com/golang/mock/gomock"
+	golangmock "github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -285,7 +285,7 @@ func makeImage() *releaseimage.Image {
 }
 
 func mockClientCalls(client *mock.MockAPI) {
-	client.EXPECT().GetVMCapabilities(gomock.Any(), "Standard_D2s_v3", "centralus").
+	client.EXPECT().GetVMCapabilities(golangmock.Any(), "Standard_D2s_v3", "centralus").
 		Return(map[string]string{
 			"vCPUsAvailable":               "4",
 			"MemoryGB":                     "16",
@@ -295,7 +295,7 @@ func mockClientCalls(client *mock.MockAPI) {
 			"CPUArchitectureType":          "x64",
 		}, nil).
 		AnyTimes()
-	client.EXPECT().GetMarketplaceImage(gomock.Any(), "centralus", "azureopenshift", "aro4", "aro_417", "417.00.20240517").
+	client.EXPECT().GetMarketplaceImage(golangmock.Any(), "centralus", "azureopenshift", "aro4", "aro_417", "417.00.20240517").
 		Return(compute.VirtualMachineImage{
 			VirtualMachineImageProperties: &compute.VirtualMachineImageProperties{
 				HyperVGeneration: compute.HyperVGenerationTypesV2,
@@ -311,7 +311,7 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	m := fakeManager()
 	inInstallConfig := makeInstallConfig()
 
-	mockCtrl := gomock.NewController(t)
+	mockCtrl := golangmock.NewController(t)
 	defer mockCtrl.Finish()
 	mockClient := mock.NewMockAPI(mockCtrl)
 	inInstallConfig.Azure.UseMockClient(mockClient)
