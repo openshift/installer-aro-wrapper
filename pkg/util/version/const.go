@@ -25,5 +25,5 @@ func FluentbitImage(acrDomain string) string {
 // MdsdImage contains the location of the MDSD container image
 // https://eng.ms/docs/products/geneva/collect/references/linuxcontainers
 func MdsdImage(acrDomain string) string {
-	return acrDomain + "/geneva/distroless/mdsd:1.40.2-20260218-1@sha256:18d5476700adcd40e9ee2bc1cb62a1150ac1b5e696d7bad6adeea4da88c615db"
+	return acrDomain + "/geneva/distroless/mdsd:1.40.3-20260409-1@sha256:1fb51857a0a34e7e7445a91c0a1082d97df235349a66a166a58c86029c80ea89"
 }
