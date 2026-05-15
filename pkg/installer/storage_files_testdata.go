@@ -159,8 +159,8 @@ spec:
 
           [Unit]
           Description=DNS caching server.
-          After=network-online.target
           Before=bootkube.service
+          Before=node-image-pull.service
 
           [Service]
           # ExecStartPre will create a copy of the customer current resolv.conf file and make it upstream DNS.
@@ -175,7 +175,7 @@ spec:
           StandardError=journal+console
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network-online.target
         enabled: true
         name: dnsmasq.service
   extensions: null
@@ -302,8 +302,8 @@ spec:
 
           [Unit]
           Description=DNS caching server.
-          After=network-online.target
           Before=bootkube.service
+          Before=node-image-pull.service
 
           [Service]
           # ExecStartPre will create a copy of the customer current resolv.conf file and make it upstream DNS.
@@ -318,7 +318,7 @@ spec:
           StandardError=journal+console
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network-online.target
         enabled: true
         name: dnsmasq.service
   extensions: null
