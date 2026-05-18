@@ -18,6 +18,8 @@ WantedBy=multi-user.target
 	"dnsmasq.service": `
 [Unit]
 Description=DNS caching server.
+After=network-online.target
+Wants=network-online.target
 Before=bootkube.service
 Before=node-image-pull.service
 
@@ -34,6 +36,6 @@ StandardOutput=journal+console
 StandardError=journal+console
 
 [Install]
-WantedBy=network-online.target
+WantedBy=network.target
 `,
 }

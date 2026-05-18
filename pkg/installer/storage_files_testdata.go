@@ -159,6 +159,8 @@ spec:
 
           [Unit]
           Description=DNS caching server.
+          After=network-online.target
+          Wants=network-online.target
           Before=bootkube.service
           Before=node-image-pull.service
 
@@ -175,7 +177,7 @@ spec:
           StandardError=journal+console
 
           [Install]
-          WantedBy=network-online.target
+          WantedBy=network.target
         enabled: true
         name: dnsmasq.service
   extensions: null
@@ -302,6 +304,8 @@ spec:
 
           [Unit]
           Description=DNS caching server.
+          After=network-online.target
+          Wants=network-online.target
           Before=bootkube.service
           Before=node-image-pull.service
 
@@ -318,7 +322,7 @@ spec:
           StandardError=journal+console
 
           [Install]
-          WantedBy=network-online.target
+          WantedBy=network.target
         enabled: true
         name: dnsmasq.service
   extensions: null
