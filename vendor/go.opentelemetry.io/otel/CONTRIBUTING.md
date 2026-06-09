@@ -771,7 +771,7 @@ func newInstrumentation() (*instrumentation, error) {
     if !x.Observability.Enabled() {
         return nil, nil
     }
-
+ 
     meter := otel.GetMeterProvider().Meter(
         "<component-package-name>",
         metric.WithInstrumentationVersion(sdk.Version()),
@@ -847,9 +847,9 @@ var (
 	attrPool = sync.Pool{
         New: func() any {
 		    // Pre-allocate common capacity
-			knownCap := 8 // Adjust based on expected usage
+    		knownCap := 8 // Adjust based on expected usage
             s := make([]attribute.KeyValue, 0, knownCap)
-			// Return a pointer to avoid extra allocation on Put().
+    		// Return a pointer to avoid extra allocation on Put().
             return &s
         },
     }
@@ -858,7 +858,7 @@ var (
 		New: func() any {
 			const n = 1 // WithAttributeSet
 			o := make([]metric.AddOption, 0, n)
-			// Return a pointer to avoid extra allocation on Put().
+    		// Return a pointer to avoid extra allocation on Put().
 			return &o
 		},
 	}
@@ -936,7 +936,7 @@ func BenchmarkExportSpans(b *testing.B) {
         {"ObsDisabled", false},
         {"ObsEnabled", true},
     }
-
+ 
     for _, scenario := range scenarios {
         b.Run(scenario.name, func(b *testing.B) {
             b.Setenv(
@@ -967,7 +967,7 @@ func newInstrumentation() (*instrumentation, error) {
     if !x.Observability.Enabled() {
         return nil, nil
     }
-
+ 
     m := otel.GetMeterProvider().Meter(/* initialize meter */)
     counter, err := otelconv.NewSDKComponentCounter(m)
 	// Use the partially initialized counter if available.
@@ -983,7 +983,7 @@ func newInstrumentation() *instrumentation {
     if !x.Observability.Enabled() {
         return nil, nil
     }
-
+ 
     m := otel.GetMeterProvider().Meter(/* initialize meter */)
     counter, err := otelconv.NewSDKComponentCounter(m)
 	if err != nil {
@@ -1008,7 +1008,7 @@ Ensure observability measurements receive the correct context, especially for tr
 func (e *Exporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpan) error {
     // Use the provided context for observability measurements
     e.inst.recordSpanExportStarted(ctx, len(spans))
-
+ 
     err := e.doExport(ctx, spans)
 
     if err != nil {
@@ -1016,7 +1016,7 @@ func (e *Exporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpan) 
     } else {
         e.inst.recordSpanExportSucceeded(ctx, len(spans))
     }
-
+ 
     return err
 }
 ```
@@ -1026,11 +1026,11 @@ func (e *Exporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpan) 
 func (e *Exporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpan) error {
     // ❌ Do not break the context propagation.
     e.inst.recordSpanExportStarted(context.Background(), len(spans))
-
+ 
     err := e.doExport(ctx, spans)
 
 	/* ... */
-
+ 
     return err
 }
 ```
@@ -1101,7 +1101,7 @@ func TestObservability(t *testing.T) {
 
 	// Reset component ID counter to ensure deterministic component names.
 	componentIDCounter.Store(0)
-
+ 
 	/* ... test code ... */
 }
 ```
