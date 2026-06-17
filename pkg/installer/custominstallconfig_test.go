@@ -39,18 +39,10 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
-	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 )
 
-var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
-	"/etc/sysconfig/fluentbit",
-
-	"/etc/mdsd.d/mdsd.env",
-	"/etc/mdsd.d/secret/mdsdcert.pem",
-	"/etc/sysconfig/mdsd",
-
-	"/etc/dnsmasq.conf",
+var expectedBootstrapStorageFileList = []string{"/etc/dnsmasq.conf",
 	"/usr/local/bin/aro-dnsmasq-pre.sh",
 	"/etc/NetworkManager/dispatcher.d/30-eth0-mtu-3900",
 
@@ -71,7 +63,7 @@ var expectedBootstrapStorageFileList = []string{"/etc/fluentbit/journal.conf",
 	"/opt/openshift/openshift/99_openshift-cluster-api_worker-user-data-secret.yaml",
 }
 
-var expectedBootstrapSystemdFileList = []string{"fluentbit.service", "mdsd.service", "aro-etchosts-resolver.service", "dnsmasq.service"}
+var expectedBootstrapSystemdFileList = []string{"aro-etchosts-resolver.service", "dnsmasq.service"}
 
 var apiIntIP = "203.0.113.1"
 var expectedMasterIgnitionSource = "https://" + apiIntIP + ":22623/config/master"
@@ -88,24 +80,6 @@ spec:
     type: ""
 status: {}
 `
-
-func fakeBootstrapLoggingConfig(_ env.Interface, _ *api.OpenShiftCluster) (*bootstraplogging.Config, error) {
-	return &bootstraplogging.Config{
-		Certificate:       "# This is not a real certificate",
-		Key:               "# This is not a real private key", // notsecret
-		Namespace:         "test-logging-namespace",
-		Account:           "test-logging-account",
-		Environment:       "test-logging-environment",
-		ConfigVersion:     "42",
-		Region:            "centralus",
-		ResourceID:        "test-cluster-resource-id",
-		SubscriptionID:    "test-subscription",
-		ResourceName:      "test-logging-resource",
-		ResourceGroupName: "test-resource-group",
-		MdsdImage:         "registry.example.com/mdsd:latest",
-		FluentbitImage:    "registry.example.com/fluentbit:latest",
-	}, nil
-}
 
 func fakeGatewayDomains(_ env.Interface, _ *api.OpenShiftCluster) []string {
 	return []string{
@@ -139,11 +113,10 @@ func fakeCluster() *api.OpenShiftCluster {
 
 func fakeManager() *manager {
 	return &manager{
-		clusterUUID:               "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-		log:                       logrus.NewEntry(logrus.StandardLogger()),
-		oc:                        fakeCluster(),
-		getBootstrapLoggingConfig: fakeBootstrapLoggingConfig,
-		getGatewayDomains:         fakeGatewayDomains,
+		clusterUUID:       "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+		log:               logrus.NewEntry(logrus.StandardLogger()),
+		oc:                fakeCluster(),
+		getGatewayDomains: fakeGatewayDomains,
 	}
 }
 

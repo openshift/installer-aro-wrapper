@@ -36,7 +36,6 @@ const (
 	RPDevARMSecretName               = "dev-arm"
 	RPFirstPartySecretName           = "rp-firstparty"
 	RPServerSecretName               = "rp-server"
-	ClusterLoggingSecretName         = "cluster-mdsd"
 	EncryptionSecretName             = "encryption-key"
 	EncryptionSecretV2Name           = "encryption-key-v2"
 	FrontendEncryptionSecretName     = "fe-encryption-key"
@@ -60,11 +59,6 @@ type Interface interface {
 	instancemetadata.InstanceMetadata
 	proxy.Dialer
 
-	ClusterGenevaLoggingAccount() string
-	ClusterGenevaLoggingConfigVersion() string
-	ClusterGenevaLoggingEnvironment() string
-	ClusterGenevaLoggingNamespace() string
-	ClusterGenevaLoggingSecret() (*rsa.PrivateKey, *x509.Certificate)
 	Domain() string
 	FeatureIsSet(Feature) bool
 	FPAuthorizer(string, ...string) (autorest.Authorizer, error)
