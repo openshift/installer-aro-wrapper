@@ -36,15 +36,7 @@ type prod struct {
 	fpCertificateRefresher CertificateRefresher
 	fpClientID             string
 
-	clusterKeyvault keyvault.Manager
 	serviceKeyvault keyvault.Manager
-
-	clusterGenevaLoggingCertificate   *x509.Certificate
-	clusterGenevaLoggingPrivateKey    *rsa.PrivateKey
-	clusterGenevaLoggingAccount       string
-	clusterGenevaLoggingConfigVersion string
-	clusterGenevaLoggingEnvironment   string
-	clusterGenevaLoggingNamespace     string
 
 	gatewayDomains []string
 
@@ -70,12 +62,8 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 
 	if !isLocalDevelopmentMode {
 		for _, key := range []string{
-			"ARO_CLUSTER_MDSD_CONFIG_VERSION",
-			"ARO_CLUSTER_MDSD_ACCOUNT",
 			"ARO_GATEWAY_DOMAINS",
 			"ARO_GATEWAY_RESOURCEGROUP",
-			"ARO_MDSD_ENVIRONMENT",
-			"ARO_CLUSTER_MDSD_NAMESPACE",
 			"ARO_ACR_RESOURCE_ID",
 		} {
 			if _, found := os.LookupEnv(key); !found {
@@ -102,11 +90,6 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 		isLocalDevelopmentMode: isLocalDevelopmentMode,
 
 		fpClientID: os.Getenv("ARO_AZURE_FP_CLIENT_ID"),
-
-		clusterGenevaLoggingAccount:       os.Getenv("ARO_CLUSTER_MDSD_ACCOUNT"),
-		clusterGenevaLoggingConfigVersion: os.Getenv("ARO_CLUSTER_MDSD_CONFIG_VERSION"),
-		clusterGenevaLoggingEnvironment:   os.Getenv("ARO_MDSD_ENVIRONMENT"),
-		clusterGenevaLoggingNamespace:     os.Getenv("ARO_CLUSTER_MDSD_NAMESPACE"),
 
 		log: log,
 
@@ -142,26 +125,6 @@ func newProd(ctx context.Context, log *logrus.Entry) (*prod, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	localFPKVAuthorizer, err := p.FPAuthorizer(p.TenantID(), p.Environment().KeyVaultScope)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterKeyvaultURI, err := keyvault.URI(p, ClusterKeyvaultSuffix)
-	if err != nil {
-		return nil, err
-	}
-
-	p.clusterKeyvault = keyvault.NewManager(localFPKVAuthorizer, clusterKeyvaultURI)
-
-	clusterGenevaLoggingPrivateKey, clusterGenevaLoggingCertificates, err := p.serviceKeyvault.GetCertificateSecret(ctx, ClusterLoggingSecretName)
-	if err != nil {
-		return nil, err
-	}
-
-	p.clusterGenevaLoggingPrivateKey = clusterGenevaLoggingPrivateKey
-	p.clusterGenevaLoggingCertificate = clusterGenevaLoggingCertificates[0]
 
 	var acrDataDomain string
 	if p.ACRResourceID() != "" { // TODO: ugh!
@@ -210,30 +173,6 @@ func (p *prod) ACRResourceID() string {
 
 func (p *prod) ACRDomain() string {
 	return p.acrDomain
-}
-
-func (p *prod) ClusterGenevaLoggingAccount() string {
-	return p.clusterGenevaLoggingAccount
-}
-
-func (p *prod) ClusterGenevaLoggingConfigVersion() string {
-	return p.clusterGenevaLoggingConfigVersion
-}
-
-func (p *prod) ClusterGenevaLoggingEnvironment() string {
-	return p.clusterGenevaLoggingEnvironment
-}
-
-func (p *prod) ClusterGenevaLoggingNamespace() string {
-	return p.clusterGenevaLoggingNamespace
-}
-
-func (p *prod) ClusterGenevaLoggingSecret() (*rsa.PrivateKey, *x509.Certificate) {
-	return p.clusterGenevaLoggingPrivateKey, p.clusterGenevaLoggingCertificate
-}
-
-func (p *prod) ClusterKeyvault() keyvault.Manager {
-	return p.clusterKeyvault
 }
 
 func (p *prod) Domain() string {

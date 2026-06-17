@@ -41,7 +41,6 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/data/manifests"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/dnsmasq"
 	"github.com/openshift/installer-aro-wrapper/pkg/installer/etchost"
-	"github.com/openshift/installer-aro-wrapper/pkg/installer/mdsd"
 )
 
 const (
@@ -72,13 +71,8 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 		InfraID: m.oc.Properties.InfraID,
 	}
 
-	bootstrapLoggingConfig, err := m.getBootstrapLoggingConfig(m.env, m.oc)
-	if err != nil {
-		return nil, err
-	}
-
 	httpSecret := make([]byte, 64)
-	_, err = rand.Read(httpSecret)
+	_, err := rand.Read(httpSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -153,10 +147,6 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 
 	bootstrapAsset := g.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
 	err = dnsmasq.CreatednsmasqIgnitionFiles(bootstrapAsset, installConfig, localdnsConfig)
-	if err != nil {
-		return nil, err
-	}
-	err = mdsd.AppendMdsdFiles(bootstrapAsset, bootstrapLoggingConfig)
 	if err != nil {
 		return nil, err
 	}
