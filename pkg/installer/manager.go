@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/api"
-	"github.com/openshift/installer-aro-wrapper/pkg/bootstraplogging"
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armcompute"
@@ -39,8 +38,7 @@ type manager struct {
 
 	kubernetescli kubernetes.Interface
 
-	getBootstrapLoggingConfig func(env.Interface, *api.OpenShiftCluster) (*bootstraplogging.Config, error)
-	getGatewayDomains         func(env.Interface, *api.OpenShiftCluster) []string
+	getGatewayDomains func(env.Interface, *api.OpenShiftCluster) []string
 }
 
 type Interface interface {
@@ -54,17 +52,16 @@ func gatewayDomains(env env.Interface, oc *api.OpenShiftCluster) []string {
 
 func NewInstaller(log *logrus.Entry, _env env.Interface, assetsDir string, clusterUUID string, oc *api.OpenShiftCluster, subscription *api.Subscription, fpAuthorizer refreshable.Authorizer, deployments features.DeploymentsClient, armResourceSKUs armcompute.ResourceSKUsClient, g graph.Manager) Interface {
 	return &manager{
-		log:                       log,
-		env:                       _env,
-		assetsDir:                 assetsDir,
-		clusterUUID:               clusterUUID,
-		oc:                        oc,
-		sub:                       subscription,
-		fpAuthorizer:              fpAuthorizer,
-		armResourceSKUs:           armResourceSKUs,
-		deployments:               deployments,
-		graph:                     g,
-		getBootstrapLoggingConfig: bootstraplogging.GetConfig,
-		getGatewayDomains:         gatewayDomains,
+		log:               log,
+		env:               _env,
+		assetsDir:         assetsDir,
+		clusterUUID:       clusterUUID,
+		oc:                oc,
+		sub:               subscription,
+		fpAuthorizer:      fpAuthorizer,
+		armResourceSKUs:   armResourceSKUs,
+		deployments:       deployments,
+		graph:             g,
+		getGatewayDomains: gatewayDomains,
 	}
 }

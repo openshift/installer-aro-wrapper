@@ -15,62 +15,6 @@ ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 [Install]
 WantedBy=multi-user.target
 `,
-	"fluentbit.service": `[Unit]
-After=network-online.target
-StartLimitIntervalSec=0
-
-[Service]
-RestartSec=1s
-EnvironmentFile=/etc/sysconfig/fluentbit
-ExecStartPre=-/bin/podman rm -f fluent-journal
-ExecStartPre=-/bin/podman pull $FLUENTIMAGE
-ExecStartPre=-mkdir -p /var/lib/fluent
-ExecStart=/bin/podman run \
-  --entrypoint /opt/td-agent-bit/bin/td-agent-bit \
-  --net=host \
-  --hostname bootstrap \
-  --name fluent-journal \
-  --rm \
-  -v /etc/fluentbit/journal.conf:/etc/fluentbit/journal.conf \
-  -v /var/lib/fluent:/var/lib/fluent:z \
-  -v /var/log/journal:/var/log/journal:z,ro \
-  -v /etc/machine-id:/etc/machine-id:ro \
-  $FLUENTIMAGE \
-  -c /etc/fluentbit/journal.conf
-
-ExecStop=/bin/podman stop %N
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-`,
-	"mdsd.service": `[Unit]
-After=network-online.target
-StartLimitIntervalSec=0
-
-[Service]
-RestartSec=1s
-EnvironmentFile=/etc/sysconfig/mdsd
-ExecStartPre=-/bin/podman rm -f %N
-ExecStartPre=-mkdir /var/run/mdsd
-ExecStartPre=-/bin/podman pull $MDSDIMAGE
-ExecStart=/bin/podman run \
-  --entrypoint /usr/sbin/mdsd \
-  --net=host \
-  --name mdsd \
-  --env-file /etc/mdsd.d/mdsd.env \
-  --rm \
-  -v /etc/mdsd.d/:/etc/mdsd.d/:z \
-  -v /var/run/mdsd:/var/run/mdsd:z \
-  $MDSDIMAGE \
-  -A -D -f 24224 -r /var/run/mdsd/default
-
-ExecStop=/bin/podman stop %N
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-`,
 	"dnsmasq.service": `
 [Unit]
 Description=DNS caching server.
