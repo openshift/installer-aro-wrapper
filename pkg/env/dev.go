@@ -13,8 +13,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/go-autorest/autorest"
-
-	"github.com/openshift/installer-aro-wrapper/pkg/util/version"
 )
 
 type dev struct {
@@ -46,11 +44,6 @@ func newDev(ctx context.Context, log *logrus.Entry) (Interface, error) {
 	} {
 		d.features[feature] = true
 	}
-
-	d.clusterGenevaLoggingAccount = version.DevClusterGenevaLoggingAccount
-	d.clusterGenevaLoggingConfigVersion = version.DevClusterGenevaLoggingConfigVersion
-	d.clusterGenevaLoggingEnvironment = version.DevGenevaLoggingEnvironment
-	d.clusterGenevaLoggingNamespace = version.DevClusterGenevaLoggingNamespace
 
 	return d, nil
 }

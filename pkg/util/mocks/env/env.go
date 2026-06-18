@@ -19,7 +19,6 @@ import (
 	gomock "go.uber.org/mock/gomock"
 
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	compute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
 	autorest "github.com/Azure/go-autorest/autorest"
 
 	env "github.com/openshift/installer-aro-wrapper/pkg/env"
@@ -77,77 +76,6 @@ func (m *MockInterface) AksMsiClientID() string {
 func (mr *MockInterfaceMockRecorder) AksMsiClientID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AksMsiClientID", reflect.TypeOf((*MockInterface)(nil).AksMsiClientID))
-}
-
-// ClusterGenevaLoggingAccount mocks base method.
-func (m *MockInterface) ClusterGenevaLoggingAccount() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClusterGenevaLoggingAccount")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// ClusterGenevaLoggingAccount indicates an expected call of ClusterGenevaLoggingAccount.
-func (mr *MockInterfaceMockRecorder) ClusterGenevaLoggingAccount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterGenevaLoggingAccount", reflect.TypeOf((*MockInterface)(nil).ClusterGenevaLoggingAccount))
-}
-
-// ClusterGenevaLoggingConfigVersion mocks base method.
-func (m *MockInterface) ClusterGenevaLoggingConfigVersion() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClusterGenevaLoggingConfigVersion")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// ClusterGenevaLoggingConfigVersion indicates an expected call of ClusterGenevaLoggingConfigVersion.
-func (mr *MockInterfaceMockRecorder) ClusterGenevaLoggingConfigVersion() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterGenevaLoggingConfigVersion", reflect.TypeOf((*MockInterface)(nil).ClusterGenevaLoggingConfigVersion))
-}
-
-// ClusterGenevaLoggingEnvironment mocks base method.
-func (m *MockInterface) ClusterGenevaLoggingEnvironment() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClusterGenevaLoggingEnvironment")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// ClusterGenevaLoggingEnvironment indicates an expected call of ClusterGenevaLoggingEnvironment.
-func (mr *MockInterfaceMockRecorder) ClusterGenevaLoggingEnvironment() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterGenevaLoggingEnvironment", reflect.TypeOf((*MockInterface)(nil).ClusterGenevaLoggingEnvironment))
-}
-
-// ClusterGenevaLoggingNamespace mocks base method.
-func (m *MockInterface) ClusterGenevaLoggingNamespace() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClusterGenevaLoggingNamespace")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// ClusterGenevaLoggingNamespace indicates an expected call of ClusterGenevaLoggingNamespace.
-func (mr *MockInterfaceMockRecorder) ClusterGenevaLoggingNamespace() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterGenevaLoggingNamespace", reflect.TypeOf((*MockInterface)(nil).ClusterGenevaLoggingNamespace))
-}
-
-// ClusterGenevaLoggingSecret mocks base method.
-func (m *MockInterface) ClusterGenevaLoggingSecret() (*rsa.PrivateKey, *x509.Certificate) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClusterGenevaLoggingSecret")
-	ret0, _ := ret[0].(*rsa.PrivateKey)
-	ret1, _ := ret[1].(*x509.Certificate)
-	return ret0, ret1
-}
-
-// ClusterGenevaLoggingSecret indicates an expected call of ClusterGenevaLoggingSecret.
-func (mr *MockInterfaceMockRecorder) ClusterGenevaLoggingSecret() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterGenevaLoggingSecret", reflect.TypeOf((*MockInterface)(nil).ClusterGenevaLoggingSecret))
 }
 
 // DialContext mocks base method.
@@ -401,21 +329,6 @@ func (m *MockInterface) TenantID() string {
 func (mr *MockInterfaceMockRecorder) TenantID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TenantID", reflect.TypeOf((*MockInterface)(nil).TenantID))
-}
-
-// VMSku mocks base method.
-func (m *MockInterface) VMSku(vmSize string) (*compute.ResourceSku, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VMSku", vmSize)
-	ret0, _ := ret[0].(*compute.ResourceSku)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// VMSku indicates an expected call of VMSku.
-func (mr *MockInterfaceMockRecorder) VMSku(vmSize any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VMSku", reflect.TypeOf((*MockInterface)(nil).VMSku), vmSize)
 }
 
 // MockCertificateRefresher is a mock of CertificateRefresher interface.
