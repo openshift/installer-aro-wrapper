@@ -62,47 +62,8 @@ group=dnsmasq
 no-hosts
 cache-size=0
 `,
-	"/etc/fluentbit/journal.conf": `[INPUT]
-	Name systemd
-	Tag journald
-	DB /var/lib/fluent/journald
-
-[FILTER]
-	Name modify
-	Match journald
-	Remove_wildcard _
-	Remove TIMESTAMP
-	Remove SYSLOG_FACILITY
-
-[OUTPUT]
-	Name forward
-	Port 24224
-`,
 	"/etc/hosts.d/aro.conf": `203.0.113.1	api.test-cluster.test.example.com api-int.test-cluster.test.example.com
 203.0.113.2	gateway.mock1.example.com gateway.mock2.example.com
-`,
-	"/etc/mdsd.d/mdsd.env": `MONITORING_GCS_ENVIRONMENT=test-logging-environment
-MONITORING_GCS_ACCOUNT=test-logging-account
-MONITORING_GCS_REGION=centralus
-MONITORING_GCS_CERT_CERTFILE=/etc/mdsd.d/secret/mdsdcert.pem
-MONITORING_GCS_CERT_KEYFILE=/etc/mdsd.d/secret/mdsdcert.pem
-MONITORING_GCS_NAMESPACE=test-logging-namespace
-MONITORING_CONFIG_VERSION=42
-MONITORING_USE_GENEVA_CONFIG_SERVICE=true
-MONITORING_TENANT=centralus
-MONITORING_ROLE=cluster
-MONITORING_ROLE_INSTANCE=bootstrap
-RESOURCE_ID=test-cluster-resource-id
-SUBSCRIPTION_ID=test-subscription
-RESOURCE_GROUP=test-resource-group
-RESOURCE_NAME=test-logging-resource
-`,
-	"/etc/mdsd.d/secret/mdsdcert.pem": `# This is not a real private key
-# This is not a real certificate
-`,
-	"/etc/sysconfig/fluentbit": `FLUENTIMAGE=registry.example.com/fluentbit:latest
-`,
-	"/etc/sysconfig/mdsd": `MDSDIMAGE=registry.example.com/mdsd:latest
 `,
 	"/opt/openshift/manifests/aro-imageregistry.yaml": `apiVersion: imageregistry.operator.openshift.io/v1
 kind: Config
