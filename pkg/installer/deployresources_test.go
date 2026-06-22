@@ -22,6 +22,11 @@ func TestZones(t *testing.T) {
 		wantMaster *[]string
 	}{
 		{
+			name:       "non-zonal, empty slice",
+			zones:      []string{},
+			wantMaster: nil,
+		},
+		{
 			name:       "non-zonal",
 			zones:      []string{""},
 			wantMaster: nil,
