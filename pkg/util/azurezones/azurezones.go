@@ -40,7 +40,7 @@ func (m *availabilityZoneManager) FilterZones(zones []string) []string {
 	return zones
 }
 
-func (m *availabilityZoneManager) DetermineAvailabilityZones(controlPlaneSKU, workerSKU *armcompute.ResourceSKU) ([]string, []string, []string, error) {
+func (m *availabilityZoneManager) DetermineAvailabilityZones(controlPlaneSKU, workerSKU *armcompute.ResourceSKU) ([]string, []string, error) {
 	controlPlaneZones := computeskus.Zones(controlPlaneSKU)
 	workerZones := computeskus.Zones(workerSKU)
 
@@ -62,26 +62,21 @@ func (m *availabilityZoneManager) DetermineAvailabilityZones(controlPlaneSKU, wo
 
 	if (len(controlPlaneZones) == 0 && len(workerZones) > 0) ||
 		(len(workerZones) == 0 && len(controlPlaneZones) > 0) {
-		return nil, nil, nil, fmt.Errorf("cluster creation with mix of zonal and non-zonal resources is unsupported (control plane zones: %d, worker zones: %d)", len(controlPlaneZones), len(workerZones))
+		return nil, nil, fmt.Errorf("cluster creation with mix of zonal and non-zonal resources is unsupported (control plane zones: %d, worker zones: %d)", len(controlPlaneZones), len(workerZones))
 	}
 
-	// Once we've removed the expanded AZs (if applicable), get the super-set of
-	// AZs for deploying PIPs/Frontend IPs in
-	allAvailableZones := slices.Concat(controlPlaneZones, workerZones)
-	slices.Sort(allAvailableZones)
-	allAvailableZones = slices.Compact(allAvailableZones)
-	if len(allAvailableZones) == 0 {
-		allAvailableZones = []string{}
+	// we now know that if either control plane or worker zones is empty, then the other one must be as well.
+	// we return the config for non-zonal installation
+	if len(controlPlaneZones) == 0 {
+		return []string{""}, []string{""}, nil
 	}
 
-	// We handle the case where regions have no zones or >= zones than replicas,
+	// We handle the case where regions have >= zones than replicas,
 	// but not when replicas > zones. We (currently) only support 3 control
 	// plane replicas and Azure AZs will always be a minimum of 3, see
 	// https://azure.microsoft.com/en-us/blog/our-commitment-to-expand-azure-availability-zones-to-more-regions/
-	if len(controlPlaneZones) == 0 {
-		controlPlaneZones = []string{}
-	} else if len(controlPlaneZones) < CONTROL_PLANE_MACHINE_COUNT {
-		return nil, nil, nil, fmt.Errorf("control plane SKU '%s' only available in %d zones, need %d", *controlPlaneSKU.Name, len(controlPlaneZones), CONTROL_PLANE_MACHINE_COUNT)
+	if len(controlPlaneZones) < CONTROL_PLANE_MACHINE_COUNT {
+		return nil, nil, fmt.Errorf("control plane SKU '%s' only available in %d zones, need %d", *controlPlaneSKU.Name, len(controlPlaneZones), CONTROL_PLANE_MACHINE_COUNT)
 	} else if len(controlPlaneZones) >= CONTROL_PLANE_MACHINE_COUNT {
 		// Pick lower zones first
 		controlPlaneZones = controlPlaneZones[:CONTROL_PLANE_MACHINE_COUNT]
@@ -95,11 +90,9 @@ func (m *availabilityZoneManager) DetermineAvailabilityZones(controlPlaneSKU, wo
 	// such, prevent situations where 2 workers may be deployed on one zone and
 	// 1 on another, even though OpenShift treats that as a theoretically valid
 	// configuration.
-	if len(workerZones) == 0 {
-		workerZones = []string{}
-	} else if len(workerZones) < 3 {
-		return nil, nil, nil, fmt.Errorf("worker SKU '%s' only available in %d zones, need %d", *workerSKU.Name, len(workerZones), 3)
+	if len(workerZones) < 3 {
+		return nil, nil, fmt.Errorf("worker SKU '%s' only available in %d zones, need %d", *workerSKU.Name, len(workerZones), 3)
 	}
 
-	return controlPlaneZones, workerZones, allAvailableZones, nil
+	return controlPlaneZones, workerZones, nil
 }

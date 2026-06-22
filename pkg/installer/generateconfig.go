@@ -119,7 +119,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		workerZones = []string{""}
 		controlPlaneZones = []string{""}
 	} else {
-		controlPlaneZones, workerZones, _, err = azurezones.NewManager(false).DetermineAvailabilityZones(masterSKU, workerSKU)
+		controlPlaneZones, workerZones, err = azurezones.NewManager(false).DetermineAvailabilityZones(masterSKU, workerSKU)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
