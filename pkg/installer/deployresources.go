@@ -86,7 +86,7 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 // Handle the case where nonzonal resources actually need to have an empty zone
 // param instead of {""}
 func zones(installConfig *installconfig.InstallConfig) *[]string {
-	if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) {
+	if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) || reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{}) {
 		// Non-zonal
 		return nil
 	} else {
