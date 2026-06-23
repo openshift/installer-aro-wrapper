@@ -116,8 +116,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	// centraluseuap reports one zone, so we need to perform a non-zonal install in that region
 	if strings.EqualFold(m.oc.Location, "centraluseuap") {
-		workerZones = []string{""}
-		controlPlaneZones = []string{""}
+		workerZones = []string{}
+		controlPlaneZones = []string{}
 	} else {
 		controlPlaneZones, workerZones, _, err = azurezones.NewManager(false).DetermineAvailabilityZones(masterSKU, workerSKU)
 		if err != nil {

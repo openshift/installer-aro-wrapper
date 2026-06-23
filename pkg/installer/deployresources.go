@@ -58,7 +58,7 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 	}
 
 	params["controlPlaneZones"] = map[string]interface{}{
-		"value": installConfig.Config.ControlPlane.Platform.Azure.Zones,
+		"value": convertControlPlaneZonesToArmParameter(installConfig.Config.ControlPlane.Platform.Azure.Zones),
 	}
 
 	t := &arm.Template{
@@ -86,11 +86,27 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 // Handle the case where nonzonal resources actually need to have an empty zone
 // param instead of {""}
 func zones(installConfig *installconfig.InstallConfig) *[]string {
-	if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) || reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{}) {
+	if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) ||
+		reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{}) {
 		// Non-zonal
 		return nil
 	} else {
 		// Use the zones we have been specified
 		return &[]string{"[parameters('controlPlaneZones')[copyIndex(0)]]"}
 	}
+}
+
+// convertControlPlaneZonesToArmParameter makes sure that an empty zone slice
+// gets changed to []string{""}, so it can be safely passed in via the arm
+// parameter
+func convertControlPlaneZonesToArmParameter(in []string) []string {
+	if in == nil {
+		return []string{""}
+	}
+
+	if reflect.DeepEqual(in, []string{}) {
+		return []string{""}
+	}
+
+	return in
 }
