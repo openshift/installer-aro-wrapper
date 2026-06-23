@@ -66,3 +66,40 @@ func TestZones(t *testing.T) {
 		})
 	}
 }
+
+func Test_convertControlPlaneZonesToArmParameter(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []string
+		want []string
+	}{
+		{
+			name: "empty slice is converted to slice with empty string",
+			in:   []string{},
+			want: []string{""},
+		},
+		{
+			name: "nil slice is returned as-is",
+			in:   nil,
+			want: []string{""},
+		},
+		{
+			name: "non-empty zone slice is returned unchanged",
+			in:   []string{"1", "2", "3"},
+			want: []string{"1", "2", "3"},
+		},
+		{
+			name: "slice with empty string is returned unchanged",
+			in:   []string{""},
+			want: []string{""},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := convertControlPlaneZonesToArmParameter(tt.in)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("convertControlPlaneZonesToArmParameter() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
