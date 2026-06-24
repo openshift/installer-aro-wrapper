@@ -27,6 +27,11 @@ func TestZones(t *testing.T) {
 			wantMaster: nil,
 		},
 		{
+			name:       "non-zonal, nil",
+			zones:      nil,
+			wantMaster: nil,
+		},
+		{
 			name:       "non-zonal",
 			zones:      []string{""},
 			wantMaster: nil,
