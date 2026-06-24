@@ -87,7 +87,8 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 // param instead of {""}
 func zones(installConfig *installconfig.InstallConfig) *[]string {
 	if reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{""}) ||
-		reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{}) {
+		reflect.DeepEqual(installConfig.Config.ControlPlane.Platform.Azure.Zones, []string{}) ||
+		installConfig.Config.ControlPlane.Platform.Azure.Zones == nil {
 		// Non-zonal
 		return nil
 	} else {
