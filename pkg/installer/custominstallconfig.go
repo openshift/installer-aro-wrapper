@@ -91,7 +91,7 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
 
-	if m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
+	if m.oc.Properties.FeatureProfile.GatewayEnabled && m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
 		localdnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
 		localdnsConfig.GatewayDomains = m.getGatewayDomains(m.env, m.oc)
 	}
