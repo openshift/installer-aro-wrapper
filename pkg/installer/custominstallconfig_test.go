@@ -95,6 +95,9 @@ func fakeCluster() *api.OpenShiftCluster {
 		Properties: api.OpenShiftClusterProperties{
 			InfraID:                         "test-infra-id",
 			ImageRegistryStorageAccountName: "test-image-registry-storage-acct",
+			FeatureProfile: api.FeatureProfile{
+				GatewayEnabled: true,
+			},
 			APIServerProfile: api.APIServerProfile{
 				IntIP: apiIntIP,
 			},
@@ -309,6 +312,51 @@ func TestApplyInstallConfigCustomisations(t *testing.T) {
 	verifyWorkerPointerIgnition(t, workerAsset.File.Data)
 	verifyUpdateMCSCertKey(t, bootstrapAsset)
 	verifyDNSPointerIgnition(t, bootstrapAsset)
+}
+
+func TestApplyInstallConfigCustomisationsGatewayDisabled(t *testing.T) {
+	ctx := context.Background()
+	m := fakeManager()
+	m.oc.Properties.FeatureProfile.GatewayEnabled = false
+	inInstallConfig := makeInstallConfig()
+
+	mockCtrl := golangmock.NewController(t)
+	defer mockCtrl.Finish()
+	mockClient := mock.NewMockAPI(mockCtrl)
+	inInstallConfig.Azure.UseMockClient(mockClient)
+	mockClientCalls(mockClient)
+
+	graph, err := m.applyInstallConfigCustomisations(ctx, inInstallConfig, makeImage())
+	require.NoError(t, err)
+
+	bootstrapAsset := graph.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	var temp map[string]any
+	err = json.Unmarshal(bootstrapAsset.Files()[0].Data, &temp)
+	require.NoError(t, err)
+
+	files := (temp["storage"].(map[string]any))["files"].([]any)
+	storageFileList := map[string]string{}
+	for _, file := range files {
+		contents, found := file.(map[string]any)["contents"]
+		if !found {
+			contents = file.(map[string]any)["append"].([]any)[0]
+		}
+		storageFileList[file.(map[string]any)["path"].(string)] = contents.(map[string]any)["source"].(string)
+	}
+
+	for path, source := range storageFileList {
+		parts := strings.Split(source, ",")
+		if len(parts) < 2 {
+			continue
+		}
+
+		decoded, err := base64.StdEncoding.DecodeString(parts[1])
+		require.NoError(t, err)
+
+		content := string(decoded)
+		assert.NotContains(t, content, "gateway.mock1.example.com", "unexpected gateway domain in %s", path)
+		assert.NotContains(t, content, "gateway.mock2.example.com", "unexpected gateway domain in %s", path)
+	}
 }
 
 func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
