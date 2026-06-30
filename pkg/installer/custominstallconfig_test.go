@@ -320,7 +320,7 @@ func TestApplyInstallConfigCustomisationsGatewayDisabled(t *testing.T) {
 	m.oc.Properties.FeatureProfile.GatewayEnabled = false
 	inInstallConfig := makeInstallConfig()
 
-	mockCtrl := gomock.NewController(t)
+	mockCtrl := golangmock.NewController(t)
 	defer mockCtrl.Finish()
 	mockClient := mock.NewMockAPI(mockCtrl)
 	inInstallConfig.Azure.UseMockClient(mockClient)
