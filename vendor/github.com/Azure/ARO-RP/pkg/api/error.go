@@ -39,7 +39,7 @@ type CloudErrorBody struct {
 	// The target of the particular error. For example, the name of the property in error.
 	Target string `json:"target,omitempty"`
 
-	//A list of additional details about the error.
+	// A list of additional details about the error.
 	Details []CloudErrorBody `json:"details,omitempty"`
 }
 
@@ -93,6 +93,7 @@ const (
 	CloudErrorCodeInvalidResourceProviderPermissions                         = "InvalidResourceProviderPermissions"
 	CloudErrorCodeInvalidServicePrincipalPermissions                         = "InvalidServicePrincipalPermissions"
 	CloudErrorCodeInvalidWorkloadIdentityPermissions                         = "InvalidWorkloadIdentityPermissions"
+	CloudErrorCodeInvalidClusterMSIPermissions                               = "InvalidClusterMSIPermissions"
 	CloudErrorCodeInvalidLocation                                            = "InvalidLocation"
 	CloudErrorCodeInvalidOperationID                                         = "InvalidOperationID"
 	CloudErrorCodeDuplicateClientID                                          = "DuplicateClientID"
@@ -114,7 +115,8 @@ const (
 	CloudErrorCodeInvalidResourceID                                          = "InvalidResourceID"
 )
 
-// NewCloudError returns a new CloudError
+// NewCloudError creates a structured ARM-compliant CloudError,
+// ensuring consistent error responses with status codes and targets.
 func NewCloudError(statusCode int, code, target, message string) *CloudError {
 	return &CloudError{
 		StatusCode: statusCode,
