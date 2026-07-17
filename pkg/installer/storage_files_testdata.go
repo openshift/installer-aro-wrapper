@@ -247,7 +247,7 @@ spec:
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network-online.target
         enabled: true
         name: aro-etchosts-resolver.service
   extensions: null
@@ -367,7 +367,7 @@ spec:
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network-online.target
         enabled: true
         name: aro-etchosts-resolver.service
   extensions: null

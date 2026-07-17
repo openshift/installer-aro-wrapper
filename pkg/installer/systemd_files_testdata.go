@@ -13,7 +13,7 @@ Before=network-online.target
 ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=network-online.target
 `,
 	"dnsmasq.service": `
 [Unit]
