@@ -87,7 +87,7 @@ Before=network-online.target
 ExecStart=/bin/bash /usr/local/bin/{{ .ScriptFileName }}
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=network-online.target
 `))
 
 func GenerateEtcHostsAROConf(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) ([]byte, error) {
