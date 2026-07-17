@@ -241,13 +241,14 @@ spec:
           [Unit]
           Description=One shot service that appends static domains to etchosts
           Before=network-online.target
+          Before=node-image-pull.service
 
           [Service]
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network-online.target
         enabled: true
         name: aro-etchosts-resolver.service
   extensions: null
@@ -361,13 +362,14 @@ spec:
           [Unit]
           Description=One shot service that appends static domains to etchosts
           Before=network-online.target
+          Before=node-image-pull.service
 
           [Service]
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network-online.target
         enabled: true
         name: aro-etchosts-resolver.service
   extensions: null
