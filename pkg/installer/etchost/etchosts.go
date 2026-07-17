@@ -81,6 +81,7 @@ cmp "${TEMP_FILE}" "${HOSTS_FILE}" || cp -f "${TEMP_FILE}" "${HOSTS_FILE}"
 var aroUnitTemplate = template.Must(template.New("etchostservice").Parse(`[Unit]
 Description=One shot service that appends static domains to etchosts
 Before=network-online.target
+Before=node-image-pull.service
 
 [Service]
 # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
