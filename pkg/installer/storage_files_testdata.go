@@ -244,6 +244,7 @@ spec:
           Before=node-image-pull.service
 
           [Service]
+          Type=oneshot
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
@@ -365,6 +366,7 @@ spec:
           Before=node-image-pull.service
 
           [Service]
+          Type=oneshot
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
