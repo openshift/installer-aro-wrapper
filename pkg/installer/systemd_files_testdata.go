@@ -6,7 +6,6 @@ package installer
 var expectedIgnitionServiceContents = map[string]string{
 	"aro-etchosts-resolver.service": `[Unit]
 Description=One shot service that appends static domains to etchosts
-Before=network-online.target
 Before=node-image-pull.service
 
 [Service]

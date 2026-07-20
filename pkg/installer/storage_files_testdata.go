@@ -240,7 +240,6 @@ spec:
       - contents: |
           [Unit]
           Description=One shot service that appends static domains to etchosts
-          Before=network-online.target
           Before=node-image-pull.service
 
           [Service]
@@ -362,7 +361,6 @@ spec:
       - contents: |
           [Unit]
           Description=One shot service that appends static domains to etchosts
-          Before=network-online.target
           Before=node-image-pull.service
 
           [Service]
