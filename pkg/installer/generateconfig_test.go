@@ -6,9 +6,11 @@ package installer
 import (
 	"testing"
 
+	"github.com/Azure/ARO-RP/pkg/api"
 	sdkcompute "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7"
 	"github.com/Azure/go-autorest/autorest/to"
 
+	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/azure"
 )
 
@@ -123,6 +125,60 @@ func TestDetermineSkuSupportsV2Only(t *testing.T) {
 
 			if result != tt.wantResult {
 				t.Errorf("expected %v, got %v", tt.wantResult, result)
+			}
+		})
+	}
+}
+
+func TestIngressPublishStrategy(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		profile api.IngressProfile
+		want    types.PublishingStrategy
+	}{
+		{
+			name: "explicit private visibility wins over IP",
+			profile: api.IngressProfile{
+				Visibility: api.VisibilityPrivate,
+				IP:         "203.0.113.10",
+			},
+			want: types.InternalPublishingStrategy,
+		},
+		{
+			name: "explicit public visibility wins over IP",
+			profile: api.IngressProfile{
+				Visibility: api.VisibilityPublic,
+				IP:         "10.0.0.10",
+			},
+			want: types.ExternalPublishingStrategy,
+		},
+		{
+			name: "missing visibility falls back to private IP",
+			profile: api.IngressProfile{
+				IP: "10.0.0.10",
+			},
+			want: types.InternalPublishingStrategy,
+		},
+		{
+			name: "missing visibility with public IP stays external",
+			profile: api.IngressProfile{
+				IP: "203.0.113.10",
+			},
+			want: types.ExternalPublishingStrategy,
+		},
+		{
+			name: "missing visibility with invalid IP stays external",
+			profile: api.IngressProfile{
+				IP: "not-an-ip",
+			},
+			want: types.ExternalPublishingStrategy,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ingressPublishStrategy(tt.profile)
+
+			if result != tt.want {
+				t.Fatalf("expected %q, got %q", tt.want, result)
 			}
 		})
 	}

@@ -35,6 +35,7 @@ import (
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/releaseimage"
 	targetassets "github.com/openshift/installer/pkg/asset/targets"
+	"github.com/openshift/installer/pkg/types"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	bootstrapfiles "github.com/openshift/installer-aro-wrapper/pkg/data/bootstrap"
@@ -91,6 +92,11 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 		APIIntIP:  m.oc.Properties.APIServerProfile.IntIP,
 		IngressIP: m.oc.Properties.IngressProfiles[0].IP,
 	}
+
+	// Re-sync the caller-provided InstallConfig before graph resolution. This
+	// stage consumes the passed-in object directly, so we do not want stale
+	// Publish state to diverge from the current ingress profile.
+	installConfig.Config.Publish = ingressPublishStrategy(m.oc.Properties.IngressProfiles[0])
 
 	if m.oc.Properties.FeatureProfile.GatewayEnabled && m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP != "" {
 		localdnsConfig.GatewayPrivateEndpointIP = m.oc.Properties.NetworkProfile.GatewayPrivateEndpointIP
@@ -156,7 +162,7 @@ func (m *manager) applyInstallConfigCustomisations(ctx context.Context, installC
 		AccountName:         imageRegistryConfig.AccountName,
 		ContainerName:       imageRegistryConfig.ContainerName,
 		CloudName:           installConfig.Config.Azure.CloudName.Name(),
-		AROIngressInternal:  installConfig.Config.Publish == "Internal",
+		AROIngressInternal:  installConfig.Config.Publish == types.InternalPublishingStrategy,
 		AROIngressIP:        localdnsConfig.IngressIP,
 	}
 	err = manifests.AppendManifestsFilesToBootstrap(bootstrapAsset, config)

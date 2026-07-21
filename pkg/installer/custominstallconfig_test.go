@@ -28,6 +28,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/asset/ignition/machine"
 	"github.com/openshift/installer/pkg/asset/installconfig"
@@ -359,6 +360,35 @@ func TestApplyInstallConfigCustomisationsGatewayDisabled(t *testing.T) {
 	}
 }
 
+func TestApplyInstallConfigCustomisationsFallsBackToInternalWhenIngressIPIsPrivate(t *testing.T) {
+	ctx := context.Background()
+	m := fakeManager()
+	m.oc.Properties.IngressProfiles[0].IP = "10.0.0.10"
+	inInstallConfig := makeInstallConfig()
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockClient := mock.NewMockAPI(mockCtrl)
+	inInstallConfig.Azure.UseMockClient(mockClient)
+	mockClientCalls(mockClient)
+
+	graph, err := m.applyInstallConfigCustomisations(ctx, inInstallConfig, makeImage())
+	require.NoError(t, err)
+
+	bootstrapAsset := graph.Get(&bootstrap.Bootstrap{}).(*bootstrap.Bootstrap)
+	routerServiceData := bootstrapFileContents(t, bootstrapAsset, "/opt/openshift/manifests/aro-ingress-service.yaml")
+	assert.Contains(t, string(routerServiceData), `service.beta.kubernetes.io/azure-load-balancer-internal: "true"`)
+	assert.Contains(t, string(routerServiceData), `service.beta.kubernetes.io/azure-load-balancer-ipv4: "10.0.0.10"`)
+
+	ingressControllerData := bootstrapFileContents(t, bootstrapAsset, "/opt/openshift/manifests/cluster-ingress-default-ingresscontroller.yaml")
+	ingressController := &operatorv1.IngressController{}
+	err = yaml.Unmarshal(ingressControllerData, ingressController)
+	require.NoError(t, err)
+	require.NotNil(t, ingressController.Spec.EndpointPublishingStrategy)
+	require.NotNil(t, ingressController.Spec.EndpointPublishingStrategy.LoadBalancer)
+	assert.Equal(t, operatorv1.InternalLoadBalancer, ingressController.Spec.EndpointPublishingStrategy.LoadBalancer.Scope)
+}
+
 func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []string, systemdFiles []string, fileName string) {
 	files := (temp["storage"].(map[string]any))["files"].([]any)
 	systemd := (temp["systemd"].(map[string]any))["units"].([]any)
@@ -423,6 +453,36 @@ func verifyIgnitionFiles(t *testing.T, temp map[string]any, storageFiles []strin
 		t.Fatal(err)
 	}
 	assert.Equal(t, "ARO", config.Data["invoker"])
+}
+
+func bootstrapFileContents(t *testing.T, bootstrap *bootstrap.Bootstrap, path string) []byte {
+	t.Helper()
+
+	for _, file := range bootstrap.Config.Storage.Files {
+		if file.Path != path {
+			continue
+		}
+
+		switch {
+		case file.Contents.Source != nil:
+			parts := strings.SplitN(*file.Contents.Source, ",", 2)
+			require.Len(t, parts, 2, "expected data URL for %s", path)
+
+			decoded, err := base64.StdEncoding.DecodeString(parts[1])
+			require.NoError(t, err)
+			return decoded
+		case len(file.Append) > 0 && file.Append[0].Source != nil:
+			parts := strings.SplitN(*file.Append[0].Source, ",", 2)
+			require.Len(t, parts, 2, "expected appended data URL for %s", path)
+
+			decoded, err := base64.StdEncoding.DecodeString(parts[1])
+			require.NoError(t, err)
+			return decoded
+		}
+	}
+
+	t.Fatalf("file %s missing from bootstrap storage files", path)
+	return nil
 }
 
 func verifyMasterPointerIgnition(t *testing.T, ignData []byte) {

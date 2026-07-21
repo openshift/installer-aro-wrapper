@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -312,7 +313,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						},
 					},
 				},
-				Publish: types.ExternalPublishingStrategy,
+				Publish: ingressPublishStrategy(m.oc.Properties.IngressProfiles[0]),
 				Capabilities: &types.Capabilities{
 					// don't include the baremetal capability (in the baseline default)
 					BaselineCapabilitySet: configv1.ClusterVersionCapabilitySetNone,
@@ -336,10 +337,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 			},
 		},
-	}
-
-	if m.oc.Properties.IngressProfiles[0].Visibility == api.VisibilityPrivate {
-		installConfig.Config.Publish = types.InternalPublishingStrategy
 	}
 
 	var credentials *icazure.Credentials
@@ -417,6 +414,22 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 		ClientID:              m.env.FPClientID(),
 		ClientCertificatePath: clientCertificateFile.Name(),
 	}, nil
+}
+
+func ingressPublishStrategy(profile api.IngressProfile) types.PublishingStrategy {
+	switch profile.Visibility {
+	case api.VisibilityPrivate:
+		return types.InternalPublishingStrategy
+	case api.VisibilityPublic:
+		return types.ExternalPublishingStrategy
+	}
+
+	ip := net.ParseIP(profile.IP)
+	if ip != nil && ip.IsPrivate() {
+		return types.InternalPublishingStrategy
+	}
+
+	return types.ExternalPublishingStrategy
 }
 
 // determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
