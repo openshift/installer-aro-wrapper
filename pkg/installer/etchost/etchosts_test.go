@@ -16,17 +16,8 @@ import (
 //	Before=network-online.target   (in [Unit])
 //	WantedBy=network-online.target (in [Install])
 //
-// On RHCOS (systemd 252) this creates a dependency cycle:
-//
 //	network-online.target wants  aro-etchosts-resolver  → activates it
 //	network-online.target waits  aro-etchosts-resolver  → must finish first (Before=)
-//
-// systemd 252 breaks the cycle by skipping dnsmasq.service entirely, which
-// logs "[ SKIP ] Ordering cycle found, skipping DNS caching server."  Without
-// dnsmasq, /etc/resolv.conf keeps the raw DHCP nameserver (172.16.0.0), so
-// arostgsvc.azurecr.io resolves to the public IP (40.64.135.171) which a UDR
-// blackholes → node-image-pull loops → bootstrap never becomes healthy →
-// all masters: OSProvisioningTimedOut.
 //
 // Fix: remove Before=network-online.target.  The ordering is preserved
 // transitively:  aro-etchosts-resolver → Before → node-image-pull
