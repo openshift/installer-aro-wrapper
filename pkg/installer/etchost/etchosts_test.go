@@ -63,6 +63,20 @@ func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
 				"generated unit:\n%s", unit)
 	}
 
+	if !strings.Contains(unit, "StandardOutput=journal+console") {
+		t.Errorf(
+			"unit MUST contain 'StandardOutput=journal+console': "+
+				"ordering to node-image-pull is preserved after removing Before=network-online.target\n\n"+
+				"generated unit:\n%s", unit)
+	}
+
+	if !strings.Contains(unit, "StandardError=journal+console") {
+		t.Errorf(
+			"unit MUST contain 'StandardError=journal+console': "+
+				"ordering to node-image-pull is preserved after removing Before=network-online.target\n\n"+
+				"generated unit:\n%s", unit)
+	}
+
 	if !strings.Contains(unit, "WantedBy=multi-user.target") {
 		t.Errorf(
 			"unit MUST contain 'WantedBy=multi-user.target' in [Install]\n\n"+
