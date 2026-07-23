@@ -80,6 +80,7 @@ cmp "${TEMP_FILE}" "${HOSTS_FILE}" || cp -f "${TEMP_FILE}" "${HOSTS_FILE}"
 
 var aroUnitTemplate = template.Must(template.New("etchostservice").Parse(`[Unit]
 Description=One shot service that appends static domains to etchosts
+After=network-online.target
 Before=node-image-pull.service
 
 [Service]
@@ -89,7 +90,7 @@ RemainAfterExit=yes
 ExecStart=/bin/bash /usr/local/bin/{{ .ScriptFileName }}
 
 [Install]
-WantedBy=network-online.target
+WantedBy=multi-user.target
 `))
 
 func GenerateEtcHostsAROConf(clusterDomain string, apiIntIP string, gatewayDomains []string, gatewayPrivateEndpointIP string) ([]byte, error) {

@@ -6,6 +6,7 @@ package installer
 var expectedIgnitionServiceContents = map[string]string{
 	"aro-etchosts-resolver.service": `[Unit]
 Description=One shot service that appends static domains to etchosts
+After=network-online.target
 Before=node-image-pull.service
 
 [Service]
@@ -15,16 +16,12 @@ RemainAfterExit=yes
 ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
 
 [Install]
-WantedBy=network-online.target
+WantedBy=multi-user.target
 `,
 	"dnsmasq.service": `
 [Unit]
 Description=DNS caching server.
-After=network-online.target
-Wants=network-online.target
-Before=bootkube.service
-Before=node-image-pull.service
-
+After=network.target
 [Service]
 # ExecStartPre will create a copy of the customer current resolv.conf file and make it upstream DNS.
 # This file is a product of user DNS settings on the VNET. We will replace this file to point to
