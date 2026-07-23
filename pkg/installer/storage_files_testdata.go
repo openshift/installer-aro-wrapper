@@ -243,10 +243,12 @@ spec:
           Before=node-image-pull.service
 
           [Service]
-          Type=oneshot          
-          RemainAfterExit=yes          
+          Type=oneshot
+          RemainAfterExit=yes
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
+          StandardOutput=journal+console
+          StandardError=journal+console
 
           [Install]
           WantedBy=multi-user.target
@@ -365,8 +367,12 @@ spec:
           Before=node-image-pull.service
 
           [Service]
-          Type=oneshot          RemainAfterExit=yes          # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
+          Type=oneshot
+          RemainAfterExit=yes
+          # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
+          StandardOutput=journal+console
+          StandardError=journal+console
 
           [Install]
           WantedBy=multi-user.target

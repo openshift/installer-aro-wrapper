@@ -14,6 +14,8 @@ Type=oneshot
 RemainAfterExit=yes
 # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
 ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target
@@ -22,6 +24,9 @@ WantedBy=multi-user.target
 [Unit]
 Description=DNS caching server.
 After=network.target
+Before=bootkube.service
+Before=node-image-pull.service
+
 [Service]
 # ExecStartPre will create a copy of the customer current resolv.conf file and make it upstream DNS.
 # This file is a product of user DNS settings on the VNET. We will replace this file to point to
