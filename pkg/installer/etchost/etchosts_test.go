@@ -30,7 +30,8 @@ import (
 //
 // Fix: remove Before=network-online.target.  The ordering is preserved
 // transitively:  aro-etchosts-resolver → Before → node-image-pull
-//                node-image-pull        → After  → network-online.target
+//
+//	node-image-pull        → After  → network-online.target
 func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
 	unit, err := GenerateEtcHostsAROUnit()
 	if err != nil {
@@ -59,8 +60,8 @@ func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
 
 	if !strings.Contains(unit, "RemainAfterExit=yes") {
 		t.Errorf(
-			"unit MUST contain 'RemainAfterExit=yes': keeps service active after " +
-				"execution so 'systemctl status' shows it ran successfully\n\n" +
+			"unit MUST contain 'RemainAfterExit=yes': keeps service active after "+
+				"execution so 'systemctl status' shows it ran successfully\n\n"+
 				"generated unit:\n%s", unit)
 	}
 
@@ -71,9 +72,9 @@ func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
 				"generated unit:\n%s", unit)
 	}
 
-	if !strings.Contains(unit, "WantedBy=network-online.target") {
+	if !strings.Contains(unit, "WantedBy=multi-user.target") {
 		t.Errorf(
-			"unit MUST contain 'WantedBy=network-online.target' in [Install]\n\n"+
+			"unit MUST contain 'WantedBy=multi-user.target' in [Install]\n\n"+
 				"generated unit:\n%s", unit)
 	}
 }
