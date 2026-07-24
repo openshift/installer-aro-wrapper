@@ -11,16 +11,13 @@ import (
 // TestGenerateEtcHostsAROUnit_OrderingCycle is the regression test for the
 // ordering-cycle bug that caused OSProvisioningTimedOut on UDR clusters.
 //
-// Root cause: aro-etchosts-resolver.service had BOTH
+// Root cause:
 //
-//	Before=network-online.target   (in [Unit])
-//	WantedBy=network-online.target (in [Install])
+// WantedBy=network-online.target pulled aro-etchosts-resolver into the network-online.target
+// activation chain; combined with Before=node-image-pull.service and node-image-pull's own
+// After=network-online.target, that created the circular wait
 //
-//	network-online.target wants  aro-etchosts-resolver  → activates it
-//	network-online.target waits  aro-etchosts-resolver  → must finish first (Before=)
-//
-// Fix: remove Before=network-online.target.  The ordering is preserved
-// transitively:  aro-etchosts-resolver → Before → node-image-pull
+// Fix: WantedBy=network-online.target to WantedBy=multi-user.target and adding After=network-online.target
 //
 //	node-image-pull        → After  → network-online.target
 func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
@@ -31,14 +28,10 @@ func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
 
 	// ── must NOT be present ──────────────────────────────────────────────────
 	//
-	// Before=network-online.target + WantedBy=network-online.target is the
-	// cycle.  If this line appears, dnsmasq will be skipped on RHCOS 252.
-	if strings.Contains(unit, "Before=network-online.target") {
-		t.Errorf(
-			"unit MUST NOT contain 'Before=network-online.target': "+
-				"combined with WantedBy=network-online.target this creates an "+
-				"ordering cycle that causes systemd 252 to skip dnsmasq.service\n\n"+
-				"generated unit:\n%s", unit)
+	// If this line appears, dnsmasq will be skipped on RHCOS 252.
+	if strings.Contains(unit, "WantedBy=network-online.target") {
+		t.Errorf("unit must not contain 'WantedBy=network-online.target': "+
+			"this was the directive that caused the ordering cycle\n\ngenerated unit:\n%s", unit)
 	}
 
 	// ── must be present ──────────────────────────────────────────────────────
@@ -66,14 +59,14 @@ func TestGenerateEtcHostsAROUnit_OrderingCycle(t *testing.T) {
 	if !strings.Contains(unit, "StandardOutput=journal+console") {
 		t.Errorf(
 			"unit MUST contain 'StandardOutput=journal+console': "+
-				"ordering to node-image-pull is preserved after removing Before=network-online.target\n\n"+
+				"output must be routed to journal and console for bootstrap diagnostics\n\n"+
 				"generated unit:\n%s", unit)
 	}
 
 	if !strings.Contains(unit, "StandardError=journal+console") {
 		t.Errorf(
 			"unit MUST contain 'StandardError=journal+console': "+
-				"ordering to node-image-pull is preserved after removing Before=network-online.target\n\n"+
+				"errors must be routed to journal and console for bootstrap diagnostics\n\n"+
 				"generated unit:\n%s", unit)
 	}
 
