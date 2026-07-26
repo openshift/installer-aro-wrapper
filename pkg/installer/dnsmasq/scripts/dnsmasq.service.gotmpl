@@ -1,8 +1,7 @@
 {{ define "dnsmasq.service" }}
 [Unit]
 Description=DNS caching server.
-After=network-online.target
-Wants=network-online.target
+After=network.target
 Before=bootkube.service
 Before=node-image-pull.service
 

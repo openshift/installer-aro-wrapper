@@ -6,11 +6,16 @@ package installer
 var expectedIgnitionServiceContents = map[string]string{
 	"aro-etchosts-resolver.service": `[Unit]
 Description=One shot service that appends static domains to etchosts
-Before=network-online.target
+After=network-online.target
+Before=node-image-pull.service
 
 [Service]
+Type=oneshot
+RemainAfterExit=yes
 # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
 ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target
@@ -18,8 +23,7 @@ WantedBy=multi-user.target
 	"dnsmasq.service": `
 [Unit]
 Description=DNS caching server.
-After=network-online.target
-Wants=network-online.target
+After=network.target
 Before=bootkube.service
 Before=node-image-pull.service
 
