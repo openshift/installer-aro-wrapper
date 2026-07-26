@@ -159,8 +159,9 @@ spec:
 
           [Unit]
           Description=DNS caching server.
-          After=network-online.target
+          After=network.target
           Before=bootkube.service
+          Before=node-image-pull.service
 
           [Service]
           # ExecStartPre will create a copy of the customer current resolv.conf file and make it upstream DNS.
@@ -175,7 +176,7 @@ spec:
           StandardError=journal+console
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network.target
         enabled: true
         name: dnsmasq.service
   extensions: null
@@ -240,11 +241,16 @@ spec:
       - contents: |
           [Unit]
           Description=One shot service that appends static domains to etchosts
-          Before=network-online.target
+          After=network-online.target
+          Before=node-image-pull.service
 
           [Service]
+          Type=oneshot
+          RemainAfterExit=yes
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
+          StandardOutput=journal+console
+          StandardError=journal+console
 
           [Install]
           WantedBy=multi-user.target
@@ -302,8 +308,9 @@ spec:
 
           [Unit]
           Description=DNS caching server.
-          After=network-online.target
+          After=network.target
           Before=bootkube.service
+          Before=node-image-pull.service
 
           [Service]
           # ExecStartPre will create a copy of the customer current resolv.conf file and make it upstream DNS.
@@ -318,7 +325,7 @@ spec:
           StandardError=journal+console
 
           [Install]
-          WantedBy=multi-user.target
+          WantedBy=network.target
         enabled: true
         name: dnsmasq.service
   extensions: null
@@ -360,11 +367,16 @@ spec:
       - contents: |
           [Unit]
           Description=One shot service that appends static domains to etchosts
-          Before=network-online.target
+          After=network-online.target
+          Before=node-image-pull.service
 
           [Service]
+          Type=oneshot
+          RemainAfterExit=yes
           # ExecStart will copy the hosts defined in /etc/hosts.d/aro.conf to /etc/hosts
           ExecStart=/bin/bash /usr/local/bin/aro-etchosts-resolver.sh
+          StandardOutput=journal+console
+          StandardError=journal+console
 
           [Install]
           WantedBy=multi-user.target
