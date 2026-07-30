@@ -13,38 +13,46 @@ import (
 )
 
 func pemToPrivateKey(data []byte) (crypto.PrivateKey, error) {
-	block, _ := pem.Decode(data)
-	if block == nil {
-		return nil, fmt.Errorf("could not find a PEM block in the private key")
-	}
+	for {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			break
+		}
 
-	switch block.Type {
-	case "RSA PRIVATE KEY":
-		return x509.ParsePKCS1PrivateKey(block.Bytes)
-	case "EC PRIVATE KEY":
-		return x509.ParseECPrivateKey(block.Bytes)
-	case "PRIVATE KEY":
-		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-		if err != nil {
-			return nil, err
+		switch block.Type {
+		case "RSA PRIVATE KEY":
+			if key, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+				return key, nil
+			}
+		case "EC PRIVATE KEY":
+			if key, err := x509.ParseECPrivateKey(block.Bytes); err == nil {
+				return key, nil
+			}
+		case "PRIVATE KEY":
+			if key, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+				switch key.(type) {
+				case *rsa.PrivateKey, *ecdsa.PrivateKey:
+					return key, nil
+				}
+			}
 		}
-		switch key.(type) {
-		case *rsa.PrivateKey, *ecdsa.PrivateKey:
-			return key, nil
-		default:
-			return nil, fmt.Errorf("unsupported PKCS#8 key type: %T", key)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported PEM block type: %s", block.Type)
 	}
+	return nil, fmt.Errorf("data does not contain a valid RSA or ECDSA private key")
 }
 
 func pemToCertificate(data []byte) (*x509.Certificate, error) {
-	block, _ := pem.Decode(data)
-	if block == nil {
-		return nil, fmt.Errorf("could not find a PEM block in the certificate")
+	for {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			break
+		}
+		if block.Type == "CERTIFICATE" {
+			return x509.ParseCertificate(block.Bytes)
+		}
 	}
-	return x509.ParseCertificate(block.Bytes)
+	return nil, fmt.Errorf("data does not contain a valid certificate")
 }
 
 func publicKeyToPem(pub crypto.PublicKey) ([]byte, error) {
