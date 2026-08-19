@@ -5,9 +5,10 @@
 #   bash test.sh delete   # delete clusters (VERSION not required)
 #
 # Region selection prompt:
-#   Single region  : enter a number          e.g. 11
-#   Multiple regions: enter space-separated  e.g. 1 3 7
-#   All regions    : enter 'a'
+#   Single region   : enter a number           e.g. 11
+#   Multiple regions: enter space-separated    e.g. 1 3 7
+#   Range           : enter start-end          e.g. 1-10
+#   All regions     : enter 'a'
 #
 # Each selected region gets a tmux window with $CONCURRENCY panes (default 5).
 # Switch windows with Ctrl+b n. Session is named 'loadtest'.
@@ -49,20 +50,34 @@ for i in "${!regions[@]}"; do
   printf "  %3d) %s\n" "$((i+1))" "${regions[$i]}"
 done
 echo ""
-echo "Enter region number(s) space-separated, or 'a' for all regions:"
+echo "Enter region number(s) space-separated, a range (e.g. 1-10), or 'a' for all regions:"
 read -r selection
 
 if [[ "$selection" == "a" || "$selection" == "all" ]]; then
   selected_regions=("${regions[@]}")
 else
   selected_regions=()
-  for num in $selection; do
-    idx=$((num - 1))
-    if [[ $idx -ge 0 && $idx -lt ${#regions[@]} ]]; then
-      selected_regions+=("${regions[$idx]}")
+  for token in $selection; do
+    if [[ "$token" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+      start=${BASH_REMATCH[1]}
+      end=${BASH_REMATCH[2]}
+      for (( n=start; n<=end; n++ )); do
+        idx=$((n - 1))
+        if [[ $idx -ge 0 && $idx -lt ${#regions[@]} ]]; then
+          selected_regions+=("${regions[$idx]}")
+        else
+          echo "Invalid region number in range: $n"
+          exit 1
+        fi
+      done
     else
-      echo "Invalid region number: $num"
-      exit 1
+      idx=$((token - 1))
+      if [[ $idx -ge 0 && $idx -lt ${#regions[@]} ]]; then
+        selected_regions+=("${regions[$idx]}")
+      else
+        echo "Invalid region number: $token"
+        exit 1
+      fi
     fi
   done
 fi
