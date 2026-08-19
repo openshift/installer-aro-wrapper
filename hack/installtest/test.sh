@@ -27,7 +27,11 @@ case "$1" in
     ;;
 esac
 
-mapfile -t regions < "$BASEDIR/regions.txt"
+regions=()
+while IFS= read -r line; do
+  line="${line%$'\r'}"  # strip Windows carriage returns
+  [[ -n "$line" ]] && regions+=("$line")
+done < "$BASEDIR/regions.txt"
 PS3="Select your Region please: "
 select region in "${regions[@]}" Quit
 do
