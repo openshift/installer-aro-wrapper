@@ -1,4 +1,16 @@
 #!/bin/bash
+# Usage:
+#   export CLUSTER=myloadtest RESOURCEGROUP=myloadtest VERSION=4.21.22
+#   bash test.sh create   # provision clusters
+#   bash test.sh delete   # delete clusters (VERSION not required)
+#
+# Region selection prompt:
+#   Single region  : enter a number          e.g. 11
+#   Multiple regions: enter space-separated  e.g. 1 3 7
+#   All regions    : enter 'a'
+#
+# Each selected region gets a tmux window with $CONCURRENCY panes (default 5).
+# Switch windows with Ctrl+b n. Session is named 'loadtest'.
 
 usage() {
 	echo -e "usage: ${0} <create|delete>"
@@ -32,27 +44,53 @@ while IFS= read -r line; do
   line="${line%$'\r'}"  # strip Windows carriage returns
   [[ -n "$line" ]] && regions+=("$line")
 done < "$BASEDIR/regions.txt"
-PS3="Select your Region please: "
-select region in "${regions[@]}" Quit
-do
-    LOCATION=$region
-    break;
+echo "Available regions:"
+for i in "${!regions[@]}"; do
+  printf "  %3d) %s\n" "$((i+1))" "${regions[$i]}"
 done
+echo ""
+echo "Enter region number(s) space-separated, or 'a' for all regions:"
+read -r selection
 
+if [[ "$selection" == "a" || "$selection" == "all" ]]; then
+  selected_regions=("${regions[@]}")
+else
+  selected_regions=()
+  for num in $selection; do
+    idx=$((num - 1))
+    if [[ $idx -ge 0 && $idx -lt ${#regions[@]} ]]; then
+      selected_regions+=("${regions[$idx]}")
+    else
+      echo "Invalid region number: $num"
+      exit 1
+    fi
+  done
+fi
+
+if [[ ${#selected_regions[@]} -eq 0 ]]; then
+  echo "No regions selected"
+  exit 1
+fi
+
+# one tmux window per region, each with $CONCURRENCY panes running in parallel
+SESSION="loadtest"
 tmux start-server
-tmux new-session -d -n $LOCATION -s $LOCATION
-tmux select-pane -T 1
+tmux new-session -d -s "$SESSION" -n "${selected_regions[0]}"
 
-for (( i=1; i<$CONCURRENCY; i++ ))
-do
-  tmux split-window -h
-  tmux select-pane -T $i
+for LOCATION in "${selected_regions[@]}"; do
+  if [[ "$LOCATION" != "${selected_regions[0]}" ]]; then
+    tmux new-window -t "$SESSION" -n "$LOCATION"
+  fi
+
+  for (( i=1; i<CONCURRENCY; i++ )); do
+    tmux split-window -h -t "$SESSION:$LOCATION"
+  done
+  tmux select-layout -t "$SESSION:$LOCATION" even-horizontal
+
+  for (( i=0; i<CONCURRENCY; i++ )); do
+    tmux send-keys -t "$SESSION:$LOCATION.$i" \
+      "LOCATION=$LOCATION CLUSTER=$CLUSTER-$LOCATION-$i RESOURCEGROUP=$RESOURCEGROUP-$LOCATION-$i VERSION=$VERSION $COMMAND" Enter
+  done
 done
-tmux select-layout even-horizontal
 
-for (( i=0; i<$CONCURRENCY; i++ ))
-do
-  tmux send-keys -t $i "LOCATION=$LOCATION CLUSTER=$CLUSTER-$LOCATION-$i RESOURCEGROUP=$RESOURCEGROUP-$LOCATION-$i VERSION=$VERSION $COMMAND" Enter
-done
-
-tmux attach-session -t $LOCATION
+tmux attach-session -t "$SESSION"
