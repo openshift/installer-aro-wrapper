@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.5
 
 require (
-	github.com/Azure/ARO-RP/pkg/api v0.0.0-20260501080605-2acf55f49287
+	github.com/Azure/ARO-RP/pkg/api v0.0.0-20260625191944-7d3e42bd8ad5 // v20260625.03
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
