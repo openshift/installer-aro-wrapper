@@ -10,7 +10,8 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/Azure/ARO-RP/pkg/api"
+
 	"github.com/openshift/installer-aro-wrapper/pkg/cluster/graph"
 	"github.com/openshift/installer-aro-wrapper/pkg/env"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/azuresdk/armcompute"
