@@ -19,7 +19,6 @@ import (
 	capzazure "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
 	"github.com/Azure/ARO-RP/pkg/api"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/openshift/installer/pkg/types/validation"
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azurezones"
-	"github.com/openshift/installer-aro-wrapper/pkg/util/computeskus"
 	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/pullsecret"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
@@ -42,7 +40,6 @@ import (
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
-	location := m.oc.Location
 
 	pullSecret, err := pullsecret.Build(m.oc, string(m.oc.Properties.ClusterProfile.PullSecret))
 	if err != nil {
@@ -91,40 +88,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		domain += "." + m.env.Domain()
 	}
 
-	filteredSkus, err := computeskus.SelectVMSkusInCurrentRegion(ctx, m.armResourceSKUs, location, []string{
-		string(m.oc.Properties.MasterProfile.VMSize),
-		string(m.oc.Properties.WorkerProfiles[0].VMSize),
-	})
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	masterSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.MasterProfile.VMSize))
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	workerSKU, err := checkSKUAvailability(filteredSkus, location, string(m.oc.Properties.WorkerProfiles[0].VMSize))
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	masterVMNetworkingType := determineVMNetworkingType(masterSKU)
-	workerVMNetworkingType := determineVMNetworkingType(workerSKU)
-
-	var controlPlaneZones, workerZones []string
-
-	// centraluseuap reports one zone, so we need to perform a non-zonal install in that region
-	if strings.EqualFold(m.oc.Location, "centraluseuap") {
-		workerZones = []string{}
-		controlPlaneZones = []string{}
-	} else {
-		controlPlaneZones, workerZones, _, err = azurezones.NewManager(false).DetermineAvailabilityZones(masterSKU, workerSKU)
-		if err != nil {
-			return nil, nil, errors.WithStack(err)
-		}
-	}
-
 	// Set NetworkType to OVNKubernetes by default
 	softwareDefinedNetwork := string(api.SoftwareDefinedNetworkOVNKubernetes)
 	if string(m.oc.Properties.NetworkProfile.SoftwareDefinedNetwork) != "" {
@@ -164,33 +127,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
-	// TODO: Load this from the OpenShiftCluster from the RP maybe, or get it
-	// from a manifest so it can be specified in the RP's
-	// OpenShiftClusterVersions?
-
-	imageSKU := "aro_419" // Gen1 SKU (default)
-
-	// Check if any SKU requires V2 only (doesn't support V1)
-	masterRequiresV2, err := determineSkuSupportsV2Only(masterSKU)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-	workerRequiresV2, err := determineSkuSupportsV2Only(workerSKU)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	// If any SKU only supports V2, use Gen2 images for the entire cluster.
-	if masterRequiresV2 || workerRequiresV2 {
-		imageSKU = "419-v2"
-	}
-
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
-		SKU:       imageSKU,
-		Version:   "419.6.20250523", // "4x.yy.2020zzzz"
-		Plan:      azuretypes.ImageNoPurchasePlan,
+		// All of our supported install SKUs support HyperV Gen2, so use that SKU
+		SKU:     "419-v2",
+		Version: "419.6.20250523", // "4x.yy.2020zzzz"
+		Plan:    azuretypes.ImageNoPurchasePlan,
 	}
 
 	installConfig := &installconfig.InstallConfig{
@@ -226,10 +169,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					Replicas: to.Int64Ptr(azurezones.CONTROL_PLANE_MACHINE_COUNT),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
-							Zones:            controlPlaneZones,
+							// Take the zones from the OpenShiftClusterDocument,
+							// the RP will have already validated them
+							Zones:            m.oc.Properties.Zones,
 							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
-							VMNetworkingType: masterVMNetworkingType,
+							// All of our supported install SKUs have accelerated networking available
+							VMNetworkingType: string(azuretypes.VMnetworkingTypeAccelerated),
 							OSDisk: azuretypes.OSDisk{
 								DiskEncryptionSet: masterDiskEncryptionSet,
 								DiskSizeGB:        1024,
@@ -249,10 +195,13 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Replicas: to.Int64Ptr(int64(m.oc.Properties.WorkerProfiles[0].Count)),
 						Platform: types.MachinePoolPlatform{
 							Azure: &azuretypes.MachinePool{
-								Zones:            workerZones,
+								// Take the zones from the OpenShiftClusterDocument,
+								// the RP will have already validated them
+								Zones:            m.oc.Properties.Zones,
 								InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
 								EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
-								VMNetworkingType: workerVMNetworkingType,
+								// All of our supported install SKUs have accelerated networking available
+								VMNetworkingType: string(azuretypes.VMnetworkingTypeAccelerated),
 								OSDisk: azuretypes.OSDisk{
 									DiskEncryptionSet: workerDiskEncryptionSet,
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
@@ -383,17 +332,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	return installConfig, image, err
 }
 
-func determineVMNetworkingType(vmSku *armcompute.ResourceSKU) string {
-	var vmNetworkingType azuretypes.VMNetworkingCapability
-
-	if computeskus.HasCapability(vmSku, azuretypes.AcceleratedNetworkingEnabled) {
-		vmNetworkingType = azuretypes.VMnetworkingTypeAccelerated
-	} else {
-		vmNetworkingType = azuretypes.VMNetworkingTypeBasic
-	}
-	return string(vmNetworkingType)
-}
-
 func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscriptionId string) (*icazure.Credentials, error) {
 	fpPrivateKey, fpCertificates := m.env.FPCertificates()
 
@@ -417,27 +355,4 @@ func (m *manager) newInstallConfigClientCertificateCredential(tenantId, subscrip
 		ClientID:              m.env.FPClientID(),
 		ClientCertificatePath: clientCertificateFile.Name(),
 	}, nil
-}
-
-// determineSkuSupportsV2Only checks if the SKU ONLY supports HyperV Generation V2 (not V1).
-// Returns true if the SKU requires Gen2 images (supports V2 but not V1).
-func determineSkuSupportsV2Only(sku *armcompute.ResourceSKU) (bool, error) {
-	skuCapabilities, capabilityExists := computeskus.GetCapabilityMap(sku)
-	if !capabilityExists {
-		return false, fmt.Errorf("no capabilities found for SKU %s", *sku.Name)
-	}
-	generations, err := icazure.GetHyperVGenerationVersions(skuCapabilities)
-	if err != nil {
-		return false, fmt.Errorf("could not fetch HyperV generations for SKU %s: %w", *sku.Name, err)
-	}
-	return generations.Has("V2") && !generations.Has("V1"), nil
-}
-
-func checkSKUAvailability(skus map[string]*armcompute.ResourceSKU, location, vmsize string) (*armcompute.ResourceSKU, error) {
-	// Ensure desired sku exists in target region
-	sku, ok := skus[vmsize]
-	if !ok {
-		return nil, fmt.Errorf("the selected SKU '%v' is unavailable in region '%v'", vmsize, location)
-	}
-	return sku, nil
 }
