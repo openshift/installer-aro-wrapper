@@ -18,6 +18,7 @@ import (
 
 	"github.com/openshift/installer-aro-wrapper/pkg/util/arm"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/azureclient"
+	"github.com/openshift/installer-aro-wrapper/pkg/util/pointerutils"
 )
 
 func (m *manager) networkBootstrapNIC(installConfig *installconfig.InstallConfig) *arm.Resource {
@@ -181,7 +182,7 @@ func (m *manager) computeBootstrapVM(installConfig *installconfig.InstallConfig)
 	}
 }
 
-func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, zones *[]string, machineMaster *machine.Master) *arm.Resource {
+func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, zones *[]string, machineMaster *machine.Master, deployAvailabilitySet bool) *arm.Resource {
 	vm := &mgmtcompute.VirtualMachine{
 		VirtualMachineProperties: &mgmtcompute.VirtualMachineProperties{
 			HardwareProfile: &mgmtcompute.HardwareProfile{
@@ -245,15 +246,44 @@ func (m *manager) computeMasterVMs(installConfig *installconfig.InstallConfig, z
 		}
 	}
 
-	return &arm.Resource{
+	dependsOn := []string{
+		"[concat('Microsoft.Network/networkInterfaces/" + m.oc.Properties.InfraID + "-master', copyIndex(), '-nic')]",
+	}
+
+	if deployAvailabilitySet {
+		vm.AvailabilitySet = &mgmtcompute.SubResource{
+			ID: to.StringPtr(fmt.Sprintf("[resourceId('Microsoft.Compute/availabilitySets', '%s-master-as')]", m.oc.Properties.InfraID)),
+		}
+		dependsOn = append(dependsOn, "Microsoft.Compute/availabilitySets/"+m.oc.Properties.InfraID+"-master-as")
+	}
+
+	res := &arm.Resource{
 		Resource:   vm,
 		APIVersion: azureclient.APIVersion("Microsoft.Compute"),
 		Copy: &arm.Copy{
 			Name:  "computecopy",
 			Count: int(*installConfig.Config.ControlPlane.Replicas),
 		},
-		DependsOn: []string{
-			"[concat('Microsoft.Network/networkInterfaces/" + m.oc.Properties.InfraID + "-master', copyIndex(), '-nic')]",
+		DependsOn: dependsOn,
+	}
+
+	return res
+}
+
+func (m *manager) controlPlaneAvailabilitySet(installConfig *installconfig.InstallConfig) *arm.Resource {
+	return &arm.Resource{
+		Resource: &mgmtcompute.AvailabilitySet{
+			Sku: &mgmtcompute.Sku{
+				Name: pointerutils.ToPtr(string(mgmtcompute.Aligned)),
+			},
+			AvailabilitySetProperties: &mgmtcompute.AvailabilitySetProperties{
+				PlatformUpdateDomainCount: pointerutils.ToPtr(int32(3)),
+				PlatformFaultDomainCount:  pointerutils.ToPtr(int32(3)),
+			},
+			Location: &installConfig.Config.Azure.Region,
+			Name:     to.StringPtr(m.oc.Properties.InfraID + "-master-as"),
+			Type:     to.StringPtr("Microsoft.Compute/availabilitySets"),
 		},
+		APIVersion: azureclient.APIVersion("Microsoft.Compute"),
 	}
 }

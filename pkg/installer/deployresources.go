@@ -57,8 +57,10 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 		}
 	}
 
+	controlPlaneZones, hasAZs := convertControlPlaneZonesToArmParameter(installConfig.Config.ControlPlane.Platform.Azure.Zones)
+
 	params["controlPlaneZones"] = map[string]interface{}{
-		"value": convertControlPlaneZonesToArmParameter(installConfig.Config.ControlPlane.Platform.Azure.Zones),
+		"value": controlPlaneZones,
 	}
 
 	t := &arm.Template{
@@ -76,8 +78,12 @@ func (m *manager) deployResourceTemplate(ctx context.Context) error {
 			m.networkBootstrapNIC(installConfig),
 			m.networkMasterNICs(installConfig),
 			m.computeBootstrapVM(installConfig),
-			m.computeMasterVMs(installConfig, zones(installConfig), machineMaster),
+			m.computeMasterVMs(installConfig, zones(installConfig), machineMaster, !hasAZs),
 		},
+	}
+
+	if !hasAZs {
+		t.Resources = append(t.Resources, m.controlPlaneAvailabilitySet(installConfig))
 	}
 
 	return arm.DeployTemplate(ctx, m.log, m.deployments, resourceGroup, "resources", t, params)
@@ -98,16 +104,25 @@ func zones(installConfig *installconfig.InstallConfig) *[]string {
 }
 
 // convertControlPlaneZonesToArmParameter makes sure that an empty zone slice
-// gets changed to []string{""}, so it can be safely passed in via the arm
-// parameter
-func convertControlPlaneZonesToArmParameter(in []string) []string {
+// gets changed to []string{""}, and a single zone slice is triplicated, so it
+// can be safely passed in via the arm parameter. It also returns if there are
+// AZs in use.
+func convertControlPlaneZonesToArmParameter(in []string) ([]string, bool) {
 	if in == nil {
-		return []string{""}
+		return []string{""}, false
 	}
 
 	if reflect.DeepEqual(in, []string{}) {
-		return []string{""}
+		return []string{""}, false
 	}
 
-	return in
+	if len(in) == 1 && in[0] == "" {
+		return []string{""}, false
+	}
+
+	if len(in) == 1 {
+		return []string{in[0], in[0], in[0]}, true
+	}
+
+	return in, true
 }
