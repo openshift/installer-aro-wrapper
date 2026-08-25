@@ -31,7 +31,6 @@ import (
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/validation"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/util/azurezones"
 	utilpem "github.com/openshift/installer-aro-wrapper/pkg/util/pem"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/pullsecret"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
@@ -166,7 +165,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 				},
 				ControlPlane: &types.MachinePool{
 					Name:     "master",
-					Replicas: to.Int64Ptr(azurezones.CONTROL_PLANE_MACHINE_COUNT),
+					Replicas: to.Int64Ptr(3),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
 							// Take the zones from the OpenShiftClusterDocument,
