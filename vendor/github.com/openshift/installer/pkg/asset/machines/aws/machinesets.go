@@ -13,6 +13,7 @@ import (
 	icaws "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/aws"
+	"github.com/openshift/installer/pkg/utils"
 )
 
 // MachineSetInput holds the input arguments required to MachineSets for a machinepool.
@@ -25,6 +26,8 @@ type MachineSetInput struct {
 	Pool                     *types.MachinePool
 	Role                     string
 	UserDataSecret           string
+	Hosts                    map[string]icaws.Host
+	Config                   *types.InstallConfig
 }
 
 // MachineSets returns a list of machinesets for a machinepool.
@@ -87,6 +90,8 @@ func MachineSets(in *MachineSetInput) ([]*machineapi.MachineSet, error) {
 			instanceProfile = fmt.Sprintf("%s-worker-profile", in.ClusterID)
 		}
 
+		dedicatedHost := DedicatedHost(in.Hosts, mpool.HostPlacement, az)
+
 		provider, err := provider(&machineProviderInput{
 			clusterID:        in.ClusterID,
 			region:           in.InstallConfigPlatformAWS.Region,
@@ -103,10 +108,12 @@ func MachineSets(in *MachineSetInput) ([]*machineapi.MachineSet, error) {
 			publicSubnet:     publicSubnet,
 			securityGroupIDs: in.Pool.Platform.AWS.AdditionalSecurityGroupIDs,
 			cpuOptions:       mpool.CPUOptions,
+			dedicatedHost:    dedicatedHost,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create provider")
 		}
+
 		name := fmt.Sprintf("%s-%s-%s", in.ClusterID, in.Pool.Name, az)
 		spec := machineapi.MachineSpec{
 			ProviderSpec: machineapi.ProviderSpec{
@@ -152,6 +159,7 @@ func MachineSets(in *MachineSetInput) ([]*machineapi.MachineSet, error) {
 				},
 			},
 		}
+		utils.SetMachineSetOSStreamLabels(mset, in.Config)
 		machinesets = append(machinesets, mset)
 	}
 

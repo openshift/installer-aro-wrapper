@@ -24,8 +24,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/templates/content/manifests"
 	"github.com/openshift/installer/pkg/asset/tls"
 	"github.com/openshift/installer/pkg/types"
-	"github.com/openshift/installer/pkg/types/nutanix"
-	"github.com/openshift/installer/pkg/types/vsphere"
 	"github.com/openshift/library-go/pkg/crypto"
 )
 
@@ -78,6 +76,7 @@ func (m *Manifests) Dependencies() []asset.Asset {
 		&tls.RootCA{},
 		&tls.MCSCertKey{},
 		&tls.IRICertKey{},
+		&tls.IRIRegistryCredentials{},
 		&manifests.InternalReleaseImage{},
 		new(rhcos.Image),
 
@@ -89,6 +88,7 @@ func (m *Manifests) Dependencies() []asset.Asset {
 		&bootkube.MachineConfigServerTLSSecret{},
 		&bootkube.OpenshiftConfigSecretPullSecret{},
 		&bootkube.InternalReleaseImageTLSSecret{},
+		&bootkube.InternalReleaseImageRegistryAuthSecret{},
 		&BMCVerifyCAConfigMap{},
 	}
 }
@@ -229,13 +229,14 @@ func (m *Manifests) generateBootKubeManifests(dependencies asset.Parents) []*ass
 		}
 	}
 
-	if installConfig.Config.EnabledFeatureGates().Enabled(features.FeatureGateNoRegistryClusterInstall) {
+	if installConfig.Config.Enabled(features.FeatureGateNoRegistryClusterInstall) {
 		iri := &manifests.InternalReleaseImage{}
 		dependencies.Get(iri)
 
 		// Skip if InternalReleaseImage manifest wasn't found.
 		if len(iri.FileList) > 0 {
 			files = append(files, appendIRIcerts(dependencies))
+			files = append(files, appendIRIRegistryCredentials(dependencies))
 		}
 	}
 
@@ -255,6 +256,29 @@ func appendIRIcerts(dependencies asset.Parents) *asset.File {
 	}{
 		IriTLSCert: base64.StdEncoding.EncodeToString(iriCertKey.Cert()),
 		IriTLSKey:  base64.StdEncoding.EncodeToString(iriCertKey.Key()),
+	}
+	fileData := applyTemplateData(f.Data, templateData)
+
+	return &asset.File{
+		Filename: path.Join(manifestDir, strings.TrimSuffix(filepath.Base(f.Filename), ".template")),
+		Data:     fileData,
+	}
+}
+
+// appendIRIRegistryCredentials renders the IRI registry auth secret template with the generated credentials.
+func appendIRIRegistryCredentials(dependencies asset.Parents) *asset.File {
+	iriAuth := &tls.IRIRegistryCredentials{}
+	iriAuthSecret := &bootkube.InternalReleaseImageRegistryAuthSecret{}
+	dependencies.Get(iriAuth, iriAuthSecret)
+
+	f := iriAuthSecret.Files()[0]
+
+	templateData := struct {
+		IriRegistryHtpasswd string
+		IriRegistryPassword string
+	}{
+		IriRegistryHtpasswd: base64.StdEncoding.EncodeToString([]byte(iriAuth.HtpasswdContent)),
+		IriRegistryPassword: base64.StdEncoding.EncodeToString([]byte(iriAuth.Password)),
 	}
 	fileData := applyTemplateData(f.Data, templateData)
 
@@ -318,62 +342,42 @@ func (m *Manifests) Load(f asset.FileFetcher) (bool, error) {
 }
 
 func redactedInstallConfig(config types.InstallConfig) ([]byte, error) {
-	newConfig := config
+	// Use DeepCopy to create a proper deep copy, avoiding the shallow copy issue
+	// where nested pointer fields would still reference the original struct.
+	newConfig := config.DeepCopy()
 
+	// Redact top-level sensitive fields
 	newConfig.PullSecret = ""
+
+	// Redact platform-specific sensitive fields
+	// Platforms are mutually exclusive, so we use a switch statement
 	switch {
 	case newConfig.Platform.VSphere != nil:
-		p := config.VSphere
-		newVCenters := make([]vsphere.VCenter, len(p.VCenters))
-		for i, v := range p.VCenters {
-			newVCenters[i].Server = v.Server
-			newVCenters[i].Datacenters = v.Datacenters
+		// Redact deprecated credentials
+		newConfig.Platform.VSphere.DeprecatedUsername = ""
+		newConfig.Platform.VSphere.DeprecatedPassword = ""
+
+		// Redact VCenter credentials
+		for i := range newConfig.Platform.VSphere.VCenters {
+			newConfig.Platform.VSphere.VCenters[i].Username = ""
+			newConfig.Platform.VSphere.VCenters[i].Password = ""
+			newConfig.Platform.VSphere.VCenters[i].Port = 0
 		}
-		newVSpherePlatform := vsphere.Platform{
-			DeprecatedVCenter:          p.DeprecatedVCenter,
-			DeprecatedUsername:         "",
-			DeprecatedPassword:         "",
-			DeprecatedDatacenter:       p.DeprecatedDatacenter,
-			DeprecatedDefaultDatastore: p.DeprecatedDefaultDatastore,
-			DeprecatedFolder:           p.DeprecatedFolder,
-			DeprecatedCluster:          p.DeprecatedCluster,
-			DeprecatedResourcePool:     p.DeprecatedResourcePool,
-			ClusterOSImage:             p.ClusterOSImage,
-			DeprecatedAPIVIP:           p.DeprecatedAPIVIP,
-			APIVIPs:                    p.APIVIPs,
-			DeprecatedIngressVIP:       p.DeprecatedIngressVIP,
-			IngressVIPs:                p.IngressVIPs,
-			DefaultMachinePlatform:     p.DefaultMachinePlatform,
-			DeprecatedNetwork:          p.DeprecatedNetwork,
-			DiskType:                   p.DiskType,
-			VCenters:                   newVCenters,
-			FailureDomains:             p.FailureDomains,
-		}
-		newConfig.Platform.VSphere = &newVSpherePlatform
 
 	case newConfig.Platform.Nutanix != nil:
-		p := config.Nutanix
-		newPrismCentral := nutanix.PrismCentral{
-			Endpoint: p.PrismCentral.Endpoint,
-			Username: "",
-			Password: "",
+		// Redact PrismCentral credentials
+		newConfig.Platform.Nutanix.PrismCentral.Username = ""
+		newConfig.Platform.Nutanix.PrismCentral.Password = ""
+		// Endpoint is preserved (non-sensitive)
+
+	case newConfig.Platform.BareMetal != nil:
+		// Redact BMC credentials for all hosts
+		for _, host := range newConfig.Platform.BareMetal.Hosts {
+			if host != nil {
+				host.BMC.Username = ""
+				host.BMC.Password = ""
+			}
 		}
-		newNutanixPlatform := nutanix.Platform{
-			PrismCentral:           newPrismCentral,
-			PrismElements:          p.PrismElements,
-			ClusterOSImage:         p.ClusterOSImage,
-			PreloadedOSImageName:   p.PreloadedOSImageName,
-			DeprecatedAPIVIP:       p.DeprecatedAPIVIP,
-			APIVIPs:                p.APIVIPs,
-			DeprecatedIngressVIP:   p.DeprecatedIngressVIP,
-			IngressVIPs:            p.IngressVIPs,
-			DefaultMachinePlatform: p.DefaultMachinePlatform,
-			SubnetUUIDs:            p.SubnetUUIDs,
-			LoadBalancer:           p.LoadBalancer,
-			FailureDomains:         p.FailureDomains,
-			PrismAPICallTimeout:    p.PrismAPICallTimeout,
-		}
-		newConfig.Platform.Nutanix = &newNutanixPlatform
 	}
 
 	return yaml.Marshal(newConfig)

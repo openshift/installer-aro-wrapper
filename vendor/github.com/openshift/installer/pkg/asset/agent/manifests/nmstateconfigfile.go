@@ -69,8 +69,8 @@ func (n *NMStateConfigFile) Load(f asset.FileFetcher) (bool, error) {
 		return false, errors.Wrapf(err, "could not decode YAML for %s", nmStateConfigFilename)
 	}
 
-	staticNetworkConfig := make([]*models.HostStaticNetworkConfig, 0, len(yamlList))
-	nmStateConfigList := make([]*aiv1beta1.NMStateConfig, 0, len(yamlList))
+	var staticNetworkConfig []*models.HostStaticNetworkConfig
+	var nmStateConfigList []*aiv1beta1.NMStateConfig
 
 	for i := range yamlList {
 		nmStateConfig := yamlList[i]

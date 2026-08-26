@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	s "github.com/microsoft/kiota-abstractions-go/serialization"
-	stduritemplate "github.com/std-uritemplate/std-uritemplate/go"
+	stduritemplate "github.com/std-uritemplate/std-uritemplate/go/v2"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -28,12 +28,16 @@ type RequestInformation struct {
 	Headers *RequestHeaders
 	// The Query Parameters of the request.
 	// Deprecated: use QueryParametersAny instead
-	QueryParameters    map[string]string
+	QueryParameters map[string]string
+	// The Query Parameters of the request.
 	QueryParametersAny map[string]any
 	// The Request Body.
 	Content []byte
 	// The path parameters to use for the URL template when generating the URI.
+	// Deprecated: use PathParametersAny instead
 	PathParameters map[string]string
+	// The path parameters to use for the URL template when generating the URI.
+	PathParametersAny map[string]any
 	// The Url template for the current request.
 	UrlTemplate string
 	options     map[string]RequestOption
@@ -49,6 +53,7 @@ func NewRequestInformation() *RequestInformation {
 		QueryParametersAny: make(map[string]any),
 		options:            make(map[string]RequestOption),
 		PathParameters:     make(map[string]string),
+		PathParametersAny:  make(map[string]any),
 	}
 }
 
@@ -101,13 +106,16 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 
 		substitutions := make(map[string]any)
 		for key, value := range request.PathParameters {
-			substitutions[key] = value
+			substitutions[key] = request.sanitizeValue(value)
+		}
+		for key, value := range request.PathParametersAny {
+			substitutions[key] = request.normalizeParameters(reflect.ValueOf(value), request.sanitizeValue(value), false)
 		}
 		for key, value := range request.QueryParameters {
-			substitutions[key] = value
+			substitutions[key] = request.sanitizeValue(value)
 		}
 		for key, value := range request.QueryParametersAny {
-			substitutions[key] = value
+			substitutions[key] = request.sanitizeValue(value)
 		}
 		url, err := stduritemplate.Expand(request.UrlTemplate, substitutions)
 		if err != nil {
@@ -116,6 +124,76 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 		uri, err := u.Parse(url)
 		return uri, err
 	}
+}
+
+func castItem[T any, R interface{}](collection []T, mutator func(t T) R) []R {
+	if len(collection) > 0 {
+		cast := make([]R, len(collection))
+		for i, v := range collection {
+			cast[i] = mutator(v)
+		}
+		return cast
+	}
+	return nil
+}
+
+func (request *RequestInformation) sanitizeValue(value any) any {
+	if value == nil {
+		return nil
+	}
+
+	switch v := value.(type) {
+	case *time.Time:
+		return v.Format(time.RFC3339)
+	case time.Time:
+		return v.Format(time.RFC3339)
+	case []*time.Time:
+		return castItem(v, func(t *time.Time) string {
+			return t.Format(time.RFC3339)
+		})
+	case []time.Time:
+		return castItem(v, func(t time.Time) string {
+			return t.Format(time.RFC3339)
+		})
+	case *s.ISODuration:
+		return v.String()
+	case s.ISODuration:
+		return v.String()
+	case []*s.ISODuration:
+		return castItem(v, func(v *s.ISODuration) string {
+			return v.String()
+		})
+	case []s.ISODuration:
+		return castItem(v, func(v s.ISODuration) string {
+			return v.String()
+		})
+	case *s.TimeOnly:
+		return v.String()
+	case s.TimeOnly:
+		return v.String()
+	case []*s.TimeOnly:
+		return castItem(v, func(v *s.TimeOnly) string {
+			return v.String()
+		})
+	case []s.TimeOnly:
+		return castItem(v, func(v s.TimeOnly) string {
+			return v.String()
+		})
+	case *s.DateOnly:
+		return v.String()
+	case s.DateOnly:
+		return v.String()
+	case []*s.DateOnly:
+		return castItem(v, func(v *s.DateOnly) string {
+			return v.String()
+		})
+	case []s.DateOnly:
+		return castItem(v, func(v s.DateOnly) string {
+			return v.String()
+		})
+	}
+
+	return value
 }
 
 // SetUri updates the URI for the request from a raw URL.
@@ -160,7 +238,7 @@ func (request *RequestInformation) GetRequestOptions() []RequestOption {
 }
 
 const contentTypeHeader = "Content-Type"
-const binaryContentType = "application/octet-steam"
+const binaryContentType = "application/octet-stream"
 
 // SetStreamContent sets the request body to a binary stream.
 // Deprecated: Use SetStreamContentAndContentType instead.
@@ -482,12 +560,13 @@ func (request *RequestInformation) AddQueryParameters(source any) {
 		if tagValue != "" {
 			fieldName = tagValue
 		}
-		value := fieldValue.Interface()
-		if value == nil {
+		value := request.sanitizeValue(fieldValue.Interface())
+		valueOfValue := reflect.ValueOf(value)
+		if valueOfValue.IsNil() {
 			continue
 		}
 		str, ok := value.(*string)
-		if ok && str != nil && *str != "" {
+		if ok && str != nil {
 			request.QueryParameters[fieldName] = *str
 		}
 		bl, ok := value.(*bool)
@@ -509,9 +588,49 @@ func (request *RequestInformation) AddQueryParameters(source any) {
 			}
 			request.QueryParametersAny[fieldName] = tmp
 		}
-		arr, ok := value.([]any)
-		if ok && len(arr) > 0 {
+		if arr, ok := value.([]any); ok && len(arr) > 0 {
 			request.QueryParametersAny[fieldName] = arr
 		}
+		normalizedValue := request.normalizeParameters(valueOfValue, value, true)
+		if normalizedValue != nil {
+			request.QueryParametersAny[fieldName] = normalizedValue
+		}
 	}
+}
+
+// Normalize different types to values that can be rendered in an URL:
+// enum -> string (name)
+// []enum -> []string (containing names)
+// []non_interface -> []any (like []int64 -> []any)
+func (request *RequestInformation) normalizeParameters(valueOfValue reflect.Value, value any, returnNilIfNotNormalizable bool) any {
+	if valueOfValue.Kind() == reflect.Slice && valueOfValue.Len() > 0 {
+		//type assertions to "enums" don't work if you don't know the enum type in advance, we need to use reflection
+		enumArr := valueOfValue.Slice(0, valueOfValue.Len())
+		if _, ok := enumArr.Index(0).Interface().(kiotaEnum); ok {
+			// testing the first value is an enum to avoid iterating over the whole array if it's not
+			strRepresentations := make([]string, valueOfValue.Len())
+			for i := range strRepresentations {
+				strRepresentations[i] = enumArr.Index(i).Interface().(kiotaEnum).String()
+			}
+			return strRepresentations
+		} else {
+			anySlice := make([]any, valueOfValue.Len())
+			for i := range anySlice {
+				anySlice[i] = enumArr.Index(i).Interface()
+			}
+			return anySlice
+		}
+	} else if enum, ok := value.(kiotaEnum); ok {
+		return enum.String()
+	}
+
+	if returnNilIfNotNormalizable {
+		return nil
+	} else {
+		return value
+	}
+}
+
+type kiotaEnum interface {
+	String() string
 }

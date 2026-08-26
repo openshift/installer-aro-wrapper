@@ -2,14 +2,93 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.9.2](https://github.com/microsoft/kiota-abstractions-go/compare/v1.9.1...v1.9.2) (2025-04-02)
 
-## [Unreleased]
+
+### Bug Fixes
+
+* drop dependency on common-go ([#199](https://github.com/microsoft/kiota-abstractions-go/issues/199)) ([5702488](https://github.com/microsoft/kiota-abstractions-go/commit/57024882f125ff719a2155293d5e28716f2ba9db))
+
+## [1.9.1](https://github.com/microsoft/kiota-abstractions-go/compare/v1.9.0...v1.9.1) (2025-03-24)
+
+
+### Bug Fixes
+
+* upgrades common go dependency to solve triming issues ([5769aa7](https://github.com/microsoft/kiota-abstractions-go/commit/5769aa7c12ddcd01862ded353ffe4b966da25b55))
+* upgrades common go dependency to solve triming issues ([73349ca](https://github.com/microsoft/kiota-abstractions-go/commit/73349ca6ebe5122fad13eb85fd957490ea8cfeea))
+
+## [1.9.0](https://github.com/microsoft/kiota-abstractions-go/compare/v1.8.1...v1.9.0) (2025-03-13)
+
+
+### Features
+
+* upgrades required go version from go1.18 to go 1.22 ([526145f](https://github.com/microsoft/kiota-abstractions-go/commit/526145f3f219287feffe814d2f3efb2d9b7e233d))
+
+## [1.8.1] - 2024-07-09
+
+### Changed
+
+- Fixed outdated reference to std uri template.
+
+## [1.8.0] - 2024-07-09
+
+### Changed
+
+-  Removed native support for date in `std-uritemplate`  [#1.8.0](https://github.com/microsoft/kiota-abstractions-go/issues/183)
 
 ### Added
 
+## [1.7.0] - 2024-07-09
+
+-  Added accessors for headers and status to `ApiErrorable`  [#177](https://github.com/microsoft/kiota-abstractions-go/issues/177)
+
 ### Changed
+
+## [1.6.1] - 2024-07-09
+
+- Corrected two instances of `octet-steam` to `octet-stream` [#173](https://github.com/microsoft/kiota-abstractions-go/pull/173), [#174](https://github.com/microsoft/kiota-abstractions-go/pull/174)
+
+## [1.6.0] - 2024-02-29
+
+### Added
+
+- Added support for untyped nodes. (https://github.com/microsoft/kiota/pull/4095)
+
+## [1.5.6] - 2024-01-18
+
+### Changed
+
+- The input contains http or https which function will return an error. [#130](https://github.com/microsoft/kiota-abstractions-go/issues/130)
+
+## [1.5.5] - 2024-01-17
+
+### Changed
+
+- Fixed a bug where reseting properties to null would be impossible with the in memory backing store. [microsoftgraph/msgraph-sdk-go#643](https://github.com/microsoftgraph/msgraph-sdk-go/issues/643)
+
+## [1.5.4] - 2024-01-16
+
+### Changed
+
+- Fix bug where empty string query parameters are added to the request. [#133](https://github.com/microsoft/kiota-abstractions-go/issues/133)
+
+## [1.5.3] - 2023-11-24
+
+### Added
+
+- Added support for multi valued query and path parameters of type other than string. [#124](https://github.com/microsoft/kiota-abstractions-go/pull/124)
+
+## [1.5.2] - 2023-11-22
+
+### Added
+
+- Added ApiErrorable interface. [microsoft/kiota-http-go#110](https://github.com/microsoft/kiota-http-go/issues/110)
+
+## [1.5.1] - 2023-11-15
+
+### Added
+
+- Added support for query an path parameters of enum type. [microsoft/kiota#3693](https://github.com/microsoft/kiota/issues/3693)
 
 ## [1.5.0] - 2023-11-08
 

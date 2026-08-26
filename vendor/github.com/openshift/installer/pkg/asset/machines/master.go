@@ -268,6 +268,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 			masterUserDataSecretName,
 			installConfig.Config.Platform.AWS.UserTags,
 			awstypes.IsPublicOnlySubnetsEnabled(),
+			installConfig.Config,
 		)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
@@ -618,7 +619,7 @@ func (m *Master) Generate(ctx context.Context, dependencies asset.Parents) error
 		machineConfigs = append(machineConfigs, ignIPv6)
 	}
 
-	if installConfig.Config.EnabledFeatureGates().Enabled(features.FeatureGateMultiDiskSetup) {
+	if installConfig.Config.Enabled(features.FeatureGateMultiDiskSetup) {
 		for i, diskSetup := range installConfig.Config.ControlPlane.DiskSetup {
 			var dataDisk any
 			var diskName string

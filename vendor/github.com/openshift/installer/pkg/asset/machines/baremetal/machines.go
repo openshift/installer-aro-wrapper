@@ -13,6 +13,7 @@ import (
 	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/baremetal"
+	utils "github.com/openshift/installer/pkg/utils"
 )
 
 // Machines returns a list of machines for a machinepool.
@@ -56,6 +57,7 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 				// we don't need to set Versions, because we control those via cluster operators.
 			},
 		}
+		utils.SetMachineOSStreamLabels(&machine, config)
 		machines = append(machines, machine)
 	}
 
