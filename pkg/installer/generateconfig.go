@@ -169,7 +169,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// OpenShiftClusterVersions?
 
 	// 4.20 onwards, we default to Gen2 images
-	imageSKU := "421-v2" // Gen2 SKU (default)
+	imageSKU := "aro_422-v2" // Gen2 SKU (default)
 
 	// If any SKU doesn't support V2, use Gen1 images
 	masterSupportsV2, err := determineV2SkuSupport(masterSKU)
@@ -181,14 +181,14 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		return nil, nil, errors.WithStack(err)
 	}
 	if !masterSupportsV2 || !workerSupportsV2 {
-		imageSKU = "aro_421"
+		imageSKU = "aro_422"
 	}
 
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		SKU:       imageSKU,
-		Version:   "9.6.20251023", // "9.yy.20205zzz"
+		Version:   "9.8.20260428", // "9.yy.20205zzz"
 		Plan:      azuretypes.ImageNoPurchasePlan,
 	}
 
