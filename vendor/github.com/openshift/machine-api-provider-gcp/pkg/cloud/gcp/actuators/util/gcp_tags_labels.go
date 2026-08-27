@@ -110,12 +110,8 @@ func mergeLabels(ocpLabels, providerSpecLabels, infraLabels map[string]string) m
 
 // GetLabelsList returns the merged list of user-defined labels in Infrastructure.Status
 // and GCPMachineProviderSpec to apply on the resources.
-func GetLabelsList(userLabelsAllowed bool, client controllerclient.Client, machineClusterID string, providerSpecLabels map[string]string) (map[string]string, error) {
+func GetLabelsList(client controllerclient.Client, machineClusterID string, providerSpecLabels map[string]string) (map[string]string, error) {
 	ocpLabels := getOCPLabels(machineClusterID)
-
-	if !userLabelsAllowed {
-		return mergeLabels(ocpLabels, providerSpecLabels, nil), nil
-	}
 
 	infra, err := GetInfrastructure(client)
 	if err != nil {

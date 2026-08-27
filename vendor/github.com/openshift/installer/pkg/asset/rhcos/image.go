@@ -90,7 +90,7 @@ func osImage(ctx context.Context, ic *installconfig.InstallConfig, machinePool *
 	nodeArch := machinePool.Architecture
 	archName := arch.RpmArch(string(nodeArch))
 
-	st, err := rhcos.FetchCoreOSBuild(ctx)
+	st, err := rhcos.FetchCoreOSBuild(ctx, ic.Config.OSImageStream)
 	if err != nil {
 		return "", err
 	}
@@ -103,7 +103,7 @@ func osImage(ctx context.Context, ic *installconfig.InstallConfig, machinePool *
 	switch platform.Name() {
 	case aws.Name:
 		region := platform.AWS.Region
-		if !rhcos.AMIRegions(nodeArch).Has(region) {
+		if !rhcos.AMIRegions(nodeArch, ic.Config.OSImageStream).Has(region) {
 			const globalResourceRegion = "us-east-1"
 			logrus.Debugf("No AMI found in %s. Using AMI from %s.", region, globalResourceRegion)
 			region = globalResourceRegion
@@ -170,7 +170,7 @@ func osImage(ctx context.Context, ic *installconfig.InstallConfig, machinePool *
 		return azi, nil
 	case baremetal.Name:
 		// Check for image URL override
-		if oi := platform.BareMetal.ClusterOSImage; oi != "" {
+		if oi := platform.BareMetal.DeprecatedClusterOSImage; oi != "" {
 			return oi, nil
 		}
 		// Use image from release payload

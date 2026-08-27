@@ -81,6 +81,10 @@ type agentClusterInstallOnPremPlatform struct {
 	// ProvisioningDHCPRange is used to provide DHCP services to hosts
 	// for provisioning.
 	ProvisioningDHCPRange string `json:"provisioningDHCPRange,omitempty"`
+
+	// ProvisioningNetworkGateway is the IP address of the default gateway
+	// for the provisioning network, provided to hosts via DHCP.
+	ProvisioningNetworkGateway string `json:"provisioningNetworkGateway,omitempty"`
 }
 
 type agentClusterInstallOnPremExternalPlatform struct {
@@ -294,6 +298,7 @@ func (a *AgentClusterInstall) Generate(_ context.Context, dependencies asset.Par
 					baremetalPlatform.ProvisioningNetworkInterface = installConfig.Config.Platform.BareMetal.ProvisioningNetworkInterface
 					baremetalPlatform.ProvisioningNetworkCIDR = installConfig.Config.Platform.BareMetal.ProvisioningNetworkCIDR
 					baremetalPlatform.ProvisioningDHCPRange = installConfig.Config.Platform.BareMetal.ProvisioningDHCPRange
+					baremetalPlatform.ProvisioningNetworkGateway = installConfig.Config.Platform.BareMetal.ProvisioningNetworkGateway
 				}
 			}
 			if bmIcOverridden {

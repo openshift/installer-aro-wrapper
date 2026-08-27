@@ -178,12 +178,15 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 			Subnets:  subnets,
 			Tags:     tags,
 			PublicIP: publicOnlySubnets,
+			IPFamily: ic.AWS.IPFamily,
 			Ignition: &v1beta2.Ignition{
 				Version: "3.2",
 				// master machines should get ignition from the MCS on the bootstrap node
 				StorageType: v1beta2.IgnitionStorageTypeOptionUnencryptedUserData,
 			},
-		})
+			Config: installConfig.Config,
+		},
+		)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
@@ -212,10 +215,13 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 			Subnets:        bootstrapSubnets,
 			Pool:           &pool,
 			Tags:           tags,
+			IPFamily:       ic.AWS.IPFamily,
 			PublicIP:       publicOnlySubnets || (installConfig.Config.Publish == types.ExternalPublishingStrategy),
 			PublicIpv4Pool: ic.Platform.AWS.PublicIpv4Pool,
 			Ignition:       ignition,
-		})
+			Config:         installConfig.Config,
+		},
+		)
 		if err != nil {
 			return fmt.Errorf("failed to create bootstrap machine object: %w", err)
 		}
@@ -310,6 +316,7 @@ func (c *ClusterAPI) Generate(ctx context.Context, dependencies asset.Parents) e
 				Pool:           &pool,
 				StorageSuffix:  session.Environment.StorageEndpointSuffix,
 				RHCOS:          rhcosImage.ControlPlane,
+				Config:         installConfig.Config,
 			},
 		)
 		if err != nil {

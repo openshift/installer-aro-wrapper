@@ -16,6 +16,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 	"github.com/coreos/stream-metadata-go/arch"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -65,6 +67,7 @@ type Provider struct {
 	clientOptions         *arm.ClientOptions
 	computeClientOptions  *arm.ClientOptions
 	publicLBIP            string
+	publicLBIPv6          string
 }
 
 var _ clusterapi.InfraReadyProvider = (*Provider)(nil)
@@ -104,8 +107,8 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	installConfig := in.InstallConfig.Config
 	platform := installConfig.Platform.Azure
 	subscriptionID := session.Credentials.SubscriptionID
-	cloudConfiguration := session.CloudConfig
-	tokenCredential := session.TokenCreds
+	p.CloudConfiguration = session.CloudConfig
+	p.TokenCredential = session.TokenCreds
 	p.ResourceGroupName = platform.ClusterResourceGroupName(in.InfraID)
 
 	userTags := platform.UserTags
@@ -118,7 +121,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 
 	opts := &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
-			Cloud: cloudConfiguration,
+			Cloud: p.CloudConfiguration,
 		},
 	}
 	computeClientOpts := opts
@@ -126,7 +129,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		opts.APIVersion = stackAPIVersion
 		computeClientOpts = &arm.ClientOptions{
 			ClientOptions: policy.ClientOptions{
-				Cloud:      cloudConfiguration,
+				Cloud:      p.CloudConfiguration,
 				APIVersion: stackComputeAPIVersion,
 			},
 		}
@@ -139,7 +142,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		region:            platform.Region,
 		resourceGroupName: p.ResourceGroupName,
 		subscriptionID:    subscriptionID,
-		tokenCredential:   tokenCredential,
+		tokenCredential:   p.TokenCredential,
 		infraID:           in.InfraID,
 		clientOpts:        p.clientOptions,
 		tags:              p.Tags,
@@ -153,7 +156,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 
 	// Creating a dummy nsg for existing vnets installation to appease the ingress operator.
 	if in.InstallConfig.Config.Azure.VirtualNetwork != "" {
-		networkClientFactory, err := armnetwork.NewClientFactory(subscriptionID, tokenCredential, p.clientOptions)
+		networkClientFactory, err := armnetwork.NewClientFactory(subscriptionID, p.TokenCredential, p.clientOptions)
 		if err != nil {
 			return fmt.Errorf("failed to create azure network factory: %w", err)
 		}
@@ -190,7 +193,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	containerName := "vhd"
 	blobName := fmt.Sprintf("rhcos%s.vhd", randomString(5))
 
-	stream, err := rhcos.FetchCoreOSBuild(ctx)
+	stream, err := rhcos.FetchCoreOSBuild(ctx, in.InstallConfig.Config.OSImageStream)
 	if err != nil {
 		return fmt.Errorf("failed to get rhcos stream: %w", err)
 	}
@@ -229,20 +232,26 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	var storageClientFactory *armstorage.ClientFactory
 	var storageAccountKeys []armstorage.AccountKey
 
+	sharedKey := true
+	if in.InstallConfig.Config.Azure.AllowSharedKeyAccess != nil {
+		sharedKey = *in.InstallConfig.Config.Azure.AllowSharedKeyAccess
+	}
+
 	var createStorageAccountOutput *CreateStorageAccountOutput
 	if platform.CloudName != aztypes.StackCloud {
 		// Create storage account
 		createStorageAccountOutput, err = CreateStorageAccount(ctx, &CreateStorageAccountInput{
-			SubscriptionID:     subscriptionID,
-			ResourceGroupName:  resourceGroupName,
-			StorageAccountName: storageAccountName,
-			CloudName:          platform.CloudName,
-			Region:             platform.Region,
-			AuthType:           session.AuthType,
-			Tags:               tags,
-			CustomerManagedKey: platform.CustomerManagedKey,
-			TokenCredential:    tokenCredential,
-			ClientOpts:         p.clientOptions,
+			SubscriptionID:       subscriptionID,
+			ResourceGroupName:    resourceGroupName,
+			StorageAccountName:   storageAccountName,
+			CloudName:            platform.CloudName,
+			Region:               platform.Region,
+			AuthType:             session.AuthType,
+			AllowSharedKeyAccess: sharedKey,
+			Tags:                 tags,
+			CustomerManagedKey:   platform.CustomerManagedKey,
+			TokenCredential:      p.TokenCredential,
+			ClientOpts:           p.clientOptions,
 		})
 		if err != nil {
 			return err
@@ -275,13 +284,16 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		logrus.Debugf("BlobContainer.ID=%s", *blobContainer.ID)
 
 		_, err = CreatePageBlob(ctx, &CreatePageBlobInput{
-			StorageURL:         storageURL,
-			BlobURL:            blobURL,
-			ImageURL:           imageURL,
-			ImageLength:        imageLength,
-			StorageAccountName: storageAccountName,
-			StorageAccountKeys: storageAccountKeys,
-			ClientOpts:         p.clientOptions,
+			StorageURL:           storageURL,
+			BlobURL:              blobURL,
+			ImageURL:             imageURL,
+			ImageLength:          imageLength,
+			CloudEnvironment:     in.InstallConfig.Azure.CloudName,
+			AllowSharedKeyAccess: sharedKey,
+			TokenCredential:      session.TokenCreds,
+			StorageAccountName:   storageAccountName,
+			StorageAccountKeys:   storageAccountKeys,
+			ClientOpts:           p.clientOptions,
 		})
 		if err != nil {
 			return err
@@ -294,7 +306,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 			GalleryName:       galleryName,
 			Region:            platform.Region,
 			Tags:              tags,
-			TokenCredential:   tokenCredential,
+			TokenCredential:   p.TokenCredential,
 			ClientOpts:        p.clientOptions,
 		})
 		if err != nil {
@@ -313,7 +325,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 			Offer:                "rhcos",
 			SKU:                  "basic",
 			Tags:                 tags,
-			TokenCredential:      tokenCredential,
+			TokenCredential:      p.TokenCredential,
 			ClientOpts:           p.clientOptions,
 			Architecture:         architecture,
 			OSType:               armcompute.OperatingSystemTypesLinux,
@@ -339,7 +351,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 			Offer:                "rhcos-gen2",
 			SKU:                  "gen2",
 			Tags:                 tags,
-			TokenCredential:      tokenCredential,
+			TokenCredential:      p.TokenCredential,
 			ClientOpts:           p.clientOptions,
 			Architecture:         architecture,
 			OSType:               armcompute.OperatingSystemTypesLinux,
@@ -385,7 +397,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	}
 
 	if installConfig.Azure.CloudName == aztypes.StackCloud {
-		client, err := armcompute.NewImagesClient(subscriptionID, tokenCredential, p.computeClientOptions)
+		client, err := armcompute.NewImagesClient(subscriptionID, p.TokenCredential, p.computeClientOptions)
 		if err != nil {
 			return fmt.Errorf("error creating stack managed images client: %w", err)
 		}
@@ -414,16 +426,16 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		region:                 platform.Region,
 		resourceGroup:          resourceGroupName,
 		subscriptionID:         session.Credentials.SubscriptionID,
-		frontendIPConfigName:   "public-lb-ip-v4",
+		frontendIPConfigName:   "public-lb-ip",
 		backendAddressPoolName: fmt.Sprintf("%s-internal", in.InfraID),
 		idPrefix: fmt.Sprintf("subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/loadBalancers",
 			session.Credentials.SubscriptionID,
 			resourceGroupName,
 		),
-		lbClient: lbClient,
-		tags:     p.Tags,
+		lbClient:    lbClient,
+		tags:        p.Tags,
+		isDualstack: in.InstallConfig.Config.Azure.IPFamily.DualStackEnabled(),
 	}
-
 	intLoadBalancer, err := updateInternalLoadBalancer(ctx, lbInput)
 	if err != nil {
 		return fmt.Errorf("failed to update internal load balancer: %w", err)
@@ -433,6 +445,7 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 	var lbBaps []*armnetwork.BackendAddressPool
 	var extLBFQDN string
 	if in.InstallConfig.Config.PublicAPI() {
+		var publicIPv6 *armnetwork.PublicIPAddress
 		publicIP, err := createPublicIP(ctx, &pipInput{
 			name:          fmt.Sprintf("%s-pip-v4", in.InfraID),
 			infraID:       in.InfraID,
@@ -440,23 +453,39 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 			resourceGroup: resourceGroupName,
 			pipClient:     networkClientFactory.NewPublicIPAddressesClient(),
 			tags:          p.Tags,
+			ipversion:     armnetwork.IPVersionIPv4,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create public ip: %w", err)
 		}
 		logrus.Debugf("created public ip: %s", *publicIP.ID)
+		if in.InstallConfig.Config.Azure.IPFamily.DualStackEnabled() {
+			publicIPv6, err = createPublicIP(ctx, &pipInput{
+				name:          fmt.Sprintf("%s-pip-v6", in.InfraID),
+				infraID:       in.InfraID,
+				region:        in.InstallConfig.Config.Azure.Region,
+				resourceGroup: resourceGroupName,
+				pipClient:     networkClientFactory.NewPublicIPAddressesClient(),
+				tags:          p.Tags,
+				ipversion:     armnetwork.IPVersionIPv6,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create public ipv6: %w", err)
+			}
+			logrus.Debugf("created public ip v6: %s", *publicIPv6.ID)
+		}
 
 		lbInput.loadBalancerName = in.InfraID
 		lbInput.backendAddressPoolName = in.InfraID
 
 		var loadBalancer *armnetwork.LoadBalancer
 		if platform.OutboundType == aztypes.UserDefinedRoutingOutboundType {
-			loadBalancer, err = createAPILoadBalancer(ctx, publicIP, lbInput)
+			loadBalancer, err = createAPILoadBalancer(ctx, publicIP, publicIPv6, lbInput)
 			if err != nil {
 				return fmt.Errorf("failed to create API load balancer: %w", err)
 			}
 		} else {
-			loadBalancer, err = updateOutboundLoadBalancerToAPILoadBalancer(ctx, publicIP, lbInput)
+			loadBalancer, err = updateOutboundLoadBalancerToAPILoadBalancer(ctx, publicIP, publicIPv6, lbInput)
 			if err != nil {
 				return fmt.Errorf("failed to update external load balancer: %w", err)
 			}
@@ -466,6 +495,9 @@ func (p *Provider) InfraReady(ctx context.Context, in clusterapi.InfraReadyInput
 		lbBaps = loadBalancer.Properties.BackendAddressPools
 		extLBFQDN = *publicIP.Properties.DNSSettings.Fqdn
 		p.publicLBIP = *publicIP.Properties.IPAddress
+		if in.InstallConfig.Config.Azure.IPFamily.DualStackEnabled() {
+			p.publicLBIPv6 = *publicIPv6.Properties.IPAddress
+		}
 	}
 
 	if (in.InstallConfig.Config.Azure.OutboundType == aztypes.NATGatewayMultiZoneOutboundType ||
@@ -511,6 +543,24 @@ func (p *Provider) PostProvision(ctx context.Context, in clusterapi.PostProvisio
 		return fmt.Errorf("error retrieving Azure session: %w", err)
 	}
 	subscriptionID := ssn.Credentials.SubscriptionID
+
+	// Add IPv6 frontend IP to internal LB after CAPZ finishes machine reconciliation.
+	if in.InstallConfig.Config.Azure.IPFamily.DualStackEnabled() {
+		lbClient := p.NetworkClientFactory.NewLoadBalancersClient()
+		lbInput := &lbInput{
+			loadBalancerName: fmt.Sprintf("%s-internal", in.InfraID),
+			infraID:          in.InfraID,
+			region:           in.InstallConfig.Config.Azure.Region,
+			resourceGroup:    p.ResourceGroupName,
+			subscriptionID:   subscriptionID,
+			lbClient:         lbClient,
+			tags:             p.Tags,
+		}
+		if err := addIPv6InternalLBFrontend(ctx, lbInput); err != nil {
+			return fmt.Errorf("failed to add IPv6 frontend to internal load balancer: %w", err)
+		}
+		logrus.Debugf("added IPv6 frontend to internal load balancer")
+	}
 
 	if in.InstallConfig.Config.PublicAPI() {
 		vmClient, err := armcompute.NewVirtualMachinesClient(subscriptionID, ssn.TokenCreds, p.computeClientOptions)
@@ -577,6 +627,31 @@ func (p *Provider) PostProvision(ctx context.Context, in clusterapi.PostProvisio
 		})
 		if err != nil {
 			return fmt.Errorf("failed to associate inbound nat rule to interface: %w", err)
+		}
+
+		// For dual-stack, create IPv6 inbound rule for SSH access to bootstrap.
+		if in.InstallConfig.Config.Azure.IPFamily.DualStackEnabled() {
+			publicIPv6outbound, err := createPublicIP(ctx, &pipInput{
+				name:          fmt.Sprintf("%s-pip-v6-outbound-lb", in.InfraID),
+				infraID:       in.InfraID,
+				region:        in.InstallConfig.Config.Azure.Region,
+				resourceGroup: p.ResourceGroupName,
+				pipClient:     p.NetworkClientFactory.NewPublicIPAddressesClient(),
+				tags:          p.Tags,
+				ipversion:     armnetwork.IPVersionIPv6,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create public ipv6 for outbound ipv6 lb: %w", err)
+			}
+			logrus.Debugf("created public ipv6 for outbound ipv6 lb: %s", *publicIPv6outbound.ID)
+
+			// Update the outbound node IPv6 load balancer.
+			outboundLBName := fmt.Sprintf("%s-ipv6-outbound-node-lb", in.InfraID)
+			err = updateOutboundIPv6LoadBalancer(ctx, publicIPv6outbound, p.NetworkClientFactory.NewLoadBalancersClient(), p.ResourceGroupName, outboundLBName, in.InfraID)
+			if err != nil {
+				return fmt.Errorf("failed to set public ipv6 to outbound ipv6 lb: %w", err)
+			}
+			logrus.Debugf("updated outbound ipv6 lb %s with public ipv6: %s", outboundLBName, *publicIPv6outbound.ID)
 		}
 	}
 
@@ -756,25 +831,51 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 	}
 
 	sasURL := ""
+	now := time.Now().UTC().Add(-10 * time.Second)
+	expiry := now.Add(1 * time.Hour)
+	info := service.KeyInfo{
+		Start:  to.Ptr(now.UTC().Format(sas.TimeFormat)),
+		Expiry: to.Ptr(expiry.UTC().Format(sas.TimeFormat)),
+	}
+
+	serviceClient, err := service.NewClient(fmt.Sprintf("https://%s.blob.%s/", p.StorageAccountName, session.Environment.StorageEndpointSuffix),
+		session.TokenCreds,
+		&service.ClientOptions{
+			ClientOptions: azcore.ClientOptions{
+				Cloud: p.CloudConfiguration,
+			},
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create service client: %w", err)
+	}
+
+	sharedKey := true
+	if in.InstallConfig.Config.Azure.AllowSharedKeyAccess != nil {
+		sharedKey = *in.InstallConfig.Config.Azure.AllowSharedKeyAccess
+	}
 
 	if in.InstallConfig.Config.Azure.CustomerManagedKey == nil {
 		logrus.Debugf("Creating a Block Blob for ignition shim")
 		sasURL, err = CreateBlockBlob(ctx, &CreateBlockBlobInput{
-			StorageURL:         p.StorageURL,
-			BlobURL:            blobURL,
-			StorageAccountName: p.StorageAccountName,
-			StorageAccountKeys: p.StorageAccountKeys,
-			ClientOpts:         p.clientOptions,
-			BootstrapIgnData:   ignOutput.UpdatedBootstrapIgn,
-			CloudEnvironment:   in.InstallConfig.Azure.CloudName,
-			ContainerName:      ignitionContainerName,
-			BlobName:           blobName,
-			StorageSuffix:      session.Environment.StorageEndpointSuffix,
-			ARMEndpoint:        in.InstallConfig.Azure.ARMEndpoint,
-			Session:            session,
-			Region:             in.InstallConfig.Config.Azure.Region,
-			Tags:               p.Tags,
-			ResourceGroupName:  p.ResourceGroupName,
+			StorageURL:           p.StorageURL,
+			BlobURL:              blobURL,
+			AuthType:             session.AuthType,
+			TokenCredential:      session.TokenCreds,
+			StorageAccountName:   p.StorageAccountName,
+			StorageAccountKeys:   p.StorageAccountKeys,
+			AllowSharedKeyAccess: sharedKey,
+			ClientOpts:           p.clientOptions,
+			BootstrapIgnData:     ignOutput.UpdatedBootstrapIgn,
+			CloudEnvironment:     in.InstallConfig.Azure.CloudName,
+			ContainerName:        ignitionContainerName,
+			BlobName:             blobName,
+			StorageSuffix:        session.Environment.StorageEndpointSuffix,
+			ARMEndpoint:          in.InstallConfig.Azure.ARMEndpoint,
+			Session:              session,
+			Region:               in.InstallConfig.Config.Azure.Region,
+			Tags:                 p.Tags,
+			ResourceGroupName:    p.ResourceGroupName,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create BlockBlob for ignition shim: %w", err)
@@ -787,18 +888,39 @@ func (p Provider) Ignition(ctx context.Context, in clusterapi.IgnitionInput) ([]
 		}
 
 		sasURL, err = CreatePageBlob(ctx, &CreatePageBlobInput{
-			StorageURL:         p.StorageURL,
-			BlobURL:            blobURL,
-			ImageURL:           "",
-			StorageAccountName: p.StorageAccountName,
-			BootstrapIgnData:   ignOutput.UpdatedBootstrapIgn,
-			ImageLength:        lengthBootstrapFile,
-			StorageAccountKeys: p.StorageAccountKeys,
-			ClientOpts:         p.clientOptions,
+			StorageURL:           p.StorageURL,
+			BlobURL:              blobURL,
+			ImageURL:             "",
+			CloudEnvironment:     in.InstallConfig.Azure.CloudName,
+			AllowSharedKeyAccess: sharedKey,
+			TokenCredential:      session.TokenCreds,
+			StorageAccountName:   p.StorageAccountName,
+			BootstrapIgnData:     ignOutput.UpdatedBootstrapIgn,
+			ImageLength:          lengthBootstrapFile,
+			StorageAccountKeys:   p.StorageAccountKeys,
+			ClientOpts:           p.clientOptions,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create PageBlob for ignition shim: %w", err)
 		}
+	}
+	if sasURL == "" && !sharedKey {
+		udc, err := serviceClient.GetUserDelegationCredential(context.Background(), info, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create user delegation credentials: %w", err)
+		}
+		sasQueryParams, err := sas.BlobSignatureValues{
+			Protocol:      sas.ProtocolHTTPS,
+			StartTime:     time.Now().UTC().Add(time.Second * -10),
+			ExpiryTime:    time.Now().UTC().Add(1 * time.Hour),
+			Permissions:   to.Ptr(sas.ContainerPermissions{Read: true}).String(),
+			ContainerName: "ignition",
+			BlobName:      blobName,
+		}.SignWithUserDelegation(udc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to sign blob %s: %w", blobURL, err)
+		}
+		sasURL = fmt.Sprintf("https://%s.blob.%s/ignition/%s?%s", p.StorageAccountName, session.Environment.StorageEndpointSuffix, blobName, sasQueryParams.Encode())
 	}
 	ignShim, err := bootstrap.GenerateIgnitionShimWithCertBundleAndProxy(sasURL, in.InstallConfig.Config.AdditionalTrustBundle, in.InstallConfig.Config.Proxy)
 	if err != nil {

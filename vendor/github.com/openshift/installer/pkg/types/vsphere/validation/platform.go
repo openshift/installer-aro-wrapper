@@ -160,11 +160,10 @@ func validateFailureDomains(p *vsphere.Platform, platformFldPath *field.Path, fl
 	tagUrnPattern := regexp.MustCompile(`^(urn):(vmomi):(InventoryServiceTag):([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}):([^:]+)$`)
 	allErrs := field.ErrorList{}
 	topologyFld := fldPath.Child("topology")
-	var associatedVCenter *vsphere.VCenter
-
 	zoneNames := make(map[string]string)
 
 	for index, failureDomain := range p.FailureDomains {
+		var associatedVCenter *vsphere.VCenter
 		if regionName, ok := zoneNames[failureDomain.Zone]; !ok {
 			zoneNames[failureDomain.Zone] = failureDomain.Region
 		} else if regionName == failureDomain.Region {
@@ -187,7 +186,7 @@ func validateFailureDomains(p *vsphere.Platform, platformFldPath *field.Path, fl
 		}
 
 		if failureDomain.ZoneType == vsphere.HostGroupFailureDomain && failureDomain.Topology.HostGroup == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Child("hostGroup"), "must not be empty if zoneType is HostGroup"))
+			allErrs = append(allErrs, field.Required(topologyFld.Child("hostGroup"), "must not be empty if zoneType is HostGroup"))
 		}
 
 		if failureDomain.RegionType == vsphere.ComputeClusterFailureDomain {
@@ -232,6 +231,8 @@ func validateFailureDomains(p *vsphere.Platform, platformFldPath *field.Path, fl
 
 		if len(failureDomain.Topology.Datacenter) == 0 {
 			allErrs = append(allErrs, field.Required(topologyFld.Child("datacenter"), "must specify a datacenter"))
+		} else if associatedVCenter != nil && len(associatedVCenter.Datacenters) > 0 && !slices.Contains(associatedVCenter.Datacenters, failureDomain.Topology.Datacenter) {
+			allErrs = append(allErrs, field.Invalid(topologyFld.Child("datacenter"), failureDomain.Topology.Datacenter, fmt.Sprintf("datacenter must be defined in vCenter %s datacenters list", failureDomain.Server)))
 		}
 		if len(failureDomain.Topology.Datastore) == 0 {
 			allErrs = append(allErrs, field.Required(topologyFld.Child("datastore"), "must specify a datastore"))
