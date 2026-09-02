@@ -12,7 +12,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/openshift/installer-aro-wrapper/pkg/api"
+	"github.com/Azure/ARO-RP/pkg/api"
+
 	"github.com/openshift/installer-aro-wrapper/pkg/proxy"
 )
 
