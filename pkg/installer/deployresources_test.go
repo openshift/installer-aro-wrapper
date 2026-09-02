@@ -74,36 +74,50 @@ func TestZones(t *testing.T) {
 
 func Test_convertControlPlaneZonesToArmParameter(t *testing.T) {
 	tests := []struct {
-		name string
-		in   []string
-		want []string
+		name        string
+		in          []string
+		wantZones   []string
+		wantIsZonal bool
 	}{
 		{
-			name: "empty slice is converted to slice with empty string",
-			in:   []string{},
-			want: []string{""},
+			name:        "empty slice is converted to slice with empty string",
+			in:          []string{},
+			wantZones:   []string{""},
+			wantIsZonal: false,
 		},
 		{
-			name: "nil slice is returned as-is",
-			in:   nil,
-			want: []string{""},
+			name:        "nil slice is returned as slice with empty string",
+			in:          nil,
+			wantZones:   []string{""},
+			wantIsZonal: false,
 		},
 		{
-			name: "non-empty zone slice is returned unchanged",
-			in:   []string{"1", "2", "3"},
-			want: []string{"1", "2", "3"},
+			name:        "non-empty zone slice is returned unchanged",
+			in:          []string{"1", "2", "3"},
+			wantZones:   []string{"1", "2", "3"},
+			wantIsZonal: true,
 		},
 		{
-			name: "slice with empty string is returned unchanged",
-			in:   []string{""},
-			want: []string{""},
+			name:        "single-entry zone slice is returned in triplicate",
+			in:          []string{"1"},
+			wantZones:   []string{"1", "1", "1"},
+			wantIsZonal: true,
+		},
+		{
+			name:        "slice with empty string is returned unchanged",
+			in:          []string{""},
+			wantZones:   []string{""},
+			wantIsZonal: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := convertControlPlaneZonesToArmParameter(tt.in)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("convertControlPlaneZonesToArmParameter() = %v, want %v", got, tt.want)
+			got, gotIsZonal := convertControlPlaneZonesToArmParameter(tt.in)
+			if !reflect.DeepEqual(got, tt.wantZones) {
+				t.Errorf("convertControlPlaneZonesToArmParameter() = %v, want %v", got, tt.wantZones)
+			}
+			if !reflect.DeepEqual(gotIsZonal, tt.wantIsZonal) {
+				t.Errorf("convertControlPlaneZonesToArmParameter() isZonal = %v, want %v", gotIsZonal, tt.wantIsZonal)
 			}
 		})
 	}
