@@ -128,7 +128,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	// Take the zones from the OpenShiftClusterDocument,
 	// the RP will have already validated them
-	machinePoolZones := []string{}
+	var machinePoolZones []string
 	if len(m.oc.Properties.Zones) == 0 {
 		machinePoolZones = []string{""}
 	} else {
