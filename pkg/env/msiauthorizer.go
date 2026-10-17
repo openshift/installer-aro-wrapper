@@ -12,6 +12,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/go-autorest/autorest"
+
+	"github.com/openshift/installer-aro-wrapper/pkg/util/instancemetadata"
 )
 
 type MSIContext string
@@ -22,10 +24,27 @@ const (
 )
 
 func (c *prod) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autorest.Authorizer, error) {
+	tokenCredential, err := c.newMSITokenCredential(msiContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return azidext.NewTokenCredentialAdapter(tokenCredential, scopes), nil
+}
+
+func (c *prod) newMSITokenCredential(msiContext MSIContext) (azcore.TokenCredential, error) {
 	var tokenCredential azcore.TokenCredential
 	var err error
 
-	if !c.IsLocalDevelopmentMode() {
+	if !c.IsLocalDevelopmentMode() && instancemetadata.WorkloadIdentityEnabled() {
+		for _, key := range []string{"AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_FEDERATED_TOKEN_FILE"} {
+			if os.Getenv(key) == "" {
+				return nil, fmt.Errorf("environment variable %q must be set and non-empty (workload identity mode)", key)
+			}
+		}
+		options := c.Environment().WorkloadIdentityCredentialOptions()
+		tokenCredential, err = azidentity.NewWorkloadIdentityCredential(options)
+	} else if !c.IsLocalDevelopmentMode() {
 		// because Aks has multiple MSI's attached to the VMs, we have to set this
 		// ClientID so that the MSI authorizer knows which MSI to use (agentpool)
 		options := c.Environment().ManagedIdentityCredentialOptions()
@@ -50,8 +69,8 @@ func (c *prod) NewMSIAuthorizer(msiContext MSIContext, scopes ...string) (autore
 			options)
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating installer hosting credential: %w", err)
 	}
 
-	return azidext.NewTokenCredentialAdapter(tokenCredential, scopes), nil
+	return tokenCredential, nil
 }
