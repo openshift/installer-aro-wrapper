@@ -9,7 +9,6 @@ require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7 v7.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.6.0
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.2.1
 	github.com/Azure/go-autorest/autorest v0.11.29
@@ -20,7 +19,6 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/google/go-cmp v0.7.0
 	github.com/jongio/azidext/go/azidext v0.5.0
 	github.com/onsi/gomega v1.36.2
 	github.com/openshift/api v0.0.0-20250909020331-93b8cc2cf247
@@ -40,8 +38,6 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-require github.com/ugorji/go/codec v1.2.12 // indirect
-
 require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.14.0 // indirect
@@ -58,6 +54,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4 v4.2.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5 v5.7.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns v1.2.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal/v3 v3.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/keyvault/armkeyvault v1.4.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi v1.2.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork v1.1.0 // indirect
@@ -159,6 +156,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20250208200701-d0013a598941 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
@@ -255,6 +253,7 @@ require (
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/thedevsaddam/retry v1.2.1 // indirect
 	github.com/thoas/go-funk v0.9.3 // indirect
+	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/vmware/govmomi v0.47.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
