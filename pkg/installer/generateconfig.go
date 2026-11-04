@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -36,6 +37,14 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
+
+var instancesWithoutAcceleratedNetworking = []api.VMSize{
+	api.VMSizeStandardNC24rsV3,
+	api.VMSizeStandardL4s,
+	api.VMSizeStandardL8s,
+	api.VMSizeStandardL16s,
+	api.VMSizeStandardL32s,
+}
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
@@ -135,6 +144,15 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		machinePoolZones = m.oc.Properties.Zones
 	}
 
+	// Some retired Day-1 worker instance types do not support accelerated
+	// networking, special case them to avoid needing to fetch the full SKU
+	// list. This set should not expand as newly introduced VMs (v6+) mandate
+	// MANA (which needs acclerated networking).
+	networkingTypeWorker := string(azuretypes.VMnetworkingTypeAccelerated)
+	if slices.Contains(instancesWithoutAcceleratedNetworking, m.oc.Properties.MasterProfile.VMSize) {
+		networkingTypeWorker = string(azuretypes.VMNetworkingTypeBasic)
+	}
+
 	rhcosImage := &azuretypes.OSImage{
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
@@ -180,7 +198,8 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 							Zones:            machinePoolZones,
 							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
-							// All of our supported install SKUs have accelerated networking available
+							// All of our supported control plane install SKUs
+							// have accelerated networking available
 							VMNetworkingType: string(azuretypes.VMnetworkingTypeAccelerated),
 							OSDisk: azuretypes.OSDisk{
 								DiskEncryptionSet: masterDiskEncryptionSet,
@@ -204,8 +223,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 								Zones:            machinePoolZones,
 								InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
 								EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
-								// All of our supported install SKUs have accelerated networking available
-								VMNetworkingType: string(azuretypes.VMnetworkingTypeAccelerated),
+								VMNetworkingType: networkingTypeWorker,
 								OSDisk: azuretypes.OSDisk{
 									DiskEncryptionSet: workerDiskEncryptionSet,
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
