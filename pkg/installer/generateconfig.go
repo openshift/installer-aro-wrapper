@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -36,6 +37,14 @@ import (
 	"github.com/openshift/installer-aro-wrapper/pkg/util/stringutils"
 	"github.com/openshift/installer-aro-wrapper/pkg/util/subnet"
 )
+
+var instancesWithoutAcceleratedNetworking = []api.VMSize{
+	api.VMSizeStandardNC24rsV3,
+	api.VMSizeStandardL4s,
+	api.VMSizeStandardL8s,
+	api.VMSizeStandardL16s,
+	api.VMSizeStandardL32s,
+}
 
 func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.InstallConfig, *releaseimage.Image, error) {
 	resourceGroup := stringutils.LastTokenByte(m.oc.Properties.ClusterProfile.ResourceGroupID, '/')
@@ -126,13 +135,39 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
-	// Take the zones from the OpenShiftClusterDocument,
-	// the RP will have already validated them
-	var machinePoolZones []string
+	// Take the zones from the OpenShiftClusterDocument, the RP will have
+	// already validated them
+	var workerMachinePoolZones []string
+	var controlPlaneMachinePoolZones []string
+
 	if len(m.oc.Properties.Zones) == 0 {
-		machinePoolZones = []string{""}
+		workerMachinePoolZones = []string{""}
 	} else {
-		machinePoolZones = m.oc.Properties.Zones
+		// allow workers to install in all the zones the RP has given us
+		workerMachinePoolZones = m.oc.Properties.Zones
+	}
+
+	switch len(m.oc.Properties.Zones) {
+	case 0:
+		controlPlaneMachinePoolZones = []string{""}
+	case 1, 3:
+		// Pass 1 or 3 zones through
+		controlPlaneMachinePoolZones = m.oc.Properties.Zones
+	case 4:
+		// Pull the top 3 zones for the control plane if we have 4
+		controlPlaneMachinePoolZones = m.oc.Properties.Zones[:3]
+	default:
+		// for 2 or 5+ zones, raise an error
+		return nil, nil, fmt.Errorf("number of zones not supported: %d", len(m.oc.Properties.Zones))
+	}
+
+	// Some retired Day-1 worker instance types do not support accelerated
+	// networking, special case them to avoid needing to fetch the full SKU
+	// list. This set should not expand as newly introduced VMs (v6+) mandate
+	// MANA (which needs acclerated networking).
+	networkingTypeWorker := string(azuretypes.VMnetworkingTypeAccelerated)
+	if slices.Contains(instancesWithoutAcceleratedNetworking, m.oc.Properties.WorkerProfiles[0].VMSize) {
+		networkingTypeWorker = string(azuretypes.VMNetworkingTypeBasic)
 	}
 
 	rhcosImage := &azuretypes.OSImage{
@@ -177,10 +212,11 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					Replicas: to.Int64Ptr(3),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
-							Zones:            machinePoolZones,
+							Zones:            controlPlaneMachinePoolZones,
 							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
-							// All of our supported install SKUs have accelerated networking available
+							// All of our supported control plane install SKUs
+							// have accelerated networking available
 							VMNetworkingType: string(azuretypes.VMnetworkingTypeAccelerated),
 							OSDisk: azuretypes.OSDisk{
 								DiskEncryptionSet: masterDiskEncryptionSet,
@@ -201,11 +237,10 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Replicas: to.Int64Ptr(int64(m.oc.Properties.WorkerProfiles[0].Count)),
 						Platform: types.MachinePoolPlatform{
 							Azure: &azuretypes.MachinePool{
-								Zones:            machinePoolZones,
+								Zones:            workerMachinePoolZones,
 								InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
 								EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
-								// All of our supported install SKUs have accelerated networking available
-								VMNetworkingType: string(azuretypes.VMnetworkingTypeAccelerated),
+								VMNetworkingType: networkingTypeWorker,
 								OSDisk: azuretypes.OSDisk{
 									DiskEncryptionSet: workerDiskEncryptionSet,
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
