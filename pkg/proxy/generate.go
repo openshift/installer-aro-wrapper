@@ -5,4 +5,3 @@ package proxy
 
 //go:generate rm -rf ../util/mocks/$GOPACKAGE
 //go:generate mockgen -destination=../util/mocks/$GOPACKAGE/$GOPACKAGE.go github.com/openshift/installer-aro-wrapper/pkg/$GOPACKAGE Dialer
-//go:generate goimports -local=github.com/openshift/installer-aro-wrapper -e -w ../util/mocks/$GOPACKAGE/$GOPACKAGE.go

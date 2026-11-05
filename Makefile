@@ -45,6 +45,7 @@ clean:
 .PHONY: generate
 generate: install-tools
 	go generate ./...
+	$(MAKE) imports
 
 .PHONY: image-aro
 image-aro:

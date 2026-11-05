@@ -5,5 +5,4 @@ package env
 
 //go:generate rm -rf ../util/mocks/$GOPACKAGE
 //go:generate mockgen -destination=../util/mocks/$GOPACKAGE/$GOPACKAGE.go github.com/openshift/installer-aro-wrapper/pkg/$GOPACKAGE Interface,CertificateRefresher
-//go:generate goimports -local=github.com/openshift/installer-aro-wrapper -e -w ../util/mocks/$GOPACKAGE/$GOPACKAGE.go
 //go:generate enumer -type Feature -output zz_generated_feature_enumer.go

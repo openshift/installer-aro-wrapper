@@ -13,8 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
 	gomock "go.uber.org/mock/gomock"
+
+	keyvault "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.0/keyvault"
 )
 
 // MockBaseClient is a mock of BaseClient interface.

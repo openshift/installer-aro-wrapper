@@ -13,8 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	features "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features"
 	gomock "go.uber.org/mock/gomock"
+
+	features "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-07-01/features"
 )
 
 // MockDeploymentsClient is a mock of DeploymentsClient interface.

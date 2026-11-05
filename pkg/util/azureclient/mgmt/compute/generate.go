@@ -5,4 +5,3 @@ package compute
 
 //go:generate rm -rf ../../../../util/mocks/$GOPACKAGE
 //go:generate mockgen -destination=../../../../util/mocks/azureclient/mgmt/$GOPACKAGE/$GOPACKAGE.go github.com/openshift/installer-aro-wrapper/pkg/util/azureclient/mgmt/$GOPACKAGE ResourceSkusClient
-//go:generate goimports -local=github.com/openshift/installer-aro-wrapper -e -w ../../../../util/mocks/azureclient/mgmt/$GOPACKAGE/$GOPACKAGE.go

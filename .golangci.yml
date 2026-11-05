@@ -63,4 +63,3 @@ formatters:
       - third_party$
       - builtin$
       - examples$
-      - pkg/util/mocks
