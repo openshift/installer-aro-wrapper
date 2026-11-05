@@ -7,7 +7,6 @@ require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7 v7.2.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.8.1
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.2
 	github.com/Azure/go-autorest/autorest v0.11.30
@@ -18,7 +17,6 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/google/go-cmp v0.7.0
 	github.com/jongio/azidext/go/azidext v0.5.0
 	github.com/onsi/gomega v1.38.2
 	github.com/openshift/api v0.0.0-20251204164930-cd2e40c5883a
@@ -166,6 +164,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect

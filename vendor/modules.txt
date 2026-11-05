@@ -136,9 +136,6 @@ github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4
 # github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5 v5.7.0
 ## explicit; go 1.18
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5
-# github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7 v7.2.0
-## explicit; go 1.24.0
-github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v7
 # github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns v1.2.0
 ## explicit; go 1.18
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns
