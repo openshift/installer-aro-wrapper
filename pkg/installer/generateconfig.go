@@ -137,15 +137,28 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	// Take the zones from the OpenShiftClusterDocument, the RP will have
 	// already validated them
-	workerMachinePoolZones := []string{""}
-	controlPlaneMachinePoolZones := []string{""}
+	var workerMachinePoolZones []string
+	var controlPlaneMachinePoolZones []string
 
-	if len(m.oc.Properties.Zones) > 0 {
-		// allow workers to install in all 4 zones, if the RP has given us 4 zones
+	if len(m.oc.Properties.Zones) == 0 {
+		workerMachinePoolZones = []string{""}
+	} else {
+		// allow workers to install in all the zones the RP has given us
 		workerMachinePoolZones = m.oc.Properties.Zones
+	}
 
-		// Pull the top 3 zones for the control plane
+	switch len(m.oc.Properties.Zones) {
+	case 0:
+		controlPlaneMachinePoolZones = []string{""}
+	case 1, 3:
+		// Pass 1 or 3 zones through
+		controlPlaneMachinePoolZones = m.oc.Properties.Zones
+	case 4:
+		// Pull the top 3 zones for the control plane if we have 4
 		controlPlaneMachinePoolZones = m.oc.Properties.Zones[:3]
+	default:
+		// for 2 or 5+ zones, raise an error
+		return nil, nil, fmt.Errorf("number of zones not supported: %d", len(m.oc.Properties.Zones))
 	}
 
 	// Some retired Day-1 worker instance types do not support accelerated
@@ -153,7 +166,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 	// list. This set should not expand as newly introduced VMs (v6+) mandate
 	// MANA (which needs acclerated networking).
 	networkingTypeWorker := string(azuretypes.VMnetworkingTypeAccelerated)
-	if slices.Contains(instancesWithoutAcceleratedNetworking, m.oc.Properties.MasterProfile.VMSize) {
+	if slices.Contains(instancesWithoutAcceleratedNetworking, m.oc.Properties.WorkerProfiles[0].VMSize) {
 		networkingTypeWorker = string(azuretypes.VMNetworkingTypeBasic)
 	}
 
