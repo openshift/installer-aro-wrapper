@@ -135,13 +135,17 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
-	// Take the zones from the OpenShiftClusterDocument,
-	// the RP will have already validated them
-	var machinePoolZones []string
-	if len(m.oc.Properties.Zones) == 0 {
-		machinePoolZones = []string{""}
-	} else {
-		machinePoolZones = m.oc.Properties.Zones
+	// Take the zones from the OpenShiftClusterDocument, the RP will have
+	// already validated them
+	workerMachinePoolZones := []string{""}
+	controlPlaneMachinePoolZones := []string{""}
+
+	if len(m.oc.Properties.Zones) > 0 {
+		// allow workers to install in all 4 zones, if the RP has given us 4 zones
+		workerMachinePoolZones = m.oc.Properties.Zones
+
+		// Pull the top 3 zones for the control plane
+		controlPlaneMachinePoolZones = m.oc.Properties.Zones[:3]
 	}
 
 	// Some retired Day-1 worker instance types do not support accelerated
@@ -195,7 +199,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 					Replicas: to.Int64Ptr(3),
 					Platform: types.MachinePoolPlatform{
 						Azure: &azuretypes.MachinePool{
-							Zones:            machinePoolZones,
+							Zones:            controlPlaneMachinePoolZones,
 							InstanceType:     string(m.oc.Properties.MasterProfile.VMSize),
 							EncryptionAtHost: m.oc.Properties.MasterProfile.EncryptionAtHost == api.EncryptionAtHostEnabled,
 							// All of our supported control plane install SKUs
@@ -220,7 +224,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 						Replicas: to.Int64Ptr(int64(m.oc.Properties.WorkerProfiles[0].Count)),
 						Platform: types.MachinePoolPlatform{
 							Azure: &azuretypes.MachinePool{
-								Zones:            machinePoolZones,
+								Zones:            workerMachinePoolZones,
 								InstanceType:     string(m.oc.Properties.WorkerProfiles[0].VMSize),
 								EncryptionAtHost: m.oc.Properties.WorkerProfiles[0].EncryptionAtHost == api.EncryptionAtHostEnabled,
 								VMNetworkingType: networkingTypeWorker,
