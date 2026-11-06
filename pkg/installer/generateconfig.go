@@ -174,7 +174,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		Publisher: "azureopenshift",
 		Offer:     "aro4",
 		// All of our supported install SKUs support HyperV Gen2, so use that SKU
-		SKU:     "422-v2",
+		SKU:     "aro_422-v2",
 		Version: "9.8.20260428",
 		Plan:    azuretypes.ImageNoPurchasePlan,
 	}
