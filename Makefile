@@ -14,15 +14,16 @@ else
 endif
 
 # default to registry.access.redhat.com for build images on local builds and CI builds without $RP_IMAGE_ACR set.
+BUILDER_REPOSITORY = openshift-release-dev/golang-builder--partner-share
 ifeq ($(RP_IMAGE_ACR),arointsvc)
 	REGISTRY = arointsvc.azurecr.io
-	BUILDER_REGISTRY = arointsvc.azurecr.io/openshift-release-dev/golang-builder--partner-share
+	BUILDER_REGISTRY = arointsvc.azurecr.io
 else ifeq ($(RP_IMAGE_ACR),arosvc)
 	REGISTRY = arosvc.azurecr.io
-	BUILDER_REGISTRY = arosvc.azurecr.io/openshift-release-dev/golang-builder--partner-share
+	BUILDER_REGISTRY = arosvc.azurecr.io
 else
 	REGISTRY ?= registry.access.redhat.com
-	BUILDER_REGISTRY ?= quay.io/openshift-release-dev/golang-builder--partner-share
+	BUILDER_REGISTRY ?= quay.io
 endif
 
 ARO_IMAGE ?= $(ARO_IMAGE_BASE):$(VERSION)
@@ -49,7 +50,7 @@ generate: install-tools
 .PHONY: image-aro
 image-aro:
 	docker pull $(REGISTRY)/ubi9/ubi-minimal
-	docker build --platform=linux/amd64 --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) --build-arg BUILDER_REGISTRY=$(BUILDER_REGISTRY) .
+	docker build --platform=linux/amd64 --network=host --no-cache -f Dockerfile.aro -t $(ARO_IMAGE) --build-arg REGISTRY=$(REGISTRY) --build-arg BUILDER_REGISTRY=$(BUILDER_REGISTRY) --build-arg BUILDER_REPOSITORY=$(BUILDER_REPOSITORY) .
 
 .PHONY: publish-image-aro
 publish-image-aro: image-aro
