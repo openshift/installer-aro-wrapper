@@ -70,6 +70,11 @@ func New(ctx context.Context, log *logrus.Entry, isLocalDevelopmentMode bool) (I
 		return NewDev(true)
 	}
 
+	if WorkloadIdentityEnabled() {
+		log.Info("creating InstanceMetadata from workload deployment configuration")
+		return newWorkloadIdentity()
+	}
+
 	log.Info("creating InstanceMetadata from Azure Instance Metadata Service (AIMS)")
 	return newProd(ctx)
 }

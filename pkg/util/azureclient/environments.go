@@ -102,6 +102,14 @@ func (e *AROEnvironment) ManagedIdentityCredentialOptions() *azidentity.ManagedI
 	}
 }
 
+func (e *AROEnvironment) WorkloadIdentityCredentialOptions() *azidentity.WorkloadIdentityCredentialOptions {
+	return &azidentity.WorkloadIdentityCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Cloud: e.Cloud,
+		},
+	}
+}
+
 // ArmClientOptions returns an arm.ClientOptions to be passed in when instantiating
 // Azure SDK for Go clients.
 func (e *AROEnvironment) ArmClientOptions() *arm.ClientOptions {
