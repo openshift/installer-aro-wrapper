@@ -4,6 +4,7 @@ package installer
 // Licensed under the Apache License 2.0.
 
 import (
+	"crypto"
 	"os"
 	"path/filepath"
 
@@ -43,12 +44,16 @@ func (sk *AROBoundSASigningKey) Load(f asset.FileFetcher) (bool, error) {
 		return false, err
 	}
 
-	rsaKey, err := tls.PemToPrivateKey(keyFile.Data)
+	privateKey, err := pemToPrivateKey(keyFile.Data)
 	if err != nil {
-		logrus.Debugf("Failed to load rsa.PrivateKey from file: %s", err)
-		return false, errors.Wrap(err, "failed to load rsa.PrivateKey from the file")
+		logrus.Debugf("Failed to load private key from file: %s", err)
+		return false, errors.Wrap(err, "failed to load private key from the file")
 	}
-	pubData, err := tls.PublicKeyToPem(&rsaKey.PublicKey)
+	signer, ok := privateKey.(crypto.Signer)
+	if !ok {
+		return false, errors.New("private key does not implement crypto.Signer")
+	}
+	pubData, err := publicKeyToPem(signer.Public())
 	if err != nil {
 		return false, errors.Wrap(err, "failed to extract public key from the key")
 	}
